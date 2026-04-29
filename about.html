@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About FXNewsBias | Free Forex Sentiment Dashboard</title>
+<meta name="description" content="Learn about FXNewsBias - the free forex news sentiment platform. AI-powered fundamental analysis for retail traders.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
+:root{
+  --bg-soft:#f8f9fa;
+  --border:#e5e7eb; --border-strong:#d1d5db;
+  --text:#1a1a1a; --text-soft:#6b7280; --text-muted:#9ca3af;
+  --accent:#2563eb;
+  --bull:#10b981; --bear:#ef4444; --neutral:#f59e0b;
+}
+
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;color:#94a3b8;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+
+header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
+nav a:hover{color:var(--accent);}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;display:inline-block;transition:all .2s;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#1d4ed8;}
+.burger{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
+
+.ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
+.ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ticker-item{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.pair{font-weight:600;}
+.up{color:var(--bull);font-weight:600;}
+.down{color:var(--bear);font-weight:600;}
+
+.hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:60px 20px;text-align:center;}
+.hero h1{font-size:42px;font-weight:800;margin-bottom:14px;letter-spacing:-1px;}
+.hero p{font-size:17px;color:#94a3b8;max-width:680px;margin:0 auto;line-height:1.6;}
+
+.content{max-width:880px;margin:0 auto;padding:50px 20px;}
+.section{margin-bottom:50px;}
+.section h2{font-size:26px;font-weight:800;margin-bottom:16px;color:var(--text);letter-spacing:-0.5px;}
+.section p{font-size:15px;color:var(--text-soft);line-height:1.8;margin-bottom:14px;}
+.section p strong{color:var(--text);}
+
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px;}
+.feature{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;}
+.feature-icon{font-size:32px;margin-bottom:10px;}
+.feature h3{font-size:15px;font-weight:700;margin-bottom:6px;}
+.feature p{font-size:13px;color:var(--text-soft);line-height:1.6;margin:0;}
+
+.steps{display:flex;flex-direction:column;gap:14px;margin-top:20px;}
+.step{display:flex;gap:14px;padding:18px;background:var(--bg-soft);border-radius:10px;}
+.step-num{flex-shrink:0;width:36px;height:36px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;}
+.step-content h4{font-size:15px;font-weight:700;margin-bottom:4px;}
+.step-content p{font-size:13px;color:var(--text-soft);margin:0;line-height:1.6;}
+
+.cta-box{background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:1px solid #93c5fd;border-radius:12px;padding:32px;text-align:center;margin-top:30px;}
+.cta-box h3{font-size:22px;font-weight:800;color:#1e40af;margin-bottom:8px;}
+.cta-box p{font-size:14px;color:#1e3a8a;margin-bottom:16px;}
+
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-col a:hover{color:#fff;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:900px){
+  nav ul{display:none;}
+  .burger{display:block;}
+  .topbar-left span:nth-child(n+2){display:none;}
+  .hero h1{font-size:28px;}
+  .hero p{font-size:14px;}
+  .section h2{font-size:22px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 Wed, Apr 29, 2026</span>
+      <span>🌐 London Open</span>
+    </div>
+    <div class="topbar-right">
+      <a href="about.html">About</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="index.html">Markets</a></li>
+        <li><a href="currencies.html">Currencies</a></li>
+        <li><a href="pairs.html">Pairs</a></li>
+        <li><a href="calendar.html">Calendar</a></li>
+        <li><a href="news.html">News</a></li>
+        <li><a href="community.html">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-outline">Login</a>
+      <a href="#" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CAD</span><span>1.3724</span><span class="down">-0.18%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+  </div>
+</div>
+
+<section class="hero">
+  <h1>About FXNewsBias</h1>
+  <p>The free forex sentiment platform built for retail traders who care about fundamentals — not just charts.</p>
+</section>
+
+<div class="content">
+
+  <div class="section">
+    <h2>🎯 Our Mission</h2>
+    <p>Most retail forex traders lose money — not because they're bad at charts, but because they ignore <strong>fundamentals</strong>. Central bank decisions, economic data, and geopolitical events drive long-term currency moves. But fundamental analysis is hard, time-consuming, and often locked behind expensive Bloomberg terminals.</p>
+    <p><strong>FXNewsBias changes that.</strong> We aggregate news from 12+ sources, use AI to analyze sentiment, and give you a simple Bullish/Bearish score for every major currency. Free. Fast. Accessible to everyone.</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ How It Works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>News Aggregation</h4>
+          <p>Every 3 hours, we fetch fresh news from Reuters, BBC, FXStreet, ForexFactory, CNBC, Bloomberg, and 6 more trusted sources.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>AI Analysis</h4>
+          <p>Claude AI reads every headline and analyzes the impact on each major currency — considering central bank policy, economic data, and geopolitical context.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Sentiment Scoring</h4>
+          <p>Each currency gets a 0-100 score: Bullish (60+), Bearish (below 40), Neutral (40-60). With key drivers explaining the why.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>You Trade Smarter</h4>
+          <p>Use sentiment to confirm your technical setups, avoid trading against fundamentals, and sidestep dangerous news events.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>🚀 What You Get</h2>
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="feature-icon">💱</div>
+        <h3>8 Major Currencies</h3>
+        <p>Real-time sentiment for USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h3>Pair Sentiment</h3>
+        <p>Combined bias for major and minor pairs with key drivers.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📅</div>
+        <h3>Economic Calendar</h3>
+        <p>Every market-moving event with forecasts and impact ratings.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📰</div>
+        <h3>Live News Feed</h3>
+        <p>Top stories driving sentiment, organized by impact level.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">👥</div>
+        <h3>Trader Community</h3>
+        <p>Share analysis, discuss trades, learn from verified traders.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔔</div>
+        <h3>Custom Alerts</h3>
+        <p>Get notified when sentiment shifts or events approach.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>💰 How It's Free</h2>
+    <p>FXNewsBias is supported by <strong>display advertising</strong> and optional <strong>broker affiliate partnerships</strong>. We never sell your data. We never push specific brokers. Our content stays independent and our sentiment analysis is never influenced by sponsors.</p>
+    <p>If you want to support us beyond viewing ads, future Premium plans will offer: ad-free experience, sentiment history, email alerts, and priority data feeds. Core features remain free forever.</p>
+  </div>
+
+  <div class="section">
+    <h2>👤 Built By A Trader</h2>
+    <p>FXNewsBias is built by a retail trader who got tired of losing money to news events that weren't on the charts. After years of trying expensive subscription services and unreliable signal groups, the simple truth became clear: <strong>fundamental sentiment is the missing piece for most retail traders</strong>.</p>
+    <p>We're a small operation, focused on quality over quantity. Every feature is built because traders genuinely need it.</p>
+  </div>
+
+  <div class="cta-box">
+    <h3>Ready To Trade Smarter?</h3>
+    <p>Join 2,400+ traders using FXNewsBias to filter their setups</p>
+    <a href="#" class="btn btn-primary" style="font-size:14px;padding:11px 24px;">Create Free Account</a>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="#">How It Works</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="currencies.html">Currencies</a></li>
+          <li><a href="pairs.html">Pairs</a></li>
+          <li><a href="calendar.html">Calendar</a></li>
+          <li><a href="news.html">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="community.html">Latest Posts</a></li>
+          <li><a href="#">Top Traders</a></li>
+          <li><a href="#">Guidelines</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Disclaimer</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
