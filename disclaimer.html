@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk Disclaimer | FXNewsBias</title>
+<meta name="description" content="FXNewsBias risk disclaimer. Important information about forex trading risks and the nature of our content.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}
+
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;color:#94a3b8;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+
+header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
+nav a:hover{color:var(--accent);}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;display:inline-block;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-primary{background:var(--accent);color:#fff;}
+.burger{display:none;background:none;border:none;font-size:24px;}
+
+.ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
+.ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ticker-item{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.pair{font-weight:600;}
+.up{color:var(--bull);font-weight:600;}
+.down{color:var(--bear);font-weight:600;}
+
+.hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:50px 20px;text-align:center;}
+.hero h1{font-size:36px;font-weight:800;margin-bottom:10px;letter-spacing:-1px;}
+.hero p{font-size:14px;color:#94a3b8;max-width:600px;margin:0 auto;}
+.last-updated{font-size:11px;color:#64748b;margin-top:10px;font-family:'JetBrains Mono',monospace;}
+
+.warning-banner{background:linear-gradient(135deg,#fee2e2,#fecaca);border:2px solid #ef4444;border-radius:12px;padding:24px;margin:30px auto;max-width:800px;display:flex;gap:16px;align-items:flex-start;}
+.warning-icon{font-size:36px;flex-shrink:0;}
+.warning-content h2{color:#991b1b;font-size:18px;font-weight:800;margin-bottom:8px;}
+.warning-content p{color:#7f1d1d;font-size:14px;line-height:1.6;}
+
+.content{max-width:800px;margin:0 auto;padding:30px 20px 50px;}
+.section{margin-bottom:36px;}
+.section h2{font-size:22px;font-weight:800;margin-bottom:14px;color:var(--text);display:flex;align-items:center;gap:8px;}
+.section p{font-size:14px;color:var(--text-soft);line-height:1.8;margin-bottom:12px;}
+.section ul{margin-left:20px;margin-bottom:12px;}
+.section ul li{font-size:14px;color:var(--text-soft);line-height:1.8;margin-bottom:6px;}
+.section strong{color:var(--text);}
+
+.highlight-box{background:var(--bg-soft);border-left:4px solid var(--accent);padding:18px 22px;border-radius:6px;margin:18px 0;}
+.highlight-box p{font-size:13px;color:var(--text);margin:0;line-height:1.7;}
+
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:900px){nav ul{display:none;}.burger{display:block;}.topbar-left span:nth-child(n+2){display:none;}.hero h1{font-size:24px;}.section h2{font-size:18px;}.warning-banner{flex-direction:column;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 Wed, Apr 29, 2026</span>
+      <span>🌐 London Open</span>
+    </div>
+    <div class="topbar-right">
+      <a href="about.html">About</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="index.html">Markets</a></li>
+        <li><a href="currencies.html">Currencies</a></li>
+        <li><a href="pairs.html">Pairs</a></li>
+        <li><a href="calendar.html">Calendar</a></li>
+        <li><a href="news.html">News</a></li>
+        <li><a href="community.html">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-outline">Login</a>
+      <a href="#" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+  </div>
+</div>
+
+<section class="hero">
+  <h1>Risk Disclaimer</h1>
+  <p>Please read carefully before using FXNewsBias</p>
+  <div class="last-updated">Last updated: April 29, 2026</div>
+</section>
+
+<div class="warning-banner">
+  <div class="warning-icon">⚠️</div>
+  <div class="warning-content">
+    <h2>HIGH RISK WARNING</h2>
+    <p>Forex trading carries a high level of risk and may not be suitable for all investors. You can lose substantial amounts of money — possibly more than your initial investment. Only trade with money you can afford to lose completely.</p>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="section">
+    <h2>📋 Not Financial Advice</h2>
+    <p>The content on FXNewsBias — including sentiment scores, news analysis, market commentary, community posts, and any other information — is provided for <strong>educational and informational purposes only</strong>. It is NOT financial advice, investment advice, trading advice, or any other type of personalized recommendation.</p>
+    <p>FXNewsBias does not consider your personal financial situation, risk tolerance, investment objectives, or needs. We are not a licensed financial advisor, broker, or investment manager. Before making any trading decision, you should consult with a qualified, licensed financial professional.</p>
+  </div>
+
+  <div class="section">
+    <h2>💸 Risk of Loss</h2>
+    <p>Forex (foreign exchange) trading involves substantial risks, including but not limited to:</p>
+    <ul>
+      <li><strong>Leverage Risk:</strong> Forex trading uses high leverage which amplifies both gains and losses. You can lose more than your deposited capital.</li>
+      <li><strong>Market Volatility:</strong> Currency prices can move sharply due to news, central bank decisions, geopolitical events, and other factors.</li>
+      <li><strong>Liquidity Risk:</strong> During major events, spreads can widen and slippage can occur.</li>
+      <li><strong>Counterparty Risk:</strong> Your broker could become insolvent or restrict your ability to trade.</li>
+      <li><strong>Technical Risk:</strong> Internet connectivity, platform outages, or system failures can cause losses.</li>
+    </ul>
+    <p>Statistically, <strong>70-80% of retail forex traders lose money</strong>. Many lose all their capital. Past performance does not guarantee future results.</p>
+  </div>
+
+  <div class="section">
+    <h2>🤖 AI Sentiment Limitations</h2>
+    <p>FXNewsBias uses artificial intelligence to analyze news and generate sentiment scores. While we strive for accuracy, AI analysis has limitations:</p>
+    <ul>
+      <li>AI may misinterpret news context or nuance</li>
+      <li>AI cannot predict unexpected events or black swan scenarios</li>
+      <li>AI sentiment is based on news available at time of analysis — it does not include all information</li>
+      <li>Markets can move opposite to fundamental sentiment in the short term</li>
+      <li>Sentiment is one input among many — never the only basis for trading decisions</li>
+    </ul>
+    <div class="highlight-box">
+      <p><strong>Important:</strong> A "Bullish" or "Bearish" sentiment score does NOT mean you should buy or sell. It is one piece of information for you to consider alongside your own analysis.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📊 Data Accuracy</h2>
+    <p>While we make every effort to provide accurate and timely information, FXNewsBias makes <strong>no guarantees regarding the accuracy, completeness, or timeliness</strong> of any data displayed on the platform. This includes:</p>
+    <ul>
+      <li>Currency prices and quotes</li>
+      <li>Economic calendar events and forecasts</li>
+      <li>News headlines and summaries</li>
+      <li>Sentiment scores and analysis</li>
+      <li>Historical data</li>
+    </ul>
+    <p>Data may be delayed, incomplete, or contain errors. Always verify critical information from multiple sources before making trading decisions.</p>
+  </div>
+
+  <div class="section">
+    <h2>🚫 No Guaranteed Profits</h2>
+    <p>Anyone who guarantees profits in forex trading is lying. <strong>FXNewsBias makes no claims about your potential returns</strong>. We do not promise profits, do not guarantee win rates, and do not provide trading signals or advice.</p>
+    <p>Hypothetical performance, backtested results, or past trades discussed in our content do not represent actual trading and have inherent limitations. There is no guarantee that you will achieve similar results.</p>
+  </div>
+
+  <div class="section">
+    <h2>👥 Community Content</h2>
+    <p>FXNewsBias allows registered users to post content including analysis, opinions, and discussions. Important things to understand about user-generated content:</p>
+    <ul>
+      <li>User opinions are their own and do not reflect FXNewsBias views</li>
+      <li>We do not verify the accuracy of user posts or claims</li>
+      <li>Trading ideas shared by other users are not advice — treat them as opinions only</li>
+      <li>We moderate but cannot guarantee removal of all problematic content</li>
+      <li>Following community advice is at your sole risk and discretion</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>🌍 Jurisdictional Notice</h2>
+    <p>FXNewsBias is an information platform and is not registered or licensed as a financial services provider in any jurisdiction. Forex trading regulations vary by country. It is your responsibility to ensure that:</p>
+    <ul>
+      <li>Forex trading is legal in your country of residence</li>
+      <li>You comply with all applicable laws and tax regulations</li>
+      <li>You use a properly regulated broker in your jurisdiction</li>
+    </ul>
+    <p>Some jurisdictions restrict or prohibit retail forex trading, leverage levels, or specific brokers. We do not encourage trading in jurisdictions where it is restricted.</p>
+  </div>
+
+  <div class="section">
+    <h2>🔗 Third-Party Links</h2>
+    <p>FXNewsBias may contain advertisements and links to third-party websites, including brokers and financial services. We are not responsible for the content, accuracy, or practices of these third parties. Inclusion of any link or advertisement does not imply endorsement.</p>
+    <p>If you use a service through our affiliate links, we may earn a commission at no additional cost to you. This does not influence our editorial content or sentiment analysis.</p>
+  </div>
+
+  <div class="section">
+    <h2>⚖️ Limitation of Liability</h2>
+    <p>To the fullest extent permitted by law, FXNewsBias, its operators, employees, partners, and affiliates shall <strong>NOT be liable</strong> for any direct, indirect, incidental, special, consequential, or punitive damages arising from:</p>
+    <ul>
+      <li>Your use of or inability to use our platform</li>
+      <li>Trading losses based on information from our platform</li>
+      <li>Errors, inaccuracies, or omissions in any content</li>
+      <li>Service interruptions or technical failures</li>
+      <li>Unauthorized access to or alteration of your data</li>
+      <li>Any other matter relating to FXNewsBias</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>✅ Your Acknowledgment</h2>
+    <p>By using FXNewsBias, you acknowledge and agree that:</p>
+    <ul>
+      <li>You understand the risks of forex trading</li>
+      <li>You are responsible for your own trading decisions</li>
+      <li>You will not rely solely on our information for trading</li>
+      <li>You will conduct your own research and consult professionals</li>
+      <li>You release FXNewsBias from any liability for your trading results</li>
+      <li>You are of legal age to trade forex in your jurisdiction</li>
+    </ul>
+    <div class="highlight-box">
+      <p><strong>If you do not agree with this disclaimer, please do not use FXNewsBias.</strong></p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📧 Questions?</h2>
+    <p>If you have questions about this disclaimer or our content, please contact us through the contact page. We are happy to clarify any concerns about how our platform works and the limitations of our analysis.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="how.html">How It Works</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="currencies.html">Currencies</a></li>
+          <li><a href="pairs.html">Pairs</a></li>
+          <li><a href="calendar.html">Calendar</a></li>
+          <li><a href="news.html">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="community.html">Latest Posts</a></li>
+          <li><a href="#">Top Traders</a></li>
+          <li><a href="#">Guidelines</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="disclaimer.html">Disclaimer</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
