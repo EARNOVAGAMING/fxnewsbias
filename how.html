@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How FXNewsBias Works | Forex Sentiment Explained</title>
+<meta name="description" content="Learn how FXNewsBias calculates forex sentiment using AI analysis of news from 12+ trusted sources.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}
+
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;color:#94a3b8;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+
+header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
+nav a:hover{color:var(--accent);}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;display:inline-block;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-primary{background:var(--accent);color:#fff;}
+.burger{display:none;background:none;border:none;font-size:24px;}
+
+.ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
+.ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ticker-item{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.pair{font-weight:600;}
+.up{color:var(--bull);font-weight:600;}
+.down{color:var(--bear);font-weight:600;}
+
+.hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:60px 20px;text-align:center;}
+.hero h1{font-size:42px;font-weight:800;margin-bottom:14px;letter-spacing:-1px;}
+.hero p{font-size:17px;color:#94a3b8;max-width:680px;margin:0 auto;line-height:1.6;}
+
+.content{max-width:880px;margin:0 auto;padding:50px 20px;}
+.section{margin-bottom:50px;}
+.section h2{font-size:26px;font-weight:800;margin-bottom:16px;letter-spacing:-0.5px;}
+.section p{font-size:15px;color:var(--text-soft);line-height:1.8;margin-bottom:14px;}
+
+/* PIPELINE */
+.pipeline{background:var(--bg-soft);border-radius:12px;padding:24px;margin:20px 0;}
+.pipe-step{display:flex;gap:16px;margin-bottom:18px;align-items:flex-start;}
+.pipe-step:last-child{margin-bottom:0;}
+.pipe-num{flex-shrink:0;width:42px;height:42px;background:var(--accent);color:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;}
+.pipe-content{flex:1;}
+.pipe-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+.pipe-desc{font-size:13px;color:var(--text-soft);line-height:1.6;}
+
+/* SCORE EXPLAIN */
+.score-explain{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:20px;}
+.score-card{padding:18px;border-radius:10px;text-align:center;}
+.score-card.bull{background:#d1fae5;border:1px solid #10b981;}
+.score-card.bear{background:#fee2e2;border:1px solid #ef4444;}
+.score-card.neut{background:#fef3c7;border:1px solid #f59e0b;}
+.score-range{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;margin-bottom:4px;}
+.score-label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.score-desc{font-size:12px;line-height:1.5;}
+.bull .score-range,.bull .score-label{color:#065f46;}
+.bear .score-range,.bear .score-label{color:#991b1b;}
+.neut .score-range,.neut .score-label{color:#92400e;}
+
+/* SOURCES */
+.source-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:16px;}
+.source-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;font-size:13px;font-weight:600;}
+
+/* FAQ */
+.faq{margin-top:20px;}
+.faq-item{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:10px;}
+.faq-q{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.faq-q::before{content:'❓';}
+.faq-a{font-size:13px;color:var(--text-soft);line-height:1.7;}
+
+/* USE CASE */
+.use-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:18px;}
+.use-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;}
+.use-icon{font-size:28px;margin-bottom:8px;}
+.use-card h3{font-size:15px;font-weight:700;margin-bottom:6px;}
+.use-card p{font-size:13px;color:var(--text-soft);line-height:1.6;}
+
+.cta-box{background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:1px solid #93c5fd;border-radius:12px;padding:32px;text-align:center;margin-top:30px;}
+.cta-box h3{font-size:22px;font-weight:800;color:#1e40af;margin-bottom:8px;}
+.cta-box p{font-size:14px;color:#1e3a8a;margin-bottom:16px;}
+
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:900px){nav ul{display:none;}.burger{display:block;}.topbar-left span:nth-child(n+2){display:none;}.hero h1{font-size:28px;}.section h2{font-size:22px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 Wed, Apr 29, 2026</span>
+      <span>🌐 London Open</span>
+    </div>
+    <div class="topbar-right">
+      <a href="about.html">About</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="index.html">Markets</a></li>
+        <li><a href="currencies.html">Currencies</a></li>
+        <li><a href="pairs.html">Pairs</a></li>
+        <li><a href="calendar.html">Calendar</a></li>
+        <li><a href="news.html">News</a></li>
+        <li><a href="community.html">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-outline">Login</a>
+      <a href="#" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+  </div>
+</div>
+
+<section class="hero">
+  <h1>How FXNewsBias Works</h1>
+  <p>The complete guide to our forex sentiment system — from news aggregation to your trading decisions.</p>
+</section>
+
+<div class="content">
+
+  <div class="section">
+    <h2>📊 The Big Picture</h2>
+    <p>Currency markets move on <strong>fundamentals</strong> — economic data, central bank policy, and geopolitical events. But staying on top of all this is overwhelming. We built a system that does the hard work for you.</p>
+    <p>Every 3 hours, our pipeline reads news from 12+ sources, uses AI to analyze impact on each currency, and outputs a simple Bullish/Bearish score. That's it.</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ The Pipeline</h2>
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-num">1</div>
+        <div class="pipe-content">
+          <div class="pipe-title">Fetch Latest News</div>
+          <div class="pipe-desc">Our system pulls fresh news from RSS feeds and APIs every 3 hours. Sources include Reuters, BBC, FXStreet, ForexFactory, CNBC, Bloomberg, MarketWatch, DailyFX and more.</div>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">2</div>
+        <div class="pipe-content">
+          <div class="pipe-title">AI Reads & Analyzes</div>
+          <div class="pipe-desc">All news headlines and summaries get sent to Claude AI. The AI is trained to understand forex fundamentals — central bank language, economic data interpretation, geopolitical impact.</div>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">3</div>
+        <div class="pipe-content">
+          <div class="pipe-title">Sentiment Scoring</div>
+          <div class="pipe-desc">For each major currency, AI outputs a 0-100 sentiment score plus the top 3-4 key drivers explaining why. Pairs are calculated by combining the two currencies' scores.</div>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">4</div>
+        <div class="pipe-content">
+          <div class="pipe-title">Display On Dashboard</div>
+          <div class="pipe-desc">Results are stored and displayed on your dashboard with color-coded cards, key drivers, and historical trends. Refreshes automatically.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>🎯 How To Read The Score</h2>
+    <p>Every currency gets a score from 0-100. Here's what the ranges mean:</p>
+    <div class="score-explain">
+      <div class="score-card bear">
+        <div class="score-range">0-39</div>
+        <div class="score-label">Bearish</div>
+        <div class="score-desc">Negative fundamentals — currency likely to weaken</div>
+      </div>
+      <div class="score-card neut">
+        <div class="score-range">40-59</div>
+        <div class="score-label">Neutral</div>
+        <div class="score-desc">Mixed signals — wait for clearer setup</div>
+      </div>
+      <div class="score-card bull">
+        <div class="score-range">60-100</div>
+        <div class="score-label">Bullish</div>
+        <div class="score-desc">Positive fundamentals — currency likely to strengthen</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📰 Our Data Sources</h2>
+    <p>We combine multiple trusted sources for comprehensive coverage:</p>
+    <div class="source-grid">
+      <div class="source-card">📰 Reuters</div>
+      <div class="source-card">📰 BBC News</div>
+      <div class="source-card">📰 FXStreet</div>
+      <div class="source-card">📰 ForexFactory</div>
+      <div class="source-card">📰 CNBC</div>
+      <div class="source-card">📰 Bloomberg</div>
+      <div class="source-card">📰 DailyFX</div>
+      <div class="source-card">📰 MarketWatch</div>
+      <div class="source-card">📰 Investing.com</div>
+      <div class="source-card">📰 Nasdaq</div>
+      <div class="source-card">📰 Finnhub</div>
+      <div class="source-card">📰 Marketaux</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>💡 How To Use Sentiment In Trading</h2>
+    <div class="use-grid">
+      <div class="use-card">
+        <div class="use-icon">✅</div>
+        <h3>Confirm Setups</h3>
+        <p>Found a bullish technical pattern? Check sentiment. If fundamentals also bullish — higher probability trade.</p>
+      </div>
+      <div class="use-card">
+        <div class="use-icon">⚠️</div>
+        <h3>Avoid Counter-Trend</h3>
+        <p>Don't fight the fundamentals. If USD sentiment is bearish, going long USD pairs is a low-probability trade.</p>
+      </div>
+      <div class="use-card">
+        <div class="use-icon">🎯</div>
+        <h3>Filter Pairs</h3>
+        <p>Trade pairs with biggest sentiment divergence. Bullish currency vs Bearish currency = clearest direction.</p>
+      </div>
+      <div class="use-card">
+        <div class="use-icon">📅</div>
+        <h3>Plan Around Events</h3>
+        <p>Use the calendar to avoid trading 30 min before/after high-impact events. Volatility kills accounts.</p>
+      </div>
+      <div class="use-card">
+        <div class="use-icon">🔄</div>
+        <h3>Track Sentiment Shifts</h3>
+        <p>When sentiment flips from Bearish to Bullish (or vice versa), that's a major trend signal worth noting.</p>
+      </div>
+      <div class="use-card">
+        <div class="use-icon">📊</div>
+        <h3>Combine With Technicals</h3>
+        <p>Sentiment is one tool. Combine with price action, levels, and risk management for best results.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>❓ Frequently Asked Questions</h2>
+    <div class="faq">
+      <div class="faq-item">
+        <div class="faq-q">How often does sentiment update?</div>
+        <div class="faq-a">Every 3 hours, automatically. The dashboard always shows the latest available analysis. You'll see "last updated" timestamp at the top.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is this financial advice?</div>
+        <div class="faq-a">No. FXNewsBias provides information only. We never tell you to buy or sell. Trading decisions are 100% yours. Forex trading involves risk — only trade with money you can afford to lose.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How accurate is the AI sentiment?</div>
+        <div class="faq-a">AI analysis is good but not perfect. It's a tool to speed up your fundamental analysis — not a magic prediction. Always combine with your own research and technical analysis.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Why is it free?</div>
+        <div class="faq-a">We're supported by display ads. Our analysis is independent — sponsors don't influence sentiment scores. Future Premium tiers will offer extras like email alerts and ad-free experience.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Do I need an account?</div>
+        <div class="faq-a">No — sentiment dashboard, news, calendar, and pair sentiment are all free without login. Account is only needed for posting in community, watchlist, and alerts.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can I get historical sentiment data?</div>
+        <div class="faq-a">Coming soon for registered users. We'll show you how each currency's sentiment evolved over the past weeks/months.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What if AI analysis disagrees with my view?</div>
+        <div class="faq-a">That's actually useful! When you disagree with the consensus, examine why. Sometimes you have an edge. Sometimes you missed something. Either way it sharpens your thinking.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Do you cover crypto or stocks?</div>
+        <div class="faq-a">Currently focused 100% on forex (8 major currencies and their pairs). Expanding to indices and gold is on the roadmap.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-box">
+    <h3>Ready To Trade With Confidence?</h3>
+    <p>Start using fundamental sentiment in your daily trading routine</p>
+    <a href="index.html" class="btn btn-primary" style="font-size:14px;padding:11px 24px;">Open Dashboard</a>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="how.html">How It Works</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="currencies.html">Currencies</a></li>
+          <li><a href="pairs.html">Pairs</a></li>
+          <li><a href="calendar.html">Calendar</a></li>
+          <li><a href="news.html">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="community.html">Latest Posts</a></li>
+          <li><a href="#">Top Traders</a></li>
+          <li><a href="#">Guidelines</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Disclaimer</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
