@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forex Pair Sentiment | FXNewsBias</title>
+<meta name="description" content="Real-time sentiment for major and minor forex pairs. EUR/USD, GBP/USD, USD/JPY analysis based on fundamental news and central bank policy.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
+:root{
+  --bg-soft:#f8f9fa;
+  --border:#e5e7eb; --border-strong:#d1d5db;
+  --text:#1a1a1a; --text-soft:#6b7280; --text-muted:#9ca3af;
+  --accent:#2563eb;
+  --bull:#10b981; --bear:#ef4444; --neutral:#f59e0b;
+}
+
+/* TOP BAR */
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;color:#94a3b8;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+.topbar a:hover{color:#fff;}
+
+/* HEADER */
+header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;transition:color .2s;}
+nav a:hover,nav a.active{color:var(--accent);}
+nav a.active{font-weight:600;}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;display:inline-block;transition:all .2s;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#1d4ed8;}
+.burger{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
+
+/* TICKER */
+.ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
+.ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ticker-item{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.pair{font-weight:600;}
+.up{color:var(--bull);font-weight:600;}
+.down{color:var(--bear);font-weight:600;}
+
+/* PAGE HEAD */
+.page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:36px 0;}
+.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.breadcrumb{font-size:12px;color:#94a3b8;margin-bottom:10px;}
+.breadcrumb a{color:#94a3b8;text-decoration:none;}
+.breadcrumb a:hover{color:#fff;}
+.page-title{font-size:32px;font-weight:800;margin-bottom:8px;}
+.page-sub{color:#94a3b8;font-size:14px;max-width:700px;}
+
+/* CATEGORY TABS */
+.cat-tabs{max-width:1280px;margin:24px auto 0;padding:0 20px;display:flex;gap:6px;border-bottom:2px solid var(--border);overflow-x:auto;}
+.cat-tab{padding:12px 18px;font-size:14px;font-weight:600;color:var(--text-soft);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .2s;}
+.cat-tab:hover{color:var(--accent);}
+.cat-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* SECTION */
+.section{max-width:1280px;margin:24px auto;padding:0 20px;}
+.section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.section-update{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted);}
+
+/* PAIRS TABLE */
+.pairs-table{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px;}
+.table-header{display:grid;grid-template-columns:140px 1fr 110px 110px 110px 100px;gap:12px;padding:14px 18px;background:var(--bg-soft);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);}
+.pair-row{display:grid;grid-template-columns:140px 1fr 110px 110px 110px 100px;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .15s;}
+.pair-row:hover{background:#f9fafb;}
+.pair-row:last-child{border-bottom:none;}
+.pair-name{font-weight:700;font-size:15px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:6px;}
+.pair-flags{font-size:14px;}
+.pair-driver{font-size:12px;color:var(--text-soft);line-height:1.5;}
+.pair-price{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;}
+.pair-change{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;}
+.bias-badge{padding:4px 10px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;text-align:center;}
+.bull-bg{background:#d1fae5;color:#065f46;}
+.bear-bg{background:#fee2e2;color:#991b1b;}
+.neut-bg{background:#fef3c7;color:#92400e;}
+.go-arrow{color:var(--accent);font-size:16px;text-align:right;}
+
+/* COMMENT SECTION */
+.comments-section{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:24px;}
+.comments-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.comments-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.comments-count{background:var(--accent);color:#fff;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.comment-rules{font-size:12px;color:var(--text-muted);background:#fef3c7;padding:10px 14px;border-radius:6px;margin-bottom:14px;line-height:1.5;}
+.comment-rules strong{color:#92400e;}
+.comment-input{display:flex;gap:10px;margin-bottom:18px;}
+.comment-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg-soft);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text-soft);flex-shrink:0;}
+.comment-form{flex:1;}
+.comment-textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:inherit;font-size:13px;resize:vertical;min-height:60px;}
+.comment-textarea:focus{outline:none;border-color:var(--accent);}
+.comment-submit{margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
+.comment-disclaimer{font-size:11px;color:var(--text-muted);}
+
+/* COMMENT */
+.comment-list{display:flex;flex-direction:column;gap:14px;}
+.comment{display:flex;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.comment:last-child{border-bottom:none;padding-bottom:0;}
+.comment-content{flex:1;}
+.comment-meta{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px;}
+.comment-user{font-weight:700;color:var(--text);}
+.comment-time{color:var(--text-muted);}
+.user-badge{font-size:9px;background:var(--accent);color:#fff;padding:1px 6px;border-radius:8px;font-weight:600;text-transform:uppercase;}
+.user-badge.verified{background:var(--bull);}
+.comment-bias{font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700;text-transform:uppercase;}
+.bias-bull{background:#d1fae5;color:#065f46;}
+.bias-bear{background:#fee2e2;color:#991b1b;}
+.comment-text{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:6px;}
+.comment-actions{display:flex;gap:14px;font-size:11px;color:var(--text-muted);}
+.comment-action{cursor:pointer;display:flex;align-items:center;gap:4px;}
+.comment-action:hover{color:var(--accent);}
+
+/* AD */
+.ad-slot{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:8px;padding:30px;text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:24px;}
+
+/* FOOTER */
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-col a:hover{color:#fff;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+/* MOBILE */
+@media(max-width:900px){
+  nav ul{display:none;}
+  .burger{display:block;}
+  .topbar-left span:nth-child(n+2){display:none;}
+  .page-title{font-size:24px;}
+  .table-header{display:none;}
+  .pair-row{grid-template-columns:1fr auto;gap:6px;padding:14px;}
+  .pair-row .pair-driver,.pair-row .pair-change{display:none;}
+  .pair-row .go-arrow{grid-row:1/3;align-self:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 Wed, Apr 29, 2026</span>
+      <span>🌐 London Open</span>
+      <span>⚡ Live Sentiment</span>
+    </div>
+    <div class="topbar-right">
+      <a href="#">About</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="index.html">Markets</a></li>
+        <li><a href="currencies.html">Currencies</a></li>
+        <li><a href="pairs.html" class="active">Pairs</a></li>
+        <li><a href="#">Calendar</a></li>
+        <li><a href="#">News</a></li>
+        <li><a href="#">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-outline">Login</a>
+      <a href="#" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- Live Ticker -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CAD</span><span>1.3724</span><span class="down">-0.18%</span></div>
+    <div class="ticker-item"><span class="pair">NZD/USD</span><span>0.5982</span><span class="down">-0.28%</span></div>
+    <div class="ticker-item"><span class="pair">XAU/USD</span><span>2342.18</span><span class="up">+0.84%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+  </div>
+</div>
+
+<!-- Page Header -->
+<section class="page-head">
+  <div class="page-head-inner">
+    <div class="breadcrumb"><a href="index.html">Home</a> · Pairs</div>
+    <h1 class="page-title">Forex Pair Sentiment</h1>
+    <p class="page-sub">Live fundamental sentiment for major and minor pairs. Click any pair for deep analysis, historical sentiment, and trader discussions.</p>
+  </div>
+</section>
+
+<!-- Category Tabs -->
+<div class="cat-tabs">
+  <div class="cat-tab active">Major Pairs</div>
+  <div class="cat-tab">Minor Pairs</div>
+  <div class="cat-tab">JPY Crosses</div>
+  <div class="cat-tab">Commodity Pairs</div>
+</div>
+
+<!-- Major Pairs -->
+<section class="section">
+  <div class="section-title">
+    <span>Major Pairs</span>
+    <span class="section-update">⏱ Updated 14m ago</span>
+  </div>
+
+  <div class="pairs-table">
+    <div class="table-header">
+      <div>Pair</div>
+      <div>Key Driver</div>
+      <div>Price</div>
+      <div>24h Change</div>
+      <div>Bias</div>
+      <div></div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇪🇺🇺🇸</span>EUR/USD</div>
+      <div class="pair-driver">EUR strong on hawkish ECB · USD weak on dovish Fed</div>
+      <div class="pair-price">1.0842</div>
+      <div class="pair-change down">-0.21%</div>
+      <div class="bias-badge bull-bg">Bullish</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇬🇧🇺🇸</span>GBP/USD</div>
+      <div class="pair-driver">Both currencies weak · UK unemployment rising</div>
+      <div class="pair-price">1.2634</div>
+      <div class="pair-change down">-0.32%</div>
+      <div class="bias-badge neut-bg">Neutral</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇺🇸🇯🇵</span>USD/JPY</div>
+      <div class="pair-driver">JPY strength on safe-haven · USD weakness</div>
+      <div class="pair-price">149.82</div>
+      <div class="pair-change up">+0.23%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇺🇸🇨🇭</span>USD/CHF</div>
+      <div class="pair-driver">CHF safe-haven demand surges</div>
+      <div class="pair-price">0.8921</div>
+      <div class="pair-change up">+0.12%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇦🇺🇺🇸</span>AUD/USD</div>
+      <div class="pair-driver">Both bearish · AUD worse on China data</div>
+      <div class="pair-price">0.6534</div>
+      <div class="pair-change down">-0.45%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇺🇸🇨🇦</span>USD/CAD</div>
+      <div class="pair-driver">CAD strong on oil surge · USD weak</div>
+      <div class="pair-price">1.3724</div>
+      <div class="pair-change down">-0.18%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇳🇿🇺🇸</span>NZD/USD</div>
+      <div class="pair-driver">RBNZ dovish · USD weakness offsets</div>
+      <div class="pair-price">0.5982</div>
+      <div class="pair-change down">-0.28%</div>
+      <div class="bias-badge neut-bg">Neutral</div>
+      <div class="go-arrow">→</div>
+    </div>
+  </div>
+
+  <!-- Ad -->
+  <div class="ad-slot">📢 Advertisement Space — 728×90 Leaderboard</div>
+
+  <!-- Minor Pairs -->
+  <div class="section-title">
+    <span>Minor Pairs (Cross Currencies)</span>
+    <span class="section-update">⏱ Updated 14m ago</span>
+  </div>
+
+  <div class="pairs-table">
+    <div class="table-header">
+      <div>Pair</div>
+      <div>Key Driver</div>
+      <div>Price</div>
+      <div>24h Change</div>
+      <div>Bias</div>
+      <div></div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇪🇺🇬🇧</span>EUR/GBP</div>
+      <div class="pair-driver">EUR strong vs weakening GBP</div>
+      <div class="pair-price">0.8581</div>
+      <div class="pair-change up">+0.18%</div>
+      <div class="bias-badge bull-bg">Bullish</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇪🇺🇯🇵</span>EUR/JPY</div>
+      <div class="pair-driver">JPY safe-haven demand stronger than EUR</div>
+      <div class="pair-price">162.45</div>
+      <div class="pair-change down">-0.42%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇬🇧🇯🇵</span>GBP/JPY</div>
+      <div class="pair-driver">Strong JPY demand · weak GBP fundamentals</div>
+      <div class="pair-price">189.32</div>
+      <div class="pair-change down">-0.68%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇦🇺🇯🇵</span>AUD/JPY</div>
+      <div class="pair-driver">Risk-off mode crushes AUD/JPY</div>
+      <div class="pair-price">97.92</div>
+      <div class="pair-change down">-0.74%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇪🇺🇨🇭</span>EUR/CHF</div>
+      <div class="pair-driver">CHF safe-haven dominates EUR</div>
+      <div class="pair-price">0.9672</div>
+      <div class="pair-change down">-0.15%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇬🇧🇨🇦</span>GBP/CAD</div>
+      <div class="pair-driver">CAD strong on oil · GBP weak</div>
+      <div class="pair-price">1.7345</div>
+      <div class="pair-change down">-0.52%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured Pair Discussion -->
+<section class="section">
+  <div class="section-title">
+    <span>💬 Featured Discussion · EUR/USD</span>
+    <span class="section-update">156 traders viewing</span>
+  </div>
+
+  <div class="comments-section">
+    <div class="comments-head">
+      <div class="comments-title">
+        💬 Trader Views <span class="comments-count">12 comments</span>
+      </div>
+    </div>
+
+    <div class="comment-rules">
+      <strong>📌 Community Rules:</strong> Share your analysis and views. No financial advice, no signal selling, no spam, no broker promotions. Posts violating rules will be removed.
+    </div>
+
+    <!-- Comment Input -->
+    <div class="comment-input">
+      <div class="comment-avatar">👤</div>
+      <div class="comment-form">
+        <textarea class="comment-textarea" placeholder="Share your view on EUR/USD... (Login to post)"></textarea>
+        <div class="comment-submit">
+          <span class="comment-disclaimer">By posting you agree to our community guidelines.</span>
+          <button class="btn btn-primary">Post View</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comments -->
+    <div class="comment-list">
+
+      <div class="comment">
+        <div class="comment-avatar" style="background:#dbeafe;color:#1e40af;">A</div>
+        <div class="comment-content">
+          <div class="comment-meta">
+            <span class="comment-user">TraderAhmad</span>
+            <span class="user-badge verified">Verified</span>
+            <span class="comment-bias bias-bull">Bullish</span>
+            <span class="comment-time">2 hours ago</span>
+          </div>
+          <div class="comment-text">ECB hawkish stance + Fed dovish pivot is the perfect setup for EUR/USD longs. Watching 1.0950 as next key resistance. NFP tomorrow could be the catalyst we need.</div>
+          <div class="comment-actions">
+            <span class="comment-action">👍 24</span>
+            <span class="comment-action">💬 5 replies</span>
+            <span class="comment-action">↗ Share</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="comment">
+        <div class="comment-avatar" style="background:#fef3c7;color:#92400e;">M</div>
+        <div class="comment-content">
+          <div class="comment-meta">
+            <span class="comment-user">MacroMike</span>
+            <span class="comment-bias bias-bear">Bearish</span>
+            <span class="comment-time">4 hours ago</span>
+          </div>
+          <div class="comment-text">Disagree with bullish view. Eurozone PMI data this Friday will likely disappoint. France political risk also weighing. I'm short EUR/USD from 1.0860 looking for 1.0780.</div>
+          <div class="comment-actions">
+            <span class="comment-action">👍 18</span>
+            <span class="comment-action">💬 8 replies</span>
+            <span class="comment-action">↗ Share</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="comment">
+        <div class="comment-avatar" style="background:#d1fae5;color:#065f46;">S</div>
+        <div class="comment-content">
+          <div class="comment-meta">
+            <span class="comment-user">SwingTraderSiti</span>
+            <span class="comment-bias bias-bull">Bullish</span>
+            <span class="comment-time">6 hours ago</span>
+          </div>
+          <div class="comment-text">Long term bullish on EUR/USD. The rate differential narrative supports euro strength through 2026. Geopolitical tensions also reducing USD safe-haven appeal. Holding longs from 1.0750.</div>
+          <div class="comment-actions">
+            <span class="comment-action">👍 31</span>
+            <span class="comment-action">💬 12 replies</span>
+            <span class="comment-action">↗ Share</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="comment">
+        <div class="comment-avatar" style="background:#fee2e2;color:#991b1b;">R</div>
+        <div class="comment-content">
+          <div class="comment-meta">
+            <span class="comment-user">RiskOffRamesh</span>
+            <span class="comment-bias bias-bear">Bearish</span>
+            <span class="comment-time">8 hours ago</span>
+          </div>
+          <div class="comment-text">Watch out for risk-off scenarios. Middle East tensions could drive USD demand despite Fed dovishness. EUR/USD rally feels exhausted around 1.0850 level. Cautious here.</div>
+          <div class="comment-actions">
+            <span class="comment-action">👍 15</span>
+            <span class="comment-action">💬 3 replies</span>
+            <span class="comment-action">↗ Share</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">How It Works</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="currencies.html">Currencies</a></li>
+          <li><a href="pairs.html">Pairs</a></li>
+          <li><a href="#">Calendar</a></li>
+          <li><a href="#">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="#">Latest Posts</a></li>
+          <li><a href="#">Top Traders</a></li>
+          <li><a href="#">Guidelines</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Disclaimer</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
