@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Currency Sentiment Analysis | FXNewsBias</title>
+<meta name="description" content="Detailed sentiment analysis for USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD. Real-time bias from economic news, central bank policy, and geopolitical events.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#ffffff;color:#1a1a1a;line-height:1.5;}
+:root{
+  --bg:#ffffff; --bg-soft:#f8f9fa; --bg-card:#ffffff;
+  --border:#e5e7eb; --border-strong:#d1d5db;
+  --text:#1a1a1a; --text-soft:#6b7280; --text-muted:#9ca3af;
+  --primary:#0f172a; --accent:#2563eb;
+  --bull:#10b981; --bear:#ef4444; --neutral:#f59e0b;
+}
+
+/* TOP BAR */
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;color:#94a3b8;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+.topbar a:hover{color:#fff;}
+
+/* HEADER */
+header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;transition:color .2s;}
+nav a:hover,nav a.active{color:var(--accent);}
+nav a.active{font-weight:600;}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;display:inline-block;transition:all .2s;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#1d4ed8;}
+.burger{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
+
+/* TICKER */
+.ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
+.ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ticker-item{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.pair{font-weight:600;}
+.up{color:var(--bull);font-weight:600;}
+.down{color:var(--bear);font-weight:600;}
+
+/* PAGE HEADER */
+.page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:36px 0;}
+.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.breadcrumb{font-size:12px;color:#94a3b8;margin-bottom:10px;}
+.breadcrumb a{color:#94a3b8;text-decoration:none;}
+.breadcrumb a:hover{color:#fff;}
+.page-title{font-size:32px;font-weight:800;margin-bottom:8px;}
+.page-sub{color:#94a3b8;font-size:14px;max-width:700px;}
+
+/* FILTERS */
+.filter-bar{max-width:1280px;margin:24px auto 16px;padding:0 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.filter-label{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-soft);letter-spacing:1px;margin-right:8px;}
+.filter-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;color:var(--text);}
+.filter-btn:hover{border-color:var(--accent);color:var(--accent);}
+.filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.filter-btn .count{margin-left:6px;font-size:11px;opacity:0.7;}
+.filter-update{margin-left:auto;font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;}
+
+/* CURRENCIES */
+.curr-grid{max-width:1280px;margin:0 auto 32px;padding:0 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px;}
+.curr-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;transition:all .2s;cursor:pointer;}
+.curr-card:hover{border-color:var(--accent);box-shadow:0 6px 20px rgba(37,99,235,.08);transform:translateY(-2px);}
+.curr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.curr-id{display:flex;align-items:center;gap:12px;}
+.curr-flag{font-size:34px;}
+.curr-info h3{font-size:22px;font-weight:800;letter-spacing:-0.5px;}
+.curr-info p{font-size:12px;color:var(--text-soft);}
+.curr-bias{text-align:right;}
+.curr-badge{padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:inline-block;margin-bottom:6px;}
+.bull-bg{background:#d1fae5;color:#065f46;}
+.bear-bg{background:#fee2e2;color:#991b1b;}
+.neut-bg{background:#fef3c7;color:#92400e;}
+.curr-score{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:800;line-height:1;}
+
+.curr-bar{height:6px;background:var(--bg-soft);border-radius:4px;overflow:hidden;margin-bottom:16px;}
+.curr-fill{height:100%;border-radius:4px;}
+
+.curr-section{margin-bottom:14px;}
+.curr-sec-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:6px;}
+.curr-bank{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-soft);border-radius:6px;font-size:13px;}
+.bank-stance{font-weight:700;font-size:11px;padding:2px 8px;border-radius:10px;}
+.stance-hawk{background:#fee2e2;color:#991b1b;}
+.stance-dove{background:#d1fae5;color:#065f46;}
+.stance-neut{background:#fef3c7;color:#92400e;}
+
+.driver-list{display:flex;flex-direction:column;gap:6px;}
+.driver{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text);line-height:1.5;}
+.driver-icon{flex-shrink:0;font-size:14px;line-height:1.4;}
+.driver-pos{color:var(--bull);}
+.driver-neg{color:var(--bear);}
+
+.curr-foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.curr-news-count{font-size:11px;color:var(--text-muted);}
+.curr-arrow{color:var(--accent);font-size:13px;font-weight:600;text-decoration:none;}
+
+/* AD */
+.ad-wrap{max-width:1280px;margin:0 auto 32px;padding:0 20px;}
+.ad-slot{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:8px;padding:30px;text-align:center;color:var(--text-muted);font-size:12px;}
+
+/* INFO BOX */
+.info-section{max-width:1280px;margin:0 auto 32px;padding:0 20px;}
+.info-box{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:20px 24px;display:flex;gap:16px;align-items:flex-start;}
+.info-icon{font-size:28px;flex-shrink:0;}
+.info-content h4{font-size:15px;font-weight:700;margin-bottom:6px;color:#1e40af;}
+.info-content p{font-size:13px;color:#1e3a8a;line-height:1.6;}
+
+/* FOOTER */
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-col a:hover{color:#fff;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+/* MOBILE */
+@media(max-width:900px){
+  nav ul{display:none;}
+  .burger{display:block;}
+  .topbar-left span:nth-child(n+2){display:none;}
+  .page-title{font-size:24px;}
+  .curr-grid{grid-template-columns:1fr;}
+  .filter-update{width:100%;margin-left:0;margin-top:8px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 Wed, Apr 29, 2026</span>
+      <span>🌐 London Open</span>
+      <span>⚡ Live Sentiment</span>
+    </div>
+    <div class="topbar-right">
+      <a href="#">About</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="index.html">Markets</a></li>
+        <li><a href="currencies.html" class="active">Currencies</a></li>
+        <li><a href="#">Pairs</a></li>
+        <li><a href="#">Calendar</a></li>
+        <li><a href="#">News</a></li>
+        <li><a href="#">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-outline">Login</a>
+      <a href="#" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- Live Ticker -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CAD</span><span>1.3724</span><span class="down">-0.18%</span></div>
+    <div class="ticker-item"><span class="pair">NZD/USD</span><span>0.5982</span><span class="down">-0.28%</span></div>
+    <div class="ticker-item"><span class="pair">XAU/USD</span><span>2342.18</span><span class="up">+0.84%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+  </div>
+</div>
+
+<!-- Page Header -->
+<section class="page-head">
+  <div class="page-head-inner">
+    <div class="breadcrumb"><a href="index.html">Home</a> · Currencies</div>
+    <h1 class="page-title">Currency Sentiment Analysis</h1>
+    <p class="page-sub">Real-time fundamental sentiment for the 8 major currencies. Updated every 3 hours from economic news, central bank statements, and geopolitical events.</p>
+  </div>
+</section>
+
+<!-- Info Box -->
+<div class="info-section">
+  <div class="info-box">
+    <div class="info-icon">💡</div>
+    <div class="info-content">
+      <h4>How To Read These Cards</h4>
+      <p>Each card shows the overall fundamental bias for a currency on a scale of 0-100. Above 60 = Bullish, Below 40 = Bearish, 40-60 = Neutral. Click any card for deep analysis with historical sentiment, news archive, and central bank tracker.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <span class="filter-label">Filter:</span>
+  <button class="filter-btn active">All <span class="count">8</span></button>
+  <button class="filter-btn">🟢 Bullish <span class="count">4</span></button>
+  <button class="filter-btn">🔴 Bearish <span class="count">4</span></button>
+  <button class="filter-btn">🟡 Neutral <span class="count">0</span></button>
+  <span class="filter-update">⏱ Last update: 14m ago</span>
+</div>
+
+<!-- Currency Cards -->
+<div class="curr-grid">
+
+  <!-- USD -->
+  <div class="curr-card">
+    <div class="curr-top">
+      <div class="curr-id">
+        <span class="curr-flag">🇺🇸</span>
+        <div class="curr-info">
+          <h3>USD</h3>
+          <p>US Dollar</p>
+        </div>
+      </div>
+      <div class="curr-bias">
+        <div class="curr-badge bear-bg">Bearish</div>
+        <div class="curr-score" style="color:var(--bear);">42</div>
+      </div>
+    </div>
+    <div class="curr-bar"><div class="curr-fill" style="width:42%;background:var(--bear);"></div></div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">🏦 Federal Reserve Stance</div>
+      <div class="curr-bank">
+        <span style="flex:1;">Holding rates, dovish pivot signaled</span>
+        <span class="bank-stance stance-dove">Dovish</span>
+      </div>
+    </div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">📊 Key Drivers</div>
+      <div class="driver-list">
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> Weak NFP data (180K vs 220K expected)</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> Fed signals no more hikes for 2026</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> Trade deficit widening to record levels</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Risk-off flows providing some support</div>
+      </div>
+    </div>
+
+    <div class="curr-foot">
+      <span class="curr-news-count">📰 12 news items analyzed</span>
+      <a href="#" class="curr-arrow">Deep Dive →</a>
+    </div>
+  </div>
+
+  <!-- EUR -->
+  <div class="curr-card">
+    <div class="curr-top">
+      <div class="curr-id">
+        <span class="curr-flag">🇪🇺</span>
+        <div class="curr-info">
+          <h3>EUR</h3>
+          <p>Euro</p>
+        </div>
+      </div>
+      <div class="curr-bias">
+        <div class="curr-badge bull-bg">Bullish</div>
+        <div class="curr-score" style="color:var(--bull);">71</div>
+      </div>
+    </div>
+    <div class="curr-bar"><div class="curr-fill" style="width:71%;background:var(--bull);"></div></div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">🏦 European Central Bank Stance</div>
+      <div class="curr-bank">
+        <span style="flex:1;">Hints at further rate hikes through Q3</span>
+        <span class="bank-stance stance-hawk">Hawkish</span>
+      </div>
+    </div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">📊 Key Drivers</div>
+      <div class="driver-list">
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> ECB Lagarde reinforces hawkish stance</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Germany CPI beats expectations at 3.4%</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Eurozone GDP Q1 surprised to the upside</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> France political uncertainty lingers</div>
+      </div>
+    </div>
+
+    <div class="curr-foot">
+      <span class="curr-news-count">📰 9 news items analyzed</span>
+      <a href="#" class="curr-arrow">Deep Dive →</a>
+    </div>
+  </div>
+
+  <!-- GBP -->
+  <div class="curr-card">
+    <div class="curr-top">
+      <div class="curr-id">
+        <span class="curr-flag">🇬🇧</span>
+        <div class="curr-info">
+          <h3>GBP</h3>
+          <p>British Pound</p>
+        </div>
+      </div>
+      <div class="curr-bias">
+        <div class="curr-badge bear-bg">Bearish</div>
+        <div class="curr-score" style="color:var(--bear);">38</div>
+      </div>
+    </div>
+    <div class="curr-bar"><div class="curr-fill" style="width:38%;background:var(--bear);"></div></div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">🏦 Bank of England Stance</div>
+      <div class="curr-bank">
+        <span style="flex:1;">Considering cuts as economy cools</span>
+        <span class="bank-stance stance-dove">Dovish</span>
+      </div>
+    </div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">📊 Key Drivers</div>
+      <div class="driver-list">
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> UK unemployment hits 2-year high</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> Retail sales contracted -0.8%</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> BOE Bailey signals dovish pivot</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Services PMI showing slight uptick</div>
+      </div>
+    </div>
+
+    <div class="curr-foot">
+      <span class="curr-news-count">📰 7 news items analyzed</span>
+      <a href="#" class="curr-arrow">Deep Dive →</a>
+    </div>
+  </div>
+
+  <!-- JPY -->
+  <div class="curr-card">
+    <div class="curr-top">
+      <div class="curr-id">
+        <span class="curr-flag">🇯🇵</span>
+        <div class="curr-info">
+          <h3>JPY</h3>
+          <p>Japanese Yen</p>
+        </div>
+      </div>
+      <div class="curr-bias">
+        <div class="curr-badge bull-bg">Bullish</div>
+        <div class="curr-score" style="color:var(--bull);">78</div>
+      </div>
+    </div>
+    <div class="curr-bar"><div class="curr-fill" style="width:78%;background:var(--bull);"></div></div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">🏦 Bank of Japan Stance</div>
+      <div class="curr-bank">
+        <span style="flex:1;">Considering rate hike, ending YCC</span>
+        <span class="bank-stance stance-hawk">Hawkish Shift</span>
+      </div>
+    </div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">📊 Key Drivers</div>
+      <div class="driver-list">
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Middle East tensions drive safe-haven flows</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> BOJ Ueda hints at policy normalization</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Japan inflation rises above 2% target</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Risk-off market mode globally</div>
+      </div>
+    </div>
+
+    <div class="curr-foot">
+      <span class="curr-news-count">📰 8 news items analyzed</span>
+      <a href="#" class="curr-arrow">Deep Dive →</a>
+    </div>
+  </div>
+
+  <!-- AUD -->
+  <div class="curr-card">
+    <div class="curr-top">
+      <div class="curr-id">
+        <span class="curr-flag">🇦🇺</span>
+        <div class="curr-info">
+          <h3>AUD</h3>
+          <p>Australian Dollar</p>
+        </div>
+      </div>
+      <div class="curr-bias">
+        <div class="curr-badge bear-bg">Bearish</div>
+        <div class="curr-score" style="color:var(--bear);">35</div>
+      </div>
+    </div>
+    <div class="curr-bar"><div class="curr-fill" style="width:35%;background:var(--bear);"></div></div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">🏦 Reserve Bank of Australia Stance</div>
+      <div class="curr-bank">
+        <span style="flex:1;">Data dependent, leaning dovish</span>
+        <span class="bank-stance stance-neut">Neutral</span>
+      </div>
+    </div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">📊 Key Drivers</div>
+      <div class="driver-list">
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> China PMI miss hits AUD hard</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> Iron ore prices drop 5% week-on-week</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> Risk-off sentiment hurts commodity FX</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> Australia retail sales miss forecast</div>
+      </div>
+    </div>
+
+    <div class="curr-foot">
+      <span class="curr-news-count">📰 6 news items analyzed</span>
+      <a href="#" class="curr-arrow">Deep Dive →</a>
+    </div>
+  </div>
+
+  <!-- CAD -->
+  <div class="curr-card">
+    <div class="curr-top">
+      <div class="curr-id">
+        <span class="curr-flag">🇨🇦</span>
+        <div class="curr-info">
+          <h3>CAD</h3>
+          <p>Canadian Dollar</p>
+        </div>
+      </div>
+      <div class="curr-bias">
+        <div class="curr-badge bull-bg">Bullish</div>
+        <div class="curr-score" style="color:var(--bull);">65</div>
+      </div>
+    </div>
+    <div class="curr-bar"><div class="curr-fill" style="width:65%;background:var(--bull);"></div></div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">🏦 Bank of Canada Stance</div>
+      <div class="curr-bank">
+        <span style="flex:1;">Holding rates, watching inflation</span>
+        <span class="bank-stance stance-neut">Neutral</span>
+      </div>
+    </div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">📊 Key Drivers</div>
+      <div class="driver-list">
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Oil prices surge 4% on supply concerns</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Strong Canada employment data</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Trade balance turns positive</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> Housing market weakness lingers</div>
+      </div>
+    </div>
+
+    <div class="curr-foot">
+      <span class="curr-news-count">📰 5 news items analyzed</span>
+      <a href="#" class="curr-arrow">Deep Dive →</a>
+    </div>
+  </div>
+
+  <!-- CHF -->
+  <div class="curr-card">
+    <div class="curr-top">
+      <div class="curr-id">
+        <span class="curr-flag">🇨🇭</span>
+        <div class="curr-info">
+          <h3>CHF</h3>
+          <p>Swiss Franc</p>
+        </div>
+      </div>
+      <div class="curr-bias">
+        <div class="curr-badge bull-bg">Bullish</div>
+        <div class="curr-score" style="color:var(--bull);">72</div>
+      </div>
+    </div>
+    <div class="curr-bar"><div class="curr-fill" style="width:72%;background:var(--bull);"></div></div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">🏦 Swiss National Bank Stance</div>
+      <div class="curr-bank">
+        <span style="flex:1;">Cautious, monitoring inflation</span>
+        <span class="bank-stance stance-neut">Neutral</span>
+      </div>
+    </div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">📊 Key Drivers</div>
+      <div class="driver-list">
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Strong safe-haven demand on geopolitics</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Swiss inflation stable at 1.4%</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> SNB defending currency strength</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> Export weakness on strong CHF</div>
+      </div>
+    </div>
+
+    <div class="curr-foot">
+      <span class="curr-news-count">📰 4 news items analyzed</span>
+      <a href="#" class="curr-arrow">Deep Dive →</a>
+    </div>
+  </div>
+
+  <!-- NZD -->
+  <div class="curr-card">
+    <div class="curr-top">
+      <div class="curr-id">
+        <span class="curr-flag">🇳🇿</span>
+        <div class="curr-info">
+          <h3>NZD</h3>
+          <p>New Zealand Dollar</p>
+        </div>
+      </div>
+      <div class="curr-bias">
+        <div class="curr-badge bear-bg">Bearish</div>
+        <div class="curr-score" style="color:var(--bear);">40</div>
+      </div>
+    </div>
+    <div class="curr-bar"><div class="curr-fill" style="width:40%;background:var(--bear);"></div></div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">🏦 RBNZ Stance</div>
+      <div class="curr-bank">
+        <span style="flex:1;">Considering cuts as economy slows</span>
+        <span class="bank-stance stance-dove">Dovish</span>
+      </div>
+    </div>
+
+    <div class="curr-section">
+      <div class="curr-sec-label">📊 Key Drivers</div>
+      <div class="driver-list">
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> RBNZ signals rate cuts coming</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> China slowdown impacts NZ exports</div>
+        <div class="driver"><span class="driver-icon driver-neg">▼</span> Dairy prices weaken further</div>
+        <div class="driver"><span class="driver-icon driver-pos">▲</span> Tourism recovery providing support</div>
+      </div>
+    </div>
+
+    <div class="curr-foot">
+      <span class="curr-news-count">📰 5 news items analyzed</span>
+      <a href="#" class="curr-arrow">Deep Dive →</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- Ad Slot -->
+<div class="ad-wrap">
+  <div class="ad-slot">📢 Advertisement Space — 728×90 Leaderboard</div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">How It Works</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="currencies.html">Currencies</a></li>
+          <li><a href="#">Pairs</a></li>
+          <li><a href="#">Calendar</a></li>
+          <li><a href="#">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="#">Latest Posts</a></li>
+          <li><a href="#">Top Traders</a></li>
+          <li><a href="#">Guidelines</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Disclaimer</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
