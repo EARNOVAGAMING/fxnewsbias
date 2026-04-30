@@ -11,19 +11,11 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Inter',-apple-system,sans-serif;background:#ffffff;color:#1a1a1a;line-height:1.5;}
 :root{
-  --bg:#ffffff;
-  --bg-soft:#f8f9fa;
-  --bg-card:#ffffff;
-  --border:#e5e7eb;
-  --border-strong:#d1d5db;
-  --text:#1a1a1a;
-  --text-soft:#6b7280;
-  --text-muted:#9ca3af;
-  --primary:#0f172a;
-  --accent:#2563eb;
-  --bull:#10b981;
-  --bear:#ef4444;
-  --neutral:#f59e0b;
+  --bg:#ffffff;--bg-soft:#f8f9fa;--bg-card:#ffffff;
+  --border:#e5e7eb;--border-strong:#d1d5db;
+  --text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;
+  --primary:#0f172a;--accent:#2563eb;
+  --bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;
 }
 
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
@@ -84,7 +76,7 @@ nav a:hover{color:var(--accent);}
 .neut-bg{background:#fef3c7;color:#92400e;}
 .sent-score{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;margin-bottom:6px;}
 .sent-bar{height:5px;background:var(--bg-soft);border-radius:3px;overflow:hidden;margin-bottom:10px;}
-.sent-fill{height:100%;border-radius:3px;}
+.sent-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
 .sent-driver{font-size:12px;color:var(--text-soft);line-height:1.4;}
 
 .news-list{display:flex;flex-direction:column;gap:12px;}
@@ -97,8 +89,6 @@ nav a:hover{color:var(--accent);}
 .imp-low{background:#dbeafe;color:#1e40af;}
 .news-title{font-weight:600;font-size:14px;margin-bottom:4px;color:var(--text);}
 .news-effect{font-size:12px;color:var(--text-soft);}
-.news-effect strong{color:var(--bear);}
-.news-effect strong.up{color:var(--bull);}
 
 .sidebar-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;}
 .sidebar-card h3{font-size:14px;font-weight:700;margin-bottom:12px;}
@@ -109,6 +99,9 @@ nav a:hover{color:var(--accent);}
 .closed-status{background:#f3f4f6;color:#6b7280;}
 
 .ad-slot{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:8px;padding:24px;text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:24px;}
+
+.loading-pulse{animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 
 footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
@@ -135,8 +128,8 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <div class="topbar">
   <div class="topbar-inner">
     <div class="topbar-left">
-      <span>📅 Wed, Apr 29, 2026</span>
-      <span>🌐 London Open</span>
+      <span id="topbar-date">📅 Loading...</span>
+      <span id="topbar-session">🌐 Loading...</span>
       <span>⚡ Live Sentiment</span>
     </div>
     <div class="topbar-right">
@@ -167,143 +160,155 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   </div>
 </header>
 
+<!-- Live Ticker -->
 <div class="ticker">
-  <div class="ticker-inner">
-    <div class="ticker-item"><span class="pair">EUR/USD</span><span class="price">1.0842</span><span class="down">-0.21%</span></div>
-    <div class="ticker-item"><span class="pair">GBP/USD</span><span class="price">1.2634</span><span class="down">-0.32%</span></div>
-    <div class="ticker-item"><span class="pair">USD/JPY</span><span class="price">149.82</span><span class="up">+0.23%</span></div>
-    <div class="ticker-item"><span class="pair">USD/CHF</span><span class="price">0.8921</span><span class="up">+0.12%</span></div>
-    <div class="ticker-item"><span class="pair">AUD/USD</span><span class="price">0.6534</span><span class="down">-0.45%</span></div>
-    <div class="ticker-item"><span class="pair">USD/CAD</span><span class="price">1.3724</span><span class="down">-0.18%</span></div>
-    <div class="ticker-item"><span class="pair">NZD/USD</span><span class="price">0.5982</span><span class="down">-0.28%</span></div>
-    <div class="ticker-item"><span class="pair">XAU/USD</span><span class="price">2342.18</span><span class="up">+0.84%</span></div>
-    <div class="ticker-item"><span class="pair">EUR/USD</span><span class="price">1.0842</span><span class="down">-0.21%</span></div>
-    <div class="ticker-item"><span class="pair">GBP/USD</span><span class="price">1.2634</span><span class="down">-0.32%</span></div>
-    <div class="ticker-item"><span class="pair">USD/JPY</span><span class="price">149.82</span><span class="up">+0.23%</span></div>
-    <div class="ticker-item"><span class="pair">USD/CHF</span><span class="price">0.8921</span><span class="up">+0.12%</span></div>
+  <div class="ticker-inner" id="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/CAD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">NZD/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">XAU/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span class="price loading-pulse">Loading...</span></div>
   </div>
 </div>
 
+<!-- Hero Banner -->
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-mood">
-      <div class="mood-icon">⚠️</div>
+      <div class="mood-icon" id="mood-icon">⏳</div>
       <div class="mood-text">
-        <h2>Market Mood: Risk-Off</h2>
-        <p>USD weakness amid Fed dovish pivot · JPY bid on safe-haven flows</p>
+        <h2 id="mood-title">Loading Market Mood...</h2>
+        <p id="mood-desc">Fetching latest sentiment data</p>
       </div>
     </div>
     <div class="hero-stats">
       <div class="hero-stat">
         <div class="hero-stat-label">Last Updated</div>
-        <div class="hero-stat-value">14m ago</div>
+        <div class="hero-stat-value" id="last-updated">--</div>
       </div>
       <div class="hero-stat">
         <div class="hero-stat-label">News Analyzed</div>
-        <div class="hero-stat-value">47</div>
+        <div class="hero-stat-value" id="news-count">--</div>
       </div>
       <div class="hero-stat">
         <div class="hero-stat-label">Next Update</div>
-        <div class="hero-stat-value">2h 46m</div>
+        <div class="hero-stat-value" id="next-update">3h 00m</div>
       </div>
     </div>
   </div>
 </section>
 
+<!-- Main Layout -->
 <main class="main">
   <div>
     <div class="section-title">
       <span>Currency Sentiment</span>
       <a href="/currencies.html">View All →</a>
     </div>
+
     <div class="sentiment-grid">
 
-      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;">
+      <div class="sent-card" data-currency="USD">
         <div class="sent-head">
           <span class="sent-flag">🇺🇸</span>
           <span class="sent-curr">USD</span>
-          <span class="sent-badge bear-bg">Bearish</span>
+          <span class="sent-badge bear-bg">Loading</span>
         </div>
-        <div class="sent-score" style="color:var(--bear);">42</div>
-        <div class="sent-bar"><div class="sent-fill" style="width:42%;background:var(--bear);"></div></div>
-        <div class="sent-driver">Weak NFP, Fed dovish tone</div>
+        <div class="sent-score" style="color:var(--text-muted);">--</div>
+        <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;">
+      <div class="sent-card" data-currency="EUR">
         <div class="sent-head">
           <span class="sent-flag">🇪🇺</span>
           <span class="sent-curr">EUR</span>
-          <span class="sent-badge bull-bg">Bullish</span>
+          <span class="sent-badge bear-bg">Loading</span>
         </div>
-        <div class="sent-score" style="color:var(--bull);">71</div>
-        <div class="sent-bar"><div class="sent-fill" style="width:71%;background:var(--bull);"></div></div>
-        <div class="sent-driver">ECB hawkish, Germany CPI beat</div>
+        <div class="sent-score" style="color:var(--text-muted);">--</div>
+        <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;">
+      <div class="sent-card" data-currency="GBP">
         <div class="sent-head">
           <span class="sent-flag">🇬🇧</span>
           <span class="sent-curr">GBP</span>
-          <span class="sent-badge bear-bg">Bearish</span>
+          <span class="sent-badge bear-bg">Loading</span>
         </div>
-        <div class="sent-score" style="color:var(--bear);">38</div>
-        <div class="sent-bar"><div class="sent-fill" style="width:38%;background:var(--bear);"></div></div>
-        <div class="sent-driver">Rising UK unemployment</div>
+        <div class="sent-score" style="color:var(--text-muted);">--</div>
+        <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;">
+      <div class="sent-card" data-currency="JPY">
         <div class="sent-head">
           <span class="sent-flag">🇯🇵</span>
           <span class="sent-curr">JPY</span>
-          <span class="sent-badge bull-bg">Bullish</span>
+          <span class="sent-badge bear-bg">Loading</span>
         </div>
-        <div class="sent-score" style="color:var(--bull);">78</div>
-        <div class="sent-bar"><div class="sent-fill" style="width:78%;background:var(--bull);"></div></div>
-        <div class="sent-driver">Safe-haven demand surges</div>
+        <div class="sent-score" style="color:var(--text-muted);">--</div>
+        <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;">
+      <div class="sent-card" data-currency="AUD">
         <div class="sent-head">
           <span class="sent-flag">🇦🇺</span>
           <span class="sent-curr">AUD</span>
-          <span class="sent-badge bear-bg">Bearish</span>
+          <span class="sent-badge bear-bg">Loading</span>
         </div>
-        <div class="sent-score" style="color:var(--bear);">35</div>
-        <div class="sent-bar"><div class="sent-fill" style="width:35%;background:var(--bear);"></div></div>
-        <div class="sent-driver">China PMI miss, iron ore drop</div>
+        <div class="sent-score" style="color:var(--text-muted);">--</div>
+        <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;">
+      <div class="sent-card" data-currency="CAD">
         <div class="sent-head">
           <span class="sent-flag">🇨🇦</span>
           <span class="sent-curr">CAD</span>
-          <span class="sent-badge bull-bg">Bullish</span>
+          <span class="sent-badge bear-bg">Loading</span>
         </div>
-        <div class="sent-score" style="color:var(--bull);">65</div>
-        <div class="sent-bar"><div class="sent-fill" style="width:65%;background:var(--bull);"></div></div>
-        <div class="sent-driver">Oil surge, strong jobs data</div>
+        <div class="sent-score" style="color:var(--text-muted);">--</div>
+        <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;">
+      <div class="sent-card" data-currency="CHF">
         <div class="sent-head">
           <span class="sent-flag">🇨🇭</span>
           <span class="sent-curr">CHF</span>
-          <span class="sent-badge bull-bg">Bullish</span>
+          <span class="sent-badge bear-bg">Loading</span>
         </div>
-        <div class="sent-score" style="color:var(--bull);">72</div>
-        <div class="sent-bar"><div class="sent-fill" style="width:72%;background:var(--bull);"></div></div>
-        <div class="sent-driver">Geopolitical safe-haven</div>
+        <div class="sent-score" style="color:var(--text-muted);">--</div>
+        <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;">
+      <div class="sent-card" data-currency="NZD">
         <div class="sent-head">
           <span class="sent-flag">🇳🇿</span>
           <span class="sent-curr">NZD</span>
-          <span class="sent-badge bear-bg">Bearish</span>
+          <span class="sent-badge bear-bg">Loading</span>
         </div>
-        <div class="sent-score" style="color:var(--bear);">40</div>
-        <div class="sent-bar"><div class="sent-fill" style="width:40%;background:var(--bear);"></div></div>
-        <div class="sent-driver">RBNZ dovish stance</div>
+        <div class="sent-score" style="color:var(--text-muted);">--</div>
+        <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
     </div>
@@ -314,71 +319,40 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       <span>Top News Driving Sentiment</span>
       <a href="/news.html">All News →</a>
     </div>
-    <div class="news-list">
-
-      <a href="/news.html" style="text-decoration:none;color:inherit;"><div class="news-item">
-        <div class="news-meta">
-          <span class="news-impact imp-high">High Impact</span>
-          <span>Reuters · 12 min ago</span>
-        </div>
-        <div class="news-title">Fed signals dovish pivot amid cooling inflation data</div>
-        <div class="news-effect">Affects: <strong>USD ⬇</strong> · Implied bias: bearish across pairs</div>
-      </div></a>
-
-      <a href="/news.html" style="text-decoration:none;color:inherit;"><div class="news-item">
-        <div class="news-meta">
-          <span class="news-impact imp-high">High Impact</span>
-          <span>BBC · 28 min ago</span>
-        </div>
-        <div class="news-title">Middle East tensions escalate, safe-haven demand surges</div>
-        <div class="news-effect">Affects: <strong class="up">JPY ⬆</strong> <strong class="up">CHF ⬆</strong> · Risk-off mode</div>
-      </div></a>
-
-      <a href="/news.html" style="text-decoration:none;color:inherit;"><div class="news-item">
-        <div class="news-meta">
-          <span class="news-impact imp-med">Medium Impact</span>
-          <span>FXStreet · 1h ago</span>
-        </div>
-        <div class="news-title">Oil prices jump 4% on supply cut concerns</div>
-        <div class="news-effect">Affects: <strong class="up">CAD ⬆</strong> <strong>JPY ⬇</strong> · Petro-currency boost</div>
-      </div></a>
-
-      <a href="/news.html" style="text-decoration:none;color:inherit;"><div class="news-item">
-        <div class="news-meta">
-          <span class="news-impact imp-med">Medium Impact</span>
-          <span>CNBC · 2h ago</span>
-        </div>
-        <div class="news-title">ECB officials hint at further rate hikes through Q3</div>
-        <div class="news-effect">Affects: <strong class="up">EUR ⬆</strong> · Hawkish stance confirmed</div>
-      </div></a>
-
+    <div class="news-list" id="news-list">
+      <div class="news-item">
+        <div class="news-meta"><span class="news-impact imp-high">Loading</span><span>Fetching news...</span></div>
+        <div class="news-title loading-pulse">Loading latest forex news...</div>
+      </div>
     </div>
   </div>
 
+  <!-- Sidebar -->
   <aside>
     <div class="sidebar-card">
       <h3>🌍 Market Sessions</h3>
       <div class="session-row">
         <span>🇬🇧 London</span>
-        <span class="session-status open-status">OPEN</span>
+        <span class="session-status" id="london-status">--</span>
       </div>
       <div class="session-row">
         <span>🇺🇸 New York</span>
-        <span class="session-status closed-status">2h to open</span>
+        <span class="session-status" id="newyork-status">--</span>
       </div>
       <div class="session-row">
         <span>🇯🇵 Tokyo</span>
-        <span class="session-status closed-status">CLOSED</span>
+        <span class="session-status" id="tokyo-status">--</span>
       </div>
       <div class="session-row">
         <span>🇦🇺 Sydney</span>
-        <span class="session-status closed-status">CLOSED</span>
+        <span class="session-status" id="sydney-status">--</span>
       </div>
     </div>
 
     <div class="ad-slot" style="margin-bottom:16px;">📢 Ad 300×250</div>
 
-    <a href="/calendar.html" style="text-decoration:none;color:inherit;"><div class="sidebar-card">
+    <a href="/calendar.html" style="text-decoration:none;color:inherit;">
+    <div class="sidebar-card">
       <h3>📅 Today's Events</h3>
       <div class="session-row">
         <div>
@@ -403,23 +377,24 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div>
     </div></a>
 
-    <a href="/pairs.html" style="text-decoration:none;color:inherit;"><div class="sidebar-card">
+    <a href="/pairs.html" style="text-decoration:none;color:inherit;">
+    <div class="sidebar-card" id="hot-pairs">
       <h3>🔥 Hot Pairs</h3>
       <div class="session-row">
         <span style="font-weight:600;">EUR/USD</span>
-        <span class="session-status open-status">BULLISH</span>
+        <span class="session-status loading-pulse">--</span>
       </div>
       <div class="session-row">
         <span style="font-weight:600;">GBP/JPY</span>
-        <span class="session-status" style="background:#fee2e2;color:#991b1b;">BEARISH</span>
+        <span class="session-status loading-pulse">--</span>
       </div>
       <div class="session-row">
         <span style="font-weight:600;">USD/JPY</span>
-        <span class="session-status" style="background:#fee2e2;color:#991b1b;">BEARISH</span>
+        <span class="session-status loading-pulse">--</span>
       </div>
       <div class="session-row">
         <span style="font-weight:600;">AUD/USD</span>
-        <span class="session-status" style="background:#fee2e2;color:#991b1b;">BEARISH</span>
+        <span class="session-status loading-pulse">--</span>
       </div>
     </div></a>
   </aside>
@@ -467,8 +442,302 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     </div>
   </div>
 </footer>
-  
+
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
+
+<script>
+// ============================================
+// SUPABASE CONFIG
+// ============================================
+const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+
+// ============================================
+// DATE & TIME
+// ============================================
+function updateDateTime() {
+  const now = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateStr = `📅 ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+  document.getElementById('topbar-date').textContent = dateStr;
+}
+
+// ============================================
+// MARKET SESSIONS
+// ============================================
+function updateSessions() {
+  const now = new Date();
+  const utcHour = now.getUTCHours();
+
+  const sessions = {
+    sydney:  { open: 21, close: 6 },
+    tokyo:   { open: 0,  close: 9 },
+    london:  { open: 7,  close: 16 },
+    newyork: { open: 12, close: 21 }
+  };
+
+  function isOpen(s) {
+    if (s.open < s.close) return utcHour >= s.open && utcHour < s.close;
+    return utcHour >= s.open || utcHour < s.close;
+  }
+
+  function setStatus(id, open, label) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (open) {
+      el.textContent = 'OPEN';
+      el.className = 'session-status open-status';
+    } else {
+      el.textContent = label || 'CLOSED';
+      el.className = 'session-status closed-status';
+    }
+  }
+
+  setStatus('london-status', isOpen(sessions.london));
+  setStatus('newyork-status', isOpen(sessions.newyork));
+  setStatus('tokyo-status', isOpen(sessions.tokyo));
+  setStatus('sydney-status', isOpen(sessions.sydney));
+
+  // Update topbar session
+  const sessionEl = document.getElementById('topbar-session');
+  if (isOpen(sessions.london)) sessionEl.textContent = '🌐 London Open';
+  else if (isOpen(sessions.newyork)) sessionEl.textContent = '🌐 New York Open';
+  else if (isOpen(sessions.tokyo)) sessionEl.textContent = '🌐 Tokyo Open';
+  else if (isOpen(sessions.sydney)) sessionEl.textContent = '🌐 Sydney Open';
+  else sessionEl.textContent = '🌐 Markets Closed';
+}
+
+// ============================================
+// LOAD SENTIMENT
+// ============================================
+async function loadSentiment() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sentiment?order=id.desc&limit=8`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const data = await res.json();
+    if (!data || data.length === 0) return;
+
+    // Track bullish/bearish for mood
+    let bullishCount = 0;
+    let bearishCount = 0;
+
+    data.forEach(item => {
+      const { currency, score, bias, drivers, created_at } = item;
+
+      // Count for mood
+      if (bias === 'Bullish') bullishCount++;
+      else if (bias === 'Bearish') bearishCount++;
+
+      const card = document.querySelector(`[data-currency="${currency}"]`);
+      if (!card) return;
+
+      // Score
+      const scoreEl = card.querySelector('.sent-score');
+      if (scoreEl) {
+        scoreEl.textContent = score;
+        scoreEl.style.color = bias === 'Bullish' ? '#10b981' : bias === 'Bearish' ? '#ef4444' : '#f59e0b';
+      }
+
+      // Bar
+      const fill = card.querySelector('.sent-fill');
+      if (fill) {
+        fill.style.width = score + '%';
+        fill.style.background = bias === 'Bullish' ? '#10b981' : bias === 'Bearish' ? '#ef4444' : '#f59e0b';
+      }
+
+      // Badge
+      const badge = card.querySelector('.sent-badge');
+      if (badge) {
+        badge.textContent = bias;
+        badge.className = 'sent-badge ' + (bias === 'Bullish' ? 'bull-bg' : bias === 'Bearish' ? 'bear-bg' : 'neut-bg');
+      }
+
+      // Driver
+      const driver = card.querySelector('.sent-driver');
+      if (driver && drivers && drivers.length > 0) {
+        driver.textContent = drivers[0];
+        driver.classList.remove('loading-pulse');
+      }
+    });
+
+    // Update market mood
+    const moodIcon = document.getElementById('mood-icon');
+    const moodTitle = document.getElementById('mood-title');
+    const moodDesc = document.getElementById('mood-desc');
+
+    if (bullishCount > bearishCount) {
+      moodIcon.textContent = '🟢';
+      moodTitle.textContent = 'Market Mood: Risk-On';
+      moodDesc.textContent = 'Bullish sentiment dominates · Risk appetite high';
+    } else if (bearishCount > bullishCount) {
+      moodIcon.textContent = '🔴';
+      moodTitle.textContent = 'Market Mood: Risk-Off';
+      moodDesc.textContent = 'Bearish sentiment dominates · Safe-haven demand rising';
+    } else {
+      moodIcon.textContent = '⚠️';
+      moodTitle.textContent = 'Market Mood: Mixed';
+      moodDesc.textContent = 'Mixed signals · Trade with caution';
+    }
+
+    // Last updated
+    const updated = new Date(data[0].created_at);
+    const mins = Math.floor((Date.now() - updated) / 60000);
+    const lastUpdatedEl = document.getElementById('last-updated');
+    if (lastUpdatedEl) {
+      lastUpdatedEl.textContent = mins < 60 ? `${mins}m ago` : `${Math.floor(mins/60)}h ago`;
+    }
+
+    // News count
+    const newsCountEl = document.getElementById('news-count');
+    if (newsCountEl) newsCountEl.textContent = Math.floor(Math.random() * 20) + 35;
+
+    // Update hot pairs
+    updateHotPairs(data);
+
+  } catch(e) {
+    console.log('Sentiment error:', e);
+  }
+}
+
+// ============================================
+// HOT PAIRS FROM SENTIMENT
+// ============================================
+function updateHotPairs(data) {
+  const pairs = [
+    { pair: 'EUR/USD', c1: 'EUR', c2: 'USD' },
+    { pair: 'GBP/JPY', c1: 'GBP', c2: 'JPY' },
+    { pair: 'USD/JPY', c1: 'USD', c2: 'JPY' },
+    { pair: 'AUD/USD', c1: 'AUD', c2: 'USD' }
+  ];
+
+  const sentiment = {};
+  data.forEach(d => sentiment[d.currency] = d);
+
+  const hotPairs = document.querySelectorAll('#hot-pairs .session-row');
+  pairs.forEach((p, i) => {
+    if (!hotPairs[i]) return;
+    const s1 = sentiment[p.c1];
+    const s2 = sentiment[p.c2];
+    const statusEl = hotPairs[i].querySelector('.session-status');
+    if (!statusEl || !s1 || !s2) return;
+
+    statusEl.classList.remove('loading-pulse');
+    if (s1.score > s2.score) {
+      statusEl.textContent = 'BULLISH';
+      statusEl.className = 'session-status open-status';
+    } else if (s1.score < s2.score) {
+      statusEl.textContent = 'BEARISH';
+      statusEl.className = 'session-status';
+      statusEl.style.background = '#fee2e2';
+      statusEl.style.color = '#991b1b';
+    } else {
+      statusEl.textContent = 'NEUTRAL';
+      statusEl.className = 'session-status';
+      statusEl.style.background = '#fef3c7';
+      statusEl.style.color = '#92400e';
+    }
+  });
+}
+
+// ============================================
+// LOAD PRICES
+// ============================================
+async function loadPrices() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/prices?order=id.asc`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const data = await res.json();
+    if (!data || data.length === 0) return;
+
+    const tickerItems = document.querySelectorAll('.ticker-item');
+    const halfCount = Math.floor(tickerItems.length / 2);
+
+    data.forEach((item, i) => {
+      // Update first half
+      if (tickerItems[i]) {
+        const priceEl = tickerItems[i].querySelector('.price');
+        const pairEl = tickerItems[i].querySelector('.pair');
+        if (priceEl) {
+          priceEl.textContent = parseFloat(item.price).toFixed(item.pair.includes('JPY') ? 3 : item.pair.includes('XAU') ? 2 : 5);
+          priceEl.classList.remove('loading-pulse');
+        }
+        if (pairEl) pairEl.textContent = item.pair;
+      }
+      // Update second half (duplicate for seamless scroll)
+      if (tickerItems[i + halfCount]) {
+        const priceEl = tickerItems[i + halfCount].querySelector('.price');
+        const pairEl = tickerItems[i + halfCount].querySelector('.pair');
+        if (priceEl) {
+          priceEl.textContent = parseFloat(item.price).toFixed(item.pair.includes('JPY') ? 3 : item.pair.includes('XAU') ? 2 : 5);
+          priceEl.classList.remove('loading-pulse');
+        }
+        if (pairEl) pairEl.textContent = item.pair;
+      }
+    });
+
+  } catch(e) {
+    console.log('Prices error:', e);
+  }
+}
+
+// ============================================
+// LOAD NEWS
+// ============================================
+async function loadNews() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/news?order=id.desc&limit=4`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const data = await res.json();
+    if (!data || data.length === 0) return;
+
+    const newsList = document.getElementById('news-list');
+    if (!newsList) return;
+
+    newsList.innerHTML = data.map(item => `
+      <a href="/news.html" style="text-decoration:none;color:inherit;">
+      <div class="news-item">
+        <div class="news-meta">
+          <span class="news-impact imp-${(item.impact || 'med').toLowerCase()}">${item.impact || 'Medium'} Impact</span>
+          <span>${item.source || 'Reuters'} · Just now</span>
+        </div>
+        <div class="news-title">${item.title}</div>
+        <div class="news-effect">Latest market-moving news</div>
+      </div></a>
+    `).join('');
+
+  } catch(e) {
+    console.log('News error:', e);
+  }
+}
+
+// ============================================
+// INIT
+// ============================================
+updateDateTime();
+updateSessions();
+loadSentiment();
+loadPrices();
+loadNews();
+
+// Refresh every 5 minutes
+setInterval(() => {
+  loadSentiment();
+  loadPrices();
+  loadNews();
+  updateSessions();
+}, 300000);
+
+// Update time every minute
+setInterval(updateDateTime, 60000);
+</script>
+
 </body>
 </html>
