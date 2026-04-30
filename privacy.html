@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy | FXNewsBias</title>
+<meta name="description" content="FXNewsBias privacy policy. How we collect, use, and protect your data.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;}
+
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;color:#94a3b8;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+
+header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
+nav a:hover{color:var(--accent);}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;display:inline-block;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-primary{background:var(--accent);color:#fff;}
+.burger{display:none;background:none;border:none;font-size:24px;}
+
+.ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
+.ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ticker-item{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.pair{font-weight:600;}
+.up{color:var(--bull);font-weight:600;}
+.down{color:var(--bear);font-weight:600;}
+
+.hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:50px 20px;text-align:center;}
+.hero h1{font-size:36px;font-weight:800;margin-bottom:10px;letter-spacing:-1px;}
+.hero p{font-size:14px;color:#94a3b8;}
+.last-updated{font-size:11px;color:#64748b;margin-top:10px;font-family:'JetBrains Mono',monospace;}
+
+.content{max-width:800px;margin:0 auto;padding:50px 20px;}
+.section{margin-bottom:36px;}
+.section h2{font-size:22px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.section p{font-size:14px;color:var(--text-soft);line-height:1.8;margin-bottom:12px;}
+.section ul{margin-left:20px;margin-bottom:12px;}
+.section ul li{font-size:14px;color:var(--text-soft);line-height:1.8;margin-bottom:6px;}
+.section strong{color:var(--text);}
+
+.toc{background:var(--bg-soft);border-radius:10px;padding:18px 22px;margin-bottom:36px;}
+.toc h3{font-size:14px;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);}
+.toc ol{margin-left:20px;}
+.toc li{font-size:13px;line-height:1.8;}
+.toc a{color:var(--accent);text-decoration:none;}
+
+.highlight-box{background:#eff6ff;border-left:4px solid var(--accent);padding:16px 22px;border-radius:6px;margin:14px 0;}
+.highlight-box p{font-size:13px;color:var(--text);margin:0;line-height:1.7;}
+
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-col a:hover{color:#fff;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:900px){nav ul{display:none;}.burger{display:block;}.topbar-left span:nth-child(n+2){display:none;}.hero h1{font-size:24px;}.section h2{font-size:18px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 FXNewsBias</span>
+      <span>🌐 Live Sentiment</span>
+    </div>
+    <div class="topbar-right">
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html">Pairs</a></li>
+        <li><a href="/calendar.html">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-outline">Login</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+  </div>
+</div>
+
+<section class="hero">
+  <h1>Privacy Policy</h1>
+  <p>How we collect, use, and protect your data</p>
+  <div class="last-updated">Last updated: April 29, 2026</div>
+</section>
+
+<div class="content">
+
+  <div class="toc">
+    <h3>📋 Table of Contents</h3>
+    <ol>
+      <li><a href="#info">Information We Collect</a></li>
+      <li><a href="#use">How We Use Your Information</a></li>
+      <li><a href="#cookies">Cookies & Tracking</a></li>
+      <li><a href="#third">Third-Party Services</a></li>
+      <li><a href="#share">Data Sharing</a></li>
+      <li><a href="#security">Data Security</a></li>
+      <li><a href="#rights">Your Rights</a></li>
+      <li><a href="#children">Children's Privacy</a></li>
+      <li><a href="#changes">Policy Changes</a></li>
+      <li><a href="#contact">Contact Us</a></li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <p>FXNewsBias respects your privacy. This Privacy Policy explains what information we collect, how we use it, and your rights regarding your data.</p>
+    <p><strong>By using FXNewsBias, you agree to this Privacy Policy.</strong></p>
+  </div>
+
+  <div class="section" id="info">
+    <h2>1. Information We Collect</h2>
+    <p><strong>Information you provide directly:</strong></p>
+    <ul>
+      <li>Email address (if you register or subscribe to newsletter)</li>
+      <li>Username and password (for community features)</li>
+      <li>Profile information (country, trading experience — optional)</li>
+      <li>Content you post (community posts, comments)</li>
+      <li>Messages you send through contact forms</li>
+    </ul>
+    <p><strong>Information collected automatically:</strong></p>
+    <ul>
+      <li>IP address and approximate location</li>
+      <li>Device type, browser, operating system</li>
+      <li>Pages visited, time spent, click patterns</li>
+      <li>Referring website (how you found us)</li>
+      <li>Date and time of visits</li>
+    </ul>
+  </div>
+
+  <div class="section" id="use">
+    <h2>2. How We Use Your Information</h2>
+    <ul>
+      <li><strong>Provide our service</strong> — display sentiment dashboard, deliver content</li>
+      <li><strong>Account management</strong> — login, password reset, account features</li>
+      <li><strong>Communication</strong> — respond to inquiries, send newsletters (if subscribed)</li>
+      <li><strong>Improve the platform</strong> — analyze usage to make better features</li>
+      <li><strong>Display ads</strong> — show relevant advertisements (Google AdSense)</li>
+      <li><strong>Security</strong> — detect fraud, abuse, and unauthorized access</li>
+      <li><strong>Legal compliance</strong> — comply with applicable laws</li>
+    </ul>
+    <div class="highlight-box">
+      <p><strong>We never sell your personal data to third parties.</strong></p>
+    </div>
+  </div>
+
+  <div class="section" id="cookies">
+    <h2>3. Cookies & Tracking</h2>
+    <ul>
+      <li><strong>Essential cookies</strong> — required for the site to function</li>
+      <li><strong>Analytics cookies</strong> — help us understand usage (Google Analytics)</li>
+      <li><strong>Advertising cookies</strong> — used by ad networks to show relevant ads</li>
+      <li><strong>Preference cookies</strong> — remember your settings</li>
+    </ul>
+    <p>You can control cookies through your browser settings.</p>
+  </div>
+
+  <div class="section" id="third">
+    <h2>4. Third-Party Services</h2>
+    <ul>
+      <li><strong>Google Analytics</strong> — website usage analytics</li>
+      <li><strong>Google AdSense</strong> — display advertising</li>
+      <li><strong>Cloudflare</strong> — hosting, CDN, and security</li>
+      <li><strong>Firebase (Google)</strong> — user authentication and database</li>
+      <li><strong>Anthropic Claude</strong> — AI sentiment analysis</li>
+    </ul>
+  </div>
+
+  <div class="section" id="share">
+    <h2>5. Data Sharing</h2>
+    <ul>
+      <li><strong>With service providers</strong> — companies that help us operate</li>
+      <li><strong>For legal reasons</strong> — when required by law or court order</li>
+      <li><strong>To protect rights</strong> — to prevent fraud or abuse</li>
+      <li><strong>With your consent</strong> — if you specifically authorize sharing</li>
+    </ul>
+    <p>We will never sell your personal data to advertisers or data brokers.</p>
+  </div>
+
+  <div class="section" id="security">
+    <h2>6. Data Security</h2>
+    <ul>
+      <li>HTTPS encryption for all data transmission</li>
+      <li>Secure password hashing</li>
+      <li>Limited access to personal data</li>
+      <li>Regular security reviews</li>
+      <li>Cloudflare DDoS protection and firewall</li>
+    </ul>
+  </div>
+
+  <div class="section" id="rights">
+    <h2>7. Your Rights</h2>
+    <ul>
+      <li><strong>Access</strong> — request a copy of your personal data</li>
+      <li><strong>Correction</strong> — fix inaccurate data</li>
+      <li><strong>Deletion</strong> — request removal of your data</li>
+      <li><strong>Portability</strong> — receive your data in portable format</li>
+      <li><strong>Withdraw consent</strong> — for processing based on consent</li>
+    </ul>
+    <p>Contact us through our contact page to exercise these rights.</p>
+  </div>
+
+  <div class="section" id="children">
+    <h2>8. Children's Privacy</h2>
+    <p>FXNewsBias is not intended for users under 18 years old. We do not knowingly collect data from children.</p>
+  </div>
+
+  <div class="section" id="changes">
+    <h2>9. Policy Changes</h2>
+    <p>We may update this Privacy Policy from time to time. We'll update the "Last updated" date and notify registered users via email for significant changes.</p>
+  </div>
+
+  <div class="section" id="contact">
+    <h2>10. Contact Us</h2>
+    <p>If you have questions about this Privacy Policy, contact us through our <a href="/contact.html" style="color:var(--accent);">contact page</a>.</p>
+    <div class="highlight-box">
+      <p><strong>Your privacy matters to us.</strong> We're committed to handling your data responsibly.</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/how.html">How It Works</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="/currencies.html">Currencies</a></li>
+          <li><a href="/pairs.html">Pairs</a></li>
+          <li><a href="/calendar.html">Calendar</a></li>
+          <li><a href="/news.html">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="/community.html">Latest Posts</a></li>
+          <li><a href="/community.html">Top Traders</a></li>
+          <li><a href="/community.html">Guidelines</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/disclaimer.html">Disclaimer</a></li>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
