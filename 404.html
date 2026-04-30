@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page Not Found | FXNewsBias</title>
+<meta name="description" content="Page not found. Return to FXNewsBias forex sentiment dashboard.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;min-height:100vh;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;}
+
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+
+header{background:#fff;border-bottom:1px solid var(--border);}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
+nav a:hover{color:var(--accent);}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;border:none;text-decoration:none;display:inline-block;cursor:pointer;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-primary{background:var(--accent);color:#fff;}
+.burger{display:none;background:none;border:none;font-size:24px;}
+
+/* 404 */
+.error-page{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 120px);padding:40px 20px;text-align:center;}
+.error-inner{max-width:600px;}
+.error-code{font-family:'JetBrains Mono',monospace;font-size:120px;font-weight:800;color:#e5e7eb;line-height:1;margin-bottom:8px;}
+.error-icon{font-size:64px;margin-bottom:16px;}
+.error-title{font-size:32px;font-weight:800;margin-bottom:12px;letter-spacing:-1px;}
+.error-desc{font-size:16px;color:var(--text-soft);margin-bottom:32px;line-height:1.6;}
+
+.error-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:32px;}
+.error-link{background:var(--bg-soft);border:1px solid var(--border);border-radius:10px;padding:16px;text-decoration:none;color:var(--text);transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.error-link:hover{border-color:var(--accent);background:#eff6ff;}
+.error-link-icon{font-size:28px;}
+.error-link-title{font-size:13px;font-weight:700;}
+.error-link-desc{font-size:11px;color:var(--text-muted);}
+
+.error-home{display:inline-block;padding:14px 32px;background:var(--accent);color:#fff;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none;transition:background .2s;}
+.error-home:hover{background:#1d4ed8;}
+
+footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
+.footer-links{display:flex;justify-content:center;gap:20px;margin-bottom:10px;flex-wrap:wrap;}
+.footer-links a{color:#64748b;text-decoration:none;font-size:12px;}
+.footer-bottom{text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:900px){nav ul{display:none;}.burger{display:block;}.topbar-left span:nth-child(n+2){display:none;}.error-code{font-size:80px;}.error-title{font-size:24px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 FXNewsBias</span>
+      <span>🌐 Live Sentiment</span>
+    </div>
+    <div class="topbar-right">
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html">Pairs</a></li>
+        <li><a href="/calendar.html">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-outline">Login</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="error-page">
+  <div class="error-inner">
+    <div class="error-code">404</div>
+    <div class="error-icon">📉</div>
+    <h1 class="error-title">Page Not Found</h1>
+    <p class="error-desc">Looks like this page went bearish and disappeared! The page you're looking for doesn't exist or may have been moved.</p>
+
+    <div class="error-links">
+      <a href="/" class="error-link">
+        <span class="error-link-icon">📊</span>
+        <span class="error-link-title">Markets</span>
+        <span class="error-link-desc">Live sentiment dashboard</span>
+      </a>
+      <a href="/currencies.html" class="error-link">
+        <span class="error-link-icon">💱</span>
+        <span class="error-link-title">Currencies</span>
+        <span class="error-link-desc">8 major currencies</span>
+      </a>
+      <a href="/pairs.html" class="error-link">
+        <span class="error-link-icon">📈</span>
+        <span class="error-link-title">Pairs</span>
+        <span class="error-link-desc">Major & minor pairs</span>
+      </a>
+      <a href="/calendar.html" class="error-link">
+        <span class="error-link-icon">📅</span>
+        <span class="error-link-title">Calendar</span>
+        <span class="error-link-desc">Economic events</span>
+      </a>
+      <a href="/news.html" class="error-link">
+        <span class="error-link-icon">📰</span>
+        <span class="error-link-title">News</span>
+        <span class="error-link-desc">Latest forex news</span>
+      </a>
+      <a href="/community.html" class="error-link">
+        <span class="error-link-icon">👥</span>
+        <span class="error-link-title">Community</span>
+        <span class="error-link-desc">Trader discussions</span>
+      </a>
+    </div>
+
+    <a href="/" class="error-home">← Back to Dashboard</a>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="/about.html">About</a>
+    <a href="/disclaimer.html">Disclaimer</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/contact.html">Contact</a>
+  </div>
+  <div class="footer-bottom">© 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.</div>
+</footer>
+
+</body>
+</html>
