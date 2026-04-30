@@ -145,11 +145,11 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
         <div class="form-forgot"><a href="/contact.html">Forgot password?</a></div>
       </div>
 
-      <button class="login-btn">Login to FXNewsBias →</button>
+      <button class="login-btn" onclick="handleLogin()">Login to FXNewsBias →</button>
 
       <div class="divider">or continue with</div>
 
-      <button class="google-btn">🔵 Continue with Google</button>
+      <button class="google-btn" onclick="loginWithGoogle()">🔵 Continue with Google</button>
 
       <div class="login-footer">
         Don't have an account? <a href="/register.html">Register free →</a>
@@ -175,5 +175,19 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
+<script type="module" src="/firebase.js"></script>
+<script type="module">
+import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
+window.handleLogin = async function() {
+  const email = document.querySelector('input[type="email"]').value;
+  const password = document.querySelector('input[type="password"]').value;
+  if (!email || !password) {
+    alert('Please enter email and password!');
+    return;
+  }
+  await loginUser(email, password);
+}
+</script>
 </body>
 </html>
