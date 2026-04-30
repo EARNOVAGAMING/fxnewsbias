@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | FXNewsBias</title>
+<meta name="description" content="Login to your FXNewsBias account to access your watchlist, alerts, and community features.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#f8f9fa;color:#1a1a1a;line-height:1.5;min-height:100vh;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;}
+
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+
+header{background:#fff;border-bottom:1px solid var(--border);}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
+nav a:hover{color:var(--accent);}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;border:none;text-decoration:none;display:inline-block;cursor:pointer;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-primary{background:var(--accent);color:#fff;}
+.burger{display:none;background:none;border:none;font-size:24px;}
+
+.login-page{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 120px);padding:40px 20px;}
+.login-wrap{display:grid;grid-template-columns:1fr 1fr;max-width:900px;width:100%;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.08);}
+
+.login-left{background:linear-gradient(135deg,#0f172a,#1e293b);padding:48px;display:flex;flex-direction:column;justify-content:space-between;}
+.login-logo{font-size:28px;font-weight:800;color:#fff;text-decoration:none;margin-bottom:12px;display:block;}
+.login-logo span{color:var(--accent);}
+.login-tagline{color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:32px;}
+.login-features{display:flex;flex-direction:column;gap:14px;margin-bottom:32px;}
+.login-feature{display:flex;align-items:center;gap:12px;color:#cbd5e1;font-size:13px;}
+.login-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.login-stat{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px;}
+.login-stat-value{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:800;color:#fff;margin-bottom:2px;}
+.login-stat-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;}
+
+.login-right{padding:48px;}
+.login-right h1{font-size:26px;font-weight:800;margin-bottom:6px;letter-spacing:-0.5px;}
+.login-right p{font-size:14px;color:var(--text-soft);margin-bottom:28px;}
+.form-group{margin-bottom:18px;}
+.form-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-soft);display:block;margin-bottom:6px;}
+.form-input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;transition:border .2s;}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+.form-forgot{display:flex;justify-content:flex-end;margin-top:6px;}
+.form-forgot a{font-size:12px;color:var(--accent);text-decoration:none;}
+.login-btn{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;}
+.login-btn:hover{background:#1d4ed8;}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--text-muted);font-size:12px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.google-btn{width:100%;padding:12px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}
+.google-btn:hover{background:var(--bg-soft);}
+.login-footer{margin-top:20px;text-align:center;font-size:13px;color:var(--text-soft);}
+.login-footer a{color:var(--accent);text-decoration:none;font-weight:600;}
+
+footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
+.footer-links{display:flex;justify-content:center;gap:20px;margin-bottom:10px;flex-wrap:wrap;}
+.footer-links a{color:#64748b;text-decoration:none;font-size:12px;}
+.footer-bottom{text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:700px){nav ul{display:none;}.burger{display:block;}.topbar-left span:nth-child(n+2){display:none;}.login-wrap{grid-template-columns:1fr;}.login-left{display:none;}.login-right{padding:28px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 FXNewsBias</span>
+      <span>🌐 Live Sentiment</span>
+    </div>
+    <div class="topbar-right">
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html">Pairs</a></li>
+        <li><a href="/calendar.html">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-outline">Login</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="login-page">
+  <div class="login-wrap">
+
+    <div class="login-left">
+      <div>
+        <a href="/" class="login-logo">FX<span>News</span>Bias</a>
+        <p class="login-tagline">The free forex news sentiment platform for serious retail traders.</p>
+      </div>
+      <div class="login-features">
+        <div class="login-feature"><span>📊</span> Real-time sentiment for 8 major currencies</div>
+        <div class="login-feature"><span>🔔</span> Custom price and sentiment alerts</div>
+        <div class="login-feature"><span>📋</span> Personal watchlist for your pairs</div>
+        <div class="login-feature"><span>👥</span> Community posts and pair discussions</div>
+        <div class="login-feature"><span>📅</span> Economic calendar with impact alerts</div>
+        <div class="login-feature"><span>📓</span> Personal trade journal</div>
+      </div>
+      <div class="login-stats">
+        <div class="login-stat"><div class="login-stat-value">2.4K</div><div class="login-stat-label">Traders</div></div>
+        <div class="login-stat"><div class="login-stat-value">12</div><div class="login-stat-label">News Sources</div></div>
+        <div class="login-stat"><div class="login-stat-value">3hr</div><div class="login-stat-label">Updates</div></div>
+        <div class="login-stat"><div class="login-stat-value">Free</div><div class="login-stat-label">Forever</div></div>
+      </div>
+    </div>
+
+    <div class="login-right">
+      <h1>Welcome back 👋</h1>
+      <p>Login to access your watchlist, alerts, and community.</p>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" placeholder="you@email.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" placeholder="Your password">
+        <div class="form-forgot"><a href="#">Forgot password?</a></div>
+      </div>
+
+      <button class="login-btn">Login to FXNewsBias →</button>
+
+      <div class="divider">or continue with</div>
+
+      <button class="google-btn">🔵 Continue with Google</button>
+
+      <div class="login-footer">
+        Don't have an account? <a href="/register.html">Register free →</a>
+      </div>
+      <div class="login-footer" style="margin-top:10px;">
+        <a href="/terms.html">Terms of Service</a> · <a href="/privacy.html">Privacy Policy</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="/about.html">About</a>
+    <a href="/disclaimer.html">Disclaimer</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/contact.html">Contact</a>
+  </div>
+  <div class="footer-bottom">© 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.</div>
+</footer>
+
+</body>
+</html>
