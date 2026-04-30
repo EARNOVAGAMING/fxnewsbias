@@ -214,11 +214,11 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
         <label for="newsletter">Send me the daily forex sentiment digest (optional)</label>
       </div>
 
-      <button class="register-btn">Create Free Account →</button>
+      <button class="register-btn" onclick="handleRegister()">Create Free Account →</button>
 
       <div class="divider">or register with</div>
 
-      <button class="google-btn">🔵 Continue with Google</button>
+      <button class="google-btn" onclick="loginWithGoogle()">🔵 Continue with Google</button>>
 
       <div class="register-footer">
         Already have an account? <a href="/login.html">Login →</a>
@@ -240,6 +240,30 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 </footer>
 
 <script src="/nav.js"></script>
-<script src="/cookie.js"></script> 
+<script src="/cookie.js"></script>
+<script type="module" src="/firebase.js"></script>
+<script type="module">
+window.handleRegister = async function() {
+  const username = document.querySelectorAll('input[type="text"]')[0].value;
+  const email = document.querySelector('input[type="email"]').value;
+  const password = document.querySelector('input[type="password"]').value;
+  const termsChecked = document.getElementById('terms').checked;
+  const disclaimerChecked = document.getElementById('disclaimer').checked;
+
+  if (!username || !email || !password) {
+    alert('Please fill in all required fields!');
+    return;
+  }
+  if (!termsChecked || !disclaimerChecked) {
+    alert('Please agree to Terms and Disclaimer!');
+    return;
+  }
+  if (password.length < 6) {
+    alert('Password must be at least 6 characters!');
+    return;
+  }
+  await registerUser(email, password, username);
+}
+</script> 
 </body>
 </html>
