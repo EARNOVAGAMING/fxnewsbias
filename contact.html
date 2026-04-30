@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Us | FXNewsBias</title>
+<meta name="description" content="Contact FXNewsBias. Get in touch with questions, feedback, or partnership inquiries.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;}
+
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+
+header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
+nav a:hover{color:var(--accent);}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;border:none;text-decoration:none;display:inline-block;cursor:pointer;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#1d4ed8;}
+.burger{display:none;background:none;border:none;font-size:24px;}
+
+.ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
+.ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ticker-item{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.pair{font-weight:600;}
+.up{color:var(--bull);font-weight:600;}
+.down{color:var(--bear);font-weight:600;}
+
+.hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:50px 20px;text-align:center;}
+.hero h1{font-size:36px;font-weight:800;margin-bottom:10px;letter-spacing:-1px;}
+.hero p{font-size:14px;color:#94a3b8;max-width:500px;margin:0 auto;}
+
+.content{max-width:900px;margin:0 auto;padding:50px 20px;}
+
+/* CONTACT GRID */
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:40px;}
+
+/* FORM */
+.form-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:28px;}
+.form-card h2{font-size:20px;font-weight:800;margin-bottom:6px;}
+.form-card p{font-size:13px;color:var(--text-soft);margin-bottom:20px;}
+.form-group{margin-bottom:16px;}
+.form-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-soft);display:block;margin-bottom:6px;}
+.form-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;transition:border .2s;}
+.form-input:focus{outline:none;border-color:var(--accent);}
+.form-select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;background:#fff;}
+.form-textarea{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;min-height:120px;}
+.form-textarea:focus{outline:none;border-color:var(--accent);}
+.form-submit{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:15px;font-weight:700;cursor:pointer;}
+.form-submit:hover{background:#1d4ed8;}
+
+/* INFO CARDS */
+.info-cards{display:flex;flex-direction:column;gap:14px;}
+.info-card{background:var(--bg-soft);border-radius:10px;padding:18px;display:flex;gap:14px;align-items:flex-start;}
+.info-icon{font-size:24px;flex-shrink:0;}
+.info-card h3{font-size:14px;font-weight:700;margin-bottom:4px;}
+.info-card p{font-size:13px;color:var(--text-soft);line-height:1.5;}
+.info-card a{color:var(--accent);text-decoration:none;font-weight:600;}
+
+/* FAQ */
+.faq-section{margin-top:40px;}
+.faq-section h2{font-size:22px;font-weight:800;margin-bottom:20px;}
+.faq-item{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:10px;}
+.faq-q{font-size:15px;font-weight:700;margin-bottom:8px;}
+.faq-a{font-size:13px;color:var(--text-soft);line-height:1.7;}
+
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-col a:hover{color:#fff;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:900px){nav ul{display:none;}.burger{display:block;}.topbar-left span:nth-child(n+2){display:none;}.hero h1{font-size:24px;}.contact-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 FXNewsBias</span>
+      <span>🌐 Live Sentiment</span>
+    </div>
+    <div class="topbar-right">
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html">Pairs</a></li>
+        <li><a href="/calendar.html">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-outline">Login</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+  </div>
+</div>
+
+<section class="hero">
+  <h1>Contact Us</h1>
+  <p>Have a question, feedback, or partnership inquiry? We'd love to hear from you.</p>
+</section>
+
+<div class="content">
+
+  <div class="contact-grid">
+
+    <!-- Contact Form -->
+    <div class="form-card">
+      <h2>📬 Send a Message</h2>
+      <p>We respond within 1-2 business days.</p>
+
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <input type="text" class="form-input" placeholder="John Smith">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" placeholder="you@email.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Subject</label>
+        <select class="form-select">
+          <option>General Question</option>
+          <option>Bug Report</option>
+          <option>Feature Request</option>
+          <option>Partnership Inquiry</option>
+          <option>Advertising Inquiry</option>
+          <option>Data or API Access</option>
+          <option>Community / Moderation</option>
+          <option>Privacy or Legal</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea class="form-textarea" placeholder="Tell us how we can help..."></textarea>
+      </div>
+
+      <button class="form-submit">Send Message →</button>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="info-cards">
+
+      <div class="info-card">
+        <div class="info-icon">⏰</div>
+        <div>
+          <h3>Response Time</h3>
+          <p>We aim to respond to all inquiries within 1-2 business days. High volume periods may take slightly longer.</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon">🐛</div>
+        <div>
+          <h3>Bug Reports</h3>
+          <p>Found something broken? Please describe the issue clearly including which page and what happened. Screenshots help a lot!</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon">🤝</div>
+        <div>
+          <h3>Partnerships & Advertising</h3>
+          <p>Interested in advertising or partnerships? Select "Partnership Inquiry" or "Advertising Inquiry" in the subject dropdown.</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon">🔒</div>
+        <div>
+          <h3>Privacy & Legal</h3>
+          <p>For data deletion requests, privacy questions, or legal matters, select "Privacy or Legal" in the subject. See also our <a href="/privacy.html">Privacy Policy</a> and <a href="/disclaimer.html">Disclaimer</a>.</p>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon">👥</div>
+        <div>
+          <h3>Community Issues</h3>
+          <p>To report a post, comment, or user that violates community rules, select "Community / Moderation" above.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-section">
+    <h2>❓ Common Questions</h2>
+
+    <div class="faq-item">
+      <div class="faq-q">How do I delete my account?</div>
+      <div class="faq-a">Go to Account Settings → scroll to bottom → click "Delete Account". This is permanent and removes all your posts and data.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Why was my post removed?</div>
+      <div class="faq-a">Posts are removed for violating community rules. Common reasons: financial advice, signal selling, spam, or offensive content. Check our Terms of Service for full rules.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">How do I get the Verified badge?</div>
+      <div class="faq-a">Verified badges are given to active community members who consistently post quality analysis. There's no application — we review and award them periodically.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Can I advertise on FXNewsBias?</div>
+      <div class="faq-a">Yes! We accept forex-related advertising. Select "Advertising Inquiry" in the contact form and tell us about your brand and goals.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Is there an API for the sentiment data?</div>
+      <div class="faq-a">API access is coming soon. If you're interested in early access, select "Data or API Access" in the contact form and tell us about your use case.</div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/how.html">How It Works</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="/currencies.html">Currencies</a></li>
+          <li><a href="/pairs.html">Pairs</a></li>
+          <li><a href="/calendar.html">Calendar</a></li>
+          <li><a href="/news.html">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="/community.html">Latest Posts</a></li>
+          <li><a href="/community.html">Top Traders</a></li>
+          <li><a href="/community.html">Guidelines</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/disclaimer.html">Disclaimer</a></li>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
