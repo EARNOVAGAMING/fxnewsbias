@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms of Service | FXNewsBias</title>
+<meta name="description" content="FXNewsBias terms of service. Rules and conditions for using our platform.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;}
+
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+
+header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
+nav a:hover{color:var(--accent);}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;border:none;text-decoration:none;display:inline-block;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-primary{background:var(--accent);color:#fff;}
+.burger{display:none;background:none;border:none;font-size:24px;}
+
+.ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
+.ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ticker-item{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.pair{font-weight:600;}
+.up{color:var(--bull);font-weight:600;}
+.down{color:var(--bear);font-weight:600;}
+
+.hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:50px 20px;text-align:center;}
+.hero h1{font-size:36px;font-weight:800;margin-bottom:10px;letter-spacing:-1px;}
+.hero p{font-size:14px;color:#94a3b8;}
+.last-updated{font-size:11px;color:#64748b;margin-top:10px;font-family:'JetBrains Mono',monospace;}
+
+.content{max-width:800px;margin:0 auto;padding:50px 20px;}
+.section{margin-bottom:36px;}
+.section h2{font-size:22px;font-weight:800;margin-bottom:14px;}
+.section p{font-size:14px;color:var(--text-soft);line-height:1.8;margin-bottom:12px;}
+.section ul{margin-left:20px;margin-bottom:12px;}
+.section ul li{font-size:14px;color:var(--text-soft);line-height:1.8;margin-bottom:6px;}
+.section strong{color:var(--text);}
+
+.toc{background:var(--bg-soft);border-radius:10px;padding:18px 22px;margin-bottom:36px;}
+.toc h3{font-size:14px;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);}
+.toc ol{margin-left:20px;}
+.toc li{font-size:13px;line-height:1.8;}
+.toc a{color:var(--accent);text-decoration:none;}
+
+.highlight-box{background:#eff6ff;border-left:4px solid var(--accent);padding:16px 22px;border-radius:6px;margin:14px 0;}
+.highlight-box p{font-size:13px;color:var(--text);margin:0;line-height:1.7;}
+
+.rules-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;}
+.rules-card{border-radius:10px;padding:16px;}
+.rules-card.allowed{background:#d1fae5;border:1px solid #10b981;}
+.rules-card.banned{background:#fee2e2;border:1px solid #ef4444;}
+.rules-card h4{font-size:13px;font-weight:700;margin-bottom:10px;}
+.rules-card.allowed h4{color:#065f46;}
+.rules-card.banned h4{color:#991b1b;}
+.rules-card ul{list-style:none;font-size:12px;line-height:1.8;}
+.rules-card.allowed ul li::before{content:'✅ ';}
+.rules-card.banned ul li::before{content:'❌ ';}
+
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-col a:hover{color:#fff;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:900px){nav ul{display:none;}.burger{display:block;}.topbar-left span:nth-child(n+2){display:none;}.hero h1{font-size:24px;}.rules-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 FXNewsBias</span>
+      <span>🌐 Live Sentiment</span>
+    </div>
+    <div class="topbar-right">
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html">Pairs</a></li>
+        <li><a href="/calendar.html">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-outline">Login</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+  </div>
+</div>
+
+<section class="hero">
+  <h1>Terms of Service</h1>
+  <p>Rules and conditions for using FXNewsBias</p>
+  <div class="last-updated">Last updated: April 29, 2026</div>
+</section>
+
+<div class="content">
+
+  <div class="toc">
+    <h3>📋 Table of Contents</h3>
+    <ol>
+      <li><a href="#acceptance">Acceptance of Terms</a></li>
+      <li><a href="#service">Use of Service</a></li>
+      <li><a href="#accounts">User Accounts</a></li>
+      <li><a href="#community">Community Rules</a></li>
+      <li><a href="#content">User Content</a></li>
+      <li><a href="#intellectual">Intellectual Property</a></li>
+      <li><a href="#termination">Termination</a></li>
+      <li><a href="#liability">Limitation of Liability</a></li>
+      <li><a href="#changes">Changes to Terms</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ol>
+  </div>
+
+  <div class="section" id="acceptance">
+    <h2>1. Acceptance of Terms</h2>
+    <p>By accessing or using FXNewsBias ("the Service"), you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you may not access the Service.</p>
+    <p>These terms apply to all visitors, users, and others who access or use the Service.</p>
+  </div>
+
+  <div class="section" id="service">
+    <h2>2. Use of Service</h2>
+    <p>FXNewsBias provides forex news sentiment analysis for informational purposes only. By using this Service you agree that:</p>
+    <ul>
+      <li>You are at least 18 years of age</li>
+      <li>You will not use the Service for any illegal purpose</li>
+      <li>You will not attempt to disrupt or damage the Service</li>
+      <li>You understand this is NOT financial advice</li>
+      <li>You are solely responsible for your trading decisions</li>
+      <li>You will comply with all applicable local laws</li>
+    </ul>
+    <div class="highlight-box">
+      <p><strong>FXNewsBias is an information service only.</strong> Nothing on this platform constitutes financial advice, investment advice, or a recommendation to buy or sell any financial instrument.</p>
+    </div>
+  </div>
+
+  <div class="section" id="accounts">
+    <h2>3. User Accounts</h2>
+    <p>When you create an account with us, you must provide accurate and complete information. You are responsible for:</p>
+    <ul>
+      <li>Maintaining the security of your account and password</li>
+      <li>All activities that occur under your account</li>
+      <li>Notifying us immediately of any unauthorized use</li>
+      <li>Keeping your contact information up to date</li>
+    </ul>
+    <p>We reserve the right to terminate accounts that violate these terms, contain false information, or have been inactive for more than 12 months.</p>
+  </div>
+
+  <div class="section" id="community">
+    <h2>4. Community Rules</h2>
+    <p>FXNewsBias has a strict community moderation policy. All posts and comments must follow these rules:</p>
+    <div class="rules-grid">
+      <div class="rules-card allowed">
+        <h4>✅ Allowed</h4>
+        <ul>
+          <li>Original analysis and opinions</li>
+          <li>Chart and news discussion</li>
+          <li>Economic data interpretation</li>
+          <li>Educational content</li>
+          <li>Market outlooks</li>
+          <li>Respectful disagreements</li>
+          <li>Questions about markets</li>
+        </ul>
+      </div>
+      <div class="rules-card banned">
+        <h4>❌ Strictly Banned</h4>
+        <ul>
+          <li>Financial advice ("Buy/Sell now")</li>
+          <li>Signal selling or promotion</li>
+          <li>Broker advertising or spam</li>
+          <li>Referral or affiliate links</li>
+          <li>Guaranteed profit claims</li>
+          <li>Personal attacks</li>
+          <li>Offensive content</li>
+          <li>Duplicate or spam posts</li>
+          <li>Unverified news or fake data</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:14px;">Violations result in: Warning → 7-day ban → Permanent ban.</p>
+  </div>
+
+  <div class="section" id="content">
+    <h2>5. User Content</h2>
+    <p>By posting content on FXNewsBias, you grant us a non-exclusive, worldwide, royalty-free license to use, display, and distribute that content on our platform. You represent that:</p>
+    <ul>
+      <li>You own or have rights to post the content</li>
+      <li>The content does not violate any third-party rights</li>
+      <li>The content complies with our community rules</li>
+      <li>The content does not contain false or misleading information</li>
+    </ul>
+    <p>We reserve the right to remove any content that violates these terms without notice.</p>
+  </div>
+
+  <div class="section" id="intellectual">
+    <h2>6. Intellectual Property</h2>
+    <p>The FXNewsBias platform, including its design, logo, sentiment analysis system, and original content, is owned by FXNewsBias and protected by intellectual property laws.</p>
+    <p>You may not:</p>
+    <ul>
+      <li>Copy or reproduce our platform design</li>
+      <li>Use our logo or branding without permission</li>
+      <li>Scrape or bulk download our sentiment data</li>
+      <li>Republish our analysis without attribution</li>
+      <li>Build competing products using our data</li>
+    </ul>
+  </div>
+
+  <div class="section" id="termination">
+    <h2>7. Termination</h2>
+    <p>We may terminate or suspend your account immediately, without prior notice, for conduct that we believe:</p>
+    <ul>
+      <li>Violates these Terms of Service</li>
+      <li>Is harmful to other users or the community</li>
+      <li>Is harmful to FXNewsBias or third parties</li>
+      <li>Violates any applicable law or regulation</li>
+    </ul>
+    <p>You may also delete your account at any time through your account settings.</p>
+  </div>
+
+  <div class="section" id="liability">
+    <h2>8. Limitation of Liability</h2>
+    <p>To the maximum extent permitted by law, FXNewsBias shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the Service, including but not limited to:</p>
+    <ul>
+      <li>Trading losses based on our sentiment data</li>
+      <li>Loss of profits or revenue</li>
+      <li>Data loss or corruption</li>
+      <li>Service interruptions or technical failures</li>
+      <li>Actions of other users on the platform</li>
+    </ul>
+    <div class="highlight-box">
+      <p><strong>You use FXNewsBias entirely at your own risk.</strong> Always conduct your own research before making any trading decisions.</p>
+    </div>
+  </div>
+
+  <div class="section" id="changes">
+    <h2>9. Changes to Terms</h2>
+    <p>We reserve the right to modify these terms at any time. We will notify registered users of significant changes via email. Continued use of the Service after changes constitutes acceptance of the new terms.</p>
+  </div>
+
+  <div class="section" id="contact">
+    <h2>10. Contact</h2>
+    <p>If you have questions about these Terms of Service, please contact us through our <a href="/contact.html" style="color:var(--accent);">contact page</a>.</p>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/how.html">How It Works</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="/currencies.html">Currencies</a></li>
+          <li><a href="/pairs.html">Pairs</a></li>
+          <li><a href="/calendar.html">Calendar</a></li>
+          <li><a href="/news.html">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="/community.html">Latest Posts</a></li>
+          <li><a href="/community.html">Top Traders</a></li>
+          <li><a href="/community.html">Guidelines</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/disclaimer.html">Disclaimer</a></li>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
