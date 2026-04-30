@@ -26,7 +26,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#ffffff;color:#1a1a
   --neutral:#f59e0b;
 }
 
-/* TOP BAR */
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
 .topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
 .topbar-left{display:flex;gap:16px;color:#94a3b8;}
@@ -34,7 +33,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#ffffff;color:#1a1a
 .topbar a{color:#94a3b8;text-decoration:none;}
 .topbar a:hover{color:#fff;}
 
-/* HEADER */
 header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
 .logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;text-decoration:none;}
@@ -50,7 +48,6 @@ nav a:hover{color:var(--accent);}
 .btn-primary:hover{background:#1d4ed8;}
 .burger{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
 
-/* TICKER */
 .ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
 .ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
 @keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
@@ -60,7 +57,6 @@ nav a:hover{color:var(--accent);}
 .up{color:var(--bull);font-weight:600;}
 .down{color:var(--bear);font-weight:600;}
 
-/* HERO BANNER */
 .hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}
 .hero-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;}
 .hero-mood{display:flex;align-items:center;gap:18px;}
@@ -72,12 +68,10 @@ nav a:hover{color:var(--accent);}
 .hero-stat-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
 .hero-stat-value{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;}
 
-/* MAIN LAYOUT */
 .main{max-width:1280px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:24px;}
 .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
 .section-title a{color:var(--accent);font-size:12px;text-decoration:none;}
 
-/* SENTIMENT GRID */
 .sentiment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:32px;}
 .sent-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;transition:all .2s;cursor:pointer;}
 .sent-card:hover{border-color:var(--accent);box-shadow:0 4px 12px rgba(37,99,235,.08);}
@@ -93,7 +87,6 @@ nav a:hover{color:var(--accent);}
 .sent-fill{height:100%;border-radius:3px;}
 .sent-driver{font-size:12px;color:var(--text-soft);line-height:1.4;}
 
-/* NEWS */
 .news-list{display:flex;flex-direction:column;gap:12px;}
 .news-item{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;}
 .news-item:hover{border-color:var(--accent);}
@@ -107,7 +100,6 @@ nav a:hover{color:var(--accent);}
 .news-effect strong{color:var(--bear);}
 .news-effect strong.up{color:var(--bull);}
 
-/* SIDEBAR */
 .sidebar-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;}
 .sidebar-card h3{font-size:14px;font-weight:700;margin-bottom:12px;}
 .session-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
@@ -116,10 +108,8 @@ nav a:hover{color:var(--accent);}
 .open-status{background:#d1fae5;color:#065f46;}
 .closed-status{background:#f3f4f6;color:#6b7280;}
 
-/* AD */
 .ad-slot{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:8px;padding:24px;text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:24px;}
 
-/* FOOTER */
 footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
@@ -130,7 +120,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-col a:hover{color:#fff;}
 .footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
 
-/* MOBILE */
 @media(max-width:900px){
   .main{grid-template-columns:1fr;}
   nav ul{display:none;}
@@ -143,7 +132,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 </head>
 <body>
 
-<!-- Top Bar -->
 <div class="topbar">
   <div class="topbar-inner">
     <div class="topbar-left">
@@ -152,35 +140,33 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       <span>⚡ Live Sentiment</span>
     </div>
     <div class="topbar-right">
-      <a href="#">About</a>
-      <a href="#">Contact</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
     </div>
   </div>
 </div>
 
-<!-- Header -->
 <header>
   <div class="header-inner">
     <a href="/" class="logo">FX<span>News</span>Bias</a>
     <nav>
       <ul>
         <li><a href="/">Markets</a></li>
-<li><a href="/currencies.html">Currencies</a></li>
-<li><a href="/pairs.html">Pairs</a></li>
-<li><a href="/calendar.html">Calendar</a></li>
-<li><a href="/news.html">News</a></li>
-<li><a href="/community.html">Community</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html">Pairs</a></li>
+        <li><a href="/calendar.html">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html">Community</a></li>
       </ul>
     </nav>
     <div class="nav-actions">
-      <a href="#" class="btn btn-outline">Login</a>
-      <a href="#" class="btn btn-primary">Register</a>
+      <a href="/login.html" class="btn btn-outline">Login</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
       <button class="burger">☰</button>
     </div>
   </div>
 </header>
 
-<!-- Live Ticker -->
 <div class="ticker">
   <div class="ticker-inner">
     <div class="ticker-item"><span class="pair">EUR/USD</span><span class="price">1.0842</span><span class="down">-0.21%</span></div>
@@ -198,7 +184,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   </div>
 </div>
 
-<!-- Hero Banner -->
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-mood">
@@ -225,16 +210,15 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   </div>
 </section>
 
-<!-- Main Layout -->
 <main class="main">
   <div>
     <div class="section-title">
       <span>Currency Sentiment</span>
-      <a href="#">View All →</a>
+      <a href="/currencies.html">View All →</a>
     </div>
     <div class="sentiment-grid">
 
-      <div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
         <div class="sent-head">
           <span class="sent-flag">🇺🇸</span>
           <span class="sent-curr">USD</span>
@@ -243,9 +227,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-score" style="color:var(--bear);">42</div>
         <div class="sent-bar"><div class="sent-fill" style="width:42%;background:var(--bear);"></div></div>
         <div class="sent-driver">Weak NFP, Fed dovish tone</div>
-      </div>
+      </div></a>
 
-      <div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
         <div class="sent-head">
           <span class="sent-flag">🇪🇺</span>
           <span class="sent-curr">EUR</span>
@@ -254,9 +238,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-score" style="color:var(--bull);">71</div>
         <div class="sent-bar"><div class="sent-fill" style="width:71%;background:var(--bull);"></div></div>
         <div class="sent-driver">ECB hawkish, Germany CPI beat</div>
-      </div>
+      </div></a>
 
-      <div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
         <div class="sent-head">
           <span class="sent-flag">🇬🇧</span>
           <span class="sent-curr">GBP</span>
@@ -265,9 +249,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-score" style="color:var(--bear);">38</div>
         <div class="sent-bar"><div class="sent-fill" style="width:38%;background:var(--bear);"></div></div>
         <div class="sent-driver">Rising UK unemployment</div>
-      </div>
+      </div></a>
 
-      <div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
         <div class="sent-head">
           <span class="sent-flag">🇯🇵</span>
           <span class="sent-curr">JPY</span>
@@ -276,9 +260,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-score" style="color:var(--bull);">78</div>
         <div class="sent-bar"><div class="sent-fill" style="width:78%;background:var(--bull);"></div></div>
         <div class="sent-driver">Safe-haven demand surges</div>
-      </div>
+      </div></a>
 
-      <div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
         <div class="sent-head">
           <span class="sent-flag">🇦🇺</span>
           <span class="sent-curr">AUD</span>
@@ -287,9 +271,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-score" style="color:var(--bear);">35</div>
         <div class="sent-bar"><div class="sent-fill" style="width:35%;background:var(--bear);"></div></div>
         <div class="sent-driver">China PMI miss, iron ore drop</div>
-      </div>
+      </div></a>
 
-      <div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
         <div class="sent-head">
           <span class="sent-flag">🇨🇦</span>
           <span class="sent-curr">CAD</span>
@@ -298,9 +282,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-score" style="color:var(--bull);">65</div>
         <div class="sent-bar"><div class="sent-fill" style="width:65%;background:var(--bull);"></div></div>
         <div class="sent-driver">Oil surge, strong jobs data</div>
-      </div>
+      </div></a>
 
-      <div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
         <div class="sent-head">
           <span class="sent-flag">🇨🇭</span>
           <span class="sent-curr">CHF</span>
@@ -309,9 +293,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-score" style="color:var(--bull);">72</div>
         <div class="sent-bar"><div class="sent-fill" style="width:72%;background:var(--bull);"></div></div>
         <div class="sent-driver">Geopolitical safe-haven</div>
-      </div>
+      </div></a>
 
-      <div class="sent-card">
+      <a href="/currencies.html" style="text-decoration:none;color:inherit;"><div class="sent-card">
         <div class="sent-head">
           <span class="sent-flag">🇳🇿</span>
           <span class="sent-curr">NZD</span>
@@ -320,7 +304,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-score" style="color:var(--bear);">40</div>
         <div class="sent-bar"><div class="sent-fill" style="width:40%;background:var(--bear);"></div></div>
         <div class="sent-driver">RBNZ dovish stance</div>
-      </div>
+      </div></a>
 
     </div>
 
@@ -328,45 +312,45 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
     <div class="section-title">
       <span>Top News Driving Sentiment</span>
-      <a href="#">All News →</a>
+      <a href="/news.html">All News →</a>
     </div>
     <div class="news-list">
 
-      <div class="news-item">
+      <a href="/news.html" style="text-decoration:none;color:inherit;"><div class="news-item">
         <div class="news-meta">
           <span class="news-impact imp-high">High Impact</span>
           <span>Reuters · 12 min ago</span>
         </div>
         <div class="news-title">Fed signals dovish pivot amid cooling inflation data</div>
         <div class="news-effect">Affects: <strong>USD ⬇</strong> · Implied bias: bearish across pairs</div>
-      </div>
+      </div></a>
 
-      <div class="news-item">
+      <a href="/news.html" style="text-decoration:none;color:inherit;"><div class="news-item">
         <div class="news-meta">
           <span class="news-impact imp-high">High Impact</span>
           <span>BBC · 28 min ago</span>
         </div>
         <div class="news-title">Middle East tensions escalate, safe-haven demand surges</div>
         <div class="news-effect">Affects: <strong class="up">JPY ⬆</strong> <strong class="up">CHF ⬆</strong> · Risk-off mode</div>
-      </div>
+      </div></a>
 
-      <div class="news-item">
+      <a href="/news.html" style="text-decoration:none;color:inherit;"><div class="news-item">
         <div class="news-meta">
           <span class="news-impact imp-med">Medium Impact</span>
           <span>FXStreet · 1h ago</span>
         </div>
         <div class="news-title">Oil prices jump 4% on supply cut concerns</div>
         <div class="news-effect">Affects: <strong class="up">CAD ⬆</strong> <strong>JPY ⬇</strong> · Petro-currency boost</div>
-      </div>
+      </div></a>
 
-      <div class="news-item">
+      <a href="/news.html" style="text-decoration:none;color:inherit;"><div class="news-item">
         <div class="news-meta">
           <span class="news-impact imp-med">Medium Impact</span>
           <span>CNBC · 2h ago</span>
         </div>
         <div class="news-title">ECB officials hint at further rate hikes through Q3</div>
         <div class="news-effect">Affects: <strong class="up">EUR ⬆</strong> · Hawkish stance confirmed</div>
-      </div>
+      </div></a>
 
     </div>
   </div>
@@ -394,7 +378,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
     <div class="ad-slot" style="margin-bottom:16px;">📢 Ad 300×250</div>
 
-    <div class="sidebar-card">
+    <a href="/calendar.html" style="text-decoration:none;color:inherit;"><div class="sidebar-card">
       <h3>📅 Today's Events</h3>
       <div class="session-row">
         <div>
@@ -417,9 +401,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </div>
         <span class="news-impact imp-low">LOW</span>
       </div>
-    </div>
+    </div></a>
 
-    <div class="sidebar-card">
+    <a href="/pairs.html" style="text-decoration:none;color:inherit;"><div class="sidebar-card">
       <h3>🔥 Hot Pairs</h3>
       <div class="session-row">
         <span style="font-weight:600;">EUR/USD</span>
@@ -437,7 +421,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <span style="font-weight:600;">AUD/USD</span>
         <span class="session-status" style="background:#fee2e2;color:#991b1b;">BEARISH</span>
       </div>
-    </div>
+    </div></a>
   </aside>
 </main>
 
@@ -447,34 +431,34 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       <div class="footer-col">
         <h4>FXNewsBias</h4>
         <ul>
-          <li><a href="#">About Us</a></li>
-          <li><a href="#">How It Works</a></li>
-          <li><a href="#">Contact</a></li>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/how.html">How It Works</a></li>
+          <li><a href="/contact.html">Contact</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Markets</h4>
         <ul>
-          <li><a href="#">Currencies</a></li>
-          <li><a href="#">Pairs</a></li>
-          <li><a href="#">Calendar</a></li>
-          <li><a href="#">News</a></li>
+          <li><a href="/currencies.html">Currencies</a></li>
+          <li><a href="/pairs.html">Pairs</a></li>
+          <li><a href="/calendar.html">Calendar</a></li>
+          <li><a href="/news.html">News</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Community</h4>
         <ul>
-          <li><a href="#">Latest Posts</a></li>
-          <li><a href="#">Top Traders</a></li>
-          <li><a href="#">Guidelines</a></li>
+          <li><a href="/community.html">Latest Posts</a></li>
+          <li><a href="/community.html">Top Traders</a></li>
+          <li><a href="/community.html">Guidelines</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Legal</h4>
         <ul>
-          <li><a href="#">Disclaimer</a></li>
-          <li><a href="#">Privacy Policy</a></li>
-          <li><a href="#">Terms of Service</a></li>
+          <li><a href="/disclaimer.html">Disclaimer</a></li>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
         </ul>
       </div>
     </div>
