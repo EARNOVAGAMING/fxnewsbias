@@ -297,7 +297,7 @@ window.selectedDays = 7;
 
 // Check Pro access
 window.addEventListener('proPageReady', () => {
-  loadHistory(selectedCurrency, selectedDays);
+  loadHistory(window.selectedCurrency, window.selectedDays);
   loadAllCurrencies();
 });
 
@@ -307,8 +307,8 @@ document.querySelectorAll('.curr-tab').forEach(tab => {
     document.querySelectorAll('.curr-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     window.selectedCurrency = tab.getAttribute('data-curr');
-    document.getElementById('chart-title').textContent = `${selectedCurrency} Sentiment History`;
-    loadHistory(selectedCurrency, selectedDays);
+    document.getElementById('chart-title').textContent = `${window.selectedCurrency} Sentiment History`;
+    loadHistory(window.selectedCurrency, window.selectedDays);
   });
 });
 
@@ -318,7 +318,7 @@ document.querySelectorAll('.range-tab').forEach(tab => {
     document.querySelectorAll('.range-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     window.selectedDays = parseInt(tab.getAttribute('data-days'));
-    loadHistory(selectedCurrency, selectedDays);
+    loadHistory(window.selectedCurrency, window.selectedDays);
   });
 });
 
