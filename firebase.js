@@ -16,18 +16,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-// ============================================
-// CHECK PRO STATUS FROM FIRESTORE
-// ============================================
 async function checkProStatus(email) {
   try {
     if (!email) return false;
     const docId = email.replace(/[.#$[\]@]/g, '_');
     const docRef = doc(db, 'subscriptions', docId);
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists() && docSnap.data().isPro === true) {
-      return true;
-    }
+    if (docSnap.exists() && docSnap.data().isPro === true) return true;
     return false;
   } catch(e) {
     console.log('Pro check error:', e);
@@ -35,13 +30,12 @@ async function checkProStatus(email) {
   }
 }
 
-// ============================================
-// SINGLE AUTH STATE LISTENER
-// ============================================
 onAuthStateChanged(auth, async (user) => {
   const loginBtn = document.querySelector('a[href="/login.html"]');
   const registerBtn = document.querySelector('a[href="/register.html"]');
   const navActions = document.querySelector('.nav-actions');
+  const proGate = document.getElementById('pro-gate');
+  const proContent = document.getElementById('pro-content');
 
   if (user) {
     if (loginBtn) loginBtn.style.display = 'none';
@@ -49,7 +43,6 @@ onAuthStateChanged(auth, async (user) => {
 
     const isPro = await checkProStatus(user.email);
 
-    // Update nav
     const existingMenu = document.getElementById('user-menu');
     if (existingMenu) existingMenu.remove();
 
@@ -70,27 +63,25 @@ onAuthStateChanged(auth, async (user) => {
     window.userIsPro = isPro;
     window.userEmail = user.email;
 
-    // Handle Pro pages
-    const proGate = document.getElementById('pro-gate');
-    const proContent = document.getElementById('pro-content');
-
     if (proGate && proContent) {
       if (isPro) {
         proGate.style.display = 'none';
         proContent.style.display = 'block';
-        // Call page functions after short delay to ensure DOM is ready
         setTimeout(() => {
           if (typeof window.initProPage === 'function') {
-            window.initProPage();
+            try {
+              window.initProPage();
+            } catch(e) {
+              console.log('initProPage error:', e);
+            }
           }
-        }, 100);
+        }, 300);
       } else {
         proGate.style.display = 'block';
         proContent.style.display = 'none';
       }
     }
 
-    // Hide ads for Pro users
     if (isPro) {
       document.querySelectorAll('.ad-slot').forEach(ad => ad.style.display = 'none');
       const banner = document.getElementById('pro-banner');
@@ -105,29 +96,13 @@ onAuthStateChanged(auth, async (user) => {
     window.userIsPro = false;
     window.userEmail = null;
 
-    // Show pro gate if on pro page
-    const proGate = document.getElementById('pro-gate');
-    const proContent = document.getElementById('pro-content');
-    if (isPro) {
-        proGate.style.display = 'none';
-        proContent.style.display = 'block';
-        setTimeout(() => {
-          if (typeof window.initProPage === 'function') {
-            try {
-              window.initProPage();
-              alert('initProPage ran successfully!');
-            } catch(e) {
-              alert('initProPage error: ' + e.message);
-            }
-          } else {
-            alert('initProPage not defined!');
-          }
-        }, 500);
+    if (proGate && proContent) {
+      proGate.style.display = 'block';
+      proContent.style.display = 'none';
     }
+  }
+});
 
-// ============================================
-// LOGIN
-// ============================================
 window.loginUser = async function(email, password) {
   try {
     const result = await signInWithEmailAndPassword(auth, email, password);
@@ -146,9 +121,6 @@ window.loginUser = async function(email, password) {
   }
 };
 
-// ============================================
-// REGISTER
-// ============================================
 window.registerUser = async function(email, password, username) {
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
@@ -166,9 +138,6 @@ window.registerUser = async function(email, password, username) {
   }
 };
 
-// ============================================
-// GOOGLE LOGIN
-// ============================================
 window.loginWithGoogle = async function() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
@@ -181,9 +150,6 @@ window.loginWithGoogle = async function() {
   }
 };
 
-// ============================================
-// LOGOUT
-// ============================================
 window.logoutUser = async function() {
   try {
     await signOut(auth);
@@ -194,44 +160,19 @@ window.logoutUser = async function() {
   }
 };
 
-// ============================================
-// GET CURRENT USER
-// ============================================
-window.getCurrentUser = function() {
-  return auth.currentUser;
-};
+window.getCurrentUser = function() { return auth.currentUser; };
 
-// ============================================
-// CHECK PRO STATUS (public)
-// ============================================
 window.checkProStatus = async function(email) {
   const targetEmail = email || (auth.currentUser ? auth.currentUser.email : null);
   return await checkProStatus(targetEmail);
 };
 
-// ============================================
-// SHOW MESSAGE
-// ============================================
 function showMessage(msg, type) {
   const existing = document.getElementById('auth-message');
   if (existing) existing.remove();
   const el = document.createElement('div');
   el.id = 'auth-message';
-  el.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 14px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    z-index: 9999;
-    font-family: 'Inter', sans-serif;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    ${type === 'success'
-      ? 'background:#d1fae5;color:#065f46;border:1px solid #10b981;'
-      : 'background:#fee2e2;color:#991b1b;border:1px solid #ef4444;'}
-  `;
+  el.style.cssText = `position:fixed;top:20px;right:20px;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;font-family:'Inter',sans-serif;box-shadow:0 4px 12px rgba(0,0,0,0.15);${type === 'success' ? 'background:#d1fae5;color:#065f46;border:1px solid #10b981;' : 'background:#fee2e2;color:#991b1b;border:1px solid #ef4444;'}`;
   el.textContent = type === 'success' ? '✅ ' + msg : '❌ ' + msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3000);
