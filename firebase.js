@@ -221,9 +221,13 @@ function handleProPage() {
     if (user) {
       const isPro = await checkProStatus(user.email);
       if (isPro) {
-        proGate.style.display = 'none';
-        proContent.style.display = 'block';
-        window.dispatchEvent(new CustomEvent('proPageReady'));
+  proGate.style.display = 'none';
+  proContent.style.display = 'block';
+  window.dispatchEvent(new CustomEvent('proPageReady'));
+  if (typeof loadHistory === 'function') loadHistory(window.selectedCurrency || 'USD', window.selectedDays || 7);
+  if (typeof loadAllCurrencies === 'function') loadAllCurrencies();
+  if (typeof loadReport === 'function') loadReport();
+}
       } else {
         proGate.style.display = 'block';
         proContent.style.display = 'none';
