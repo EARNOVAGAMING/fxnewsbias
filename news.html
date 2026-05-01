@@ -520,86 +520,202 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script type="module" src="/firebase.js"></script>
 <script>
 // Category tabs
-const catTabs = document.querySelectorAll('.cat-tab');
-const newsCards = document.querySelectorAll('.news-card');
+const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
 
-catTabs.forEach((tab, index) => {
-  tab.addEventListener('click', () => {
-    catTabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
+// Impact color helper
+function getImpactClass(impact) {
+  if (!impact) return 'imp-med';
+  const i = impact.toLowerCase();
+  if (i === 'high') return 'imp-high';
+  if (i === 'low') return 'imp-low';
+  return 'imp-med';
+}
 
-    // Show all if first tab (All News)
-    if (index === 0) {
-      newsCards.forEach(card => card.style.display = 'flex');
-      return;
+// Time ago helper
+function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 60000);
+  if (diff < 60) return `${diff}m ago`;
+  if (diff < 1440) return `${Math.floor(diff/60)}h ago`;
+  return `${Math.floor(diff/1440)}d ago`;
+}
+
+// Emoji for source
+function sourceEmoji(source) {
+  const map = {
+    'reuters': '📰', 'bbc': '📺', 'cnbc': '📡',
+    'fxstreet': '💹', 'dailyfx': '📊', 'bloomberg': '💼',
+    'marketwatch': '📈', 'investing': '💰'
+  };
+  const key = (source || '').toLowerCase();
+  for (const [k, v] of Object.entries(map)) {
+    if (key.includes(k)) return v;
+  }
+  return '📰';
+}
+
+// Load real news from Supabase
+async function loadNews() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/news?order=id.desc&limit=20`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const data = await res.json();
+    if (!data || data.length === 0) return;
+
+    // Update featured card with latest news
+    const featured = document.querySelector('.featured');
+    if (featured && data[0]) {
+      const top = data[0];
+      featured.innerHTML = `
+        <span class="featured-tag">🔥 Latest · ${top.impact || 'Medium'} Impact</span>
+        <h2 class="featured-title">${top.title}</h2>
+        <p class="featured-summary">Click to read the full article from ${top.source || 'News Source'}.</p>
+        <div class="featured-meta">
+          <span>${sourceEmoji(top.source)} ${top.source || 'News Source'}</span>
+          <span>⏰ ${timeAgo(top.created_at)}</span>
+        </div>
+      `;
+      featured.style.cursor = 'pointer';
+      featured.onclick = () => {
+        if (top.url) window.open(top.url, '_blank');
+      };
     }
 
-    // Filter by impact/source text in card
-    const filterMap = {
-      1: ['Central Bank', 'Fed', 'ECB', 'BOE', 'BOJ', 'RBA', 'SNB', 'RBNZ'],
-      2: ['GDP', 'CPI', 'NFP', 'PMI', 'Unemployment', 'Inflation', 'Trade'],
-      3: ['Geopolitical', 'War', 'Tension', 'Conflict', 'Political'],
-      4: ['Oil', 'Gold', 'Silver', 'Commodity', 'Iron', 'Copper'],
-      5: ['USD', 'Dollar', 'Federal Reserve', 'Fed'],
-      6: ['EUR', 'Euro', 'ECB', 'Eurozone'],
-      7: ['GBP', 'Sterling', 'BOE', 'Britain'],
-      8: ['JPY', 'Yen', 'BOJ', 'Japan']
-    };
+    // Build news cards
+    const newsContainer = document.querySelector('.news-list') ||
+      document.querySelector('.section > div:not(.featured):not(.section-title):not(.ad-slot)');
 
-    const keywords = filterMap[index] || [];
+    // Find all existing news cards and replace them
+    const existingCards = document.querySelectorAll('.news-card');
+    const firstCard = existingCards[0];
+    const parent = firstCard ? firstCard.parentElement : null;
 
-    newsCards.forEach(card => {
-      const text = card.textContent || '';
-      const matches = keywords.some(kw =>
-        text.toLowerCase().includes(kw.toLowerCase())
-      );
-      card.style.display = matches ? 'flex' : 'none';
+    if (!parent) return;
+
+    // Remove existing static cards
+    existingCards.forEach(card => card.remove());
+
+    // Remove existing ad slot temporarily
+    const adSlot = parent.querySelector('.ad-slot');
+
+    // Insert real news cards
+    data.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = 'news-card';
+      card.setAttribute('data-source', (item.source || '').toLowerCase());
+      card.setAttribute('data-impact', item.impact || 'Medium');
+      card.setAttribute('data-title', item.title.toLowerCase());
+
+      card.innerHTML = `
+        <div class="news-img blue">${sourceEmoji(item.source)}</div>
+        <div class="news-content">
+          <div class="news-meta-top">
+            <span class="news-impact ${getImpactClass(item.impact)}">${item.impact || 'Medium'} Impact</span>
+            <span>${sourceEmoji(item.source)} ${item.source || 'News'}</span>
+            <span>⏰ ${timeAgo(item.created_at)}</span>
+          </div>
+          <h3 class="news-title">${item.title}</h3>
+          <p class="news-summary">Click to read the full article.</p>
+        </div>
+      `;
+
+      card.style.cursor = 'pointer';
+      card.onclick = () => {
+        if (item.url) window.open(item.url, '_blank');
+        else window.location.href = '/news.html';
+      };
+
+      // Insert ad after 3rd card
+      if (index === 2 && adSlot) {
+        parent.appendChild(adSlot);
+      }
+
+      parent.appendChild(card);
     });
-  });
-});
 
-// Source filter tags
-const sourceTags = document.querySelectorAll('.source-tag');
-sourceTags.forEach(tag => {
-  tag.style.cursor = 'pointer';
-  tag.addEventListener('click', () => {
-    sourceTags.forEach(t => t.classList.remove('active'));
-    tag.classList.add('active');
-    const source = tag.textContent.trim();
+    // Setup category filter tabs
+    setupFilters();
 
-    newsCards.forEach(card => {
-      const cardSource = card.querySelector('.news-source');
-      if (!cardSource) {
-        card.style.display = 'flex';
+  } catch(e) {
+    console.log('News load error:', e);
+    setupFilters(); // Still setup filters for static cards
+  }
+}
+
+// Category filter
+function setupFilters() {
+  const catTabs = document.querySelectorAll('.cat-tab');
+
+  catTabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => {
+      catTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      const newsCards = document.querySelectorAll('.news-card');
+
+      if (index === 0) {
+        newsCards.forEach(card => card.style.display = 'flex');
         return;
       }
-      if (source === 'All Sources') {
-        card.style.display = 'flex';
-      } else if (cardSource.textContent.includes(source)) {
-        card.style.display = 'flex';
-      } else {
-        card.style.display = 'none';
-      }
+
+      const filterMap = {
+        1: ['central bank', 'fed', 'ecb', 'boe', 'boj', 'rba', 'snb', 'rbnz', 'rate'],
+        2: ['gdp', 'cpi', 'nfp', 'pmi', 'unemployment', 'inflation', 'payroll', 'trade'],
+        3: ['geopolit', 'war', 'tension', 'conflict', 'political', 'middle east'],
+        4: ['oil', 'gold', 'silver', 'commodity', 'iron', 'copper', 'opec'],
+        5: ['usd', 'dollar', 'federal reserve', 'fed'],
+        6: ['eur', 'euro', 'ecb', 'eurozone'],
+        7: ['gbp', 'sterling', 'boe', 'britain', 'uk'],
+        8: ['jpy', 'yen', 'boj', 'japan']
+      };
+
+      const keywords = filterMap[index] || [];
+
+      newsCards.forEach(card => {
+        const title = (card.getAttribute('data-title') || card.textContent || '').toLowerCase();
+        const matches = keywords.some(kw => title.includes(kw));
+        card.style.display = matches ? 'flex' : 'none';
+      });
     });
   });
-});
 
-// Trending items clickable
-document.querySelectorAll('.trending-item').forEach(item => {
-  item.style.cursor = 'pointer';
-  item.addEventListener('click', () => {
-    window.location.href = '/news.html';
+  // Source filter tags
+  const sourceTags = document.querySelectorAll('.source-tag');
+  sourceTags.forEach(tag => {
+    tag.style.cursor = 'pointer';
+    tag.addEventListener('click', () => {
+      sourceTags.forEach(t => t.classList.remove('active'));
+      tag.classList.add('active');
+
+      const source = tag.querySelector('span') ?
+        tag.querySelector('span').textContent.trim().toLowerCase() :
+        tag.textContent.trim().toLowerCase();
+
+      const newsCards = document.querySelectorAll('.news-card');
+      newsCards.forEach(card => {
+        if (source === 'all' || source.includes('all')) {
+          card.style.display = 'flex';
+        } else {
+          const cardSource = card.getAttribute('data-source') || '';
+          card.style.display = cardSource.includes(source) ? 'flex' : 'none';
+        }
+      });
+    });
   });
-});
 
-// Featured story clickable
-const featured = document.querySelector('.featured');
-if (featured) {
-  featured.style.cursor = 'pointer';
-  featured.addEventListener('click', () => {
-    window.location.href = '/news.html';
+  // Trending items clickable
+  document.querySelectorAll('.trending-item').forEach(item => {
+    item.style.cursor = 'pointer';
+    item.addEventListener('click', () => {
+      window.location.href = '/news.html';
+    });
   });
 }
+
+// Init
+loadNews();
 </script>
 </body>
 </html>
