@@ -721,11 +721,54 @@ async function loadAllData() {
     const sentArr = await sentRes.json();
     sentArr.forEach(s => { if (!sentimentData[s.currency]) sentimentData[s.currency] = s; });
 
-    const priceRes = await fetch(SUPABASE_URL + '/rest/v1/prices?order=id.desc&limit=30', {
+    // Fetch 500 prices to have 24h history per pair
+    const priceRes = await fetch(SUPABASE_URL + '/rest/v1/prices?order=id.desc&limit=500', {
       headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
     });
     const priceArr = await priceRes.json();
-    priceArr.forEach(p => { if (!pricesData[p.pair]) pricesData[p.pair] = p; });
+
+    // Group prices by pair
+    const grouped = {};
+    priceArr.forEach(p => {
+      if (!grouped[p.pair]) grouped[p.pair] = [];
+      grouped[p.pair].push(p);
+    });
+
+    // For each pair, compute 24h change
+    Object.keys(grouped).forEach(pair => {
+      const records = grouped[pair];
+      const current = records[0];
+      const currentPrice = parseFloat(current.price);
+
+      // Find record closest to 24h ago
+      const dayAgo = Date.now() - 24*60*60*1000;
+      let oldRecord = null;
+      for (const r of records) {
+        if (new Date(r.created_at).getTime() < dayAgo) {
+          oldRecord = r;
+          break;
+        }
+      }
+
+      // If no 24h-old record yet, use oldest available
+      if (!oldRecord && records.length > 1) {
+        oldRecord = records[records.length - 1];
+      }
+
+      let change = null;
+      if (oldRecord && oldRecord !== current) {
+        const oldPrice = parseFloat(oldRecord.price);
+        if (oldPrice > 0) {
+          change = ((currentPrice - oldPrice) / oldPrice) * 100;
+        }
+      }
+
+      pricesData[pair] = {
+        price: currentPrice,
+        change_24h: change,
+        created_at: current.created_at
+      };
+    });
 
     // Update timestamps
     if (sentArr[0]) {
