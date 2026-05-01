@@ -689,29 +689,38 @@ function setupFilters() {
       sourceTags.forEach(t => t.classList.remove('active'));
       tag.classList.add('active');
 
-      const source = tag.querySelector('span') ?
-        tag.querySelector('span').textContent.trim().toLowerCase() :
-        tag.textContent.trim().toLowerCase();
+      const sourceText = tag.textContent.trim().toLowerCase()
+        .replace('📰', '').replace('📺', '').replace('📡', '')
+        .replace('💹', '').replace('📊', '').replace('💼', '')
+        .replace('📈', '').replace('💰', '').trim();
 
       const newsCards = document.querySelectorAll('.news-card');
       newsCards.forEach(card => {
-        if (source === 'all' || source.includes('all')) {
+        if (sourceText.includes('all') || sourceText === '') {
           card.style.display = 'flex';
         } else {
-          const cardSource = card.getAttribute('data-source') || '';
-          card.style.display = cardSource.includes(source) ? 'flex' : 'none';
+          const cardSource = (card.getAttribute('data-source') || '').toLowerCase();
+          const cardText = card.textContent.toLowerCase();
+          card.style.display = (cardSource.includes(sourceText) || cardText.includes(sourceText)) ? 'flex' : 'none';
         }
       });
     });
   });
 
-  // Trending items clickable
-  document.querySelectorAll('.trending-item').forEach(item => {
-    item.style.cursor = 'pointer';
-    item.addEventListener('click', () => {
-      window.location.href = '/news.html';
+  // Trending items - filter news by topic
+document.querySelectorAll('.trending-item').forEach(item => {
+  item.style.cursor = 'pointer';
+  item.addEventListener('click', () => {
+    const topic = item.querySelector('.trending-title');
+    if (!topic) return;
+    const keyword = topic.textContent.trim().toLowerCase().split(' ')[0];
+    const newsCards = document.querySelectorAll('.news-card');
+    newsCards.forEach(card => {
+      const title = (card.getAttribute('data-title') || '').toLowerCase();
+      card.style.display = title.includes(keyword) ? 'flex' : 'none';
     });
   });
+});
 }
 
 // Init
