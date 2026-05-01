@@ -699,6 +699,14 @@ document.querySelectorAll('.pair-row').forEach(row => {
     window.location.href = '/pairs.html';
   });
 });
+// Hide ads for Pro users
+window.addEventListener('userLoaded', (e) => {
+  if (e.detail.isPro) {
+    document.querySelectorAll('.ad-slot').forEach(ad => {
+      ad.style.display = 'none';
+    });
+  }
+});
 </script>
 </body>
 </html>
