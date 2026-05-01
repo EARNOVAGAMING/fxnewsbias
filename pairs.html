@@ -223,7 +223,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 </div>
 
 <!-- Major Pairs -->
-<section class="section">
+<section class="section" id="tab-major">
   <div class="section-title">
     <span>Major Pairs</span>
     <span class="section-update">⏱ Updated 14m ago</span>
@@ -306,7 +306,10 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   <!-- Ad -->
   <div class="ad-slot">📢 Advertisement Space — 728×90 Leaderboard</div>
 
-  <!-- Minor Pairs -->
+  </section>
+
+<!-- Minor Pairs -->
+<section class="section" id="tab-minor" style="display:none;">
   <div class="section-title">
     <span>Minor Pairs (Cross Currencies)</span>
     <span class="section-update">⏱ Updated 14m ago</span>
@@ -373,6 +376,136 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       <div class="pair-price">1.7345</div>
       <div class="pair-change down">-0.52%</div>
       <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+  </div>
+</section>
+
+<!-- JPY Crosses -->
+<section class="section" id="tab-jpy" style="display:none;">
+  <div class="section-title">
+    <span>JPY Crosses</span>
+    <span class="section-update">⏱ Updated 14m ago</span>
+  </div>
+  <div class="pairs-table">
+    <div class="table-header">
+      <div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇺🇸🇯🇵</span>USD/JPY</div>
+      <div class="pair-driver">JPY safe-haven demand · BOJ hawkish shift</div>
+      <div class="pair-price">149.82</div>
+      <div class="pair-change up">+0.23%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇪🇺🇯🇵</span>EUR/JPY</div>
+      <div class="pair-driver">JPY safe-haven stronger than EUR bulls</div>
+      <div class="pair-price">162.45</div>
+      <div class="pair-change down">-0.42%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇬🇧🇯🇵</span>GBP/JPY</div>
+      <div class="pair-driver">Strong JPY · weak GBP fundamentals</div>
+      <div class="pair-price">189.32</div>
+      <div class="pair-change down">-0.68%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇦🇺🇯🇵</span>AUD/JPY</div>
+      <div class="pair-driver">Risk-off crushes AUD · JPY surges</div>
+      <div class="pair-price">97.92</div>
+      <div class="pair-change down">-0.74%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇨🇦🇯🇵</span>CAD/JPY</div>
+      <div class="pair-driver">CAD strong on oil · JPY still dominates</div>
+      <div class="pair-price">109.34</div>
+      <div class="pair-change down">-0.31%</div>
+      <div class="bias-badge neut-bg">Neutral</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇨🇭🇯🇵</span>CHF/JPY</div>
+      <div class="pair-driver">Both safe-havens strong · CHF slightly weaker</div>
+      <div class="pair-price">168.92</div>
+      <div class="pair-change up">+0.12%</div>
+      <div class="bias-badge neut-bg">Neutral</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇳🇿🇯🇵</span>NZD/JPY</div>
+      <div class="pair-driver">RBNZ dovish · JPY safe-haven demand</div>
+      <div class="pair-price">89.74</div>
+      <div class="pair-change down">-0.55%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+  </div>
+</section>
+
+<!-- Commodity Pairs -->
+<section class="section" id="tab-commodity" style="display:none;">
+  <div class="section-title">
+    <span>Commodity Pairs</span>
+    <span class="section-update">⏱ Updated 14m ago</span>
+  </div>
+  <div class="pairs-table">
+    <div class="table-header">
+      <div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇦🇺🇺🇸</span>AUD/USD</div>
+      <div class="pair-driver">Iron ore weak · China PMI miss</div>
+      <div class="pair-price">0.6534</div>
+      <div class="pair-change down">-0.45%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇨🇦🇺🇸</span>USD/CAD</div>
+      <div class="pair-driver">Oil surge supports CAD · USD weak</div>
+      <div class="pair-price">1.3724</div>
+      <div class="pair-change down">-0.18%</div>
+      <div class="bias-badge bull-bg">Bullish CAD</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🇳🇿🇺🇸</span>NZD/USD</div>
+      <div class="pair-driver">Dairy prices weak · RBNZ dovish signal</div>
+      <div class="pair-price">0.5982</div>
+      <div class="pair-change down">-0.28%</div>
+      <div class="bias-badge bear-bg">Bearish</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🥇🇺🇸</span>XAU/USD</div>
+      <div class="pair-driver">Gold surges on safe-haven demand · risk-off</div>
+      <div class="pair-price">2342.18</div>
+      <div class="pair-change up">+0.84%</div>
+      <div class="bias-badge bull-bg">Bullish</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🪙🇺🇸</span>XAG/USD</div>
+      <div class="pair-driver">Silver follows gold · industrial demand steady</div>
+      <div class="pair-price">27.45</div>
+      <div class="pair-change up">+0.62%</div>
+      <div class="bias-badge bull-bg">Bullish</div>
+      <div class="go-arrow">→</div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-name"><span class="pair-flags">🛢️🇺🇸</span>WTI/USD</div>
+      <div class="pair-driver">Middle East tensions · OPEC supply cuts</div>
+      <div class="pair-price">84.32</div>
+      <div class="pair-change up">+1.24%</div>
+      <div class="bias-badge bull-bg">Bullish</div>
       <div class="go-arrow">→</div>
     </div>
   </div>
@@ -532,55 +665,37 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script> 
 <script>
-// Add IDs to sections
-const sections = document.querySelectorAll('.section');
-const sectionTitles = ['major', 'minor'];
-sections.forEach((s, i) => {
-  if (sectionTitles[i]) s.setAttribute('data-section', sectionTitles[i]);
-});
-
-// Category tabs
+// Category tabs with proper section switching
 const catTabs = document.querySelectorAll('.cat-tab');
+const tabSections = {
+  0: 'tab-major',
+  1: 'tab-minor',
+  2: 'tab-jpy',
+  3: 'tab-commodity'
+};
+
 catTabs.forEach((tab, index) => {
   tab.addEventListener('click', () => {
     catTabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
 
-    // Show/hide pair tables based on tab
-    const allTables = document.querySelectorAll('.pairs-table');
-    const allTitles = document.querySelectorAll('.section-title');
+    // Hide all sections
+    Object.values(tabSections).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
 
-    if (index === 0) {
-      // Major pairs - show first table
-      allTables.forEach((t, i) => t.style.display = i === 0 ? 'block' : 'none');
-      allTitles.forEach((t, i) => t.style.display = i === 0 ? 'flex' : 'none');
-    } else if (index === 1) {
-      // Minor pairs - show second table
-      allTables.forEach((t, i) => t.style.display = i === 1 ? 'block' : 'none');
-      allTitles.forEach((t, i) => t.style.display = i === 1 ? 'flex' : 'none');
-    } else {
-      // JPY/Commodity - show message
-      allTables.forEach(t => t.style.display = 'none');
-      allTitles.forEach(t => t.style.display = 'none');
-    }
+    // Show selected section
+    const targetId = tabSections[index];
+    const target = document.getElementById(targetId);
+    if (target) target.style.display = 'block';
   });
 });
 
 // Make pair rows clickable
-const pairRows = document.querySelectorAll('.pair-row');
-pairRows.forEach(row => {
+document.querySelectorAll('.pair-row').forEach(row => {
   row.style.cursor = 'pointer';
   row.addEventListener('click', () => {
-    window.location.href = '/pairs.html';
-  });
-});
-
-// Make arrows clickable
-const arrows = document.querySelectorAll('.go-arrow');
-arrows.forEach(arrow => {
-  arrow.style.cursor = 'pointer';
-  arrow.addEventListener('click', (e) => {
-    e.stopPropagation();
     window.location.href = '/pairs.html';
   });
 });
