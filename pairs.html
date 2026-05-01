@@ -531,5 +531,37 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script> 
+<script>
+// Category tabs
+const catTabs = document.querySelectorAll('.cat-tab');
+catTabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => {
+    catTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// Make pair rows clickable
+const pairRows = document.querySelectorAll('.pair-row');
+pairRows.forEach(row => {
+  row.style.cursor = 'pointer';
+  row.addEventListener('click', () => {
+    const pairName = row.querySelector('.pair-name');
+    if (!pairName) return;
+    const pair = pairName.textContent.trim().replace('/', '').toLowerCase();
+    window.location.href = `/pairs.html`;
+  });
+});
+
+// Make arrow links work
+const arrows = document.querySelectorAll('.go-arrow');
+arrows.forEach(arrow => {
+  arrow.style.cursor = 'pointer';
+  arrow.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.location.href = '/pairs.html';
+  });
+});
+</script>
 </body>
 </html>
