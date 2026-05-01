@@ -36,30 +36,24 @@ async function checkProStatus(email) {
 }
 
 // ============================================
-// AUTH STATE LISTENER
+// SINGLE AUTH STATE LISTENER
 // ============================================
-// Show cached user immediately to prevent flash
-const cachedUser = localStorage.getItem('fxnb_user');
-if (cachedUser) {
-  const loginBtn2 = document.querySelector('a[href="/login.html"]');
-  const registerBtn2 = document.querySelector('a[href="/register.html"]');
-  if (loginBtn2) loginBtn2.style.display = 'none';
-  if (registerBtn2) registerBtn2.style.display = 'none';
-}
-
 onAuthStateChanged(auth, async (user) => {
   const loginBtn = document.querySelector('a[href="/login.html"]');
   const registerBtn = document.querySelector('a[href="/register.html"]');
   const navActions = document.querySelector('.nav-actions');
 
   if (user) {
-    localStorage.setItem('fxnb_user', JSON.stringify({email: user.email, name: user.displayName}));
     if (loginBtn) loginBtn.style.display = 'none';
     if (registerBtn) registerBtn.style.display = 'none';
-    // Check Pro status
+
     const isPro = await checkProStatus(user.email);
 
-    if (navActions && !document.getElementById('user-menu')) {
+    // Update nav
+    const existingMenu = document.getElementById('user-menu');
+    if (existingMenu) existingMenu.remove();
+
+    if (navActions) {
       const userMenu = document.createElement('div');
       userMenu.id = 'user-menu';
       userMenu.style.cssText = 'display:flex;align-items:center;gap:10px;';
@@ -68,16 +62,7 @@ onAuthStateChanged(auth, async (user) => {
           👤 ${user.displayName || user.email.split('@')[0]}
         </span>
         ${isPro ? '<span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">⭐ PRO</span>' : ''}
-        <button onclick="logoutUser()" style="
-          padding:8px 16px;
-          border-radius:6px;
-          font-weight:600;
-          font-size:13px;
-          cursor:pointer;
-          border:1px solid #d1d5db;
-          background:transparent;
-          color:#1a1a1a;
-        ">Logout</button>
+        <button onclick="logoutUser()" style="padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;border:1px solid #d1d5db;background:transparent;color:#1a1a1a;">Logout</button>
       `;
       navActions.appendChild(userMenu);
     }
@@ -85,18 +70,48 @@ onAuthStateChanged(auth, async (user) => {
     window.userIsPro = isPro;
     window.userEmail = user.email;
 
-    window.dispatchEvent(new CustomEvent('userLoaded', {
-      detail: { user, isPro }
-    }));
+    // Handle Pro pages
+    const proGate = document.getElementById('pro-gate');
+    const proContent = document.getElementById('pro-content');
+
+    if (proGate && proContent) {
+      if (isPro) {
+        proGate.style.display = 'none';
+        proContent.style.display = 'block';
+        // Call page functions after short delay to ensure DOM is ready
+        setTimeout(() => {
+          if (typeof window.initProPage === 'function') {
+            window.initProPage();
+          }
+        }, 100);
+      } else {
+        proGate.style.display = 'block';
+        proContent.style.display = 'none';
+      }
+    }
+
+    // Hide ads for Pro users
+    if (isPro) {
+      document.querySelectorAll('.ad-slot').forEach(ad => ad.style.display = 'none');
+      const banner = document.getElementById('pro-banner');
+      if (banner) banner.style.display = 'none';
+    }
 
   } else {
-    localStorage.removeItem('fxnb_user');
     if (loginBtn) loginBtn.style.display = 'inline-block';
     if (registerBtn) registerBtn.style.display = 'inline-block';
     const userMenu = document.getElementById('user-menu');
     if (userMenu) userMenu.remove();
     window.userIsPro = false;
     window.userEmail = null;
+
+    // Show pro gate if on pro page
+    const proGate = document.getElementById('pro-gate');
+    const proContent = document.getElementById('pro-content');
+    if (proGate && proContent) {
+      proGate.style.display = 'block';
+      proContent.style.display = 'none';
+    }
   }
 });
 
@@ -211,31 +226,3 @@ function showMessage(msg, type) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
-// Handle Pro page access
-function handleProPage() {
-  const proGate = document.getElementById('pro-gate');
-  const proContent = document.getElementById('pro-content');
-  if (!proGate || !proContent) return;
-
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      const isPro = await checkProStatus(user.email);
-      if (isPro) {
-        proGate.style.display = 'none';
-        proContent.style.display = 'block';
-        window.dispatchEvent(new CustomEvent('proPageReady'));
-        if (typeof loadHistory === 'function') loadHistory(window.selectedCurrency || 'USD', window.selectedDays || 7);
-        if (typeof loadAllCurrencies === 'function') loadAllCurrencies();
-        if (typeof loadReport === 'function') loadReport();
-      } else {
-        proGate.style.display = 'block';
-        proContent.style.display = 'none';
-      }
-    } else {
-      proGate.style.display = 'block';
-      proContent.style.display = 'none';
-    }
-  });
-}
-
-handleProPage();
