@@ -109,6 +109,7 @@ onAuthStateChanged(auth, async (user) => {
     const proGate = document.getElementById('pro-gate');
     const proContent = document.getElementById('pro-content');
     if (proGate && proContent) {
+      alert('Pro detected! initProPage exists: ' + (typeof window.initProPage));
       proGate.style.display = 'block';
       proContent.style.display = 'none';
     }
