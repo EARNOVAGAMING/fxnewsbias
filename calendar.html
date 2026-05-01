@@ -553,55 +553,38 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script>
 // Day tabs
 const dayTabs = document.querySelectorAll('.day-tab');
-const calSections = document.querySelectorAll('.cal-wrap > .cal-day-header, .cal-wrap > .cal-table');
-
 dayTabs.forEach((tab, index) => {
   tab.addEventListener('click', () => {
     dayTabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-
-    // Show today or tomorrow section
     const allHeaders = document.querySelectorAll('.cal-day-header');
     const allTables = document.querySelectorAll('.cal-table');
-    const adSlot = document.querySelector('.cal-wrap .ad-slot');
-
     if (index === 2) {
-      // Today
       allHeaders.forEach((h, i) => h.style.display = i === 0 ? 'flex' : 'none');
       allTables.forEach((t, i) => t.style.display = i === 0 ? 'block' : 'none');
-      if (adSlot) adSlot.style.display = 'block';
     } else if (index === 3) {
-      // Tomorrow
       allHeaders.forEach((h, i) => h.style.display = i === 1 ? 'flex' : 'none');
       allTables.forEach((t, i) => t.style.display = i === 1 ? 'block' : 'none');
-      if (adSlot) adSlot.style.display = 'none';
     } else {
-      // Other days - show coming soon
       allHeaders.forEach(h => h.style.display = 'none');
       allTables.forEach(t => t.style.display = 'none');
-      if (adSlot) adSlot.style.display = 'none';
     }
   });
 });
 
-// Impact filter buttons
-const filterBtns = document.querySelectorAll('.filter-btn');
+// Impact filter
+const impactBtns = document.querySelectorAll('.filter-bar:first-of-type .filter-btn');
 const calRows = document.querySelectorAll('.cal-row');
 
-filterBtns.forEach(btn => {
+impactBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    const filterBar = btn.closest('.filter-bar');
-    const siblings = filterBar.querySelectorAll('.filter-btn');
-    siblings.forEach(b => b.classList.remove('active'));
+    impactBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-
     const filter = btn.textContent.trim();
-
     calRows.forEach(row => {
       const impact = row.querySelector('.cal-impact');
       if (!impact) return;
       const impactText = impact.textContent.trim();
-
       if (filter === 'All') {
         row.style.display = 'grid';
       } else if (filter.includes('High') && impactText === 'High') {
@@ -617,10 +600,12 @@ filterBtns.forEach(btn => {
   });
 });
 
-// Currency filter buttons
-const currencyFlags = {
+// Currency filter
+const currencyMap = {
   'USD': '🇺🇸', 'EUR': '🇪🇺', 'GBP': '🇬🇧',
-  'JPY': '🇯🇵', 'AUD': '🇦🇺', 'CAD': '🇨🇦'
+  'JPY': '🇯🇵', 'AUD': '🇦🇺', 'CAD': '🇨🇦',
+  'CHF': '🇨🇭', 'NZD': '🇳🇿', 'CNY': '🇨🇳',
+  'ALL': 'all'
 };
 
 const currBtns = document.querySelectorAll('.filter-bar:last-of-type .filter-btn');
@@ -631,11 +616,15 @@ currBtns.forEach(btn => {
     const curr = btn.textContent.trim();
 
     calRows.forEach(row => {
-      const flag = row.querySelector('.cal-flag');
-      if (!flag) return;
-      if (curr === 'All') {
+      if (curr === 'All' || curr === '+4 more') {
         row.style.display = 'grid';
-      } else if (flag.textContent.includes(currencyFlags[curr])) {
+        return;
+      }
+      const flag = row.querySelector('.cal-flag');
+      const rowText = row.textContent || '';
+      if (!flag) return;
+
+      if (rowText.includes(curr)) {
         row.style.display = 'grid';
       } else {
         row.style.display = 'none';
