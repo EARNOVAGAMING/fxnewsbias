@@ -486,11 +486,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
 <script>
-// Category tabs
-const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+ const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
 
-// Impact color helper
 function getImpactClass(impact) {
   if (!impact) return 'imp-med';
   const i = impact.toLowerCase();
@@ -499,7 +497,6 @@ function getImpactClass(impact) {
   return 'imp-med';
 }
 
-// Time ago helper
 function timeAgo(dateStr) {
   const diff = Math.floor((Date.now() - new Date(dateStr)) / 60000);
   if (diff < 60) return `${diff}m ago`;
@@ -507,7 +504,6 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff/1440)}d ago`;
 }
 
-// Emoji for source
 function sourceEmoji(source) {
   const map = {
     'reuters': '📰', 'bbc': '📺', 'cnbc': '📡',
@@ -521,7 +517,6 @@ function sourceEmoji(source) {
   return '📰';
 }
 
-// Load real news from Supabase
 async function loadNews() {
   try {
     const res = await fetch(
@@ -531,12 +526,12 @@ async function loadNews() {
     const data = await res.json();
     if (!data || data.length === 0) return;
 
-    // Update featured card with latest news
+    // Update featured card
     const featured = document.querySelector('.featured');
     if (featured && data[0]) {
       const top = data[0];
       featured.innerHTML = `
-        <span class="featured-tag">🔥 Latest · ${top.impact || 'Medium'} Impact</span>
+        <span class="featured-tag">🔥 Breaking · ${top.impact || 'Medium'} Impact</span>
         <h2 class="featured-title">${top.title}</h2>
         <p class="featured-summary">Click to read the full article from ${top.source || 'News Source'}.</p>
         <div class="featured-meta">
@@ -545,34 +540,22 @@ async function loadNews() {
         </div>
       `;
       featured.style.cursor = 'pointer';
-      featured.onclick = () => {
-        if (top.url) window.open(top.url, '_blank');
-      };
+      featured.onclick = () => { if (top.url) window.open(top.url, '_blank'); };
     }
 
-    // Build news cards
-    const newsContainer = document.querySelector('.news-list') ||
-      document.querySelector('.section > div:not(.featured):not(.section-title):not(.ad-slot)');
-
-    // Find all existing news cards and replace them
+    // Find parent and remove old static cards
     const existingCards = document.querySelectorAll('.news-card');
-    const firstCard = existingCards[0];
-    const parent = firstCard ? firstCard.parentElement : null;
-
+    const parent = existingCards[0] ? existingCards[0].parentElement : null;
     if (!parent) return;
-
-    // Remove existing static cards
-    existingCards.forEach(card => card.remove());
-
-    // Remove existing ad slot temporarily
     const adSlot = parent.querySelector('.ad-slot');
+    existingCards.forEach(card => card.remove());
 
     // Insert real news cards
     data.forEach((item, index) => {
       const card = document.createElement('div');
       card.className = 'news-card';
       card.setAttribute('data-source', (item.source || '').toLowerCase());
-      card.setAttribute('data-impact', item.impact || 'Medium');
+      card.setAttribute('data-impact', (item.impact || 'medium').toLowerCase());
       card.setAttribute('data-title', item.title.toLowerCase());
 
       card.innerHTML = `
@@ -594,113 +577,76 @@ async function loadNews() {
         else window.location.href = '/news.html';
       };
 
-      // Insert ad after 3rd card
-      if (index === 2 && adSlot) {
-        parent.appendChild(adSlot);
-      }
-
+      if (index === 2 && adSlot) parent.appendChild(adSlot);
       parent.appendChild(card);
     });
 
-    // Setup category filter tabs
     setupFilters();
 
   } catch(e) {
     console.log('News load error:', e);
-    setupFilters(); // Still setup filters for static cards
+    setupFilters();
   }
 }
 
-// Category filter
 function setupFilters() {
+  // Category tabs
   const catTabs = document.querySelectorAll('.cat-tab');
-
   catTabs.forEach((tab, index) => {
     tab.addEventListener('click', () => {
       catTabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-
       const newsCards = document.querySelectorAll('.news-card');
-
       if (index === 0) {
         newsCards.forEach(card => card.style.display = 'flex');
         return;
       }
-
       const filterMap = {
-        1: ['central bank', 'fed', 'ecb', 'boe', 'boj', 'rba', 'snb', 'rbnz', 'rate'],
-        2: ['gdp', 'cpi', 'nfp', 'pmi', 'unemployment', 'inflation', 'payroll', 'trade'],
-        3: ['geopolit', 'war', 'tension', 'conflict', 'political', 'middle east'],
+        1: ['central bank', 'fed', 'ecb', 'boe', 'boj', 'rba', 'rate hike', 'rate cut'],
+        2: ['gdp', 'cpi', 'nfp', 'pmi', 'unemployment', 'inflation', 'payroll'],
+        3: ['geopolit', 'war', 'tension', 'conflict', 'political', 'middle east', 'sanction'],
         4: ['oil', 'gold', 'silver', 'commodity', 'iron', 'copper', 'opec'],
-        5: ['usd', 'dollar', 'federal reserve', 'fed'],
+        5: ['usd', 'dollar', 'federal reserve'],
         6: ['eur', 'euro', 'ecb', 'eurozone'],
-        7: ['gbp', 'sterling', 'boe', 'britain', 'uk'],
+        7: ['gbp', 'sterling', 'britain', 'uk unemployment', 'bank of england'],
         8: ['jpy', 'yen', 'boj', 'japan']
       };
-
       const keywords = filterMap[index] || [];
-
       newsCards.forEach(card => {
-        const title = (card.getAttribute('data-title') || card.textContent || '').toLowerCase();
+        const title = (card.getAttribute('data-title') || '').toLowerCase();
         const matches = keywords.some(kw => title.includes(kw));
         card.style.display = matches ? 'flex' : 'none';
       });
     });
   });
 
-  // Source filter tags
-  // Source filter tags
+  // Source filter
   const sourceTags = document.querySelectorAll('.source-tag');
   sourceTags.forEach(tag => {
     tag.style.cursor = 'pointer';
-    tag.style.transition = 'background .2s';
     tag.addEventListener('click', () => {
-      // Reset all
-      sourceTags.forEach(t => {
-        t.style.background = '';
-        t.style.borderRadius = '';
-        t.style.padding = '';
-      });
-      // Highlight selected
+      sourceTags.forEach(t => t.style.background = '');
       tag.style.background = '#eff6ff';
       tag.style.borderRadius = '6px';
       tag.style.padding = '4px 8px';
 
       const sourceNameEl = tag.querySelector('.source-name');
-      const rawText = (sourceNameEl ? sourceNameEl.textContent : tag.textContent).trim();
-      // Remove emoji and clean
-      const sourceText = rawText.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim().toLowerCase();
+      const rawText = (sourceNameEl ? sourceNameEl.textContent : tag.textContent).trim().toLowerCase()
+        .replace(/[^\w\s]/g, '').trim();
 
       const newsCards = document.querySelectorAll('.news-card');
-      let visibleCount = 0;
-
+      let visible = 0;
       newsCards.forEach(card => {
         const cardSource = (card.getAttribute('data-source') || '').toLowerCase();
-        const cardText = card.textContent.toLowerCase();
-
-        // Check multiple ways
-        const sourceWords = sourceText.split(' ').filter(w => w.length > 2);
-        const matches = sourceWords.some(word =>
-          cardSource.includes(word) || cardText.includes(word)
-        );
-
-        card.style.display = matches ? 'flex' : 'none';
-        if (matches) visibleCount++;
+        const words = rawText.split(' ').filter(w => w.length > 2);
+        const match = words.some(w => cardSource.includes(w));
+        card.style.display = match ? 'flex' : 'none';
+        if (match) visible++;
       });
-
-      // If nothing matches show all
-      if (visibleCount === 0) {
-        newsCards.forEach(card => card.style.display = 'flex');
-      }
+      if (visible === 0) newsCards.forEach(c => c.style.display = 'flex');
     });
   });
-
-  // Trending loaded from Supabase - handled in loadTrending()
 }
-
-// Init
-loadNews();
-loadTrending();
 
 async function loadTrending() {
   try {
@@ -718,7 +664,7 @@ async function loadTrending() {
       <div class="trending-item" data-title="${item.title.toLowerCase()}" style="cursor:pointer;">
         <span class="trending-num">${index + 1}</span>
         <div>
-          <div class="trending-title">${item.title.length > 50 ? item.title.substring(0, 50) + '...' : item.title}</div>
+          <div class="trending-title">${item.title.length > 55 ? item.title.substring(0, 55) + '...' : item.title}</div>
           <span class="trending-meta">${item.source || 'News'} · ${timeAgo(item.created_at)}</span>
         </div>
       </div>
@@ -727,14 +673,14 @@ async function loadTrending() {
     trendingList.querySelectorAll('.trending-item').forEach(item => {
       item.addEventListener('click', () => {
         const title = item.getAttribute('data-title');
-        document.querySelectorAll('.news-card').forEach(card => {
+        const cards = document.querySelectorAll('.news-card');
+        cards.forEach(card => {
           card.style.display = 'flex';
           card.style.border = '';
           card.style.boxShadow = '';
         });
-        const cards = document.querySelectorAll('.news-card');
+        const titleWords = title.split(' ').filter(w => w.length > 4).slice(0, 3);
         let found = null;
-        const titleWords = title.split(' ').filter(w => w.length > 4).slice(0, 2);
         cards.forEach(card => {
           const cardTitle = (card.getAttribute('data-title') || '').toLowerCase();
           const matches = titleWords.some(w => cardTitle.includes(w));
@@ -744,18 +690,20 @@ async function loadTrending() {
             card.style.boxShadow = '0 0 0 4px rgba(37,99,235,0.1)';
           }
         });
-        if (found) {
-          found.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-          document.querySelector('.section-title')?.scrollIntoView({ behavior: 'smooth' });
-        }
+        if (found) found.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        else document.querySelector('.section-title')?.scrollIntoView({ behavior: 'smooth' });
       });
     });
 
   } catch(e) {
-    console.log('Trending load error:', e);
+    console.log('Trending error:', e);
   }
 }
+
+// Init
+loadNews();
+loadTrending();   
+  
 </script>
 </body>
 </html>
