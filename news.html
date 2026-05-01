@@ -682,30 +682,49 @@ function setupFilters() {
   });
 
   // Source filter tags
+  // Source filter tags
   const sourceTags = document.querySelectorAll('.source-tag');
   sourceTags.forEach(tag => {
     tag.style.cursor = 'pointer';
+    tag.style.transition = 'background .2s';
     tag.addEventListener('click', () => {
-      sourceTags.forEach(t => t.classList.remove('active'));
-      tag.classList.add('active');
+      // Reset all
+      sourceTags.forEach(t => {
+        t.style.background = '';
+        t.style.borderRadius = '';
+        t.style.padding = '';
+      });
+      // Highlight selected
+      tag.style.background = '#eff6ff';
+      tag.style.borderRadius = '6px';
+      tag.style.padding = '4px 8px';
 
       const sourceNameEl = tag.querySelector('.source-name');
-const sourceText = (sourceNameEl ? sourceNameEl.textContent : tag.textContent)
-  .trim().toLowerCase()
-  .replace('📰', '').replace('📺', '').replace('📡', '')
-  .replace('💹', '').replace('📊', '').replace('💼', '')
-  .replace('📈', '').replace('💰', '').trim();
+      const rawText = (sourceNameEl ? sourceNameEl.textContent : tag.textContent).trim();
+      // Remove emoji and clean
+      const sourceText = rawText.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim().toLowerCase();
 
       const newsCards = document.querySelectorAll('.news-card');
+      let visibleCount = 0;
+
       newsCards.forEach(card => {
-        if (sourceText.includes('all') || sourceText === '') {
-          card.style.display = 'flex';
-        } else {
-          const cardSource = (card.getAttribute('data-source') || '').toLowerCase();
-          const cardText = card.textContent.toLowerCase();
-          card.style.display = (cardSource.includes(sourceText) || cardText.includes(sourceText)) ? 'flex' : 'none';
-        }
+        const cardSource = (card.getAttribute('data-source') || '').toLowerCase();
+        const cardText = card.textContent.toLowerCase();
+
+        // Check multiple ways
+        const sourceWords = sourceText.split(' ').filter(w => w.length > 2);
+        const matches = sourceWords.some(word =>
+          cardSource.includes(word) || cardText.includes(word)
+        );
+
+        card.style.display = matches ? 'flex' : 'none';
+        if (matches) visibleCount++;
       });
+
+      // If nothing matches show all
+      if (visibleCount === 0) {
+        newsCards.forEach(card => card.style.display = 'flex');
+      }
     });
   });
 
