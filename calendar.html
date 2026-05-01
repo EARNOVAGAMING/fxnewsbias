@@ -550,5 +550,50 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script> 
+<script>
+// Day tabs
+const dayTabs = document.querySelectorAll('.day-tab');
+dayTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    dayTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// Impact filter buttons
+const filterBtns = document.querySelectorAll('.filter-btn');
+const calRows = document.querySelectorAll('.cal-row');
+
+filterBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const filterBar = btn.closest('.filter-bar');
+    const siblings = filterBar.querySelectorAll('.filter-btn');
+    siblings.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const filter = btn.textContent.trim();
+
+    calRows.forEach(row => {
+      const impact = row.querySelector('.cal-impact');
+      if (!impact) return;
+      const impactText = impact.textContent.trim();
+
+      if (filter === 'All') {
+        row.style.display = 'grid';
+      } else if (filter.includes('High') && impactText === 'High') {
+        row.style.display = 'grid';
+      } else if (filter.includes('Medium') && impactText === 'Medium') {
+        row.style.display = 'grid';
+      } else if (filter.includes('Low') && impactText === 'Low') {
+        row.style.display = 'grid';
+      } else if (!filter.includes('High') && !filter.includes('Medium') && !filter.includes('Low')) {
+        row.style.display = 'grid';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  });
+});
+</script>
 </body>
 </html>
