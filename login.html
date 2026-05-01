@@ -176,9 +176,7 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
-<script type="module">
-import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-
+<script>
 window.handleLogin = async function() {
   const email = document.querySelector('input[type="email"]').value;
   const password = document.querySelector('input[type="password"]').value;
@@ -186,7 +184,12 @@ window.handleLogin = async function() {
     alert('Please enter email and password!');
     return;
   }
-  await loginUser(email, password);
+  const waitForFirebase = setInterval(async () => {
+    if (window.loginUser) {
+      clearInterval(waitForFirebase);
+      await window.loginUser(email, password);
+    }
+  }, 100);
 }
 </script>
 </body>
