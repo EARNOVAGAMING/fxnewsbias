@@ -83,10 +83,24 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     if (isPro) {
-      document.querySelectorAll('.ad-slot').forEach(ad => ad.style.display = 'none');
-      const banner = document.getElementById('pro-banner');
-      if (banner) banner.style.display = 'none';
-    }
+  document.querySelectorAll('.ad-slot').forEach(ad => ad.style.display = 'none');
+  const banner = document.getElementById('pro-banner');
+  if (banner) banner.style.display = 'none';
+
+  // Add Pro tabs to nav
+  const navUl = document.querySelector('nav ul');
+  if (navUl && !document.getElementById('pro-history-link')) {
+    const historyLink = document.createElement('li');
+    historyLink.id = 'pro-history-link';
+    historyLink.innerHTML = '<a href="/history.html" style="color:#f59e0b;font-weight:600;">📊 History</a>';
+    navUl.appendChild(historyLink);
+
+    const reportLink = document.createElement('li');
+    reportLink.id = 'pro-report-link';
+    reportLink.innerHTML = '<a href="/report.html" style="color:#f59e0b;font-weight:600;">📄 Report</a>';
+    navUl.appendChild(reportLink);
+  }
+}
 
   } else {
     if (loginBtn) loginBtn.style.display = 'inline-block';
