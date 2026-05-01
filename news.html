@@ -518,5 +518,52 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
+<script>
+// Category tabs
+const catTabs = document.querySelectorAll('.cat-tab');
+catTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    catTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// Make news cards clickable
+const newsCards = document.querySelectorAll('.news-card');
+newsCards.forEach(card => {
+  card.style.cursor = 'pointer';
+  card.addEventListener('click', () => {
+    const url = card.querySelector('a');
+    if (url) window.open(url.href, '_blank');
+  });
+});
+
+// Make trending items clickable
+const trendingItems = document.querySelectorAll('.trending-item');
+trendingItems.forEach(item => {
+  item.style.cursor = 'pointer';
+  item.addEventListener('click', () => {
+    window.location.href = '/news.html';
+  });
+});
+
+// Make source tags clickable
+const sourceTags = document.querySelectorAll('.source-tag');
+sourceTags.forEach(tag => {
+  tag.style.cursor = 'pointer';
+  tag.addEventListener('click', () => {
+    window.location.href = '/news.html';
+  });
+});
+
+// Featured story clickable
+const featured = document.querySelector('.featured');
+if (featured) {
+  featured.style.cursor = 'pointer';
+  featured.addEventListener('click', () => {
+    window.location.href = '/news.html';
+  });
+}
+</script>
 </body>
 </html>
