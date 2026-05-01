@@ -391,44 +391,11 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   <!-- Sidebar -->
   <aside>
     <div class="sidebar-card">
-      <h3>🔥 Trending Now</h3>
-      <div class="trending-item">
-        <span class="trending-num">1</span>
-        <div>
-          <div class="trending-title">Fed dovish pivot rocks USD across all pairs</div>
-          <span class="trending-meta">2.4K views · 12 min ago</span>
-        </div>
-      </div>
-      <div class="trending-item">
-        <span class="trending-num">2</span>
-        <div>
-          <div class="trending-title">Middle East tensions drive safe-haven demand</div>
-          <span class="trending-meta">1.8K views · 28 min ago</span>
-        </div>
-      </div>
-      <div class="trending-item">
-        <span class="trending-num">3</span>
-        <div>
-          <div class="trending-title">Oil surges 4%, CAD strengthens vs USD</div>
-          <span class="trending-meta">1.2K views · 1h ago</span>
-        </div>
-      </div>
-      <div class="trending-item">
-        <span class="trending-num">4</span>
-        <div>
-          <div class="trending-title">UK unemployment hits 2-year high</div>
-          <span class="trending-meta">980 views · 3h ago</span>
-        </div>
-      </div>
-      <div class="trending-item">
-        <span class="trending-num">5</span>
-        <div>
-          <div class="trending-title">ECB hints at more hikes through Q3</div>
-          <span class="trending-meta">812 views · 2h ago</span>
-        </div>
-      </div>
-    </div>
-
+  <h3>🔥 Trending Now</h3>
+  <div id="trending-list">
+    <div style="font-size:12px;color:#9ca3af;padding:10px 0;">Loading...</div>
+  </div>
+</div>
     <div class="ad-slot">📢 Ad 300×250</div>
 
     <div class="sidebar-card">
@@ -728,23 +695,67 @@ function setupFilters() {
     });
   });
 
-  // Trending items - scroll to news
-document.querySelectorAll('.trending-item').forEach(item => {
-  item.style.cursor = 'pointer';
-  item.addEventListener('click', () => {
-    // Show all news cards
-    document.querySelectorAll('.news-card').forEach(card => {
-      card.style.display = 'flex';
-    });
-    // Scroll to latest news section
-    const sectionTitle = document.querySelector('.section-title');
-    if (sectionTitle) sectionTitle.scrollIntoView({ behavior: 'smooth' });
-  });
-});
+  // Trending loaded from Supabase - handled in loadTrending()
 }
 
 // Init
 loadNews();
+loadTrending();
+
+async function loadTrending() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/news?order=id.desc&limit=5`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const data = await res.json();
+    if (!data || data.length === 0) return;
+
+    const trendingList = document.getElementById('trending-list');
+    if (!trendingList) return;
+
+    trendingList.innerHTML = data.map((item, index) => `
+      <div class="trending-item" data-title="${item.title.toLowerCase()}" style="cursor:pointer;">
+        <span class="trending-num">${index + 1}</span>
+        <div>
+          <div class="trending-title">${item.title.length > 50 ? item.title.substring(0, 50) + '...' : item.title}</div>
+          <span class="trending-meta">${item.source || 'News'} · ${timeAgo(item.created_at)}</span>
+        </div>
+      </div>
+    `).join('');
+
+    trendingList.querySelectorAll('.trending-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const title = item.getAttribute('data-title');
+        document.querySelectorAll('.news-card').forEach(card => {
+          card.style.display = 'flex';
+          card.style.border = '';
+          card.style.boxShadow = '';
+        });
+        const cards = document.querySelectorAll('.news-card');
+        let found = null;
+        const titleWords = title.split(' ').filter(w => w.length > 4).slice(0, 2);
+        cards.forEach(card => {
+          const cardTitle = (card.getAttribute('data-title') || '').toLowerCase();
+          const matches = titleWords.some(w => cardTitle.includes(w));
+          if (matches && !found) {
+            found = card;
+            card.style.border = '2px solid #2563eb';
+            card.style.boxShadow = '0 0 0 4px rgba(37,99,235,0.1)';
+          }
+        });
+        if (found) {
+          found.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          document.querySelector('.section-title')?.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+
+  } catch(e) {
+    console.log('Trending load error:', e);
+  }
+}
 </script>
 </body>
 </html>
