@@ -369,45 +369,65 @@ nav a:hover{color:var(--accent);}
 const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
 
-const FLAGS = { USD:'🇺🇸', EUR:'🇪🇺', GBP:'🇬🇧', JPY:'🇯🇵', AUD:'🇦🇺', CAD:'🇨🇦', CHF:'🇨🇭', NZD:'🇳🇿' };
+const FLAGS = {USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',AUD:'🇦🇺',CAD:'🇨🇦',CHF:'🇨🇭',NZD:'🇳🇿'};
+let pageInitialized = false;
 
-// Check Pro access
-window.addEventListener('userLoaded', async (e) => {
-  if (e.detail.isPro) {
-    document.getElementById('pro-gate').style.display = 'none';
-    document.getElementById('pro-content').style.display = 'block';
+function showProContent() {
+  document.getElementById('pro-gate').style.display = 'none';
+  document.getElementById('pro-content').style.display = 'block';
+  if (!pageInitialized) {
+    pageInitialized = true;
     loadReport();
+  }
+}
+
+function showProGate() {
+  document.getElementById('pro-gate').style.display = 'block';
+  document.getElementById('pro-content').style.display = 'none';
+}
+
+// Check every 500ms until auth loads
+const authCheck = setInterval(() => {
+  if (window.userEmail !== undefined) {
+    clearInterval(authCheck);
+    if (window.userIsPro === true) {
+      showProContent();
+    } else {
+      showProGate();
+    }
+  }
+}, 500);
+
+// Listen for userLoaded event
+window.addEventListener('userLoaded', (e) => {
+  clearInterval(authCheck);
+  if (e.detail.isPro) {
+    showProContent();
   } else {
-    document.getElementById('pro-gate').style.display = 'block';
-    document.getElementById('pro-content').style.display = 'none';
+    showProGate();
   }
 });
 
+// Fallback after 5 seconds
 setTimeout(() => {
-  if (!window.userEmail) {
-    document.getElementById('pro-gate').style.display = 'block';
-  } else if (window.userIsPro) {
-    document.getElementById('pro-gate').style.display = 'none';
-    document.getElementById('pro-content').style.display = 'block';
-    loadReport();
+  clearInterval(authCheck);
+  if (window.userIsPro === true) {
+    showProContent();
   } else {
-    document.getElementById('pro-gate').style.display = 'block';
+    showProGate();
   }
-}, 3000);
+}, 5000);
 
 async function loadReport() {
-  // Set report date
   const now = new Date();
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - now.getDay());
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
-
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   document.getElementById('report-date').textContent =
     `📅 Week of ${months[weekStart.getMonth()]} ${weekStart.getDate()} – ${months[weekEnd.getMonth()]} ${weekEnd.getDate()}, ${weekEnd.getFullYear()}`;
 
-  // Load sentiment
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/sentiment?order=id.desc&limit=8`,
@@ -416,7 +436,6 @@ async function loadReport() {
     const data = await res.json();
     if (!data || data.length === 0) return;
 
-    // Executive summary
     const bullish = data.filter(d => d.bias === 'Bullish');
     const bearish = data.filter(d => d.bias === 'Bearish');
     const neutral = data.filter(d => d.bias === 'Neutral');
@@ -424,73 +443,56 @@ async function loadReport() {
     let mood, moodDesc;
     if (bullish.length > bearish.length) {
       mood = '🟢 Market Mood: Risk-On';
-      moodDesc = `Bullish sentiment dominates with ${bullish.length} of 8 currencies showing positive bias. Risk appetite is elevated — traders favor higher-yielding currencies.`;
+      moodDesc = `Bullish sentiment dominates with ${bullish.length} of 8 currencies showing positive bias. Risk appetite is elevated.`;
     } else if (bearish.length > bullish.length) {
       mood = '🔴 Market Mood: Risk-Off';
-      moodDesc = `Bearish sentiment dominates with ${bearish.length} of 8 currencies showing negative bias. Safe-haven demand rising — JPY and CHF favored.`;
+      moodDesc = `Bearish sentiment dominates with ${bearish.length} of 8 currencies showing negative bias. Safe-haven demand rising.`;
     } else {
       mood = '🟡 Market Mood: Mixed';
-      moodDesc = 'Market sentiment is mixed with no clear directional bias. Trade with caution and wait for clearer catalysts.';
+      moodDesc = 'Market sentiment is mixed with no clear directional bias. Trade with caution.';
     }
 
     document.getElementById('exec-mood').textContent = mood;
     document.getElementById('exec-desc').textContent = moodDesc;
 
-    // Pills
-    const pillsEl = document.getElementById('exec-pills');
     const strongest = [...data].sort((a, b) => b.score - a.score)[0];
     const weakest = [...data].sort((a, b) => a.score - b.score)[0];
-    pillsEl.innerHTML = `
+    document.getElementById('exec-pills').innerHTML = `
       <span class="exec-pill pill-bull">💪 Strongest: ${FLAGS[strongest.currency]} ${strongest.currency} (${strongest.score})</span>
       <span class="exec-pill pill-bear">📉 Weakest: ${FLAGS[weakest.currency]} ${weakest.currency} (${weakest.score})</span>
       <span class="exec-pill pill-neut">📊 Bullish: ${bullish.length} | Bearish: ${bearish.length} | Neutral: ${neutral.length}</span>
     `;
 
-    // Currency table
     const tbody = document.getElementById('currency-table-body');
     tbody.innerHTML = data.map(item => `
       <tr>
-        <td>
-          <span class="curr-flag">${FLAGS[item.currency] || ''}</span>
-          <span class="curr-name">${item.currency}</span>
-        </td>
-        <td>
-          <span class="score-badge" style="color:${item.bias === 'Bullish' ? '#10b981' : item.bias === 'Bearish' ? '#ef4444' : '#f59e0b'}">
-            ${item.score}
-          </span>
-        </td>
-        <td><span class="bias-pill ${item.bias === 'Bullish' ? 'bull-bg' : item.bias === 'Bearish' ? 'bear-bg' : 'neut-bg'}">${item.bias}</span></td>
-        <td>
-          <ul class="driver-list">
-            ${(item.drivers || []).map(d => `<li>${d}</li>`).join('')}
-          </ul>
-        </td>
+        <td><span class="curr-flag">${FLAGS[item.currency]||''}</span><span class="curr-name">${item.currency}</span></td>
+        <td><span class="score-badge" style="color:${item.bias==='Bullish'?'#10b981':item.bias==='Bearish'?'#ef4444':'#f59e0b'}">${item.score}</span></td>
+        <td><span class="bias-pill ${item.bias==='Bullish'?'bull-bg':item.bias==='Bearish'?'bear-bg':'neut-bg'}">${item.bias}</span></td>
+        <td><ul class="driver-list">${(item.drivers||[]).map(d=>`<li>${d}</li>`).join('')}</ul></td>
       </tr>
     `).join('');
 
-    // Trading outlook
-    const outlookEl = document.getElementById('trading-outlook');
-    outlookEl.innerHTML = `
+    document.getElementById('trading-outlook').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div style="background:#d1fae5;border-radius:8px;padding:16px;">
-          <div style="font-size:12px;font-weight:700;color:#065f46;margin-bottom:8px;">🟢 BULLISH OPPORTUNITIES</div>
-          ${bullish.map(b => `<div style="font-size:13px;margin-bottom:4px;">• ${FLAGS[b.currency]} ${b.currency} — Score: ${b.score}</div>`).join('') || '<div style="font-size:13px;color:#065f46;">No clear bullish plays this week</div>'}
+          <div style="font-size:12px;font-weight:700;color:#065f46;margin-bottom:8px;">🟢 BULLISH</div>
+          ${bullish.map(b=>`<div style="font-size:13px;margin-bottom:4px;">• ${FLAGS[b.currency]} ${b.currency} — ${b.score}</div>`).join(')||'<div style="font-size:13px;">No bullish plays</div>'}
         </div>
         <div style="background:#fee2e2;border-radius:8px;padding:16px;">
-          <div style="font-size:12px;font-weight:700;color:#991b1b;margin-bottom:8px;">🔴 BEARISH OPPORTUNITIES</div>
-          ${bearish.map(b => `<div style="font-size:13px;margin-bottom:4px;">• ${FLAGS[b.currency]} ${b.currency} — Score: ${b.score}</div>`).join('') || '<div style="font-size:13px;color:#991b1b;">No clear bearish plays this week</div>'}
+          <div style="font-size:12px;font-weight:700;color:#991b1b;margin-bottom:8px;">🔴 BEARISH</div>
+          ${bearish.map(b=>`<div style="font-size:13px;margin-bottom:4px;">• ${FLAGS[b.currency]} ${b.currency} — ${b.score}</div>`).join('')||'<div style="font-size:13px;">No bearish plays</div>'}
         </div>
       </div>
       <div style="background:#fef3c7;border-radius:8px;padding:14px;margin-top:12px;font-size:13px;color:#92400e;">
-        ⚠️ <strong>Remember:</strong> Sentiment analysis is one tool among many. Always combine with technical analysis and proper risk management. Never risk more than 1-2% per trade.
+        ⚠️ <strong>Remember:</strong> Always combine with technical analysis. Never risk more than 1-2% per trade.
       </div>
     `;
 
   } catch(e) {
-    console.log('Sentiment load error:', e);
+    console.log('Sentiment error:', e);
   }
 
-  // Load news
   try {
     const newsRes = await fetch(
       `${SUPABASE_URL}/rest/v1/news?order=id.desc&limit=5`,
@@ -499,24 +501,20 @@ async function loadReport() {
     const newsData = await newsRes.json();
     if (!newsData || newsData.length === 0) return;
 
-    const newsList = document.getElementById('news-report-list');
-    newsList.innerHTML = newsData.map((item, i) => `
+    document.getElementById('news-report-list').innerHTML = newsData.map((item, i) => `
       <div class="news-report-item">
-        <span class="news-report-num">${i + 1}</span>
+        <span class="news-report-num">${i+1}</span>
         <div class="news-report-content">
-          <div class="news-report-title">
-            ${item.title}
-            <span class="impact-badge imp-${(item.impact || 'med').toLowerCase()}">${item.impact || 'Medium'}</span>
-          </div>
-          <div class="news-report-meta">${item.source || 'News Source'} · ${new Date(item.created_at).toLocaleDateString()}</div>
+          <div class="news-report-title">${item.title}<span class="impact-badge imp-${(item.impact||'med').toLowerCase()}">${item.impact||'Medium'}</span></div>
+          <div class="news-report-meta">${item.source||'News'} · ${new Date(item.created_at).toLocaleDateString()}</div>
         </div>
       </div>
     `).join('');
 
   } catch(e) {
-    console.log('News load error:', e);
+    console.log('News error:', e);
   }
-}
+}      
 </script>
 
 </body>
