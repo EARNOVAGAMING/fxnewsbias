@@ -211,3 +211,28 @@ function showMessage(msg, type) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
+// Handle Pro page access
+function handleProPage() {
+  const proGate = document.getElementById('pro-gate');
+  const proContent = document.getElementById('pro-content');
+  if (!proGate || !proContent) return;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const isPro = await checkProStatus(user.email);
+      if (isPro) {
+        proGate.style.display = 'none';
+        proContent.style.display = 'block';
+        window.dispatchEvent(new CustomEvent('proPageReady'));
+      } else {
+        proGate.style.display = 'block';
+        proContent.style.display = 'none';
+      }
+    } else {
+      proGate.style.display = 'block';
+      proContent.style.display = 'none';
+    }
+  });
+}
+
+handleProPage();
