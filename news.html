@@ -704,7 +704,14 @@ async function loadTrending() {
 loadNews();
 loadTrending(); 
 setupFilters(); // Always setup filters regardless
-  
+// Hide ads for Pro users
+window.addEventListener('userLoaded', (e) => {
+  if (e.detail.isPro) {
+    document.querySelectorAll('.ad-slot').forEach(ad => {
+      ad.style.display = 'none';
+    });
+  }
+}); 
 </script>
 </body>
 </html>
