@@ -728,22 +728,17 @@ function setupFilters() {
     });
   });
 
-  // Trending items - filter news by topic
+  // Trending items - scroll to news
 document.querySelectorAll('.trending-item').forEach(item => {
   item.style.cursor = 'pointer';
   item.addEventListener('click', () => {
-    const topic = item.querySelector('.trending-title');
-    if (!topic) return;
-    const words = topic.textContent.trim().toLowerCase()
-  .split(' ')
-  .filter(w => w.length > 3)
-  .slice(0, 3);
-const keyword = words[0] || topic.textContent.trim().toLowerCase().split(' ')[0];
-    const newsCards = document.querySelectorAll('.news-card');
-    newsCards.forEach(card => {
-      const title = (card.getAttribute('data-title') || '').toLowerCase();
-      card.style.display = title.includes(keyword) ? 'flex' : 'none';
+    // Show all news cards
+    document.querySelectorAll('.news-card').forEach(card => {
+      card.style.display = 'flex';
     });
+    // Scroll to latest news section
+    const sectionTitle = document.querySelector('.section-title');
+    if (sectionTitle) sectionTitle.scrollIntoView({ behavior: 'smooth' });
   });
 });
 }
