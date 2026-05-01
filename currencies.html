@@ -420,15 +420,15 @@ filterBtns.forEach(btn => {
       if (!badge) return;
       const bias = badge.textContent.trim();
       if (filter.includes('All')) {
-        card.parentElement.style.display = 'block';
+        card.style.display = 'block';
       } else if (filter.includes('Bullish') && bias === 'Bullish') {
-        card.parentElement.style.display = 'block';
+        card.style.display = 'block';
       } else if (filter.includes('Bearish') && bias === 'Bearish') {
-        card.parentElement.style.display = 'block';
+        card.style.display = 'block';
       } else if (filter.includes('Neutral') && bias === 'Neutral') {
-        card.parentElement.style.display = 'block';
+        card.style.display = 'block';
       } else {
-        card.parentElement.style.display = 'none';
+        card.style.display = 'none';
       }
     });
   });
