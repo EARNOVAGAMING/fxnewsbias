@@ -242,7 +242,7 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
-<script type="module">
+<script>
 window.handleRegister = async function() {
   const username = document.querySelectorAll('input[type="text"]')[0].value;
   const email = document.querySelector('input[type="email"]').value;
@@ -262,7 +262,14 @@ window.handleRegister = async function() {
     alert('Password must be at least 6 characters!');
     return;
   }
-  await registerUser(email, password, username);
+
+  // Wait for firebase to load then register
+  const waitForFirebase = setInterval(async () => {
+    if (window.registerUser) {
+      clearInterval(waitForFirebase);
+      await window.registerUser(email, password, username);
+    }
+  }, 100);
 }
 </script> 
 </body>
