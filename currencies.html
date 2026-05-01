@@ -406,5 +406,33 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
+<script>
+const filterBtns = document.querySelectorAll('.filter-btn');
+const currCards = document.querySelectorAll('.curr-card');
+
+filterBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    filterBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.textContent.trim();
+    currCards.forEach(card => {
+      const badge = card.querySelector('.curr-badge');
+      if (!badge) return;
+      const bias = badge.textContent.trim();
+      if (filter.includes('All')) {
+        card.parentElement.style.display = 'block';
+      } else if (filter.includes('Bullish') && bias === 'Bullish') {
+        card.parentElement.style.display = 'block';
+      } else if (filter.includes('Bearish') && bias === 'Bearish') {
+        card.parentElement.style.display = 'block';
+      } else if (filter.includes('Neutral') && bias === 'Neutral') {
+        card.parentElement.style.display = 'block';
+      } else {
+        card.parentElement.style.display = 'none';
+      }
+    });
+  });
+});
+</script>
 </body>
 </html>
