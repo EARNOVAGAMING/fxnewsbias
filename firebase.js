@@ -137,6 +137,42 @@ window.logoutUser = async function() {
     showMessage('Logout failed. Please try again.', 'error');
   }
 };
+// ============================================
+// CHECK PRO STATUS
+// ============================================
+window.checkProStatus = async function() {
+  const user = auth.currentUser;
+  if (!user) return false;
+
+  try {
+    const { getFirestore, doc, getDoc } = await import(
+      'https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js'
+    );
+    const db = getFirestore(app);
+    const docRef = doc(db, 'subscriptions', user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists() && docSnap.data().isPro === true) {
+      return true;
+    }
+    return false;
+  } catch(e) {
+    console.log('Pro check error:', e);
+    return false;
+  }
+};
+
+// Show Pro badge in nav if Pro user
+window.updateProBadge = async function() {
+  const isPro = await window.checkProStatus();
+  const userMenu = document.getElementById('user-menu');
+  if (isPro && userMenu) {
+    const badge = document.createElement('span');
+    badge.style.cssText = 'background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;';
+    badge.textContent = '⭐ PRO';
+    userMenu.appendChild(badge);
+  }
+};
 
 // ============================================
 // GET CURRENT USER
