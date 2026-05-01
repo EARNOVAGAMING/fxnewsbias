@@ -563,17 +563,53 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
 <script>
-// Category tabs
+// Category tabs filter posts
 const catTabs = document.querySelectorAll('.cat-tab');
-catTabs.forEach(tab => {
+const postCards = document.querySelectorAll('.post-card');
+const featuredPost = document.querySelector('.featured-post');
+
+catTabs.forEach((tab, index) => {
   tab.addEventListener('click', () => {
     catTabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
+
+    const filter = tab.textContent.trim();
+
+    if (index === 0) {
+      // All posts
+      postCards.forEach(card => card.style.display = 'block');
+      if (featuredPost) featuredPost.style.display = 'block';
+    } else if (index === 1) {
+      // Trending - show most liked
+      postCards.forEach(card => card.style.display = 'block');
+      if (featuredPost) featuredPost.style.display = 'none';
+    } else if (index === 2) {
+      // Featured only
+      postCards.forEach(card => card.style.display = 'none');
+      if (featuredPost) featuredPost.style.display = 'block';
+    } else {
+      // Filter by category tag
+      const categoryMap = {
+        3: 'Technical Analysis',
+        4: 'Fundamental',
+        5: 'Economic Events',
+        6: 'Pair Analysis',
+        7: 'News Breakdown'
+      };
+      const category = categoryMap[index];
+      postCards.forEach(card => {
+        const tags = card.querySelectorAll('.fp-tag');
+        const hasCategory = Array.from(tags).some(t =>
+          t.textContent.includes(category)
+        );
+        card.style.display = hasCategory ? 'block' : 'none';
+      });
+      if (featuredPost) featuredPost.style.display = 'none';
+    }
   });
 });
 
 // Make post cards clickable
-const postCards = document.querySelectorAll('.post-card');
 postCards.forEach(card => {
   card.style.cursor = 'pointer';
   card.addEventListener('click', () => {
@@ -581,8 +617,7 @@ postCards.forEach(card => {
   });
 });
 
-// Make featured post clickable
-const featuredPost = document.querySelector('.featured-post');
+// Featured post clickable
 if (featuredPost) {
   featuredPost.style.cursor = 'pointer';
   featuredPost.addEventListener('click', () => {
@@ -590,7 +625,7 @@ if (featuredPost) {
   });
 }
 
-// Make trader rows clickable
+// Trader rows clickable
 const traderRows = document.querySelectorAll('.trader-row');
 traderRows.forEach(row => {
   row.style.cursor = 'pointer';
@@ -604,12 +639,7 @@ const writeBtn = document.querySelector('.btn-lg');
 if (writeBtn) {
   writeBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    const user = getCurrentUser ? getCurrentUser() : null;
-    if (!user) {
-      window.location.href = '/register.html';
-    } else {
-      alert('Post editor coming soon! 🚀');
-    }
+    window.location.href = '/register.html';
   });
 }
 </script>
