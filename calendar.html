@@ -576,6 +576,12 @@ const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep
 // Update day tabs
 const dayTabs = document.querySelectorAll('.day-tab');
 dayTabs.forEach((tab, i) => {
+  // Only show today + tomorrow tabs
+  const todayIdx = weekDays.findIndex(d => d.toDateString() === today.toDateString());
+  if (i !== todayIdx && i !== todayIdx + 1) {
+    tab.style.display = 'none';
+    return;
+  }
   if (!weekDays[i]) return;
   const d = weekDays[i];
   const isToday = d.toDateString() === today.toDateString();
