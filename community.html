@@ -562,5 +562,56 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
+<script>
+// Category tabs
+const catTabs = document.querySelectorAll('.cat-tab');
+catTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    catTabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// Make post cards clickable
+const postCards = document.querySelectorAll('.post-card');
+postCards.forEach(card => {
+  card.style.cursor = 'pointer';
+  card.addEventListener('click', () => {
+    window.location.href = '/community.html';
+  });
+});
+
+// Make featured post clickable
+const featuredPost = document.querySelector('.featured-post');
+if (featuredPost) {
+  featuredPost.style.cursor = 'pointer';
+  featuredPost.addEventListener('click', () => {
+    window.location.href = '/community.html';
+  });
+}
+
+// Make trader rows clickable
+const traderRows = document.querySelectorAll('.trader-row');
+traderRows.forEach(row => {
+  row.style.cursor = 'pointer';
+  row.addEventListener('click', () => {
+    window.location.href = '/community.html';
+  });
+});
+
+// Write post button
+const writeBtn = document.querySelector('.btn-lg');
+if (writeBtn) {
+  writeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const user = getCurrentUser ? getCurrentUser() : null;
+    if (!user) {
+      window.location.href = '/register.html';
+    } else {
+      alert('Post editor coming soon! 🚀');
+    }
+  });
+}
+</script>
 </body>
 </html>
