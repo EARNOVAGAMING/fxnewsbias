@@ -108,12 +108,22 @@ onAuthStateChanged(auth, async (user) => {
     // Show pro gate if on pro page
     const proGate = document.getElementById('pro-gate');
     const proContent = document.getElementById('pro-content');
-    if (proGate && proContent) {
-      alert('Pro detected! initProPage exists: ' + (typeof window.initProPage));
-      proGate.style.display = 'block';
-      proContent.style.display = 'none';
+    if (isPro) {
+        proGate.style.display = 'none';
+        proContent.style.display = 'block';
+        setTimeout(() => {
+          if (typeof window.initProPage === 'function') {
+            try {
+              window.initProPage();
+              alert('initProPage ran successfully!');
+            } catch(e) {
+              alert('initProPage error: ' + e.message);
+            }
+          } else {
+            alert('initProPage not defined!');
+          }
+        }, 500);
     }
-  }
 });
 
 // ============================================
