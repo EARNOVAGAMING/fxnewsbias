@@ -386,6 +386,12 @@ window.addEventListener('userLoaded', async (e) => {
 setTimeout(() => {
   if (!window.userEmail) {
     document.getElementById('pro-gate').style.display = 'block';
+  } else if (window.userIsPro) {
+    document.getElementById('pro-gate').style.display = 'none';
+    document.getElementById('pro-content').style.display = 'block';
+    loadReport();
+  } else {
+    document.getElementById('pro-gate').style.display = 'block';
   }
 }, 3000);
 
