@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentiment History | FXNewsBias Pro</title>
+<meta name="description" content="Historical forex sentiment data for Pro subscribers. Track currency bias over time.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#f8f9fa;color:#1a1a1a;line-height:1.5;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}
+
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+
+header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
+nav a:hover{color:var(--accent);}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;border:none;text-decoration:none;display:inline-block;cursor:pointer;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-primary{background:var(--accent);color:#fff;}
+.burger{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
+
+/* PRO GATE */
+.pro-gate{display:none;max-width:600px;margin:80px auto;padding:0 20px;text-align:center;}
+.pro-gate-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:48px 32px;}
+.pro-gate-icon{font-size:64px;margin-bottom:20px;}
+.pro-gate-title{font-size:28px;font-weight:800;margin-bottom:12px;}
+.pro-gate-desc{color:var(--text-soft);font-size:15px;line-height:1.6;margin-bottom:28px;}
+.pro-gate-btn{display:inline-block;padding:14px 32px;background:var(--accent);color:#fff;border-radius:8px;font-weight:700;font-size:16px;text-decoration:none;}
+.pro-gate-features{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px;text-align:left;}
+.pro-gate-feature{background:var(--bg-soft);border-radius:8px;padding:12px;font-size:13px;display:flex;gap:8px;align-items:center;}
+
+/* MAIN CONTENT */
+.pro-content{display:none;}
+
+.page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}
+.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.pro-badge-head{display:inline-flex;align-items:center;gap:6px;background:#f59e0b;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:12px;}
+.page-title{font-size:28px;font-weight:800;margin-bottom:6px;}
+.page-sub{color:#94a3b8;font-size:13px;}
+
+.content{max-width:1280px;margin:24px auto;padding:0 20px;}
+
+/* CONTROLS */
+.controls{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+.currency-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.curr-tab{padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;color:var(--text);}
+.curr-tab:hover{border-color:var(--accent);color:var(--accent);}
+.curr-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.range-tabs{display:flex;gap:6px;}
+.range-tab{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);}
+.range-tab.active{background:#0f172a;color:#fff;border-color:#0f172a;}
+
+/* CHART CARD */
+.chart-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px;}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.chart-title{font-size:16px;font-weight:700;}
+.chart-subtitle{font-size:12px;color:var(--text-muted);}
+.chart-wrap{position:relative;height:300px;}
+.chart-loading{display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-muted);font-size:14px;}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;}
+.stat-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;}
+.stat-sub{font-size:11px;color:var(--text-muted);margin-top:4px;}
+.bull-color{color:var(--bull);}
+.bear-color{color:var(--bear);}
+.neut-color{color:var(--neutral);}
+
+/* ALL CURRENCIES GRID */
+.all-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:20px;}
+.mini-chart-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;}
+.mini-chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.mini-chart-curr{font-size:15px;font-weight:700;}
+.mini-chart-badge{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;}
+.mini-chart-wrap{height:80px;}
+
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-col a:hover{color:#fff;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:900px){nav ul{display:none;}.burger{display:block;}.controls{flex-direction:column;align-items:flex-start;}.chart-wrap{height:220px;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>📅 FXNewsBias Pro</span>
+      <span>⭐ Pro Feature</span>
+    </div>
+    <div class="topbar-right">
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html">Pairs</a></li>
+        <li><a href="/calendar.html">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-outline">Login</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- PRO GATE (shown to non-Pro users) -->
+<div class="pro-gate" id="pro-gate">
+  <div class="pro-gate-card">
+    <div class="pro-gate-icon">📊</div>
+    <h1 class="pro-gate-title">Sentiment History</h1>
+    <p class="pro-gate-desc">Track how currency sentiment has changed over time. Spot trends before they happen. Available exclusively for Pro subscribers.</p>
+    <div class="pro-gate-features">
+      <div class="pro-gate-feature">📈 90 days of history</div>
+      <div class="pro-gate-feature">🎯 All 8 currencies</div>
+      <div class="pro-gate-feature">📉 Trend detection</div>
+      <div class="pro-gate-feature">💾 Data export soon</div>
+    </div>
+    <a href="https://buy.stripe.com/test_cNi9AU6CucCHeZXfTN4ko00" class="pro-gate-btn">⭐ Upgrade to Pro — $9.99/mo</a>
+    <p style="margin-top:16px;font-size:12px;color:var(--text-muted);">Already Pro? <a href="/login.html" style="color:var(--accent);">Login here →</a></p>
+  </div>
+</div>
+
+<!-- PRO CONTENT (shown to Pro users only) -->
+<div class="pro-content" id="pro-content">
+
+  <section class="page-head">
+    <div class="page-head-inner">
+      <div class="pro-badge-head">⭐ PRO FEATURE</div>
+      <h1 class="page-title">Sentiment History</h1>
+      <p class="page-sub">Track how fundamental sentiment has shifted over time across all major currencies.</p>
+    </div>
+  </section>
+
+  <div class="content">
+
+    <!-- Controls -->
+    <div class="controls">
+      <div class="currency-tabs">
+        <button class="curr-tab active" data-curr="USD">🇺🇸 USD</button>
+        <button class="curr-tab" data-curr="EUR">🇪🇺 EUR</button>
+        <button class="curr-tab" data-curr="GBP">🇬🇧 GBP</button>
+        <button class="curr-tab" data-curr="JPY">🇯🇵 JPY</button>
+        <button class="curr-tab" data-curr="AUD">🇦🇺 AUD</button>
+        <button class="curr-tab" data-curr="CAD">🇨🇦 CAD</button>
+        <button class="curr-tab" data-curr="CHF">🇨🇭 CHF</button>
+        <button class="curr-tab" data-curr="NZD">🇳🇿 NZD</button>
+      </div>
+      <div class="range-tabs">
+        <button class="range-tab active" data-days="7">7D</button>
+        <button class="range-tab" data-days="30">30D</button>
+        <button class="range-tab" data-days="90">90D</button>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Current Score</div>
+        <div class="stat-value" id="stat-current">--</div>
+        <div class="stat-sub" id="stat-bias">Loading...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">7D Average</div>
+        <div class="stat-value" id="stat-avg">--</div>
+        <div class="stat-sub">Average sentiment</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">7D High</div>
+        <div class="stat-value bull-color" id="stat-high">--</div>
+        <div class="stat-sub">Most bullish</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">7D Low</div>
+        <div class="stat-value bear-color" id="stat-low">--</div>
+        <div class="stat-sub">Most bearish</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Trend</div>
+        <div class="stat-value" id="stat-trend">--</div>
+        <div class="stat-sub" id="stat-trend-sub">vs previous period</div>
+      </div>
+    </div>
+
+    <!-- Main Chart -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="chart-title">USD Sentiment History</div>
+          <div class="chart-subtitle">Score: 0 (Extremely Bearish) → 100 (Extremely Bullish) · 50 = Neutral</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-loading" id="chart-loading">⏳ Loading sentiment history...</div>
+        <canvas id="main-chart" style="display:none;"></canvas>
+      </div>
+    </div>
+
+    <!-- All Currencies Mini Charts -->
+    <div class="chart-header" style="margin-bottom:14px;">
+      <div>
+        <div class="chart-title">All Currencies Overview</div>
+        <div class="chart-subtitle">Latest sentiment scores across all 8 major currencies</div>
+      </div>
+    </div>
+    <div class="all-grid" id="all-grid">
+      <!-- Filled by JS -->
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/how.html">How It Works</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="/currencies.html">Currencies</a></li>
+          <li><a href="/pairs.html">Pairs</a></li>
+          <li><a href="/calendar.html">Calendar</a></li>
+          <li><a href="/news.html">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Pro Features</h4>
+        <ul>
+          <li><a href="/history.html">Sentiment History</a></li>
+          <li><a href="/report.html">Weekly Report</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/disclaimer.html">Disclaimer</a></li>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.</div>
+  </div>
+</footer>
+
+<script src="/nav.js"></script>
+<script src="/cookie.js"></script>
+<script type="module" src="/firebase.js"></script>
+
+<script>
+const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+
+let mainChart = null;
+let selectedCurrency = 'USD';
+let selectedDays = 7;
+
+// Check Pro access
+window.addEventListener('userLoaded', async (e) => {
+  if (e.detail.isPro) {
+    document.getElementById('pro-gate').style.display = 'none';
+    document.getElementById('pro-content').style.display = 'block';
+    loadHistory(selectedCurrency, selectedDays);
+    loadAllCurrencies();
+  } else {
+    document.getElementById('pro-gate').style.display = 'block';
+    document.getElementById('pro-content').style.display = 'none';
+  }
+});
+
+// If not logged in after 3 seconds show gate
+setTimeout(() => {
+  if (!window.userEmail) {
+    document.getElementById('pro-gate').style.display = 'block';
+  }
+}, 3000);
+
+// Currency tabs
+document.querySelectorAll('.curr-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.curr-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    selectedCurrency = tab.getAttribute('data-curr');
+    document.getElementById('chart-title').textContent = `${selectedCurrency} Sentiment History`;
+    loadHistory(selectedCurrency, selectedDays);
+  });
+});
+
+// Range tabs
+document.querySelectorAll('.range-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.range-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    selectedDays = parseInt(tab.getAttribute('data-days'));
+    loadHistory(selectedCurrency, selectedDays);
+  });
+});
+
+// Load history for selected currency
+async function loadHistory(currency, days) {
+  document.getElementById('chart-loading').style.display = 'flex';
+  document.getElementById('main-chart').style.display = 'none';
+
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sentiment?currency=eq.${currency}&created_at=gte.${since.toISOString()}&order=created_at.asc&limit=500`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const data = await res.json();
+
+    if (!data || data.length === 0) {
+      document.getElementById('chart-loading').textContent = '📭 No history data yet. Data builds over time as sentiment is analyzed every 3 hours.';
+      return;
+    }
+
+    // Update stats
+    const scores = data.map(d => d.score);
+    const latest = data[data.length - 1];
+    const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    const high = Math.max(...scores);
+    const low = Math.min(...scores);
+
+    const statCurrent = document.getElementById('stat-current');
+    statCurrent.textContent = latest.score;
+    statCurrent.className = 'stat-value ' + (latest.bias === 'Bullish' ? 'bull-color' : latest.bias === 'Bearish' ? 'bear-color' : 'neut-color');
+
+    document.getElementById('stat-bias').textContent = latest.bias;
+    document.getElementById('stat-avg').textContent = avg;
+    document.getElementById('stat-high').textContent = high;
+    document.getElementById('stat-low').textContent = low;
+
+    // Trend
+    const firstHalf = scores.slice(0, Math.floor(scores.length / 2));
+    const secondHalf = scores.slice(Math.floor(scores.length / 2));
+    const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+    const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+    const trendDiff = Math.round(secondAvg - firstAvg);
+    const trendEl = document.getElementById('stat-trend');
+    trendEl.textContent = trendDiff > 0 ? `+${trendDiff} ↑` : `${trendDiff} ↓`;
+    trendEl.className = 'stat-value ' + (trendDiff > 0 ? 'bull-color' : 'bear-color');
+
+    // Build chart
+    const labels = data.map(d => {
+      const date = new Date(d.created_at);
+      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+    });
+
+    document.getElementById('chart-loading').style.display = 'none';
+    document.getElementById('main-chart').style.display = 'block';
+
+    if (mainChart) mainChart.destroy();
+
+    const ctx = document.getElementById('main-chart').getContext('2d');
+    mainChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: `${currency} Sentiment Score`,
+          data: scores,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,0.08)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: data.length > 50 ? 0 : 3,
+          pointHoverRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const score = ctx.raw;
+                const bias = score >= 60 ? 'Bullish' : score <= 40 ? 'Bearish' : 'Neutral';
+                return `Score: ${score} (${bias})`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            min: 0,
+            max: 100,
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              callback: (val) => {
+                if (val === 0) return 'Bearish';
+                if (val === 50) return 'Neutral';
+                if (val === 100) return 'Bullish';
+                return val;
+              }
+            }
+          },
+          x: {
+            grid: { display: false },
+            ticks: {
+              maxTicksLimit: 8,
+              maxRotation: 0
+            }
+          }
+        }
+      }
+    });
+
+  } catch(e) {
+    console.log('History error:', e);
+    document.getElementById('chart-loading').textContent = '❌ Error loading data. Please try again.';
+  }
+}
+
+// Load all currencies mini charts
+async function loadAllCurrencies() {
+  try {
+    const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'NZD'];
+    const flags = { USD:'🇺🇸', EUR:'🇪🇺', GBP:'🇬🇧', JPY:'🇯🇵', AUD:'🇦🇺', CAD:'🇨🇦', CHF:'🇨🇭', NZD:'🇳🇿' };
+
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sentiment?order=id.desc&limit=80`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const data = await res.json();
+    if (!data || data.length === 0) return;
+
+    const grid = document.getElementById('all-grid');
+    grid.innerHTML = '';
+
+    currencies.forEach(curr => {
+      const currData = data.filter(d => d.currency === curr).slice(0, 10).reverse();
+      if (currData.length === 0) return;
+
+      const latest = currData[currData.length - 1];
+      const scores = currData.map(d => d.score);
+      const badgeColor = latest.bias === 'Bullish' ? '#d1fae5;color:#065f46' : latest.bias === 'Bearish' ? '#fee2e2;color:#991b1b' : '#fef3c7;color:#92400e';
+
+      const card = document.createElement('div');
+      card.className = 'mini-chart-card';
+      card.innerHTML = `
+        <div class="mini-chart-header">
+          <span class="mini-chart-curr">${flags[curr]} ${curr}</span>
+          <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${badgeColor.split(';')[0]};${badgeColor.split(';')[1]}">${latest.bias} ${latest.score}</span>
+        </div>
+        <div class="mini-chart-wrap">
+          <canvas id="mini-${curr}"></canvas>
+        </div>
+      `;
+      grid.appendChild(card);
+
+      // Draw mini chart
+      setTimeout(() => {
+        const ctx = document.getElementById(`mini-${curr}`).getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: scores.map((_, i) => i),
+            datasets: [{
+              data: scores,
+              borderColor: latest.bias === 'Bullish' ? '#10b981' : latest.bias === 'Bearish' ? '#ef4444' : '#f59e0b',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: {
+              x: { display: false },
+              y: { display: false, min: 0, max: 100 }
+            }
+          }
+        });
+      }, 100);
+    });
+
+  } catch(e) {
+    console.log('All currencies error:', e);
+  }
+}
+</script>
+
+</body>
+</html>
