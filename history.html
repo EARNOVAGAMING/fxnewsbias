@@ -288,105 +288,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script type="module" src="/firebase.js"></script>
 
 <script>
-const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
-
-let mainChart = null;
-let selectedCurrency = 'USD';
-let selectedDays = 7;
-
-// Check Pro access
-window.addEventListener('userLoaded', async (e) => {
-  if (e.detail.isPro) {
-    document.getElementById('pro-gate').style.display = 'none';
-    document.getElementById('pro-content').style.display = 'block';
-    loadHistory(selectedCurrency, selectedDays);
-    loadAllCurrencies();
-  } else {
-    document.getElementById('pro-gate').style.display = 'block';
-    document.getElementById('pro-content').style.display = 'none';
-  }
-});
-
-// Check auth state after delay
-setTimeout(() => {
-  if (!window.userEmail) {
-    document.getElementById('pro-gate').style.display = 'block';
-  } else if (window.userIsPro) {
-    document.getElementById('pro-gate').style.display = 'none';
-    document.getElementById('pro-content').style.display = 'block';
-    loadHistory(selectedCurrency, selectedDays);
-    loadAllCurrencies();
-  } else {
-    document.getElementById('pro-gate').style.display = 'block';
-  }
-}, 3000);
-
-// Currency tabs
-document.querySelectorAll('.curr-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.curr-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    selectedCurrency = tab.getAttribute('data-curr');
-    document.getElementById('chart-title').textContent = `${selectedCurrency} Sentiment History`;
-    loadHistory(selectedCurrency, selectedDays);
-  });
-});
-
-// Range tabs
-document.querySelectorAll('.range-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.range-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    selectedDays = parseInt(tab.getAttribute('data-days'));
-    loadHistory(selectedCurrency, selectedDays);
-  });
-});
-
-// Load history for selected currency
-async function loadHistory(currency, days) {
-  document.getElementById('chart-loading').style.display = 'flex';
-  document.getElementById('main-chart').style.display = 'none';
-
-  try {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
-
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/sentiment?currency=eq.${currency}&created_at=gte.${since.toISOString()}&order=created_at.asc&limit=500`,
-      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
-    );
-    const data = await res.json();
-
-    if (!data || data.length === 0) {
-      document.getElementById('chart-loading').textContent = '📭 No history data yet. Data builds over time as sentiment is analyzed every 3 hours.';
-      return;
-    }
-
-    // Update stats
-    const scores = data.map(d => d.score);
-    const latest = data[data.length - 1];
-    const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-    const high = Math.max(...scores);
-    const low = Math.min(...scores);
-
-    const statCurrent = document.getElementById('stat-current');
-    statCurrent.textContent = latest.score;
-    statCurrent.className = 'stat-value ' + (latest.bias === 'Bullish' ? 'bull-color' : latest.bias === 'Bearish' ? 'bear-color' : 'neut-color');
-
-    document.getElementById('stat-bias').textContent = latest.bias;
-    document.getElementById('stat-avg').textContent = avg;
-    document.getElementById('stat-high').textContent = high;
-    document.getElementById('stat-low').textContent = low;
-
-    // Trend
-    const firstHalf = scores.slice(0, Math.floor(scores.length / 2));
-    const secondHalf = scores.slice(Math.floor(scores.length / 2));
-    const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-    const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-    const trendDiff = Math.round(secondAvg - firstAvg);
-    const trendEl = document.getElementById('stat-trend');
-    trendEl.textContent = trendDiff > 0 ? `+${trendDiff} ↑` : `${trendDiff} ↓`;
+const     trendEl.textContent = trendDiff > 0 ? `+${trendDiff} ↑` : `${trendDiff} ↓`;
     trendEl.className = 'stat-value ' + (trendDiff > 0 ? 'bull-color' : 'bear-color');
 
     // Build chart
@@ -503,27 +405,231 @@ async function loadAllCurrencies() {
       // Draw mini chart
       setTimeout(() => {
         const ctx = document.getElementById(`mini-${curr}`).getContext('2d');
+const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+
+let mainChart = null;
+let selectedCurrency = 'USD';
+let selectedDays = 7;
+let pageInitialized = false;
+
+function showProContent() {
+  document.getElementById('pro-gate').style.display = 'none';
+  document.getElementById('pro-content').style.display = 'block';
+  if (!pageInitialized) {
+    pageInitialized = true;
+    loadHistory(selectedCurrency, selectedDays);
+    loadAllCurrencies();
+  }
+}
+
+function showProGate() {
+  document.getElementById('pro-gate').style.display = 'block';
+  document.getElementById('pro-content').style.display = 'none';
+}
+
+// Check every second until auth loads
+const authCheck = setInterval(() => {
+  if (window.userEmail !== undefined) {
+    clearInterval(authCheck);
+    if (window.userIsPro === true) {
+      showProContent();
+    } else if (window.userEmail === null) {
+      showProGate();
+    } else {
+      showProGate();
+    }
+  }
+}, 500);
+
+// Also listen for userLoaded event
+window.addEventListener('userLoaded', (e) => {
+  clearInterval(authCheck);
+  if (e.detail.isPro) {
+    showProContent();
+  } else {
+    showProGate();
+  }
+});
+
+// Fallback after 5 seconds
+setTimeout(() => {
+  clearInterval(authCheck);
+  if (window.userIsPro === true) {
+    showProContent();
+  } else {
+    showProGate();
+  }
+}, 5000);
+
+// Currency tabs
+document.querySelectorAll('.curr-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.curr-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    selectedCurrency = tab.getAttribute('data-curr');
+    document.getElementById('chart-title').textContent = `${selectedCurrency} Sentiment History`;
+    loadHistory(selectedCurrency, selectedDays);
+  });
+});
+
+// Range tabs
+document.querySelectorAll('.range-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.range-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    selectedDays = parseInt(tab.getAttribute('data-days'));
+    loadHistory(selectedCurrency, selectedDays);
+  });
+});
+
+async function loadHistory(currency, days) {
+  document.getElementById('chart-loading').style.display = 'flex';
+  document.getElementById('main-chart').style.display = 'none';
+
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sentiment?currency=eq.${currency}&created_at=gte.${since.toISOString()}&order=created_at.asc&limit=500`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const data = await res.json();
+
+    if (!data || data.length === 0) {
+      document.getElementById('chart-loading').textContent = '📭 No history data yet. Data builds every 3 hours automatically.';
+      return;
+    }
+
+    const scores = data.map(d => d.score);
+    const latest = data[data.length - 1];
+    const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    const high = Math.max(...scores);
+    const low = Math.min(...scores);
+
+    const statCurrent = document.getElementById('stat-current');
+    statCurrent.textContent = latest.score;
+    statCurrent.className = 'stat-value ' + (latest.bias === 'Bullish' ? 'bull-color' : latest.bias === 'Bearish' ? 'bear-color' : 'neut-color');
+    document.getElementById('stat-bias').textContent = latest.bias;
+    document.getElementById('stat-avg').textContent = avg;
+    document.getElementById('stat-high').textContent = high;
+    document.getElementById('stat-low').textContent = low;
+
+    const firstHalf = scores.slice(0, Math.floor(scores.length / 2));
+    const secondHalf = scores.slice(Math.floor(scores.length / 2));
+    const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+    const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+    const trendDiff = Math.round(secondAvg - firstAvg);
+    const trendEl = document.getElementById('stat-trend');
+    trendEl.textContent = trendDiff > 0 ? `+${trendDiff} ↑` : `${trendDiff} ↓`;
+    trendEl.className = 'stat-value ' + (trendDiff > 0 ? 'bull-color' : 'bear-color');
+
+    const labels = data.map(d => {
+      const date = new Date(d.created_at);
+      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:00`;
+    });
+
+    document.getElementById('chart-loading').style.display = 'none';
+    document.getElementById('main-chart').style.display = 'block';
+
+    if (mainChart) mainChart.destroy();
+
+    const ctx = document.getElementById('main-chart').getContext('2d');
+    mainChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: `${currency} Sentiment Score`,
+          data: scores,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,0.08)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: data.length > 50 ? 0 : 3,
+          pointHoverRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const score = ctx.raw;
+                const bias = score >= 60 ? 'Bullish' : score <= 40 ? 'Bearish' : 'Neutral';
+                return `Score: ${score} (${bias})`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: { min: 0, max: 100, grid: { color: '#f1f5f9' } },
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 8, maxRotation: 0 } }
+        }
+      }
+    });
+
+  } catch(e) {
+    console.log('History error:', e);
+    document.getElementById('chart-loading').textContent = '❌ Error loading data.';
+  }
+}
+
+async function loadAllCurrencies() {
+  try {
+    const currencies = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD'];
+    const flags = {USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',AUD:'🇦🇺',CAD:'🇨🇦',CHF:'🇨🇭',NZD:'🇳🇿'};
+
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sentiment?order=id.desc&limit=80`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const data = await res.json();
+    if (!data || data.length === 0) return;
+
+    const grid = document.getElementById('all-grid');
+    grid.innerHTML = '';
+
+    currencies.forEach(curr => {
+      const currData = data.filter(d => d.currency === curr).slice(0, 10).reverse();
+      if (currData.length === 0) return;
+
+      const latest = currData[currData.length - 1];
+      const scores = currData.map(d => d.score);
+      const bgColor = latest.bias === 'Bullish' ? '#d1fae5' : latest.bias === 'Bearish' ? '#fee2e2' : '#fef3c7';
+      const textColor = latest.bias === 'Bullish' ? '#065f46' : latest.bias === 'Bearish' ? '#991b1b' : '#92400e';
+      const lineColor = latest.bias === 'Bullish' ? '#10b981' : latest.bias === 'Bearish' ? '#ef4444' : '#f59e0b';
+
+      const card = document.createElement('div');
+      card.className = 'mini-chart-card';
+      card.innerHTML = `
+        <div class="mini-chart-header">
+          <span class="mini-chart-curr">${flags[curr]} ${curr}</span>
+          <span style="padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${bgColor};color:${textColor};">${latest.bias} ${latest.score}</span>
+        </div>
+        <div class="mini-chart-wrap">
+          <canvas id="mini-${curr}"></canvas>
+        </div>
+      `;
+      grid.appendChild(card);
+
+      setTimeout(() => {
+        const ctx = document.getElementById(`mini-${curr}`).getContext('2d');
         new Chart(ctx, {
           type: 'line',
           data: {
             labels: scores.map((_, i) => i),
-            datasets: [{
-              data: scores,
-              borderColor: latest.bias === 'Bullish' ? '#10b981' : latest.bias === 'Bearish' ? '#ef4444' : '#f59e0b',
-              backgroundColor: 'transparent',
-              borderWidth: 2,
-              pointRadius: 0,
-              tension: 0.4
-            }]
+            datasets: [{ data: scores, borderColor: lineColor, backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0.4 }]
           },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            scales: {
-              x: { display: false },
-              y: { display: false, min: 0, max: 100 }
-            }
+            scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } }
           }
         });
       }, 100);
