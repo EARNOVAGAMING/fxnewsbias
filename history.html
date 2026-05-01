@@ -296,10 +296,10 @@ window.selectedCurrency = 'USD';
 window.selectedDays = 7;
 
 // Check Pro access
-window.addEventListener('proPageReady', () => {
+window.initProPage = function() {
   loadHistory(window.selectedCurrency, window.selectedDays);
   loadAllCurrencies();
-});
+};
 
 // Currency tabs
 document.querySelectorAll('.curr-tab').forEach(tab => {
