@@ -665,47 +665,179 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script> 
 <script>
-// Category tabs with proper section switching
-const catTabs = document.querySelectorAll('.cat-tab');
-const tabSections = {
-  0: 'tab-major',
-  1: 'tab-minor',
-  2: 'tab-jpy',
-  3: 'tab-commodity'
+const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+
+const PAIRS_CONFIG = {
+  major: [
+    { pair: 'EUR/USD', base: 'EUR', quote: 'USD', flags: '🇪🇺🇺🇸' },
+    { pair: 'GBP/USD', base: 'GBP', quote: 'USD', flags: '🇬🇧🇺🇸' },
+    { pair: 'USD/JPY', base: 'USD', quote: 'JPY', flags: '🇺🇸🇯🇵' },
+    { pair: 'USD/CHF', base: 'USD', quote: 'CHF', flags: '🇺🇸🇨🇭' },
+    { pair: 'AUD/USD', base: 'AUD', quote: 'USD', flags: '🇦🇺🇺🇸' },
+    { pair: 'USD/CAD', base: 'USD', quote: 'CAD', flags: '🇺🇸🇨🇦' },
+    { pair: 'NZD/USD', base: 'NZD', quote: 'USD', flags: '🇳🇿🇺🇸' }
+  ],
+  minor: [
+    { pair: 'EUR/GBP', base: 'EUR', quote: 'GBP', flags: '🇪🇺🇬🇧' },
+    { pair: 'EUR/JPY', base: 'EUR', quote: 'JPY', flags: '🇪🇺🇯🇵' },
+    { pair: 'GBP/JPY', base: 'GBP', quote: 'JPY', flags: '🇬🇧🇯🇵' },
+    { pair: 'AUD/JPY', base: 'AUD', quote: 'JPY', flags: '🇦🇺🇯🇵' },
+    { pair: 'EUR/CHF', base: 'EUR', quote: 'CHF', flags: '🇪🇺🇨🇭' },
+    { pair: 'GBP/CAD', base: 'GBP', quote: 'CAD', flags: '🇬🇧🇨🇦' }
+  ],
+  jpy: [
+    { pair: 'USD/JPY', base: 'USD', quote: 'JPY', flags: '🇺🇸🇯🇵' },
+    { pair: 'EUR/JPY', base: 'EUR', quote: 'JPY', flags: '🇪🇺🇯🇵' },
+    { pair: 'GBP/JPY', base: 'GBP', quote: 'JPY', flags: '🇬🇧🇯🇵' },
+    { pair: 'AUD/JPY', base: 'AUD', quote: 'JPY', flags: '🇦🇺🇯🇵' },
+    { pair: 'CAD/JPY', base: 'CAD', quote: 'JPY', flags: '🇨🇦🇯🇵' },
+    { pair: 'CHF/JPY', base: 'CHF', quote: 'JPY', flags: '🇨🇭🇯🇵' },
+    { pair: 'NZD/JPY', base: 'NZD', quote: 'JPY', flags: '🇳🇿🇯🇵' }
+  ],
+  commodity: [
+    { pair: 'AUD/USD', base: 'AUD', quote: 'USD', flags: '🇦🇺🇺🇸' },
+    { pair: 'USD/CAD', base: 'USD', quote: 'CAD', flags: '🇺🇸🇨🇦' },
+    { pair: 'NZD/USD', base: 'NZD', quote: 'USD', flags: '🇳🇿🇺🇸' },
+    { pair: 'XAU/USD', base: 'XAU', quote: 'USD', flags: '🥇🇺🇸' }
+  ]
 };
+
+let sentimentData = {};
+let pricesData = {};
+
+function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 60000);
+  if (diff < 60) return diff + 'm ago';
+  if (diff < 1440) return Math.floor(diff/60) + 'h ago';
+  return Math.floor(diff/1440) + 'd ago';
+}
+
+async function loadAllData() {
+  try {
+    const sentRes = await fetch(SUPABASE_URL + '/rest/v1/sentiment?order=id.desc&limit=8', {
+      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+    });
+    const sentArr = await sentRes.json();
+    sentArr.forEach(s => { if (!sentimentData[s.currency]) sentimentData[s.currency] = s; });
+
+    const priceRes = await fetch(SUPABASE_URL + '/rest/v1/prices?order=id.desc&limit=30', {
+      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+    });
+    const priceArr = await priceRes.json();
+    priceArr.forEach(p => { if (!pricesData[p.pair]) pricesData[p.pair] = p; });
+
+    // Update timestamps
+    if (sentArr[0]) {
+      const t = '⏱ Updated ' + timeAgo(sentArr[0].created_at);
+      document.querySelectorAll('.section-update').forEach(el => {
+        if (el.textContent.includes('Updated')) el.textContent = t;
+      });
+    }
+
+    renderAllTabs();
+  } catch(e) {
+    console.log('Pairs load error:', e);
+  }
+}
+
+function computePairBias(base, quote) {
+  const baseSent = sentimentData[base];
+  const quoteSent = sentimentData[quote];
+
+  if (!baseSent && base !== 'XAU' && base !== 'XAG' && base !== 'WTI') {
+    return { bias: 'Neutral', driver: 'Sentiment data loading...' };
+  }
+
+  // Special handling for commodities
+  if (base === 'XAU' || base === 'XAG' || base === 'WTI') {
+    const usdSent = sentimentData['USD'];
+    if (!usdSent) return { bias: 'Neutral', driver: 'Loading...' };
+    const bias = usdSent.score < 50 ? 'Bullish' : 'Bearish';
+    const driver = base === 'XAU' ? `Gold vs USD (${usdSent.score})` :
+                   base === 'XAG' ? `Silver vs USD (${usdSent.score})` :
+                   `Oil vs USD (${usdSent.score})`;
+    return { bias, driver };
+  }
+
+  if (!quoteSent) return { bias: 'Neutral', driver: 'Sentiment data loading...' };
+
+  const diff = baseSent.score - quoteSent.score;
+  let bias = 'Neutral';
+  if (diff > 10) bias = 'Bullish';
+  else if (diff < -10) bias = 'Bearish';
+
+  const driver = `${base} ${baseSent.bias} (${baseSent.score}) · ${quote} ${quoteSent.bias} (${quoteSent.score})`;
+  return { bias, driver };
+}
+
+function renderTab(tabKey) {
+  const config = PAIRS_CONFIG[tabKey];
+  const sectionId = 'tab-' + tabKey;
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+
+  const table = section.querySelector('.pairs-table');
+  if (!table) return;
+
+  const header = table.querySelector('.table-header');
+  table.innerHTML = '';
+  if (header) table.appendChild(header);
+
+  config.forEach(p => {
+    const { bias, driver } = computePairBias(p.base, p.quote);
+    const price = pricesData[p.pair];
+
+    let priceVal = '—';
+    if (price) {
+      const num = parseFloat(price.price);
+      priceVal = p.pair.includes('JPY') ? num.toFixed(2) :
+                 (p.pair === 'XAU/USD') ? num.toFixed(2) :
+                 num.toFixed(4);
+    }
+
+    const change = price && price.change_24h !== null && price.change_24h !== undefined ?
+                   parseFloat(price.change_24h) : null;
+    const changeClass = change > 0 ? 'up' : 'down';
+    const changeText = change !== null ? (change > 0 ? '+' : '') + change.toFixed(2) + '%' : '—';
+
+    const biasClass = bias === 'Bullish' ? 'bull-bg' : bias === 'Bearish' ? 'bear-bg' : 'neut-bg';
+
+    const row = document.createElement('div');
+    row.className = 'pair-row';
+    row.innerHTML = `
+      <div class="pair-name"><span class="pair-flags">${p.flags}</span>${p.pair}</div>
+      <div class="pair-driver">${driver}</div>
+      <div class="pair-price">${priceVal}</div>
+      <div class="pair-change ${changeClass}">${changeText}</div>
+      <div class="bias-badge ${biasClass}">${bias}</div>
+      <div class="go-arrow">→</div>
+    `;
+    table.appendChild(row);
+  });
+}
+
+function renderAllTabs() {
+  Object.keys(PAIRS_CONFIG).forEach(key => renderTab(key));
+}
+
+loadAllData();
+
+// Tab switching
+const catTabs = document.querySelectorAll('.cat-tab');
+const tabSections = { 0: 'tab-major', 1: 'tab-minor', 2: 'tab-jpy', 3: 'tab-commodity' };
 
 catTabs.forEach((tab, index) => {
   tab.addEventListener('click', () => {
     catTabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-
-    // Hide all sections
     Object.values(tabSections).forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
-
-    // Show selected section
-    const targetId = tabSections[index];
-    const target = document.getElementById(targetId);
+    const target = document.getElementById(tabSections[index]);
     if (target) target.style.display = 'block';
   });
-});
-
-// Make pair rows clickable
-document.querySelectorAll('.pair-row').forEach(row => {
-  row.style.cursor = 'pointer';
-  row.addEventListener('click', () => {
-    window.location.href = '/pairs.html';
-  });
-});
-// Hide ads for Pro users
-window.addEventListener('userLoaded', (e) => {
-  if (e.detail.isPro) {
-    document.querySelectorAll('.ad-slot').forEach(ad => {
-      ad.style.display = 'none';
-    });
-  }
 });
 </script>
 </body>
