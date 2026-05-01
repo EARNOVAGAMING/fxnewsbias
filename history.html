@@ -308,9 +308,16 @@ window.addEventListener('userLoaded', async (e) => {
   }
 });
 
-// If not logged in after 3 seconds show gate
+// Check auth state after delay
 setTimeout(() => {
   if (!window.userEmail) {
+    document.getElementById('pro-gate').style.display = 'block';
+  } else if (window.userIsPro) {
+    document.getElementById('pro-gate').style.display = 'none';
+    document.getElementById('pro-content').style.display = 'block';
+    loadHistory(selectedCurrency, selectedDays);
+    loadAllCurrencies();
+  } else {
     document.getElementById('pro-gate').style.display = 'block';
   }
 }, 3000);
