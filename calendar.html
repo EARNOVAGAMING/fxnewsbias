@@ -551,7 +551,61 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script> 
 <script>
-// Day tabs
+const allFilterBtns = document.querySelectorAll('.filter-btn');
+const calRows = document.querySelectorAll('.cal-row');
+
+const impactBtns = Array.from(allFilterBtns).slice(0, 4);
+const currBtns = Array.from(allFilterBtns).slice(4);
+
+const flagMap = {
+  'USD': '🇺🇸', 'EUR': '🇪🇺', 'GBP': '🇬🇧',
+  'JPY': '🇯🇵', 'AUD': '🇦🇺', 'CAD': '🇨🇦',
+  'CHF': '🇨🇭', 'NZD': '🇳🇿'
+};
+
+let activeImpact = 'All';
+let activeCurr = 'All';
+
+function filterRows() {
+  calRows.forEach(row => {
+    const impact = row.querySelector('.cal-impact');
+    const flagEl = row.querySelector('.cal-flag');
+    if (!impact || !flagEl) return;
+    const impactText = impact.textContent.trim();
+    const flag = flagEl.textContent.trim();
+    let impactMatch = false;
+    if (activeImpact === 'All') impactMatch = true;
+    else if (activeImpact.includes('High') && impactText === 'High') impactMatch = true;
+    else if (activeImpact.includes('Medium') && impactText === 'Medium') impactMatch = true;
+    else if (activeImpact.includes('Low') && impactText === 'Low') impactMatch = true;
+    let currMatch = false;
+    if (activeCurr === 'All' || activeCurr === '+4 more') currMatch = true;
+    else {
+      const targetFlag = flagMap[activeCurr];
+      if (targetFlag && flag === targetFlag) currMatch = true;
+    }
+    row.style.display = (impactMatch && currMatch) ? 'grid' : 'none';
+  });
+}
+
+impactBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    impactBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeImpact = btn.textContent.trim();
+    filterRows();
+  });
+});
+
+currBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    currBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCurr = btn.textContent.trim();
+    filterRows();
+  });
+});
+
 const dayTabs = document.querySelectorAll('.day-tab');
 dayTabs.forEach((tab, index) => {
   tab.addEventListener('click', () => {
@@ -569,70 +623,6 @@ dayTabs.forEach((tab, index) => {
       allHeaders.forEach(h => h.style.display = 'none');
       allTables.forEach(t => t.style.display = 'none');
     }
-  });
-});
-
-// Impact filter
-const impactBtns = document.querySelectorAll('.filter-bar:first-of-type .filter-btn');
-const calRows = document.querySelectorAll('.cal-row');
-
-impactBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    impactBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const filter = btn.textContent.trim();
-    calRows.forEach(row => {
-      const impact = row.querySelector('.cal-impact');
-      if (!impact) return;
-      const impactText = impact.textContent.trim();
-      if (filter === 'All') {
-        row.style.display = 'grid';
-      } else if (filter.includes('High') && impactText === 'High') {
-        row.style.display = 'grid';
-      } else if (filter.includes('Medium') && impactText === 'Medium') {
-        row.style.display = 'grid';
-      } else if (filter.includes('Low') && impactText === 'Low') {
-        row.style.display = 'grid';
-      } else {
-        row.style.display = 'none';
-      }
-    });
-  });
-});
-// Currency filter - using flag emojis
-const flagMap = {
-  'USD': '🇺🇸',
-  'EUR': '🇪🇺',
-  'GBP': '🇬🇧',
-  'JPY': '🇯🇵',
-  'AUD': '🇦🇺',
-  'CAD': '🇨🇦',
-  'CHF': '🇨🇭',
-  'NZD': '🇳🇿'
-};
-
-const currBtns = document.querySelectorAll('.filter-bar:last-of-type .filter-btn');
-currBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    currBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const curr = btn.textContent.trim();
-
-    calRows.forEach(row => {
-      if (curr === 'All' || curr === '+4 more') {
-        row.style.display = 'grid';
-        return;
-      }
-      const flagEl = row.querySelector('.cal-flag');
-      if (!flagEl) return;
-      const flag = flagEl.textContent.trim();
-      const targetFlag = flagMap[curr];
-      if (targetFlag && flag === targetFlag) {
-        row.style.display = 'grid';
-      } else {
-        row.style.display = 'none';
-      }
-    });
   });
 });
 </script>
