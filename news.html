@@ -519,56 +519,75 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
 <script>
-// Category tabs filter news
+// Category tabs
 const catTabs = document.querySelectorAll('.cat-tab');
 const newsCards = document.querySelectorAll('.news-card');
 
-const categoryMap = {
-  'All News': null,
-  '🏦 Central Banks': 'Central Banks',
-  '📊 Economic Data': 'Economic Data',
-  '🌍 Geopolitical': 'Geopolitical',
-  '🛢️ Commodities': 'Commodities',
-  '💱 USD': 'USD',
-  '💱 EUR': 'EUR',
-  '💱 GBP': 'GBP',
-  '💱 JPY': 'JPY'
-};
-
-catTabs.forEach(tab => {
+catTabs.forEach((tab, index) => {
   tab.addEventListener('click', () => {
     catTabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
 
-    const filter = tab.textContent.trim();
-    const category = categoryMap[filter];
+    // Show all if first tab (All News)
+    if (index === 0) {
+      newsCards.forEach(card => card.style.display = 'flex');
+      return;
+    }
+
+    // Filter by impact/source text in card
+    const filterMap = {
+      1: ['Central Bank', 'Fed', 'ECB', 'BOE', 'BOJ', 'RBA', 'SNB', 'RBNZ'],
+      2: ['GDP', 'CPI', 'NFP', 'PMI', 'Unemployment', 'Inflation', 'Trade'],
+      3: ['Geopolitical', 'War', 'Tension', 'Conflict', 'Political'],
+      4: ['Oil', 'Gold', 'Silver', 'Commodity', 'Iron', 'Copper'],
+      5: ['USD', 'Dollar', 'Federal Reserve', 'Fed'],
+      6: ['EUR', 'Euro', 'ECB', 'Eurozone'],
+      7: ['GBP', 'Sterling', 'BOE', 'Britain'],
+      8: ['JPY', 'Yen', 'BOJ', 'Japan']
+    };
+
+    const keywords = filterMap[index] || [];
 
     newsCards.forEach(card => {
-      if (!category) {
-        card.style.display = 'flex';
-        return;
-      }
-      const meta = card.querySelector('.news-meta');
-      const text = meta ? meta.textContent : '';
-      card.style.display = text.includes(category) ? 'flex' : 'none';
+      const text = card.textContent || '';
+      const matches = keywords.some(kw =>
+        text.toLowerCase().includes(kw.toLowerCase())
+      );
+      card.style.display = matches ? 'flex' : 'none';
     });
   });
 });
 
-// Make trending items clickable
-const trendingItems = document.querySelectorAll('.trending-item');
-trendingItems.forEach(item => {
-  item.style.cursor = 'pointer';
-  item.addEventListener('click', () => {
-    window.location.href = '/news.html';
-  });
-});
-
-// Make source tags clickable
+// Source filter tags
 const sourceTags = document.querySelectorAll('.source-tag');
 sourceTags.forEach(tag => {
   tag.style.cursor = 'pointer';
   tag.addEventListener('click', () => {
+    sourceTags.forEach(t => t.classList.remove('active'));
+    tag.classList.add('active');
+    const source = tag.textContent.trim();
+
+    newsCards.forEach(card => {
+      const cardSource = card.querySelector('.news-source');
+      if (!cardSource) {
+        card.style.display = 'flex';
+        return;
+      }
+      if (source === 'All Sources') {
+        card.style.display = 'flex';
+      } else if (cardSource.textContent.includes(source)) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  });
+});
+
+// Trending items clickable
+document.querySelectorAll('.trending-item').forEach(item => {
+  item.style.cursor = 'pointer';
+  item.addEventListener('click', () => {
     window.location.href = '/news.html';
   });
 });
