@@ -519,22 +519,39 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
 <script>
-// Category tabs
+// Category tabs filter news
 const catTabs = document.querySelectorAll('.cat-tab');
+const newsCards = document.querySelectorAll('.news-card');
+
+const categoryMap = {
+  'All News': null,
+  '🏦 Central Banks': 'Central Banks',
+  '📊 Economic Data': 'Economic Data',
+  '🌍 Geopolitical': 'Geopolitical',
+  '🛢️ Commodities': 'Commodities',
+  '💱 USD': 'USD',
+  '💱 EUR': 'EUR',
+  '💱 GBP': 'GBP',
+  '💱 JPY': 'JPY'
+};
+
 catTabs.forEach(tab => {
   tab.addEventListener('click', () => {
     catTabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
-  });
-});
 
-// Make news cards clickable
-const newsCards = document.querySelectorAll('.news-card');
-newsCards.forEach(card => {
-  card.style.cursor = 'pointer';
-  card.addEventListener('click', () => {
-    const url = card.querySelector('a');
-    if (url) window.open(url.href, '_blank');
+    const filter = tab.textContent.trim();
+    const category = categoryMap[filter];
+
+    newsCards.forEach(card => {
+      if (!category) {
+        card.style.display = 'flex';
+        return;
+      }
+      const meta = card.querySelector('.news-meta');
+      const text = meta ? meta.textContent : '';
+      card.style.display = text.includes(category) ? 'flex' : 'none';
+    });
   });
 });
 
