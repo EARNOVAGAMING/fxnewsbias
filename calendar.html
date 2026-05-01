@@ -600,12 +600,16 @@ impactBtns.forEach(btn => {
   });
 });
 
-// Currency filter
-const currencyMap = {
-  'USD': '🇺🇸', 'EUR': '🇪🇺', 'GBP': '🇬🇧',
-  'JPY': '🇯🇵', 'AUD': '🇦🇺', 'CAD': '🇨🇦',
-  'CHF': '🇨🇭', 'NZD': '🇳🇿', 'CNY': '🇨🇳',
-  'ALL': 'all'
+// Currency filter - using flag emojis
+const flagMap = {
+  'USD': '🇺🇸',
+  'EUR': '🇪🇺',
+  'GBP': '🇬🇧',
+  'JPY': '🇯🇵',
+  'AUD': '🇦🇺',
+  'CAD': '🇨🇦',
+  'CHF': '🇨🇭',
+  'NZD': '🇳🇿'
 };
 
 const currBtns = document.querySelectorAll('.filter-bar:last-of-type .filter-btn');
@@ -620,11 +624,11 @@ currBtns.forEach(btn => {
         row.style.display = 'grid';
         return;
       }
-      const flag = row.querySelector('.cal-flag');
-      const rowText = row.textContent || '';
-      if (!flag) return;
-
-      if (rowText.includes(curr)) {
+      const flagEl = row.querySelector('.cal-flag');
+      if (!flagEl) return;
+      const flag = flagEl.textContent.trim();
+      const targetFlag = flagMap[curr];
+      if (targetFlag && flag === targetFlag) {
         row.style.display = 'grid';
       } else {
         row.style.display = 'none';
