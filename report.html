@@ -116,6 +116,7 @@ nav a:hover{color:var(--accent);}
 .disclaimer{background:var(--bg-soft);border-radius:8px;padding:16px;font-size:11px;color:var(--text-muted);line-height:1.6;margin-top:24px;}
 
 /* PRINT STYLES */
+@media(max-width:900px){nav ul{display:none;}.burger{display:block;}.page-head-inner{flex-direction:column;}.curr-table th:nth-child(4),.curr-table td:nth-child(4){display:none;}.footer-grid{grid-template-columns:1fr 1fr;}.report-body{padding:16px;}.exec-pills{flex-direction:column;}}
 @media print {
   header, .topbar, footer, .download-btn, nav, .nav-actions, .burger { display: none !important; }
   body { background: #fff; }
@@ -123,8 +124,6 @@ nav a:hover{color:var(--accent);}
   .page-head { display: none; }
   .content { margin: 0; padding: 0; max-width: 100%; }
 }
-
-@media(max-width:900px){nav ul{display:none;}.burger{display:block;}.page-head-inner{flex-direction:column;}.curr-table th:nth-child(4),.curr-table td:nth-child(4){display:none;}}
 </style>
 </head>
 <body>
