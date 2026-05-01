@@ -354,23 +354,9 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 const FLAGS = { USD:'🇺🇸', EUR:'🇪🇺', GBP:'🇬🇧', JPY:'🇯🇵', AUD:'🇦🇺', CAD:'🇨🇦', CHF:'🇨🇭', NZD:'🇳🇿' };
 
-// Check Pro access
-window.addEventListener('userLoaded', async (e) => {
-  if (e.detail.isPro) {
-    document.getElementById('pro-gate').style.display = 'none';
-    document.getElementById('pro-content').style.display = 'block';
-    loadReport();
-  } else {
-    document.getElementById('pro-gate').style.display = 'block';
-    document.getElementById('pro-content').style.display = 'none';
-  }
+window.addEventListener('proPageReady', () => {
+  loadReport();
 });
-
-setTimeout(() => {
-  if (!window.userEmail) {
-    document.getElementById('pro-gate').style.display = 'block';
-  }
-}, 3000);
 
 async function loadReport() {
   // Set report date
