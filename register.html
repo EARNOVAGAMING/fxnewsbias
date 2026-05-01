@@ -264,13 +264,17 @@ window.handleRegister = async function() {
   }
 
   // Wait for firebase to load then register
-  const waitForFirebase = setInterval(async () => {
-    if (window.registerUser) {
-      clearInterval(waitForFirebase);
-      await window.registerUser(email, password, username);
-    }
-  }, 100);
-}
+  let attempts = 0;
+const waitForFirebase = setInterval(async () => {
+  attempts++;
+  if (window.loginUser) {
+    clearInterval(waitForFirebase);
+    await window.loginUser(email, password);
+  } else if (attempts > 50) {
+    clearInterval(waitForFirebase);
+    alert('Failed to load. Please refresh the page.');
+  }
+}, 100);
 </script> 
 </body>
 </html>
