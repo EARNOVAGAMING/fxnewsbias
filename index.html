@@ -733,11 +733,17 @@ updateSessions();
 loadSentiment();
 loadPrices();
 loadNews();
-// Hide Pro banner for Pro users
+// Hide Pro banner and ads for Pro users
 window.addEventListener('userLoaded', (e) => {
   if (e.detail.isPro) {
+    // Hide upgrade banner
     const banner = document.getElementById('pro-banner');
     if (banner) banner.style.display = 'none';
+
+    // Hide all ad slots
+    document.querySelectorAll('.ad-slot').forEach(ad => {
+      ad.style.display = 'none';
+    });
   }
 });
 // Refresh every 5 minutes
