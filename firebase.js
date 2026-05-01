@@ -38,15 +38,24 @@ async function checkProStatus(email) {
 // ============================================
 // AUTH STATE LISTENER
 // ============================================
+// Show cached user immediately to prevent flash
+const cachedUser = localStorage.getItem('fxnb_user');
+if (cachedUser) {
+  const loginBtn2 = document.querySelector('a[href="/login.html"]');
+  const registerBtn2 = document.querySelector('a[href="/register.html"]');
+  if (loginBtn2) loginBtn2.style.display = 'none';
+  if (registerBtn2) registerBtn2.style.display = 'none';
+}
+
 onAuthStateChanged(auth, async (user) => {
   const loginBtn = document.querySelector('a[href="/login.html"]');
   const registerBtn = document.querySelector('a[href="/register.html"]');
   const navActions = document.querySelector('.nav-actions');
 
   if (user) {
+    localStorage.setItem('fxnb_user', JSON.stringify({email: user.email, name: user.displayName}));
     if (loginBtn) loginBtn.style.display = 'none';
     if (registerBtn) registerBtn.style.display = 'none';
-
     // Check Pro status
     const isPro = await checkProStatus(user.email);
 
@@ -81,6 +90,7 @@ onAuthStateChanged(auth, async (user) => {
     }));
 
   } else {
+    localStorage.removeItem('fxnb_user');
     if (loginBtn) loginBtn.style.display = 'inline-block';
     if (registerBtn) registerBtn.style.display = 'inline-block';
     const userMenu = document.getElementById('user-menu');
