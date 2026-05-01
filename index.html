@@ -312,7 +312,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div></a>
 
     </div>
-<div style="background:linear-gradient(135deg,#1e40af,#2563eb);border-radius:12px;padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+<div id="pro-banner" style="background:linear-gradient(135deg,#1e40af,#2563eb);border-radius:12px;padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
   <div>
     <div style="color:#fff;font-size:18px;font-weight:800;margin-bottom:6px;">⭐ Upgrade to FXNewsBias Pro</div>
     <div style="color:#bfdbfe;font-size:13px;">Get sentiment alerts, history, PDF reports and ad-free experience</div>
@@ -733,7 +733,13 @@ updateSessions();
 loadSentiment();
 loadPrices();
 loadNews();
-
+// Hide Pro banner for Pro users
+window.addEventListener('userLoaded', (e) => {
+  if (e.detail.isPro) {
+    const banner = document.getElementById('pro-banner');
+    if (banner) banner.style.display = 'none';
+  }
+});
 // Refresh every 5 minutes
 setInterval(() => {
   loadSentiment();
