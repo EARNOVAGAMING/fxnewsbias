@@ -532,12 +532,37 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script> 
 <script>
+// Add IDs to sections
+const sections = document.querySelectorAll('.section');
+const sectionTitles = ['major', 'minor'];
+sections.forEach((s, i) => {
+  if (sectionTitles[i]) s.setAttribute('data-section', sectionTitles[i]);
+});
+
 // Category tabs
 const catTabs = document.querySelectorAll('.cat-tab');
 catTabs.forEach((tab, index) => {
   tab.addEventListener('click', () => {
     catTabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
+
+    // Show/hide pair tables based on tab
+    const allTables = document.querySelectorAll('.pairs-table');
+    const allTitles = document.querySelectorAll('.section-title');
+
+    if (index === 0) {
+      // Major pairs - show first table
+      allTables.forEach((t, i) => t.style.display = i === 0 ? 'block' : 'none');
+      allTitles.forEach((t, i) => t.style.display = i === 0 ? 'flex' : 'none');
+    } else if (index === 1) {
+      // Minor pairs - show second table
+      allTables.forEach((t, i) => t.style.display = i === 1 ? 'block' : 'none');
+      allTitles.forEach((t, i) => t.style.display = i === 1 ? 'flex' : 'none');
+    } else {
+      // JPY/Commodity - show message
+      allTables.forEach(t => t.style.display = 'none');
+      allTitles.forEach(t => t.style.display = 'none');
+    }
   });
 });
 
@@ -546,14 +571,11 @@ const pairRows = document.querySelectorAll('.pair-row');
 pairRows.forEach(row => {
   row.style.cursor = 'pointer';
   row.addEventListener('click', () => {
-    const pairName = row.querySelector('.pair-name');
-    if (!pairName) return;
-    const pair = pairName.textContent.trim().replace('/', '').toLowerCase();
-    window.location.href = `/pairs.html`;
+    window.location.href = '/pairs.html';
   });
 });
 
-// Make arrow links work
+// Make arrows clickable
 const arrows = document.querySelectorAll('.go-arrow');
 arrows.forEach(arrow => {
   arrow.style.cursor = 'pointer';
