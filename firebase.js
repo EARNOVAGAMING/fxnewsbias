@@ -92,7 +92,7 @@ onAuthStateChanged(auth, async (user) => {
   if (navUl && !document.getElementById('pro-history-link')) {
     const historyLink = document.createElement('li');
     historyLink.id = 'pro-history-link';
-    historyLink.innerHTML = '<a href="/history.html" style="color:#f59e0b;font-weight:600;">📊 History</a>';
+    historyLink.innerHTML = '<a href="/history.html" style="color:#f59e0b;">📊 History</a>';
     navUl.appendChild(historyLink);
 
     const reportLink = document.createElement('li');
