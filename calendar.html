@@ -553,10 +553,34 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script>
 // Day tabs
 const dayTabs = document.querySelectorAll('.day-tab');
-dayTabs.forEach(tab => {
+const calSections = document.querySelectorAll('.cal-wrap > .cal-day-header, .cal-wrap > .cal-table');
+
+dayTabs.forEach((tab, index) => {
   tab.addEventListener('click', () => {
     dayTabs.forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
+
+    // Show today or tomorrow section
+    const allHeaders = document.querySelectorAll('.cal-day-header');
+    const allTables = document.querySelectorAll('.cal-table');
+    const adSlot = document.querySelector('.cal-wrap .ad-slot');
+
+    if (index === 2) {
+      // Today
+      allHeaders.forEach((h, i) => h.style.display = i === 0 ? 'flex' : 'none');
+      allTables.forEach((t, i) => t.style.display = i === 0 ? 'block' : 'none');
+      if (adSlot) adSlot.style.display = 'block';
+    } else if (index === 3) {
+      // Tomorrow
+      allHeaders.forEach((h, i) => h.style.display = i === 1 ? 'flex' : 'none');
+      allTables.forEach((t, i) => t.style.display = i === 1 ? 'block' : 'none');
+      if (adSlot) adSlot.style.display = 'none';
+    } else {
+      // Other days - show coming soon
+      allHeaders.forEach(h => h.style.display = 'none');
+      allTables.forEach(t => t.style.display = 'none');
+      if (adSlot) adSlot.style.display = 'none';
+    }
   });
 });
 
@@ -586,7 +610,32 @@ filterBtns.forEach(btn => {
         row.style.display = 'grid';
       } else if (filter.includes('Low') && impactText === 'Low') {
         row.style.display = 'grid';
-      } else if (!filter.includes('High') && !filter.includes('Medium') && !filter.includes('Low')) {
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  });
+});
+
+// Currency filter buttons
+const currencyFlags = {
+  'USD': '🇺🇸', 'EUR': '🇪🇺', 'GBP': '🇬🇧',
+  'JPY': '🇯🇵', 'AUD': '🇦🇺', 'CAD': '🇨🇦'
+};
+
+const currBtns = document.querySelectorAll('.filter-bar:last-of-type .filter-btn');
+currBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    currBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const curr = btn.textContent.trim();
+
+    calRows.forEach(row => {
+      const flag = row.querySelector('.cal-flag');
+      if (!flag) return;
+      if (curr === 'All') {
+        row.style.display = 'grid';
+      } else if (flag.textContent.includes(currencyFlags[curr])) {
         row.style.display = 'grid';
       } else {
         row.style.display = 'none';
