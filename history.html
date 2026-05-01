@@ -296,24 +296,10 @@ let selectedCurrency = 'USD';
 let selectedDays = 7;
 
 // Check Pro access
-window.addEventListener('userLoaded', async (e) => {
-  if (e.detail.isPro) {
-    document.getElementById('pro-gate').style.display = 'none';
-    document.getElementById('pro-content').style.display = 'block';
-    loadHistory(selectedCurrency, selectedDays);
-    loadAllCurrencies();
-  } else {
-    document.getElementById('pro-gate').style.display = 'block';
-    document.getElementById('pro-content').style.display = 'none';
-  }
+window.addEventListener('proPageReady', () => {
+  loadHistory(selectedCurrency, selectedDays);
+  loadAllCurrencies();
 });
-
-// If not logged in after 3 seconds show gate
-setTimeout(() => {
-  if (!window.userEmail) {
-    document.getElementById('pro-gate').style.display = 'block';
-  }
-}, 3000);
 
 // Currency tabs
 document.querySelectorAll('.curr-tab').forEach(tab => {
