@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile | FXNewsBias</title>
+<meta name="description" content="Manage your FXNewsBias account, subscription, and preferences.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}
+
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left{display:flex;gap:16px;color:#94a3b8;}
+.topbar-right{display:flex;gap:14px;color:#94a3b8;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+
+header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;color:#0f172a;text-decoration:none;}
+.logo span{color:var(--accent);}
+nav ul{list-style:none;display:flex;gap:28px;}
+nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
+nav a:hover,nav a.active{color:var(--accent);}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;border:none;text-decoration:none;display:inline-block;cursor:pointer;}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+.btn-primary{background:var(--accent);color:#fff;}
+.burger{display:none;background:none;border:none;font-size:24px;}
+
+.ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
+.ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ticker-item{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.pair{font-weight:600;}
+.up{color:var(--bull);font-weight:600;}
+.down{color:var(--bear);font-weight:600;}
+
+.page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:36px 0;}
+.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.breadcrumb{font-size:12px;color:#94a3b8;margin-bottom:10px;}
+.breadcrumb a{color:#94a3b8;text-decoration:none;}
+.page-title{font-size:32px;font-weight:800;margin-bottom:8px;}
+.page-sub{color:#94a3b8;font-size:14px;}
+
+.profile-wrap{max-width:900px;margin:32px auto;padding:0 20px;}
+
+/* NOT LOGGED IN STATE */
+.login-prompt{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:12px;padding:48px 24px;text-align:center;}
+.login-prompt-icon{font-size:48px;margin-bottom:16px;}
+.login-prompt h2{font-size:24px;font-weight:800;color:#1e40af;margin-bottom:10px;}
+.login-prompt p{font-size:14px;color:#1e3a8a;margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto;}
+.login-prompt-buttons{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.btn-login{padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;display:inline-block;}
+.btn-login-primary{background:var(--accent);color:#fff;}
+.btn-login-outline{background:#fff;color:var(--accent);border:2px solid var(--accent);}
+
+/* PROFILE STATE */
+.profile-content{display:none;}
+
+.profile-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:20px;}
+.profile-header{display:flex;align-items:center;gap:20px;padding-bottom:24px;border-bottom:1px solid var(--border);margin-bottom:24px;}
+.avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#60a5fa);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;flex-shrink:0;}
+.profile-info h2{font-size:24px;font-weight:800;margin-bottom:4px;}
+.profile-info .email{font-size:13px;color:var(--text-soft);font-family:'JetBrains Mono',monospace;}
+.pro-badge{display:inline-block;background:#f59e0b;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;margin-top:6px;}
+.free-badge{display:inline-block;background:var(--bg-soft);color:var(--text-soft);font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;margin-top:6px;border:1px solid var(--border);}
+
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:14px;}
+
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);}
+.info-row:last-child{border-bottom:none;}
+.info-label{font-size:13px;color:var(--text-soft);font-weight:500;}
+.info-value{font-size:13px;color:var(--text);font-weight:600;text-align:right;}
+.info-value.muted{color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+.edit-row{display:flex;gap:8px;align-items:center;}
+.edit-input{padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;width:200px;}
+.edit-input:focus{outline:none;border-color:var(--accent);}
+.btn-small{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;}
+.btn-small-primary{background:var(--accent);color:#fff;}
+.btn-small-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
+
+/* SUBSCRIPTION CARD */
+.sub-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:20px;}
+.sub-card.pro{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;}
+.sub-status{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.sub-plan-name{font-size:18px;font-weight:800;}
+.sub-plan-price{font-size:13px;color:var(--text-soft);}
+.sub-features{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.sub-feature{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);}
+.sub-feature .check{color:var(--bull);font-weight:700;}
+.sub-actions{display:flex;gap:10px;flex-wrap:wrap;}
+
+/* DANGER ZONE */
+.danger-zone{background:#fff;border:1px solid #fecaca;border-radius:12px;padding:24px;}
+.danger-zone .section-title{color:#991b1b;}
+.btn-danger{padding:10px 20px;border-radius:6px;font-weight:600;font-size:13px;background:transparent;color:#991b1b;border:1px solid #fecaca;cursor:pointer;}
+.btn-danger:hover{background:#fee2e2;}
+
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:900px){
+  nav ul{display:none;}
+  .burger{display:block;}
+  .topbar-left span:nth-child(n+2){display:none;}
+  .profile-header{flex-direction:column;text-align:center;}
+  .info-row{flex-direction:column;align-items:flex-start;gap:6px;}
+  .info-value{text-align:left;}
+  .edit-input{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span id="topbar-date">📅 Loading...</span>
+      <span>🌐 Live Markets</span>
+    </div>
+    <div class="topbar-right">
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo">FX<span>News</span>Bias</a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html">Pairs</a></li>
+        <li><a href="/calendar.html">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-outline">Login</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CAD</span><span>1.3724</span><span class="down">-0.18%</span></div>
+    <div class="ticker-item"><span class="pair">NZD/USD</span><span>0.5982</span><span class="down">-0.28%</span></div>
+    <div class="ticker-item"><span class="pair">XAU/USD</span><span>2342.18</span><span class="up">+0.84%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+  </div>
+</div>
+
+<section class="page-head">
+  <div class="page-head-inner">
+    <div class="breadcrumb"><a href="/">Home</a> · My Profile</div>
+    <h1 class="page-title">My Profile</h1>
+    <p class="page-sub">Manage your account, subscription and preferences.</p>
+  </div>
+</section>
+
+<div class="profile-wrap">
+
+  <!-- NOT LOGGED IN STATE -->
+  <div class="login-prompt" id="login-prompt">
+    <div class="login-prompt-icon">🔒</div>
+    <h2>Login to View Your Profile</h2>
+    <p>Access your account settings, subscription details, and preferences. Don't have an account? Register for free!</p>
+    <div class="login-prompt-buttons">
+      <a href="/login.html" class="btn-login btn-login-primary">Login</a>
+      <a href="/register.html" class="btn-login btn-login-outline">Register Free</a>
+    </div>
+  </div>
+
+  <!-- LOGGED IN STATE -->
+  <div class="profile-content" id="profile-content">
+
+    <!-- USER INFO CARD -->
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="avatar" id="user-avatar">👤</div>
+        <div class="profile-info">
+          <h2 id="user-name">Loading...</h2>
+          <div class="email" id="user-email">loading@example.com</div>
+          <div id="user-badge"></div>
+        </div>
+      </div>
+
+      <div class="section-title">Account Information</div>
+
+      <div class="info-row">
+        <span class="info-label">Username</span>
+        <div id="username-display">
+          <span class="info-value" id="username-text">Loading...</span>
+          <button class="btn-small btn-small-outline" onclick="toggleEditUsername()" style="margin-left:8px;">Edit</button>
+        </div>
+        <div id="username-edit" style="display:none;">
+          <div class="edit-row">
+            <input type="text" id="username-input" class="edit-input" placeholder="Enter new username">
+            <button class="btn-small btn-small-primary" onclick="saveUsername()">Save</button>
+            <button class="btn-small btn-small-outline" onclick="cancelEditUsername()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Email</span>
+        <span class="info-value muted" id="email-display">loading@example.com</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Member Since</span>
+        <span class="info-value muted" id="member-since">Loading...</span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Login Method</span>
+        <span class="info-value muted" id="login-method">Email & Password</span>
+      </div>
+    </div>
+
+    <!-- SUBSCRIPTION CARD -->
+    <div class="sub-card" id="sub-card">
+      <div class="section-title">Subscription</div>
+      <div class="sub-status">
+        <div>
+          <div class="sub-plan-name" id="sub-plan-name">Free Plan</div>
+          <div class="sub-plan-price" id="sub-plan-price">$0/month</div>
+        </div>
+        <div id="sub-status-badge"></div>
+      </div>
+
+      <div class="sub-features" id="sub-features">
+        <div class="sub-feature"><span class="check">✓</span> Real-time sentiment analysis</div>
+        <div class="sub-feature"><span class="check">✓</span> Live forex prices</div>
+        <div class="sub-feature"><span class="check">✓</span> Economic calendar</div>
+        <div class="sub-feature"><span class="check">✓</span> Latest news</div>
+      </div>
+
+      <div class="sub-actions" id="sub-actions">
+        <a href="https://buy.stripe.com/test_cNi9AU6CucCHeZXfTN4ko00" class="btn btn-primary" style="text-decoration:none;">⭐ Upgrade to Pro</a>
+      </div>
+    </div>
+
+    <!-- DANGER ZONE -->
+    <div class="danger-zone">
+      <div class="section-title">Account Actions</div>
+      <button class="btn-danger" onclick="window.logoutUser()">Logout</button>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/how.html">How It Works</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="/currencies.html">Currencies</a></li>
+          <li><a href="/pairs.html">Pairs</a></li>
+          <li><a href="/calendar.html">Calendar</a></li>
+          <li><a href="/news.html">News</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="/community.html">Latest Posts</a></li>
+          <li><a href="/community.html">Top Traders</a></li>
+          <li><a href="/community.html">Guidelines</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/disclaimer.html">Disclaimer</a></li>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.</div>
+  </div>
+</footer>
+
+<script src="/nav.js"></script>
+<script src="/cookie.js"></script>
+<script type="module" src="/firebase.js"></script>
+<script type="module">
+import { getAuth, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
+  authDomain: "fxnewsbias.firebaseapp.com",
+  projectId: "fxnewsbias",
+  storageBucket: "fxnewsbias.firebasestorage.app",
+  messagingSenderId: "414710041736",
+  appId: "1:414710041736:web:00e79ccc58fdb94e98633d"
+};
+
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+const loginPrompt = document.getElementById('login-prompt');
+const profileContent = document.getElementById('profile-content');
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    loginPrompt.style.display = 'none';
+    profileContent.style.display = 'block';
+
+    // Set basic info
+    const username = user.displayName || user.email.split('@')[0];
+    document.getElementById('user-name').textContent = username;
+    document.getElementById('user-email').textContent = user.email;
+    document.getElementById('username-text').textContent = username;
+    document.getElementById('email-display').textContent = user.email;
+
+    // Avatar - first letter
+    document.getElementById('user-avatar').textContent = (username[0] || 'U').toUpperCase();
+
+    // Member since
+    if (user.metadata && user.metadata.creationTime) {
+      const date = new Date(user.metadata.creationTime);
+      document.getElementById('member-since').textContent = date.toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+    }
+
+    // Login method
+    const provider = user.providerData[0]?.providerId;
+    let methodText = 'Email & Password';
+    if (provider === 'google.com') methodText = '🔵 Google';
+    document.getElementById('login-method').textContent = methodText;
+
+    // Check Pro status
+    const isPro = await checkProStatus(user.email);
+    const badge = document.getElementById('user-badge');
+    const subCard = document.getElementById('sub-card');
+    const subPlanName = document.getElementById('sub-plan-name');
+    const subPlanPrice = document.getElementById('sub-plan-price');
+    const subStatusBadge = document.getElementById('sub-status-badge');
+    const subFeatures = document.getElementById('sub-features');
+    const subActions = document.getElementById('sub-actions');
+
+    if (isPro) {
+      badge.innerHTML = '<span class="pro-badge">⭐ PRO MEMBER</span>';
+      subCard.classList.add('pro');
+      subPlanName.textContent = '⭐ Pro Plan';
+      subPlanPrice.textContent = '$9.99/month';
+      subStatusBadge.innerHTML = '<span class="pro-badge">ACTIVE</span>';
+      subFeatures.innerHTML = `
+        <div class="sub-feature"><span class="check">✓</span> All Free features</div>
+        <div class="sub-feature"><span class="check">✓</span> Sentiment History (charts)</div>
+        <div class="sub-feature"><span class="check">✓</span> Weekly PDF Reports</div>
+        <div class="sub-feature"><span class="check">✓</span> Ad-free experience</div>
+        <div class="sub-feature"><span class="check">✓</span> Priority support</div>
+      `;
+      subActions.innerHTML = `
+        <a href="/history.html" class="btn btn-primary" style="text-decoration:none;">📊 View History</a>
+        <a href="/report.html" class="btn btn-outline" style="text-decoration:none;">📄 Weekly Report</a>
+      `;
+    } else {
+      badge.innerHTML = '<span class="free-badge">FREE PLAN</span>';
+    }
+
+  } else {
+    loginPrompt.style.display = 'block';
+    profileContent.style.display = 'none';
+  }
+});
+
+async function checkProStatus(email) {
+  if (window.checkProStatus) {
+    return await window.checkProStatus(email);
+  }
+  return false;
+}
+
+// USERNAME EDIT
+window.toggleEditUsername = function() {
+  const display = document.getElementById('username-display');
+  const edit = document.getElementById('username-edit');
+  const input = document.getElementById('username-input');
+  const currentName = document.getElementById('username-text').textContent;
+
+  display.style.display = 'none';
+  edit.style.display = 'block';
+  input.value = currentName;
+  input.focus();
+};
+
+window.cancelEditUsername = function() {
+  document.getElementById('username-display').style.display = 'block';
+  document.getElementById('username-edit').style.display = 'none';
+};
+
+window.saveUsername = async function() {
+  const newUsername = document.getElementById('username-input').value.trim();
+  if (!newUsername) {
+    alert('Username cannot be empty!');
+    return;
+  }
+  if (newUsername.length < 3) {
+    alert('Username must be at least 3 characters!');
+    return;
+  }
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
+    await updateProfile(user, { displayName: newUsername });
+    document.getElementById('username-text').textContent = newUsername;
+    document.getElementById('user-name').textContent = newUsername;
+    document.getElementById('user-avatar').textContent = newUsername[0].toUpperCase();
+    document.getElementById('username-display').style.display = 'block';
+    document.getElementById('username-edit').style.display = 'none';
+
+    // Show success
+    const msg = document.createElement('div');
+    msg.style.cssText = 'position:fixed;top:20px;right:20px;background:#d1fae5;color:#065f46;padding:14px 20px;border-radius:8px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+    msg.textContent = '✅ Username updated successfully!';
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 3000);
+  } catch(e) {
+    alert('Error updating username: ' + e.message);
+  }
+};
+</script>
+
+<script>
+// Update topbar date
+const topbarDate = document.getElementById('topbar-date');
+if (topbarDate) {
+  const now = new Date();
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  topbarDate.textContent = `📅 ${dayNames[now.getDay()]}, ${monthNames[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+}
+
+// Live ticker
+const SUPABASE_URL_TICKER = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+const SUPABASE_ANON_TICKER = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+
+async function loadTickerPrices() {
+  try {
+    const res = await fetch(SUPABASE_URL_TICKER + '/rest/v1/prices?order=id.desc&limit=50', {
+      headers: { 'apikey': SUPABASE_ANON_TICKER, 'Authorization': 'Bearer ' + SUPABASE_ANON_TICKER }
+    });
+    const allData = await res.json();
+    if (!allData || allData.length === 0) return;
+    const pricesByPair = {};
+    allData.forEach(p => { if (!pricesByPair[p.pair]) pricesByPair[p.pair] = p; });
+    document.querySelectorAll('.ticker-item').forEach(item => {
+      const pairEl = item.querySelector('.pair');
+      if (!pairEl) return;
+      const pairName = pairEl.textContent.trim();
+      const data = pricesByPair[pairName];
+      if (data) {
+        const allSpans = item.querySelectorAll('span');
+        if (allSpans[1]) {
+          const price = parseFloat(data.price);
+          allSpans[1].textContent = price.toFixed(pairName.includes('JPY') ? 3 : pairName.includes('XAU') ? 2 : 5);
+        }
+      }
+    });
+  } catch(e) { console.log('Ticker error:', e); }
+}
+loadTickerPrices();
+setInterval(loadTickerPrices, 300000);
+</script>
+</body>
+</html>
