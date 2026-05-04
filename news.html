@@ -713,5 +713,36 @@ window.addEventListener('userLoaded', (e) => {
   }
 }); 
 </script>
+  <script>
+const SUPABASE_URL_TICKER = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+const SUPABASE_ANON_TICKER = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+
+async function loadTickerPrices() {
+  try {
+    const res = await fetch(SUPABASE_URL_TICKER + '/rest/v1/prices?order=id.desc&limit=50', {
+      headers: { 'apikey': SUPABASE_ANON_TICKER, 'Authorization': 'Bearer ' + SUPABASE_ANON_TICKER }
+    });
+    const allData = await res.json();
+    if (!allData || allData.length === 0) return;
+    const pricesByPair = {};
+    allData.forEach(p => { if (!pricesByPair[p.pair]) pricesByPair[p.pair] = p; });
+    document.querySelectorAll('.ticker-item').forEach(item => {
+      const pairEl = item.querySelector('.pair');
+      if (!pairEl) return;
+      const pairName = pairEl.textContent.trim();
+      const data = pricesByPair[pairName];
+      if (data) {
+        const allSpans = item.querySelectorAll('span');
+        if (allSpans[1]) {
+          const price = parseFloat(data.price);
+          allSpans[1].textContent = price.toFixed(pairName.includes('JPY') ? 3 : pairName.includes('XAU') ? 2 : 5);
+        }
+      }
+    });
+  } catch(e) { console.log('Ticker error:', e); }
+}
+loadTickerPrices();
+setInterval(loadTickerPrices, 300000);
+</script>
 </body>
 </html>
