@@ -17,7 +17,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;
   --bull:#10b981; --bear:#ef4444; --neutral:#f59e0b;
 }
 
-/* TOP BAR */
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
 .topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
 .topbar-left{display:flex;gap:16px;color:#94a3b8;}
@@ -25,7 +24,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;
 .topbar a{color:#94a3b8;text-decoration:none;}
 .topbar a:hover{color:#fff;}
 
-/* HEADER */
 header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
 .logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;text-decoration:none;}
@@ -42,7 +40,6 @@ nav a.active{font-weight:600;}
 .btn-primary:hover{background:#1d4ed8;}
 .burger{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
 
-/* TICKER */
 .ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
 .ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
 @keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
@@ -51,76 +48,28 @@ nav a.active{font-weight:600;}
 .up{color:var(--bull);font-weight:600;}
 .down{color:var(--bear);font-weight:600;}
 
-/* PAGE HEAD */
 .page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}
-.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
-.page-head-left{flex:1;min-width:280px;}
+.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .breadcrumb{font-size:12px;color:#94a3b8;margin-bottom:8px;}
 .breadcrumb a{color:#94a3b8;text-decoration:none;}
 .page-title{font-size:28px;font-weight:800;margin-bottom:6px;}
 .page-sub{color:#94a3b8;font-size:13px;}
-.next-event{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 18px;min-width:240px;}
-.next-label{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
-.next-event-name{font-size:15px;font-weight:700;margin-bottom:2px;}
-.next-time{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--neutral);}
 
-/* DAY TABS */
-.day-tabs{max-width:1280px;margin:24px auto 0;padding:0 20px;display:flex;gap:6px;overflow-x:auto;border-bottom:2px solid var(--border);}
-.day-tab{padding:12px 20px;font-size:13px;font-weight:600;color:var(--text-soft);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:2px;}
-.day-tab:hover{color:var(--accent);}
-.day-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-.day-tab .day-name{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);}
-.day-tab.active .day-name{color:var(--accent);}
-.day-count{background:var(--bg-soft);font-size:10px;padding:1px 6px;border-radius:8px;font-weight:700;color:var(--text-soft);}
-.day-tab.active .day-count{background:var(--accent);color:#fff;}
-
-/* FILTERS */
-.filter-bar{max-width:1280px;margin:18px auto 12px;padding:0 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-.filter-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-soft);letter-spacing:1px;margin-right:6px;}
-.filter-btn{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:#fff;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;color:var(--text);}
-.filter-btn:hover{border-color:var(--accent);color:var(--accent);}
-.filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-
-/* CALENDAR */
-.cal-wrap{max-width:1280px;margin:0 auto 32px;padding:0 20px;}
-.cal-day-header{background:#0f172a;color:#fff;padding:10px 18px;border-radius:8px 8px 0 0;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
-.cal-day-header:first-child{margin-top:0;}
-.cal-day-stats{font-size:11px;color:#94a3b8;font-weight:500;}
-
-.cal-table{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden;}
-.cal-row{display:grid;grid-template-columns:80px 50px 1fr 80px 90px 90px 90px;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);align-items:center;font-size:13px;cursor:pointer;transition:background .15s;}
-.cal-row:hover{background:#f9fafb;}
-.cal-row:last-child{border-bottom:none;}
-.cal-row.high-impact{border-left:3px solid var(--bear);padding-left:15px;}
-.cal-row.med-impact{border-left:3px solid var(--neutral);padding-left:15px;}
-.cal-row.low-impact{border-left:3px solid #94a3b8;padding-left:15px;}
-
-.cal-time{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--text);}
-.cal-flag{font-size:18px;text-align:center;}
-.cal-event{font-weight:600;color:var(--text);}
-.cal-event-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
-.cal-impact{font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;text-align:center;letter-spacing:0.5px;}
-.imp-high{background:#fee2e2;color:#991b1b;}
-.imp-med{background:#fef3c7;color:#92400e;}
-.imp-low{background:#dbeafe;color:#1e40af;}
-.cal-data{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-soft);text-align:right;}
-.cal-data-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:1px;}
-.cal-data-value{font-weight:600;color:var(--text);}
-.cal-actual.up{color:var(--bull);}
-.cal-actual.down{color:var(--bear);}
-.cal-pending{color:var(--text-muted);}
-
-/* INFO */
-.info-section{max-width:1280px;margin:0 auto 24px;padding:0 20px;}
+.info-section{max-width:1280px;margin:24px auto 16px;padding:0 20px;}
 .info-box{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:16px 20px;display:flex;gap:14px;align-items:flex-start;}
 .info-icon{font-size:24px;flex-shrink:0;}
 .info-content h4{font-size:14px;font-weight:700;margin-bottom:4px;color:#1e40af;}
 .info-content p{font-size:12px;color:#1e3a8a;line-height:1.6;}
 
-/* AD */
+.cal-wrap{max-width:1280px;margin:0 auto 32px;padding:0 20px;}
+.cal-embed{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.cal-embed iframe{width:100%;height:600px;border:none;display:block;}
+.cal-credit{font-size:11px;color:var(--text-muted);text-align:center;padding:10px;background:var(--bg-soft);border-top:1px solid var(--border);}
+.cal-credit a{color:var(--accent);text-decoration:none;}
+.cal-credit a:hover{text-decoration:underline;}
+
 .ad-slot{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:8px;padding:30px;text-align:center;color:var(--text-muted);font-size:12px;margin:16px 0;}
 
-/* FOOTER */
 footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
@@ -131,59 +80,52 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-col a:hover{color:#fff;}
 .footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
 
-/* MOBILE */
 @media(max-width:900px){
   nav ul{display:none;}
   .burger{display:block;}
   .topbar-left span:nth-child(n+2){display:none;}
   .page-title{font-size:22px;}
-  .next-event{width:100%;}
-  .cal-row{grid-template-columns:60px 30px 1fr 70px;gap:8px;padding:12px;font-size:12px;}
-  .cal-row .cal-data:not(:last-child){display:none;}
-  .filter-bar{padding:0 12px;}
+  .cal-embed iframe{height:500px;}
 }
 </style>
 </head>
 <body>
 
-<!-- Top Bar -->
 <div class="topbar">
   <div class="topbar-inner">
     <div class="topbar-left">
-      <span>📅 Wed, Apr 29, 2026</span>
-      <span>🌐 London Open</span>
-      <span>⚡ Live Sentiment</span>
+      <span id="topbar-date">📅 Loading...</span>
+      <span>🌐 Live Calendar</span>
+      <span>⚡ Real-time Data</span>
     </div>
     <div class="topbar-right">
       <a href="/about.html">About</a>
-<a href="/contact.html">Contact</a>
+      <a href="/contact.html">Contact</a>
     </div>
   </div>
 </div>
 
-<!-- Header -->
 <header>
   <div class="header-inner">
-    <a href="index.html" class="logo">FX<span>News</span>Bias</a>
+    <a href="/" class="logo">FX<span>News</span>Bias</a>
     <nav>
       <ul>
         <li><a href="/">Markets</a></li>
-<li><a href="/currencies.html">Currencies</a></li>
-<li><a href="/pairs.html">Pairs</a></li>
-<li><a href="/calendar.html">Calendar</a></li>
-<li><a href="/news.html">News</a></li>
-<li><a href="/community.html">Community</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html">Pairs</a></li>
+        <li><a href="/calendar.html" class="active">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html">Community</a></li>
       </ul>
     </nav>
     <div class="nav-actions">
       <a href="/login.html" class="btn btn-outline">Login</a>
-<a href="/register.html" class="btn btn-primary">Register</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
       <button class="burger">☰</button>
     </div>
   </div>
 </header>
 
-<!-- Live Ticker -->
 <div class="ticker">
   <div class="ticker-inner">
     <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
@@ -200,310 +142,38 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   </div>
 </div>
 
-<!-- Page Header -->
 <section class="page-head">
   <div class="page-head-inner">
-    <div class="page-head-left">
-      <div class="breadcrumb"><a href="index.html">Home</a> · Economic Calendar</div>
-      <h1 class="page-title">Economic Calendar</h1>
-      <p class="page-sub">All market-moving events across major economies. Times shown in EST.</p>
-    </div>
-    <div class="next-event">
-      <div class="next-label">⏰ Next High Impact Event</div>
-      <div class="next-event-name">🇺🇸 US Non-Farm Payrolls</div>
-      <div class="next-time">in 4h 32m</div>
-    </div>
+    <div class="breadcrumb"><a href="/">Home</a> · Economic Calendar</div>
+    <h1 class="page-title">Economic Calendar</h1>
+    <p class="page-sub">Real-time forex economic calendar covering all major economies. Track high-impact events that move currency markets.</p>
   </div>
 </section>
 
-<!-- Day Tabs -->
-<div class="day-tabs">
-  <div class="day-tab">
-    <span class="day-name">Mon</span>
-    <span>Apr 27</span>
-    <span class="day-count">8</span>
-  </div>
-  <div class="day-tab">
-    <span class="day-name">Tue</span>
-    <span>Apr 28</span>
-    <span class="day-count">12</span>
-  </div>
-  <div class="day-tab active">
-    <span class="day-name">Today</span>
-    <span>Apr 29</span>
-    <span class="day-count">14</span>
-  </div>
-  <div class="day-tab">
-    <span class="day-name">Thu</span>
-    <span>Apr 30</span>
-    <span class="day-count">9</span>
-  </div>
-  <div class="day-tab">
-    <span class="day-name">Fri</span>
-    <span>May 01</span>
-    <span class="day-count">15</span>
-  </div>
-  <div class="day-tab">
-    <span class="day-name">Mon</span>
-    <span>May 04</span>
-    <span class="day-count">7</span>
-  </div>
-  <div class="day-tab">
-    <span class="day-name">Tue</span>
-    <span>May 05</span>
-    <span class="day-count">11</span>
-  </div>
-</div>
-
-<!-- Filters -->
-<div class="filter-bar">
-  <span class="filter-label">Impact:</span>
-  <button class="filter-btn active">All</button>
-  <button class="filter-btn">🔴 High</button>
-  <button class="filter-btn">🟡 Medium</button>
-  <button class="filter-btn">🔵 Low</button>
-  <span class="filter-label" style="margin-left:12px;">Currency:</span>
-  <button class="filter-btn active">All</button>
-  <button class="filter-btn">USD</button>
-  <button class="filter-btn">EUR</button>
-  <button class="filter-btn">GBP</button>
-  <button class="filter-btn">JPY</button>
-  <button class="filter-btn">+4 more</button>
-</div>
-
-<!-- Info Box -->
 <div class="info-section">
   <div class="info-box">
     <div class="info-icon">💡</div>
     <div class="info-content">
       <h4>How To Use This Calendar</h4>
-      <p>High impact events (red) cause volatility — be cautious trading 30 min before/after. Compare Actual vs Forecast: beats are bullish, misses are bearish for that currency.</p>
+      <p>High impact events (red) cause volatility — be cautious trading 30 min before/after. Compare Actual vs Forecast: beats are bullish, misses are bearish for that currency. Use the date picker and filters to customize your view.</p>
     </div>
   </div>
 </div>
 
-<!-- Calendar Today -->
 <div class="cal-wrap">
-
-  <div class="cal-day-header">
-    <span>📅 Wednesday, April 29, 2026 · Today</span>
-    <span class="cal-day-stats">3 high · 5 medium · 6 low impact</span>
+  <div class="cal-embed">
+    <iframe 
+      src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone,timeselector,filters&countries=25,32,6,37,72,22,17,39,14,10,35,43,56,36,110,11,26,12,4,5&calType=week&timeZone=8&lang=1" 
+      allowtransparency="true"
+      scrolling="auto"></iframe>
+    <div class="cal-credit">
+      Real-time Economic Calendar provided by <a href="https://www.investing.com/" rel="nofollow noopener" target="_blank">Investing.com</a>
+    </div>
   </div>
 
-  <div class="cal-table">
-
-    <div class="cal-row low-impact">
-      <div class="cal-time">02:30</div>
-      <div class="cal-flag">🇦🇺</div>
-      <div>
-        <div class="cal-event">CPI q/q (Q1)</div>
-        <div class="cal-event-sub">Australia consumer prices</div>
-      </div>
-      <div class="cal-impact imp-low">Low</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">0.8%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">0.6%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-actual up">1.1%</span></div>
-    </div>
-
-    <div class="cal-row med-impact">
-      <div class="cal-time">04:00</div>
-      <div class="cal-flag">🇨🇳</div>
-      <div>
-        <div class="cal-event">Manufacturing PMI</div>
-        <div class="cal-event-sub">China industrial activity gauge</div>
-      </div>
-      <div class="cal-impact imp-med">Medium</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">50.4</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">50.8</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-actual down">49.7</span></div>
-    </div>
-
-    <div class="cal-row low-impact">
-      <div class="cal-time">07:00</div>
-      <div class="cal-flag">🇪🇺</div>
-      <div>
-        <div class="cal-event">German GfK Consumer Confidence</div>
-        <div class="cal-event-sub">May survey</div>
-      </div>
-      <div class="cal-impact imp-low">Low</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">-23.5</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">-24.2</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-actual up">-22.8</span></div>
-    </div>
-
-    <div class="cal-row high-impact">
-      <div class="cal-time">08:30</div>
-      <div class="cal-flag">🇺🇸</div>
-      <div>
-        <div class="cal-event">Non-Farm Payrolls</div>
-        <div class="cal-event-sub">Most important US jobs report</div>
-      </div>
-      <div class="cal-impact imp-high">High</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">175K</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">236K</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-    <div class="cal-row high-impact">
-      <div class="cal-time">08:30</div>
-      <div class="cal-flag">🇺🇸</div>
-      <div>
-        <div class="cal-event">Unemployment Rate</div>
-        <div class="cal-event-sub">US monthly unemployment</div>
-      </div>
-      <div class="cal-impact imp-high">High</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">3.9%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">3.8%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-    <div class="cal-row med-impact">
-      <div class="cal-time">08:30</div>
-      <div class="cal-flag">🇺🇸</div>
-      <div>
-        <div class="cal-event">Average Hourly Earnings m/m</div>
-        <div class="cal-event-sub">Wage inflation indicator</div>
-      </div>
-      <div class="cal-impact imp-med">Medium</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">0.3%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">0.3%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-    <div class="cal-row med-impact">
-      <div class="cal-time">10:00</div>
-      <div class="cal-flag">🇪🇺</div>
-      <div>
-        <div class="cal-event">ECB President Lagarde Speech</div>
-        <div class="cal-event-sub">Frankfurt economic forum</div>
-      </div>
-      <div class="cal-impact imp-med">Medium</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">—</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">Hawkish</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-    <div class="cal-row high-impact">
-      <div class="cal-time">10:00</div>
-      <div class="cal-flag">🇺🇸</div>
-      <div>
-        <div class="cal-event">ISM Manufacturing PMI</div>
-        <div class="cal-event-sub">US factory activity</div>
-      </div>
-      <div class="cal-impact imp-high">High</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">50.2</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">50.3</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-    <div class="cal-row low-impact">
-      <div class="cal-time">10:30</div>
-      <div class="cal-flag">🇺🇸</div>
-      <div>
-        <div class="cal-event">Crude Oil Inventories</div>
-        <div class="cal-event-sub">Weekly EIA report</div>
-      </div>
-      <div class="cal-impact imp-low">Low</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">-1.2M</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">-2.4M</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-    <div class="cal-row med-impact">
-      <div class="cal-time">14:00</div>
-      <div class="cal-flag">🇨🇦</div>
-      <div>
-        <div class="cal-event">BoC Interest Rate Decision</div>
-        <div class="cal-event-sub">Bank of Canada policy meeting</div>
-      </div>
-      <div class="cal-impact imp-med">Medium</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">4.50%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">4.50%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-    <div class="cal-row low-impact">
-      <div class="cal-time">19:30</div>
-      <div class="cal-flag">🇯🇵</div>
-      <div>
-        <div class="cal-event">Tokyo Core CPI y/y</div>
-        <div class="cal-event-sub">Leading inflation indicator</div>
-      </div>
-      <div class="cal-impact imp-low">Low</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">2.2%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">2.4%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-  </div>
-
-  <!-- Ad -->
   <div class="ad-slot">📢 Advertisement Space — 728×90</div>
-
-  <!-- Tomorrow Preview -->
-  <div class="cal-day-header">
-    <span>📅 Thursday, April 30, 2026 · Tomorrow</span>
-    <span class="cal-day-stats">2 high · 3 medium · 4 low impact</span>
-  </div>
-
-  <div class="cal-table">
-
-    <div class="cal-row med-impact">
-      <div class="cal-time">04:55</div>
-      <div class="cal-flag">🇩🇪</div>
-      <div>
-        <div class="cal-event">German Unemployment Change</div>
-        <div class="cal-event-sub">April labor market</div>
-      </div>
-      <div class="cal-impact imp-med">Medium</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">8K</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">4K</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-    <div class="cal-row high-impact">
-      <div class="cal-time">05:00</div>
-      <div class="cal-flag">🇪🇺</div>
-      <div>
-        <div class="cal-event">Eurozone CPI Flash y/y</div>
-        <div class="cal-event-sub">April inflation reading</div>
-      </div>
-      <div class="cal-impact imp-high">High</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">2.4%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">2.5%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-    <div class="cal-row high-impact">
-      <div class="cal-time">07:30</div>
-      <div class="cal-flag">🇬🇧</div>
-      <div>
-        <div class="cal-event">BoE Monetary Policy Report</div>
-        <div class="cal-event-sub">Bank of England rate decision</div>
-      </div>
-      <div class="cal-impact imp-high">High</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">5.00%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">5.25%</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-    <div class="cal-row med-impact">
-      <div class="cal-time">08:30</div>
-      <div class="cal-flag">🇺🇸</div>
-      <div>
-        <div class="cal-event">Initial Jobless Claims</div>
-        <div class="cal-event-sub">Weekly unemployment claims</div>
-      </div>
-      <div class="cal-impact imp-med">Medium</div>
-      <div class="cal-data"><span class="cal-data-label">Forecast</span><span class="cal-data-value">213K</span></div>
-      <div class="cal-data"><span class="cal-data-label">Previous</span><span class="cal-data-value">217K</span></div>
-      <div class="cal-data"><span class="cal-data-label">Actual</span><span class="cal-data-value cal-pending">⏰ Pending</span></div>
-    </div>
-
-  </div>
 </div>
 
-<!-- Footer -->
 <footer>
   <div class="footer-inner">
     <div class="footer-grid">
@@ -511,33 +181,33 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <h4>FXNewsBias</h4>
         <ul>
           <li><a href="/about.html">About Us</a></li>
-<li><a href="/how.html">How It Works</a></li>
-<li><a href="/contact.html">Contact</a></li>
+          <li><a href="/how.html">How It Works</a></li>
+          <li><a href="/contact.html">Contact</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Markets</h4>
         <ul>
           <li><a href="/currencies.html">Currencies</a></li>
-<li><a href="/pairs.html">Pairs</a></li>
-<li><a href="/calendar.html">Calendar</a></li>
-<li><a href="/news.html">News</a></li>
+          <li><a href="/pairs.html">Pairs</a></li>
+          <li><a href="/calendar.html">Calendar</a></li>
+          <li><a href="/news.html">News</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Community</h4>
         <ul>
           <li><a href="/community.html">Latest Posts</a></li>
-<li><a href="/community.html">Top Traders</a></li>
-<li><a href="/community.html">Guidelines</a></li>
+          <li><a href="/community.html">Top Traders</a></li>
+          <li><a href="/community.html">Guidelines</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Legal</h4>
         <ul>
           <li><a href="/disclaimer.html">Disclaimer</a></li>
-<li><a href="/privacy.html">Privacy Policy</a></li>
-<li><a href="/terms.html">Terms of Service</a></li>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
         </ul>
       </div>
     </div>
@@ -549,195 +219,20 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
-<script type="module" src="/firebase.js"></script> 
+<script type="module" src="/firebase.js"></script>
 <script>
-// ============================================
-// DYNAMIC CALENDAR - Auto-shifts dates to current week
-// ============================================
-
-const today = new Date();
-const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon...
-
-// Get Monday of this week
-const monday = new Date(today);
-monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-
-// Generate 7 days starting from Monday
-const weekDays = [];
-for (let i = 0; i < 7; i++) {
-  const d = new Date(monday);
-  d.setDate(monday.getDate() + i);
-  weekDays.push(d);
+// Update topbar date to today's real date
+const topbarDate = document.getElementById('topbar-date');
+if (topbarDate) {
+  const now = new Date();
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  topbarDate.textContent = `📅 ${dayNames[now.getDay()]}, ${monthNames[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
 }
-
-const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-// Update day tabs
-const dayTabs = document.querySelectorAll('.day-tab');
-dayTabs.forEach((tab, i) => {
-  // Only show today + tomorrow tabs
-  const todayIdx = weekDays.findIndex(d => d.toDateString() === today.toDateString());
-  if (i !== todayIdx && i !== todayIdx + 1) {
-    tab.style.display = 'none';
-    return;
-  }
-  if (!weekDays[i]) return;
-  const d = weekDays[i];
-  const isToday = d.toDateString() === today.toDateString();
-  const dayName = isToday ? 'Today' : dayNames[d.getDay()];
-  const counts = [8, 12, 14, 9, 15, 7, 11];
-
-  tab.innerHTML = `
-    <span class="day-name">${dayName}</span>
-    <span>${monthNames[d.getMonth()]} ${String(d.getDate()).padStart(2, '0')}</span>
-    <span class="day-count">${counts[i] || 5}</span>
-  `;
-
-  tab.classList.remove('active');
-  if (isToday) tab.classList.add('active');
-});
-
-// Update day headers
-const todayStr = `${dayNames[today.getDay()]}day, ${monthNames[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()} · Today`;
-const tomorrow = new Date(today);
-tomorrow.setDate(today.getDate() + 1);
-const tomorrowStr = `${dayNames[tomorrow.getDay()]}day, ${monthNames[tomorrow.getMonth()]} ${tomorrow.getDate()}, ${tomorrow.getFullYear()} · Tomorrow`;
-
-const dayHeaders = document.querySelectorAll('.cal-day-header span:first-child');
-if (dayHeaders[0]) dayHeaders[0].textContent = '📅 ' + todayStr;
-if (dayHeaders[1]) dayHeaders[1].textContent = '📅 ' + tomorrowStr;
-
-// Update next event time dynamically (show 4-6 hours from now)
-const nextEventTime = document.querySelector('.next-time');
-if (nextEventTime) {
-  const hour = today.getHours();
-  let hoursAway = 8 - (hour % 8);
-  if (hoursAway < 1) hoursAway = 4;
-  const mins = 60 - today.getMinutes();
-  nextEventTime.textContent = `in ${hoursAway}h ${mins}m`;
-}
-
-// Mark past events as released, future as pending based on current time
-const calRows = document.querySelectorAll('.cal-row');
-calRows.forEach(row => {
-  const timeEl = row.querySelector('.cal-time');
-  const actualEl = row.querySelector('.cal-data:last-child .cal-data-value');
-  if (!timeEl || !actualEl) return;
-
-  const [hours, minutes] = timeEl.textContent.trim().split(':').map(Number);
-  const eventTime = new Date(today);
-  eventTime.setHours(hours, minutes, 0, 0);
-
-  const isPast = eventTime < today;
-  const isCurrentDay = row.closest('.cal-table') === document.querySelectorAll('.cal-table')[0];
-
-  if (isCurrentDay && isPast && actualEl.textContent.includes('Pending')) {
-    // Generate plausible actual based on forecast
-    const forecastEl = row.querySelectorAll('.cal-data-value')[0];
-    if (forecastEl) {
-      const forecast = forecastEl.textContent.trim();
-      const numMatch = forecast.match(/-?[\d.]+/);
-      if (numMatch) {
-        const num = parseFloat(numMatch[0]);
-        const variance = (Math.random() - 0.5) * 0.15; // ±7.5% variance
-        const actual = (num * (1 + variance)).toFixed(num < 10 ? 1 : 0);
-        const isUp = parseFloat(actual) > num;
-        const suffix = forecast.replace(/-?[\d.]+/, '');
-        actualEl.textContent = actual + suffix;
-        actualEl.classList.remove('cal-pending');
-        actualEl.classList.add(isUp ? 'up' : 'down', 'cal-actual');
-      }
-    }
-  }
-});
-
-// ============================================
-// FILTERS
-// ============================================
-const allFilterBtns = document.querySelectorAll('.filter-btn');
-const impactBtns = Array.from(allFilterBtns).slice(0, 4);
-const currBtns = Array.from(allFilterBtns).slice(4);
-
-const flagMap = {
-  'USD': '🇺🇸', 'EUR': '🇪🇺', 'GBP': '🇬🇧',
-  'JPY': '🇯🇵', 'AUD': '🇦🇺', 'CAD': '🇨🇦',
-  'CHF': '🇨🇭', 'NZD': '🇳🇿'
-};
-
-let activeImpact = 'All';
-let activeCurr = 'All';
-
-function filterRows() {
-  document.querySelectorAll('.cal-row').forEach(row => {
-    const impact = row.querySelector('.cal-impact');
-    const flagEl = row.querySelector('.cal-flag');
-    if (!impact || !flagEl) return;
-    const impactText = impact.textContent.trim();
-    const flag = flagEl.textContent.trim();
-
-    let impactMatch = false;
-    if (activeImpact === 'All') impactMatch = true;
-    else if (activeImpact.includes('High') && impactText === 'High') impactMatch = true;
-    else if (activeImpact.includes('Medium') && impactText === 'Medium') impactMatch = true;
-    else if (activeImpact.includes('Low') && impactText === 'Low') impactMatch = true;
-
-    let currMatch = false;
-    if (activeCurr === 'All' || activeCurr === '+4 more') currMatch = true;
-    else {
-      const targetFlag = flagMap[activeCurr];
-      if (targetFlag && flag === targetFlag) currMatch = true;
-    }
-
-    row.style.display = (impactMatch && currMatch) ? 'grid' : 'none';
-  });
-}
-
-impactBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    impactBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeImpact = btn.textContent.trim();
-    filterRows();
-  });
-});
-
-currBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    currBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeCurr = btn.textContent.trim();
-    filterRows();
-  });
-});
-
-// ============================================
-// DAY TAB SWITCHING
-// ============================================
-dayTabs.forEach((tab, index) => {
-  tab.addEventListener('click', () => {
-    dayTabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    const allHeaders = document.querySelectorAll('.cal-day-header');
-    const allTables = document.querySelectorAll('.cal-table');
-    const todayIndex = weekDays.findIndex(d => d.toDateString() === today.toDateString());
-
-    if (index === todayIndex) {
-      allHeaders.forEach((h, i) => h.style.display = i === 0 ? 'flex' : 'none');
-      allTables.forEach((t, i) => t.style.display = i === 0 ? 'block' : 'none');
-    } else if (index === todayIndex + 1) {
-      allHeaders.forEach((h, i) => h.style.display = i === 1 ? 'flex' : 'none');
-      allTables.forEach((t, i) => t.style.display = i === 1 ? 'block' : 'none');
-    } else {
-      allHeaders.forEach(h => h.style.display = 'none');
-      allTables.forEach(t => t.style.display = 'none');
-    }
-  });
-});
 
 // Hide ads for Pro users
 window.addEventListener('userLoaded', (e) => {
-  if (e.detail.isPro) {
+  if (e.detail && e.detail.isPro) {
     document.querySelectorAll('.ad-slot').forEach(ad => ad.style.display = 'none');
   }
 });
