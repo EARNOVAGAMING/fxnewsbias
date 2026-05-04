@@ -656,35 +656,29 @@ function updateHotPairs(data) {
 async function loadPrices() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/prices?order=id.asc`,
+      `${SUPABASE_URL}/rest/v1/prices?order=id.desc&limit=50`,
       { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
     );
-    const data = await res.json();
-    if (!data || data.length === 0) return;
+    const allData = await res.json();
+    if (!allData || allData.length === 0) return;
 
-    const tickerItems = document.querySelectorAll('.ticker-item');
-    const halfCount = Math.floor(tickerItems.length / 2);
+    // Get latest unique price per pair
+    const pricesByPair = {};
+    allData.forEach(p => {
+      if (!pricesByPair[p.pair]) pricesByPair[p.pair] = p;
+    });
 
-    data.forEach((item, i) => {
-      // Update first half
-      if (tickerItems[i]) {
-        const priceEl = tickerItems[i].querySelector('.price');
-        const pairEl = tickerItems[i].querySelector('.pair');
-        if (priceEl) {
-          priceEl.textContent = parseFloat(item.price).toFixed(item.pair.includes('JPY') ? 3 : item.pair.includes('XAU') ? 2 : 5);
-          priceEl.classList.remove('loading-pulse');
-        }
-        if (pairEl) pairEl.textContent = item.pair;
-      }
-      // Update second half (duplicate for seamless scroll)
-      if (tickerItems[i + halfCount]) {
-        const priceEl = tickerItems[i + halfCount].querySelector('.price');
-        const pairEl = tickerItems[i + halfCount].querySelector('.pair');
-        if (priceEl) {
-          priceEl.textContent = parseFloat(item.price).toFixed(item.pair.includes('JPY') ? 3 : item.pair.includes('XAU') ? 2 : 5);
-          priceEl.classList.remove('loading-pulse');
-        }
-        if (pairEl) pairEl.textContent = item.pair;
+    // Match each ticker item by pair name
+    document.querySelectorAll('.ticker-item').forEach(item => {
+      const pairEl = item.querySelector('.pair');
+      const priceEl = item.querySelector('.price');
+      if (!pairEl || !priceEl) return;
+      const pairName = pairEl.textContent.trim();
+      const data = pricesByPair[pairName];
+      if (data) {
+        const price = parseFloat(data.price);
+        priceEl.textContent = price.toFixed(pairName.includes('JPY') ? 3 : pairName.includes('XAU') ? 2 : 5);
+        priceEl.classList.remove('loading-pulse');
       }
     });
 
@@ -733,6 +727,35 @@ updateSessions();
 loadSentiment();
 loadPrices();
 loadNews();
+
+// ============================================
+// NEXT UPDATE COUNTDOWN (3-hour cycle)
+// ============================================
+function updateNextRunTime() {
+  const nextUpdateEl = document.getElementById('next-update');
+  if (!nextUpdateEl) return;
+
+  // Sentiment runs every 3 hours: 0, 3, 6, 9, 12, 15, 18, 21 UTC
+  const now = new Date();
+  const utcHour = now.getUTCHours();
+  const utcMin = now.getUTCMinutes();
+  const utcSec = now.getUTCSeconds();
+
+  // Find next 3-hour mark
+  const nextHour = Math.ceil((utcHour + 1) / 3) * 3;
+  const hoursUntil = nextHour - utcHour - 1;
+  const minsUntil = 60 - utcMin - 1;
+  const secsUntil = 60 - utcSec;
+
+  let totalMins = hoursUntil * 60 + minsUntil;
+  if (secsUntil < 60) totalMins += 0;
+
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  nextUpdateEl.textContent = `${h}h ${String(m).padStart(2,'0')}m`;
+}
+updateNextRunTime();
+setInterval(updateNextRunTime, 60000); // Update every minute
 // Hide Pro banner and ads for Pro users
 window.addEventListener('userLoaded', (e) => {
   if (e.detail.isPro) {
