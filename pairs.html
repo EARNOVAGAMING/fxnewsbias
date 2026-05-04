@@ -913,6 +913,36 @@ async function loadTickerPrices() {
 }
 loadTickerPrices();
 setInterval(loadTickerPrices, 300000);
-</script>
+// Disable comment functionality (not yet implemented)
+document.addEventListener('DOMContentLoaded', () => {
+  const textarea = document.querySelector('.comment-textarea');
+  const postBtn = document.querySelector('.comment-submit .btn-primary');
+
+  if (textarea) {
+    textarea.disabled = true;
+    textarea.placeholder = '🔒 Login to share your view (coming soon!)';
+    textarea.style.cursor = 'not-allowed';
+    textarea.style.background = '#f9fafb';
+  }
+
+  if (postBtn) {
+    postBtn.textContent = '🔒 Coming Soon';
+    postBtn.style.opacity = '0.6';
+    postBtn.style.cursor = 'not-allowed';
+    postBtn.disabled = true;
+  }
+
+  // Disable like/reply/share actions
+  document.querySelectorAll('.comment-action').forEach(action => {
+    action.style.cursor = 'default';
+    action.style.opacity = '0.6';
+    action.title = 'Coming soon';
+    action.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  });
+});
+  </script>
 </body>
 </html>
