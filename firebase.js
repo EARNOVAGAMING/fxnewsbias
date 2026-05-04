@@ -121,10 +121,10 @@ onAuthStateChanged(auth, async (user) => {
     localStorage.removeItem('fxnb_logged_in');
     if (loginBtn) loginBtn.style.display = 'inline-block';
     if (registerBtn) registerBtn.style.display = 'inline-block';
-    const userMenu = document.getElementById('user-menu');
     // Remove Profile link
     const profileLink = document.getElementById('topbar-profile-link');
     if (profileLink) profileLink.remove();
+    const userMenu = document.getElementById('user-menu');
     if (userMenu) userMenu.remove();
     window.userIsPro = false;
     window.userEmail = null;
