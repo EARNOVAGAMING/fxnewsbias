@@ -45,6 +45,16 @@ onAuthStateChanged(auth, async (user) => {
     localStorage.setItem('fxnb_logged_in', 'true');
     if (loginBtn) loginBtn.style.display = 'none';
     if (registerBtn) registerBtn.style.display = 'none';
+    // Add Profile link to topbar
+    const topbarRight = document.querySelector('.topbar-right');
+    if (topbarRight && !document.getElementById('topbar-profile-link')) {
+      const profileLink = document.createElement('a');
+      profileLink.id = 'topbar-profile-link';
+      profileLink.href = '/profile.html';
+      profileLink.textContent = '👤 Profile';
+      profileLink.style.cssText = 'color:#94a3b8;text-decoration:none;';
+      topbarRight.insertBefore(profileLink, topbarRight.firstChild);
+    }
 
     const isPro = await checkProStatus(user.email);
 
@@ -112,6 +122,9 @@ onAuthStateChanged(auth, async (user) => {
     if (loginBtn) loginBtn.style.display = 'inline-block';
     if (registerBtn) registerBtn.style.display = 'inline-block';
     const userMenu = document.getElementById('user-menu');
+    // Remove Profile link
+    const profileLink = document.getElementById('topbar-profile-link');
+    if (profileLink) profileLink.remove();
     if (userMenu) userMenu.remove();
     window.userIsPro = false;
     window.userEmail = null;
