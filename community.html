@@ -428,7 +428,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
     <!-- Top Traders -->
     <div class="sidebar-card">
-      <h3>🏆 Top Traders This Week</h3>
+      <h3>🏆 Top Contributors This Week</h3>
       <div class="trader-row">
         <span class="trader-rank gold">1</span>
         <div class="trader-avatar-sm" style="background:linear-gradient(135deg,#3b82f6,#1e40af);">A</div>
@@ -642,10 +642,24 @@ if (writeBtn) {
     window.location.href = '/register.html';
   });
 }
-  // Init
-loadNews();
-loadTrending(); 
-setupFilters(); // Always setup filters regardless
+  // Disable like/comment/save/views actions (Coming Soon)
+document.querySelectorAll('.fp-meta span, .post-meta-bottom span').forEach(action => {
+  action.style.cursor = 'default';
+  action.title = 'Coming soon — feature in development';
+  action.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const existing = document.getElementById('coming-soon-toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.id = 'coming-soon-toast';
+    toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#fef3c7;color:#92400e;padding:14px 20px;border-radius:8px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-size:13px;border:1px solid #fcd34d;';
+    toast.textContent = '🔒 This feature is coming soon!';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+  });
+});
 // Hide ads for Pro users
 window.addEventListener('userLoaded', (e) => {
   if (e.detail.isPro) {
