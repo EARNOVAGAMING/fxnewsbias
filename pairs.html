@@ -17,7 +17,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;
   --bull:#10b981; --bear:#ef4444; --neutral:#f59e0b;
 }
 
-/* TOP BAR */
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
 .topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
 .topbar-left{display:flex;gap:16px;color:#94a3b8;}
@@ -25,7 +24,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;
 .topbar a{color:#94a3b8;text-decoration:none;}
 .topbar a:hover{color:#fff;}
 
-/* HEADER */
 header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
 .logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;text-decoration:none;}
@@ -42,7 +40,6 @@ nav a.active{font-weight:600;}
 .btn-primary:hover{background:#1d4ed8;}
 .burger{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
 
-/* TICKER */
 .ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
 .ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
 @keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
@@ -51,7 +48,6 @@ nav a.active{font-weight:600;}
 .up{color:var(--bull);font-weight:600;}
 .down{color:var(--bear);font-weight:600;}
 
-/* PAGE HEAD */
 .page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:36px 0;}
 .page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .breadcrumb{font-size:12px;color:#94a3b8;margin-bottom:10px;}
@@ -60,18 +56,15 @@ nav a.active{font-weight:600;}
 .page-title{font-size:32px;font-weight:800;margin-bottom:8px;}
 .page-sub{color:#94a3b8;font-size:14px;max-width:700px;}
 
-/* CATEGORY TABS */
 .cat-tabs{max-width:1280px;margin:24px auto 0;padding:0 20px;display:flex;gap:6px;border-bottom:2px solid var(--border);overflow-x:auto;}
 .cat-tab{padding:12px 18px;font-size:14px;font-weight:600;color:var(--text-soft);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .2s;}
 .cat-tab:hover{color:var(--accent);}
 .cat-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 
-/* SECTION */
 .section{max-width:1280px;margin:24px auto;padding:0 20px;}
 .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
 .section-update{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted);}
 
-/* PAIRS TABLE */
 .pairs-table{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px;}
 .table-header{display:grid;grid-template-columns:140px 1fr 110px 110px 110px 100px;gap:12px;padding:14px 18px;background:var(--bg-soft);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);}
 .pair-row{display:grid;grid-template-columns:140px 1fr 110px 110px 110px 100px;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .15s;}
@@ -96,35 +89,43 @@ nav a.active{font-weight:600;}
 .comment-rules{font-size:12px;color:var(--text-muted);background:#fef3c7;padding:10px 14px;border-radius:6px;margin-bottom:14px;line-height:1.5;}
 .comment-rules strong{color:#92400e;}
 .comment-input{display:flex;gap:10px;margin-bottom:18px;}
-.comment-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg-soft);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text-soft);flex-shrink:0;}
+.comment-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg-soft);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text-soft);flex-shrink:0;overflow:hidden;}
+.comment-avatar img{width:100%;height:100%;object-fit:cover;}
 .comment-form{flex:1;}
 .comment-textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:inherit;font-size:13px;resize:vertical;min-height:60px;}
 .comment-textarea:focus{outline:none;border-color:var(--accent);}
-.comment-submit{margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
+.comment-textarea:disabled{cursor:not-allowed;background:#f9fafb;}
+.bias-selector{display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center;}
+.bias-selector-label{font-size:11px;color:var(--text-soft);font-weight:600;}
+.bias-btn{padding:4px 12px;border:1px solid var(--border);background:#fff;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.bias-btn:hover{border-color:var(--accent);}
+.bias-btn.active-bull{background:#d1fae5;border-color:#10b981;color:#065f46;}
+.bias-btn.active-bear{background:#fee2e2;border-color:#ef4444;color:#991b1b;}
+.bias-btn.active-neut{background:#fef3c7;border-color:#f59e0b;color:#92400e;}
+.comment-submit{margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
 .comment-disclaimer{font-size:11px;color:var(--text-muted);}
-
-/* COMMENT */
 .comment-list{display:flex;flex-direction:column;gap:14px;}
 .comment{display:flex;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);}
 .comment:last-child{border-bottom:none;padding-bottom:0;}
-.comment-content{flex:1;}
-.comment-meta{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px;}
+.comment-content{flex:1;min-width:0;}
+.comment-meta{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px;flex-wrap:wrap;}
 .comment-user{font-weight:700;color:var(--text);}
 .comment-time{color:var(--text-muted);}
-.user-badge{font-size:9px;background:var(--accent);color:#fff;padding:1px 6px;border-radius:8px;font-weight:600;text-transform:uppercase;}
-.user-badge.verified{background:var(--bull);}
 .comment-bias{font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700;text-transform:uppercase;}
 .bias-bull{background:#d1fae5;color:#065f46;}
 .bias-bear{background:#fee2e2;color:#991b1b;}
-.comment-text{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:6px;}
-.comment-actions{display:flex;gap:14px;font-size:11px;color:var(--text-muted);}
-.comment-action{cursor:pointer;display:flex;align-items:center;gap:4px;}
+.bias-neut{background:#fef3c7;color:#92400e;}
+.comment-text{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:6px;word-wrap:break-word;}
+.comment-actions{display:flex;gap:14px;font-size:11px;color:var(--text-muted);align-items:center;}
+.comment-action{cursor:pointer;display:flex;align-items:center;gap:4px;user-select:none;}
 .comment-action:hover{color:var(--accent);}
+.comment-action.liked{color:var(--accent);font-weight:600;}
+.delete-btn{margin-left:auto;font-size:10px;color:#9ca3af;cursor:pointer;}
+.delete-btn:hover{color:var(--bear);}
+.empty-comments{text-align:center;padding:30px;color:var(--text-muted);font-size:13px;}
 
-/* AD */
 .ad-slot{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:8px;padding:30px;text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:24px;}
 
-/* FOOTER */
 footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
@@ -135,7 +136,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-col a:hover{color:#fff;}
 .footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
 
-/* MOBILE */
 @media(max-width:900px){
   nav ul{display:none;}
   .burger{display:block;}
@@ -150,44 +150,41 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 </head>
 <body>
 
-<!-- Top Bar -->
 <div class="topbar">
   <div class="topbar-inner">
     <div class="topbar-left">
-      <span>📅 Wed, Apr 29, 2026</span>
-      <span>🌐 London Open</span>
+      <span id="topbar-date">📅 Loading...</span>
+      <span>🌐 Live Markets</span>
       <span>⚡ Live Sentiment</span>
     </div>
     <div class="topbar-right">
       <a href="/about.html">About</a>
-<a href="/contact.html">Contact</a>
+      <a href="/contact.html">Contact</a>
     </div>
   </div>
 </div>
 
-<!-- Header -->
 <header>
   <div class="header-inner">
     <a href="index.html" class="logo">FX<span>News</span>Bias</a>
     <nav>
       <ul>
         <li><a href="/">Markets</a></li>
-<li><a href="/currencies.html">Currencies</a></li>
-<li><a href="/pairs.html" class="active">Pairs</a></li>
-<li><a href="/calendar.html">Calendar</a></li>
-<li><a href="/news.html">News</a></li>
-<li><a href="/community.html">Community</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html" class="active">Pairs</a></li>
+        <li><a href="/calendar.html">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html">Community</a></li>
       </ul>
     </nav>
     <div class="nav-actions">
       <a href="/login.html" class="btn btn-outline">Login</a>
-<a href="/register.html" class="btn btn-primary">Register</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
       <button class="burger">☰</button>
     </div>
   </div>
 </header>
 
-<!-- Live Ticker -->
 <div class="ticker">
   <div class="ticker-inner">
     <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
@@ -205,7 +202,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   </div>
 </div>
 
-<!-- Page Header -->
 <section class="page-head">
   <div class="page-head-inner">
     <div class="breadcrumb"><a href="index.html">Home</a> · Pairs</div>
@@ -214,7 +210,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   </div>
 </section>
 
-<!-- Category Tabs -->
 <div class="cat-tabs">
   <div class="cat-tab active">Major Pairs</div>
   <div class="cat-tab">Minor Pairs</div>
@@ -222,402 +217,81 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   <div class="cat-tab">Commodity Pairs</div>
 </div>
 
-<!-- Major Pairs -->
 <section class="section" id="tab-major">
   <div class="section-title">
     <span>Major Pairs</span>
     <span class="section-update">⏱ Updated 14m ago</span>
   </div>
-
   <div class="pairs-table">
     <div class="table-header">
-      <div>Pair</div>
-      <div>Key Driver</div>
-      <div>Price</div>
-      <div>24h Change</div>
-      <div>Bias</div>
-      <div></div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇪🇺🇺🇸</span>EUR/USD</div>
-      <div class="pair-driver">EUR strong on hawkish ECB · USD weak on dovish Fed</div>
-      <div class="pair-price">1.0842</div>
-      <div class="pair-change down">-0.21%</div>
-      <div class="bias-badge bull-bg">Bullish</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇬🇧🇺🇸</span>GBP/USD</div>
-      <div class="pair-driver">Both currencies weak · UK unemployment rising</div>
-      <div class="pair-price">1.2634</div>
-      <div class="pair-change down">-0.32%</div>
-      <div class="bias-badge neut-bg">Neutral</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇺🇸🇯🇵</span>USD/JPY</div>
-      <div class="pair-driver">JPY strength on safe-haven · USD weakness</div>
-      <div class="pair-price">149.82</div>
-      <div class="pair-change up">+0.23%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇺🇸🇨🇭</span>USD/CHF</div>
-      <div class="pair-driver">CHF safe-haven demand surges</div>
-      <div class="pair-price">0.8921</div>
-      <div class="pair-change up">+0.12%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇦🇺🇺🇸</span>AUD/USD</div>
-      <div class="pair-driver">Both bearish · AUD worse on China data</div>
-      <div class="pair-price">0.6534</div>
-      <div class="pair-change down">-0.45%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇺🇸🇨🇦</span>USD/CAD</div>
-      <div class="pair-driver">CAD strong on oil surge · USD weak</div>
-      <div class="pair-price">1.3724</div>
-      <div class="pair-change down">-0.18%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇳🇿🇺🇸</span>NZD/USD</div>
-      <div class="pair-driver">RBNZ dovish · USD weakness offsets</div>
-      <div class="pair-price">0.5982</div>
-      <div class="pair-change down">-0.28%</div>
-      <div class="bias-badge neut-bg">Neutral</div>
-      <div class="go-arrow">→</div>
+      <div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div>
     </div>
   </div>
-
-  <!-- Ad -->
   <div class="ad-slot">📢 Advertisement Space — 728×90 Leaderboard</div>
-
 </section>
 
-<!-- Minor Pairs -->
 <section class="section" id="tab-minor" style="display:none;">
-  <div class="section-title">
-    <span>Minor Pairs (Cross Currencies)</span>
-    <span class="section-update">⏱ Updated 14m ago</span>
-  </div>
-
+  <div class="section-title"><span>Minor Pairs (Cross Currencies)</span><span class="section-update">⏱ Updated 14m ago</span></div>
   <div class="pairs-table">
-    <div class="table-header">
-      <div>Pair</div>
-      <div>Key Driver</div>
-      <div>Price</div>
-      <div>24h Change</div>
-      <div>Bias</div>
-      <div></div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇪🇺🇬🇧</span>EUR/GBP</div>
-      <div class="pair-driver">EUR strong vs weakening GBP</div>
-      <div class="pair-price">0.8581</div>
-      <div class="pair-change up">+0.18%</div>
-      <div class="bias-badge bull-bg">Bullish</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇪🇺🇯🇵</span>EUR/JPY</div>
-      <div class="pair-driver">JPY safe-haven demand stronger than EUR</div>
-      <div class="pair-price">162.45</div>
-      <div class="pair-change down">-0.42%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇬🇧🇯🇵</span>GBP/JPY</div>
-      <div class="pair-driver">Strong JPY demand · weak GBP fundamentals</div>
-      <div class="pair-price">189.32</div>
-      <div class="pair-change down">-0.68%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇦🇺🇯🇵</span>AUD/JPY</div>
-      <div class="pair-driver">Risk-off mode crushes AUD/JPY</div>
-      <div class="pair-price">97.92</div>
-      <div class="pair-change down">-0.74%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇪🇺🇨🇭</span>EUR/CHF</div>
-      <div class="pair-driver">CHF safe-haven dominates EUR</div>
-      <div class="pair-price">0.9672</div>
-      <div class="pair-change down">-0.15%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇬🇧🇨🇦</span>GBP/CAD</div>
-      <div class="pair-driver">CAD strong on oil · GBP weak</div>
-      <div class="pair-price">1.7345</div>
-      <div class="pair-change down">-0.52%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
+    <div class="table-header"><div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div></div>
   </div>
 </section>
 
-<!-- JPY Crosses -->
 <section class="section" id="tab-jpy" style="display:none;">
-  <div class="section-title">
-    <span>JPY Crosses</span>
-    <span class="section-update">⏱ Updated 14m ago</span>
-  </div>
+  <div class="section-title"><span>JPY Crosses</span><span class="section-update">⏱ Updated 14m ago</span></div>
   <div class="pairs-table">
-    <div class="table-header">
-      <div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇺🇸🇯🇵</span>USD/JPY</div>
-      <div class="pair-driver">JPY safe-haven demand · BOJ hawkish shift</div>
-      <div class="pair-price">149.82</div>
-      <div class="pair-change up">+0.23%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇪🇺🇯🇵</span>EUR/JPY</div>
-      <div class="pair-driver">JPY safe-haven stronger than EUR bulls</div>
-      <div class="pair-price">162.45</div>
-      <div class="pair-change down">-0.42%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇬🇧🇯🇵</span>GBP/JPY</div>
-      <div class="pair-driver">Strong JPY · weak GBP fundamentals</div>
-      <div class="pair-price">189.32</div>
-      <div class="pair-change down">-0.68%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇦🇺🇯🇵</span>AUD/JPY</div>
-      <div class="pair-driver">Risk-off crushes AUD · JPY surges</div>
-      <div class="pair-price">97.92</div>
-      <div class="pair-change down">-0.74%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇨🇦🇯🇵</span>CAD/JPY</div>
-      <div class="pair-driver">CAD strong on oil · JPY still dominates</div>
-      <div class="pair-price">109.34</div>
-      <div class="pair-change down">-0.31%</div>
-      <div class="bias-badge neut-bg">Neutral</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇨🇭🇯🇵</span>CHF/JPY</div>
-      <div class="pair-driver">Both safe-havens strong · CHF slightly weaker</div>
-      <div class="pair-price">168.92</div>
-      <div class="pair-change up">+0.12%</div>
-      <div class="bias-badge neut-bg">Neutral</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇳🇿🇯🇵</span>NZD/JPY</div>
-      <div class="pair-driver">RBNZ dovish · JPY safe-haven demand</div>
-      <div class="pair-price">89.74</div>
-      <div class="pair-change down">-0.55%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
+    <div class="table-header"><div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div></div>
   </div>
 </section>
 
-<!-- Commodity Pairs -->
 <section class="section" id="tab-commodity" style="display:none;">
-  <div class="section-title">
-    <span>Commodity Pairs</span>
-    <span class="section-update">⏱ Updated 14m ago</span>
-  </div>
+  <div class="section-title"><span>Commodity Pairs</span><span class="section-update">⏱ Updated 14m ago</span></div>
   <div class="pairs-table">
-    <div class="table-header">
-      <div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇦🇺🇺🇸</span>AUD/USD</div>
-      <div class="pair-driver">Iron ore weak · China PMI miss</div>
-      <div class="pair-price">0.6534</div>
-      <div class="pair-change down">-0.45%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇨🇦🇺🇸</span>USD/CAD</div>
-      <div class="pair-driver">Oil surge supports CAD · USD weak</div>
-      <div class="pair-price">1.3724</div>
-      <div class="pair-change down">-0.18%</div>
-      <div class="bias-badge bull-bg">Bullish CAD</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🇳🇿🇺🇸</span>NZD/USD</div>
-      <div class="pair-driver">Dairy prices weak · RBNZ dovish signal</div>
-      <div class="pair-price">0.5982</div>
-      <div class="pair-change down">-0.28%</div>
-      <div class="bias-badge bear-bg">Bearish</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🥇🇺🇸</span>XAU/USD</div>
-      <div class="pair-driver">Gold surges on safe-haven demand · risk-off</div>
-      <div class="pair-price">2342.18</div>
-      <div class="pair-change up">+0.84%</div>
-      <div class="bias-badge bull-bg">Bullish</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🪙🇺🇸</span>XAG/USD</div>
-      <div class="pair-driver">Silver follows gold · industrial demand steady</div>
-      <div class="pair-price">27.45</div>
-      <div class="pair-change up">+0.62%</div>
-      <div class="bias-badge bull-bg">Bullish</div>
-      <div class="go-arrow">→</div>
-    </div>
-    <div class="pair-row">
-      <div class="pair-name"><span class="pair-flags">🛢️🇺🇸</span>WTI/USD</div>
-      <div class="pair-driver">Middle East tensions · OPEC supply cuts</div>
-      <div class="pair-price">84.32</div>
-      <div class="pair-change up">+1.24%</div>
-      <div class="bias-badge bull-bg">Bullish</div>
-      <div class="go-arrow">→</div>
-    </div>
+    <div class="table-header"><div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div></div>
   </div>
 </section>
 
-<!-- Featured Pair Discussion -->
+<!-- LIVE Comments Section -->
 <section class="section">
   <div class="section-title">
-    <span>💬 Featured Discussion · EUR/USD</span>
-    <span class="section-update">156 traders viewing</span>
+    <span>💬 Trader Discussion</span>
+    <span class="section-update" id="live-indicator">🟢 Live</span>
   </div>
 
   <div class="comments-section">
     <div class="comments-head">
       <div class="comments-title">
-        💬 Trader Views <span class="comments-count">12 comments</span>
+        💬 Trader Views <span class="comments-count" id="comments-count">0 comments</span>
       </div>
     </div>
 
     <div class="comment-rules">
-      <strong>📌 Community Rules:</strong> Share your analysis and views. No financial advice, no signal selling, no spam, no broker promotions. Posts violating rules will be removed.
+      <strong>📌 Community Rules:</strong> Share your analysis and views. Mention pair (e.g. EUR/USD) in your comment. No financial advice, no signal selling, no spam, no broker promotions. Posts violating rules will be removed.
     </div>
 
-    <!-- Comment Input -->
     <div class="comment-input">
-      <div class="comment-avatar">👤</div>
+      <div class="comment-avatar" id="user-comment-avatar">👤</div>
       <div class="comment-form">
-        <textarea class="comment-textarea" placeholder="Share your view on EUR/USD... (Login to post)"></textarea>
+        <div class="bias-selector" id="bias-selector">
+          <span class="bias-selector-label">Your bias:</span>
+          <button type="button" class="bias-btn" data-bias="Bullish">🟢 Bullish</button>
+          <button type="button" class="bias-btn" data-bias="Bearish">🔴 Bearish</button>
+          <button type="button" class="bias-btn" data-bias="Neutral">🟡 Neutral</button>
+        </div>
+        <textarea class="comment-textarea" id="comment-textarea" placeholder="🔒 Login to share your view" disabled></textarea>
         <div class="comment-submit">
           <span class="comment-disclaimer">By posting you agree to our community guidelines.</span>
-          <button class="btn btn-primary">Post View</button>
+          <button class="btn btn-primary" id="post-comment-btn" disabled style="opacity:0.6;cursor:not-allowed;">🔒 Login to Post</button>
         </div>
       </div>
     </div>
 
-    <!-- Comments -->
-    <div class="comment-list">
-
-      <div class="comment">
-        <div class="comment-avatar" style="background:#dbeafe;color:#1e40af;">A</div>
-        <div class="comment-content">
-          <div class="comment-meta">
-            <span class="comment-user">TraderAhmad</span>
-            <span class="user-badge verified">Verified</span>
-            <span class="comment-bias bias-bull">Bullish</span>
-            <span class="comment-time">2 hours ago</span>
-          </div>
-          <div class="comment-text">ECB hawkish stance + Fed dovish pivot is the perfect setup for EUR/USD longs. Watching 1.0950 as next key resistance. NFP tomorrow could be the catalyst we need.</div>
-          <div class="comment-actions">
-            <span class="comment-action">👍 24</span>
-            <span class="comment-action">💬 5 replies</span>
-            <span class="comment-action">↗ Share</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="comment">
-        <div class="comment-avatar" style="background:#fef3c7;color:#92400e;">M</div>
-        <div class="comment-content">
-          <div class="comment-meta">
-            <span class="comment-user">MacroMike</span>
-            <span class="comment-bias bias-bear">Bearish</span>
-            <span class="comment-time">4 hours ago</span>
-          </div>
-          <div class="comment-text">Disagree with bullish view. Eurozone PMI data this Friday will likely disappoint. France political risk also weighing. I'm short EUR/USD from 1.0860 looking for 1.0780.</div>
-          <div class="comment-actions">
-            <span class="comment-action">👍 18</span>
-            <span class="comment-action">💬 8 replies</span>
-            <span class="comment-action">↗ Share</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="comment">
-        <div class="comment-avatar" style="background:#d1fae5;color:#065f46;">S</div>
-        <div class="comment-content">
-          <div class="comment-meta">
-            <span class="comment-user">SwingTraderSiti</span>
-            <span class="comment-bias bias-bull">Bullish</span>
-            <span class="comment-time">6 hours ago</span>
-          </div>
-          <div class="comment-text">Long term bullish on EUR/USD. The rate differential narrative supports euro strength through 2026. Geopolitical tensions also reducing USD safe-haven appeal. Holding longs from 1.0750.</div>
-          <div class="comment-actions">
-            <span class="comment-action">👍 31</span>
-            <span class="comment-action">💬 12 replies</span>
-            <span class="comment-action">↗ Share</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="comment">
-        <div class="comment-avatar" style="background:#fee2e2;color:#991b1b;">R</div>
-        <div class="comment-content">
-          <div class="comment-meta">
-            <span class="comment-user">RiskOffRamesh</span>
-            <span class="comment-bias bias-bear">Bearish</span>
-            <span class="comment-time">8 hours ago</span>
-          </div>
-          <div class="comment-text">Watch out for risk-off scenarios. Middle East tensions could drive USD demand despite Fed dovishness. EUR/USD rally feels exhausted around 1.0850 level. Cautious here.</div>
-          <div class="comment-actions">
-            <span class="comment-action">👍 15</span>
-            <span class="comment-action">💬 3 replies</span>
-            <span class="comment-action">↗ Share</span>
-          </div>
-        </div>
-      </div>
-
+    <div class="comment-list" id="comment-list">
+      <div class="empty-comments">Loading comments...</div>
     </div>
   </div>
 </section>
 
-<!-- Footer -->
 <footer>
   <div class="footer-inner">
     <div class="footer-grid">
@@ -625,8 +299,8 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <h4>FXNewsBias</h4>
         <ul>
           <li><a href="/about.html">About Us</a></li>
-<li><a href="/how.html">How It Works</a></li>
-<li><a href="/contact.html">Contact</a></li>
+          <li><a href="/how.html">How It Works</a></li>
+          <li><a href="/contact.html">Contact</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -635,23 +309,23 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
           <li><a href="currencies.html">Currencies</a></li>
           <li><a href="pairs.html">Pairs</a></li>
           <li><a href="/calendar.html">Calendar</a></li>
-<li><a href="/news.html">News</a></li>
+          <li><a href="/news.html">News</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Community</h4>
         <ul>
           <li><a href="/community.html">Latest Posts</a></li>
-<li><a href="/community.html">Top Traders</a></li>
-<li><a href="/community.html">Guidelines</a></li>
+          <li><a href="/community.html">Top Traders</a></li>
+          <li><a href="/community.html">Guidelines</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Legal</h4>
         <ul>
           <li><a href="/disclaimer.html">Disclaimer</a></li>
-<li><a href="/privacy.html">Privacy Policy</a></li>
-<li><a href="/terms.html">Terms of Service</a></li>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
         </ul>
       </div>
     </div>
@@ -663,8 +337,19 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
-<script type="module" src="/firebase.js"></script> 
+<script type="module" src="/firebase.js"></script>
+
 <script>
+// Topbar date
+const topbarDate = document.getElementById('topbar-date');
+if (topbarDate) {
+  const now = new Date();
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  topbarDate.textContent = `📅 ${dayNames[now.getDay()]}, ${monthNames[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+}
+
+// Pair data from Supabase
 const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
 
@@ -721,56 +406,35 @@ async function loadAllData() {
     const sentArr = await sentRes.json();
     sentArr.forEach(s => { if (!sentimentData[s.currency]) sentimentData[s.currency] = s; });
 
-    // Fetch 500 prices to have 24h history per pair
     const priceRes = await fetch(SUPABASE_URL + '/rest/v1/prices?order=id.desc&limit=500', {
       headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
     });
     const priceArr = await priceRes.json();
 
-    // Group prices by pair
     const grouped = {};
     priceArr.forEach(p => {
       if (!grouped[p.pair]) grouped[p.pair] = [];
       grouped[p.pair].push(p);
     });
 
-    // For each pair, compute 24h change
     Object.keys(grouped).forEach(pair => {
       const records = grouped[pair];
       const current = records[0];
       const currentPrice = parseFloat(current.price);
-
-      // Find record closest to 24h ago
       const dayAgo = Date.now() - 24*60*60*1000;
       let oldRecord = null;
       for (const r of records) {
-        if (new Date(r.created_at).getTime() < dayAgo) {
-          oldRecord = r;
-          break;
-        }
+        if (new Date(r.created_at).getTime() < dayAgo) { oldRecord = r; break; }
       }
-
-      // If no 24h-old record yet, use oldest available
-      if (!oldRecord && records.length > 1) {
-        oldRecord = records[records.length - 1];
-      }
-
+      if (!oldRecord && records.length > 1) oldRecord = records[records.length - 1];
       let change = null;
       if (oldRecord && oldRecord !== current) {
         const oldPrice = parseFloat(oldRecord.price);
-        if (oldPrice > 0) {
-          change = ((currentPrice - oldPrice) / oldPrice) * 100;
-        }
+        if (oldPrice > 0) change = ((currentPrice - oldPrice) / oldPrice) * 100;
       }
-
-      pricesData[pair] = {
-        price: currentPrice,
-        change_24h: change,
-        created_at: current.created_at
-      };
+      pricesData[pair] = { price: currentPrice, change_24h: change, created_at: current.created_at };
     });
 
-    // Update timestamps
     if (sentArr[0]) {
       const t = '⏱ Updated ' + timeAgo(sentArr[0].created_at);
       document.querySelectorAll('.section-update').forEach(el => {
@@ -779,73 +443,52 @@ async function loadAllData() {
     }
 
     renderAllTabs();
-  } catch(e) {
-    console.log('Pairs load error:', e);
-  }
+  } catch(e) { console.log('Pairs load error:', e); }
 }
 
 function computePairBias(base, quote) {
   const baseSent = sentimentData[base];
   const quoteSent = sentimentData[quote];
-
   if (!baseSent && base !== 'XAU' && base !== 'XAG' && base !== 'WTI') {
     return { bias: 'Neutral', driver: 'Sentiment data loading...' };
   }
-
-  // Special handling for commodities
   if (base === 'XAU' || base === 'XAG' || base === 'WTI') {
     const usdSent = sentimentData['USD'];
     if (!usdSent) return { bias: 'Neutral', driver: 'Loading...' };
     const bias = usdSent.score < 50 ? 'Bullish' : 'Bearish';
-    const driver = base === 'XAU' ? `Gold vs USD (${usdSent.score})` :
-                   base === 'XAG' ? `Silver vs USD (${usdSent.score})` :
-                   `Oil vs USD (${usdSent.score})`;
+    const driver = base === 'XAU' ? `Gold vs USD (${usdSent.score})` : base === 'XAG' ? `Silver vs USD (${usdSent.score})` : `Oil vs USD (${usdSent.score})`;
     return { bias, driver };
   }
-
   if (!quoteSent) return { bias: 'Neutral', driver: 'Sentiment data loading...' };
-
   const diff = baseSent.score - quoteSent.score;
   let bias = 'Neutral';
   if (diff > 10) bias = 'Bullish';
   else if (diff < -10) bias = 'Bearish';
-
   const driver = `${base} ${baseSent.bias} (${baseSent.score}) · ${quote} ${quoteSent.bias} (${quoteSent.score})`;
   return { bias, driver };
 }
 
 function renderTab(tabKey) {
   const config = PAIRS_CONFIG[tabKey];
-  const sectionId = 'tab-' + tabKey;
-  const section = document.getElementById(sectionId);
+  const section = document.getElementById('tab-' + tabKey);
   if (!section) return;
-
   const table = section.querySelector('.pairs-table');
   if (!table) return;
-
   const header = table.querySelector('.table-header');
   table.innerHTML = '';
   if (header) table.appendChild(header);
-
   config.forEach(p => {
     const { bias, driver } = computePairBias(p.base, p.quote);
     const price = pricesData[p.pair];
-
     let priceVal = '—';
     if (price) {
       const num = parseFloat(price.price);
-      priceVal = p.pair.includes('JPY') ? num.toFixed(2) :
-                 (p.pair === 'XAU/USD') ? num.toFixed(2) :
-                 num.toFixed(4);
+      priceVal = p.pair.includes('JPY') ? num.toFixed(2) : (p.pair === 'XAU/USD') ? num.toFixed(2) : num.toFixed(4);
     }
-
-    const change = price && price.change_24h !== null && price.change_24h !== undefined ?
-                   parseFloat(price.change_24h) : null;
+    const change = price && price.change_24h !== null && price.change_24h !== undefined ? parseFloat(price.change_24h) : null;
     const changeClass = change > 0 ? 'up' : 'down';
     const changeText = change !== null ? (change > 0 ? '+' : '') + change.toFixed(2) + '%' : '—';
-
     const biasClass = bias === 'Bullish' ? 'bull-bg' : bias === 'Bearish' ? 'bear-bg' : 'neut-bg';
-
     const row = document.createElement('div');
     row.className = 'pair-row';
     row.innerHTML = `
@@ -860,16 +503,11 @@ function renderTab(tabKey) {
   });
 }
 
-function renderAllTabs() {
-  Object.keys(PAIRS_CONFIG).forEach(key => renderTab(key));
-}
-
+function renderAllTabs() { Object.keys(PAIRS_CONFIG).forEach(key => renderTab(key)); }
 loadAllData();
 
-// Tab switching
 const catTabs = document.querySelectorAll('.cat-tab');
 const tabSections = { 0: 'tab-major', 1: 'tab-minor', 2: 'tab-jpy', 3: 'tab-commodity' };
-
 catTabs.forEach((tab, index) => {
   tab.addEventListener('click', () => {
     catTabs.forEach(t => t.classList.remove('active'));
@@ -883,7 +521,9 @@ catTabs.forEach((tab, index) => {
   });
 });
 </script>
-  <script>
+
+<!-- Live Ticker -->
+<script>
 const SUPABASE_URL_TICKER = 'https://vtbmtxtgtdprpbilragm.supabase.co';
 const SUPABASE_ANON_TICKER = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
 
@@ -913,36 +553,278 @@ async function loadTickerPrices() {
 }
 loadTickerPrices();
 setInterval(loadTickerPrices, 300000);
-// Disable comment functionality (not yet implemented)
-document.addEventListener('DOMContentLoaded', () => {
-  const textarea = document.querySelector('.comment-textarea');
-  const postBtn = document.querySelector('.comment-submit .btn-primary');
+</script>
 
-  if (textarea) {
-    textarea.disabled = true;
-    textarea.placeholder = '🔒 Login to share your view (coming soon!)';
-    textarea.style.cursor = 'not-allowed';
-    textarea.style.background = '#f9fafb';
-  }
+<!-- LIVE COMMENTS SYSTEM -->
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, where, orderBy, limit, onSnapshot, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-  if (postBtn) {
-    postBtn.textContent = '🔒 Coming Soon';
-    postBtn.style.opacity = '0.6';
-    postBtn.style.cursor = 'not-allowed';
-    postBtn.disabled = true;
-  }
+const firebaseConfig = {
+  apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
+  authDomain: "fxnewsbias.firebaseapp.com",
+  projectId: "fxnewsbias",
+  storageBucket: "fxnewsbias.firebasestorage.app",
+  messagingSenderId: "414710041736",
+  appId: "1:414710041736:web:00e79ccc58fdb94e98633d"
+};
 
-  // Disable like/reply/share actions
-  document.querySelectorAll('.comment-action').forEach(action => {
-    action.style.cursor = 'default';
-    action.style.opacity = '0.6';
-    action.title = 'Coming soon';
-    action.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let userProfile = null;
+let selectedBias = 'Neutral';
+let userLikes = new Set();
+
+const textarea = document.getElementById('comment-textarea');
+const postBtn = document.getElementById('post-comment-btn');
+const biasSelector = document.getElementById('bias-selector');
+const userAvatar = document.getElementById('user-comment-avatar');
+const commentList = document.getElementById('comment-list');
+const commentsCount = document.getElementById('comments-count');
+
+function timeAgoComment(date) {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+function showToast(msg, type) {
+  const existing = document.getElementById('comment-toast');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'comment-toast';
+  el.style.cssText = 'position:fixed;top:20px;right:20px;padding:14px 20px;border-radius:8px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-size:13px;' + (type === 'success' ? 'background:#d1fae5;color:#065f46;border:1px solid #10b981;' : 'background:#fee2e2;color:#991b1b;border:1px solid #ef4444;');
+  el.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// Bias buttons
+document.querySelectorAll('.bias-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.bias-btn').forEach(b => {
+      b.classList.remove('active-bull', 'active-bear', 'active-neut');
     });
+    if (btn.dataset.bias === 'Bullish') btn.classList.add('active-bull');
+    else if (btn.dataset.bias === 'Bearish') btn.classList.add('active-bear');
+    else btn.classList.add('active-neut');
+    selectedBias = btn.dataset.bias;
   });
 });
-  </script>
+
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if (user) {
+    try {
+      const docId = user.email.replace(/[.#$[\]@]/g, '_');
+      const userDoc = await getDoc(doc(db, 'users', docId));
+      if (userDoc.exists()) userProfile = userDoc.data();
+    } catch(e) { console.log('Profile load:', e); }
+
+    const username = user.displayName || (userProfile && userProfile.username) || user.email.split('@')[0];
+    textarea.disabled = false;
+    textarea.placeholder = 'Share your view (mention pair like EUR/USD)... Min 10 characters';
+    postBtn.disabled = false;
+    postBtn.textContent = 'Post View';
+    postBtn.style.opacity = '1';
+    postBtn.style.cursor = 'pointer';
+    biasSelector.style.display = 'flex';
+
+    if (userProfile && userProfile.photoURL) {
+      userAvatar.innerHTML = `<img src="${userProfile.photoURL}" alt="">`;
+      userAvatar.style.padding = '0';
+    } else {
+      userAvatar.textContent = username[0].toUpperCase();
+      userAvatar.style.background = 'linear-gradient(135deg,#2563eb,#60a5fa)';
+      userAvatar.style.color = '#fff';
+      userAvatar.style.border = 'none';
+    }
+
+    try {
+      const likesQuery = query(collection(db, 'likes'), where('userEmail', '==', user.email));
+      const likesSnap = await getDocs(likesQuery);
+      likesSnap.forEach(d => userLikes.add(d.data().itemId));
+    } catch(e) { console.log('Likes load:', e); }
+  } else {
+    textarea.disabled = true;
+    textarea.placeholder = '🔒 Login to share your view';
+    postBtn.disabled = true;
+    postBtn.textContent = '🔒 Login to Post';
+    postBtn.style.opacity = '0.6';
+    postBtn.style.cursor = 'not-allowed';
+    biasSelector.style.display = 'none';
+    userAvatar.textContent = '👤';
+  }
+});
+
+postBtn.addEventListener('click', async () => {
+  if (!currentUser) {
+    window.location.href = '/login.html';
+    return;
+  }
+  const text = textarea.value.trim();
+  if (!text) { showToast('Please write something!', 'error'); return; }
+  if (text.length < 10) { showToast('Comment too short (min 10 chars)', 'error'); return; }
+  if (text.length > 1000) { showToast('Comment too long (max 1000 chars)', 'error'); return; }
+
+  postBtn.disabled = true;
+  postBtn.textContent = 'Posting...';
+
+  try {
+    const username = currentUser.displayName || (userProfile && userProfile.username) || currentUser.email.split('@')[0];
+    await addDoc(collection(db, 'comments'), {
+      text: text,
+      bias: selectedBias,
+      authorEmail: currentUser.email,
+      authorName: username,
+      authorPhoto: (userProfile && userProfile.photoURL) || null,
+      section: 'pairs',
+      createdAt: serverTimestamp(),
+      likes: 0
+    });
+    textarea.value = '';
+    selectedBias = 'Neutral';
+    document.querySelectorAll('.bias-btn').forEach(b => {
+      b.classList.remove('active-bull', 'active-bear', 'active-neut');
+    });
+    showToast('Posted!', 'success');
+  } catch(e) {
+    console.log('Post error:', e);
+    showToast('Error posting. Try again.', 'error');
+  } finally {
+    postBtn.disabled = false;
+    postBtn.textContent = 'Post View';
+  }
+});
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderComments(comments) {
+  if (!comments.length) {
+    commentList.innerHTML = '<div class="empty-comments">No comments yet. Be the first to share your view!</div>';
+    return;
+  }
+
+  const colors = [
+    {bg:'#dbeafe',color:'#1e40af'},
+    {bg:'#fef3c7',color:'#92400e'},
+    {bg:'#d1fae5',color:'#065f46'},
+    {bg:'#fee2e2',color:'#991b1b'},
+    {bg:'#e0e7ff',color:'#4338ca'},
+    {bg:'#fce7f3',color:'#9d174d'}
+  ];
+
+  commentList.innerHTML = comments.map(c => {
+    const date = c.createdAt && c.createdAt.toDate ? c.createdAt.toDate() : new Date();
+    const time = timeAgoComment(date);
+    const initial = (c.authorName || 'U')[0].toUpperCase();
+    const colorIdx = (c.authorName || 'U').charCodeAt(0) % colors.length;
+    const col = colors[colorIdx];
+    const biasClass = c.bias === 'Bullish' ? 'bias-bull' : c.bias === 'Bearish' ? 'bias-bear' : 'bias-neut';
+    const biasShow = c.bias && c.bias !== 'Neutral' ? `<span class="comment-bias ${biasClass}">${c.bias}</span>` : '';
+    const liked = userLikes.has(c.id);
+    const isOwn = currentUser && currentUser.email === c.authorEmail;
+
+    const avatarHtml = c.authorPhoto ?
+      `<div class="comment-avatar" style="padding:0;"><img src="${escapeHtml(c.authorPhoto)}" alt=""></div>` :
+      `<div class="comment-avatar" style="background:${col.bg};color:${col.color};border:none;">${initial}</div>`;
+
+    return `
+      <div class="comment" data-id="${c.id}">
+        ${avatarHtml}
+        <div class="comment-content">
+          <div class="comment-meta">
+            <span class="comment-user">${escapeHtml(c.authorName || 'Anonymous')}</span>
+            ${biasShow}
+            <span class="comment-time">${time}</span>
+            ${isOwn ? `<span class="delete-btn" data-delete="${c.id}">🗑️ Delete</span>` : ''}
+          </div>
+          <div class="comment-text">${escapeHtml(c.text)}</div>
+          <div class="comment-actions">
+            <span class="comment-action like-btn ${liked ? 'liked' : ''}" data-id="${c.id}">👍 ${c.likes || 0}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Like handlers
+  document.querySelectorAll('.like-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!currentUser) { window.location.href = '/login.html'; return; }
+      await toggleLike(btn.dataset.id);
+    });
+  });
+
+  // Delete handlers
+  document.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this comment?')) return;
+      try {
+        await deleteDoc(doc(db, 'comments', btn.dataset.delete));
+        showToast('Comment deleted', 'success');
+      } catch(e) {
+        showToast('Error deleting', 'error');
+      }
+    });
+  });
+}
+
+async function toggleLike(commentId) {
+  if (!currentUser) return;
+  const userDocId = currentUser.email.replace(/[.#$[\]@]/g, '_');
+  const likeId = `${userDocId}_${commentId}`;
+  const likeRef = doc(db, 'likes', likeId);
+  const commentRef = doc(db, 'comments', commentId);
+
+  try {
+    const likeDoc = await getDoc(likeRef);
+    if (likeDoc.exists()) {
+      await deleteDoc(likeRef);
+      await updateDoc(commentRef, { likes: increment(-1) });
+      userLikes.delete(commentId);
+    } else {
+      await setDoc(likeRef, {
+        userEmail: currentUser.email,
+        itemId: commentId,
+        itemType: 'comment',
+        createdAt: serverTimestamp()
+      });
+      await updateDoc(commentRef, { likes: increment(1) });
+      userLikes.add(commentId);
+    }
+  } catch(e) {
+    console.log('Like error:', e);
+  }
+}
+
+// Real-time comments listener
+const commentsQuery = query(
+  collection(db, 'comments'),
+  where('section', '==', 'pairs'),
+  orderBy('createdAt', 'desc'),
+  limit(50)
+);
+
+onSnapshot(commentsQuery, (snapshot) => {
+  const comments = [];
+  snapshot.forEach(d => comments.push({ id: d.id, ...d.data() }));
+  renderComments(comments);
+  commentsCount.textContent = comments.length + ' comments';
+}, (err) => {
+  console.log('Comments listen error:', err);
+  commentList.innerHTML = '<div class="empty-comments">Comments unavailable. Refresh page.</div>';
+});
+</script>
+
 </body>
 </html>
