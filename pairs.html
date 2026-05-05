@@ -807,13 +807,18 @@ async function toggleLike(commentId) {
   }
 }
 
-// Real-time comments listener
-const commentsQuery = query(
-  collection(db, 'comments'),
-  where('section', '==', 'pairs'),
-  orderBy('createdAt', 'desc'),
-  limit(50)
-);
+onSnapshot(commentsQuery, (snapshot) => {
+  const comments = [];
+  snapshot.forEach(d => comments.push({ id: d.id, ...d.data() }));
+  // Sort by createdAt desc in JavaScript
+  comments.sort((a, b) => {
+    const aTime = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+    const bTime = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+    return bTime - aTime;
+  });
+  renderComments(comments);
+  commentsCount.textContent = comments.length + ' comments';
+}, (err) => {
 
 onSnapshot(commentsQuery, (snapshot) => {
   const comments = [];
