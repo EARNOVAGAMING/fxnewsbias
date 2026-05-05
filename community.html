@@ -4,18 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Forex Trader Community | FXNewsBias</title>
-<meta name="description" content="Join the FXNewsBias trader community. Share analysis, discuss trades, learn from verified traders. Strict moderation, no signals or spam.">
+<meta name="description" content="Join the FXNewsBias trader community. Share analysis, discuss trades, learn from verified traders.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
-:root{
-  --bg-soft:#f8f9fa;
-  --border:#e5e7eb; --border-strong:#d1d5db;
-  --text:#1a1a1a; --text-soft:#6b7280; --text-muted:#9ca3af;
-  --accent:#2563eb;
-  --bull:#10b981; --bear:#ef4444; --neutral:#f59e0b;
-}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}
 
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
 .topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
@@ -25,7 +19,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;
 
 header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
-.logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;text-decoration:none;}
+.logo{font-size:24px;font-weight:800;color:#0f172a;text-decoration:none;}
 .logo span{color:var(--accent);}
 nav ul{list-style:none;display:flex;gap:28px;}
 nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
@@ -34,11 +28,10 @@ nav a.active{font-weight:600;}
 .nav-actions{display:flex;gap:10px;align-items:center;}
 .btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;display:inline-block;transition:all .2s;}
 .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
-.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
 .btn-primary{background:var(--accent);color:#fff;}
 .btn-primary:hover{background:#1d4ed8;}
 .btn-lg{padding:11px 20px;font-size:14px;}
-.burger{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
+.burger{display:none;background:none;border:none;font-size:24px;}
 
 .ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
 .ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
@@ -48,7 +41,6 @@ nav a.active{font-weight:600;}
 .up{color:var(--bull);font-weight:600;}
 .down{color:var(--bear);font-weight:600;}
 
-/* PAGE HEAD */
 .page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}
 .page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;}
 .page-head-left{flex:1;min-width:280px;}
@@ -61,71 +53,61 @@ nav a.active{font-weight:600;}
 .cstat-value{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:800;color:#fff;}
 .cstat-label{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
 
-/* TABS */
 .cat-tabs{max-width:1280px;margin:24px auto 0;padding:0 20px;display:flex;gap:6px;border-bottom:2px solid var(--border);overflow-x:auto;}
 .cat-tab{padding:12px 18px;font-size:13px;font-weight:600;color:var(--text-soft);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;}
 .cat-tab:hover{color:var(--accent);}
 .cat-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 
-/* MAIN */
 .main{max-width:1280px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:24px;}
 
-/* CTA BANNER */
 .cta-banner{background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:1px solid #93c5fd;border-radius:12px;padding:18px 22px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;}
 .cta-text h3{font-size:16px;font-weight:700;color:#1e40af;margin-bottom:4px;}
 .cta-text p{font-size:13px;color:#1e3a8a;}
 
-/* FEATURED POST */
-.featured-post{background:#fff;border:2px solid var(--accent);border-radius:12px;padding:24px;margin-bottom:20px;cursor:pointer;transition:all .2s;}
-.featured-post:hover{box-shadow:0 8px 24px rgba(37,99,235,.12);}
-.featured-tag{display:inline-block;background:var(--accent);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:4px 10px;border-radius:4px;margin-bottom:14px;}
-.fp-author{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
-.fp-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1e40af);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;}
-.fp-author-info{flex:1;}
-.fp-author-name{font-weight:700;display:flex;align-items:center;gap:6px;}
-.verified-badge{font-size:10px;background:var(--bull);color:#fff;padding:2px 6px;border-radius:8px;font-weight:600;}
-.fp-author-meta{font-size:11px;color:var(--text-muted);}
-.fp-title{font-size:22px;font-weight:800;line-height:1.3;margin-bottom:10px;color:var(--text);}
-.fp-summary{font-size:14px;color:var(--text-soft);line-height:1.6;margin-bottom:14px;}
-.fp-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
-.fp-tag{font-size:11px;padding:4px 10px;border-radius:4px;background:var(--bg-soft);color:var(--text-soft);font-weight:500;}
-.fp-tag.bias-bull{background:#d1fae5;color:#065f46;}
-.fp-tag.bias-bear{background:#fee2e2;color:#991b1b;}
-.fp-meta{display:flex;gap:16px;font-size:12px;color:var(--text-muted);padding-top:14px;border-top:1px solid var(--border);}
-.fp-meta span{display:flex;align-items:center;gap:4px;}
-
-/* POST CARDS */
 .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:14px;}
 
 .post-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:12px;cursor:pointer;transition:all .2s;}
 .post-card:hover{border-color:var(--accent);box-shadow:0 4px 12px rgba(37,99,235,.06);}
+.post-card.featured{border:2px solid var(--accent);}
+.featured-tag{display:inline-block;background:var(--accent);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 8px;border-radius:4px;margin-bottom:10px;}
 .post-author{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.post-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px;flex-shrink:0;}
+.post-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px;flex-shrink:0;overflow:hidden;}
+.post-avatar img{width:100%;height:100%;object-fit:cover;}
+.post-author-info{flex:1;}
 .post-author-name{font-weight:600;font-size:13px;}
 .post-meta{font-size:11px;color:var(--text-muted);}
-.post-title{font-size:16px;font-weight:700;margin-bottom:6px;line-height:1.4;color:var(--text);}
-.post-summary{font-size:13px;color:var(--text-soft);line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.post-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
-.post-meta-bottom{display:flex;gap:14px;font-size:11px;color:var(--text-muted);padding-top:10px;border-top:1px solid var(--border);}
-.post-meta-bottom span{display:flex;align-items:center;gap:3px;}
+.post-title{font-size:18px;font-weight:700;margin-bottom:8px;line-height:1.4;color:var(--text);}
+.post-content{font-size:13px;color:var(--text-soft);line-height:1.6;margin-bottom:10px;white-space:pre-wrap;word-wrap:break-word;}
+.post-content.collapsed{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;}
+.post-image{width:100%;max-height:400px;object-fit:cover;border-radius:8px;margin-bottom:10px;cursor:pointer;}
+.post-bias{display:inline-block;font-size:10px;padding:2px 8px;border-radius:8px;font-weight:700;text-transform:uppercase;margin-bottom:8px;}
+.bias-bull{background:#d1fae5;color:#065f46;}
+.bias-bear{background:#fee2e2;color:#991b1b;}
+.bias-neut{background:#fef3c7;color:#92400e;}
+.post-meta-bottom{display:flex;gap:14px;font-size:12px;color:var(--text-muted);padding-top:12px;border-top:1px solid var(--border);align-items:center;}
+.post-action{cursor:pointer;display:flex;align-items:center;gap:4px;user-select:none;padding:4px 0;}
+.post-action:hover{color:var(--accent);}
+.post-action.active{color:var(--accent);font-weight:600;}
+.delete-post{margin-left:auto;font-size:11px;color:#9ca3af;cursor:pointer;}
+.delete-post:hover{color:var(--bear);}
 
-/* SIDEBAR */
+.read-more{font-size:12px;color:var(--accent);font-weight:600;cursor:pointer;display:inline-block;margin-bottom:8px;}
+
 .sidebar-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
 .sidebar-card h3{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
 
-/* TOP TRADERS */
-.trader-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.trader-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
 .trader-row:last-child{border-bottom:none;}
 .trader-rank{font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--text-muted);font-size:14px;width:22px;}
 .trader-rank.gold{color:#f59e0b;}
 .trader-rank.silver{color:#94a3b8;}
 .trader-rank.bronze{color:#a16207;}
-.trader-avatar-sm{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:12px;flex-shrink:0;}
+.trader-avatar-sm{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:12px;flex-shrink:0;overflow:hidden;}
+.trader-avatar-sm img{width:100%;height:100%;object-fit:cover;}
 .trader-info{flex:1;min-width:0;}
-.trader-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:4px;}
+.trader-name{font-size:13px;font-weight:600;}
 .trader-stats{font-size:11px;color:var(--text-muted);}
 
-/* RULES */
 .rules-card{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #fcd34d;border-radius:10px;padding:16px;margin-bottom:16px;}
 .rules-card h3{color:#92400e;font-size:14px;font-weight:700;margin-bottom:10px;}
 .rules-list{list-style:none;font-size:12px;color:#78350f;line-height:1.7;}
@@ -133,10 +115,44 @@ nav a.active{font-weight:600;}
 .rules-list li::before{content:'✓';position:absolute;left:0;color:#65a30d;font-weight:700;}
 .rules-list li.no::before{content:'✗';color:#dc2626;}
 
-/* AD */
 .ad-slot{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:8px;padding:30px;text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:16px;}
 
-/* FOOTER */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
+.empty-state h3{font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.empty-state p{font-size:14px;margin-bottom:16px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal{background:#fff;border-radius:12px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;}
+.modal-header{padding:20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-size:18px;font-weight:700;}
+.modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);}
+.modal-body{padding:20px;}
+.form-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:6px;display:block;}
+.form-input,.form-textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:14px;}
+.form-input:focus,.form-textarea:focus{outline:none;border-color:var(--accent);}
+.form-textarea{resize:vertical;min-height:140px;}
+.char-count{font-size:11px;color:var(--text-muted);text-align:right;margin-top:-10px;margin-bottom:14px;}
+.char-count.warn{color:var(--bear);}
+.bias-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.bias-btn{padding:8px 16px;border:1px solid var(--border);background:#fff;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;}
+.bias-btn.selected{border-width:2px;}
+.bias-btn.selected[data-b="Bullish"]{background:#d1fae5;border-color:#10b981;color:#065f46;}
+.bias-btn.selected[data-b="Bearish"]{background:#fee2e2;border-color:#ef4444;color:#991b1b;}
+.bias-btn.selected[data-b="Neutral"]{background:#fef3c7;border-color:#f59e0b;color:#92400e;}
+.image-upload{border:2px dashed var(--border-strong);border-radius:8px;padding:20px;text-align:center;cursor:pointer;margin-bottom:14px;}
+.image-upload:hover{border-color:var(--accent);background:var(--bg-soft);}
+.image-upload input{display:none;}
+.image-preview{position:relative;margin-bottom:14px;}
+.image-preview img{width:100%;max-height:300px;object-fit:cover;border-radius:8px;}
+.image-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+
+.image-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:10000;cursor:pointer;}
+.image-modal.show{display:flex;}
+.image-modal img{max-width:90vw;max-height:90vh;}
+
 footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
@@ -144,7 +160,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-col ul{list-style:none;}
 .footer-col li{margin-bottom:8px;}
 .footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
-.footer-col a:hover{color:#fff;}
 .footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
 
 @media(max-width:900px){
@@ -154,7 +169,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   .page-title{font-size:22px;}
   .main{grid-template-columns:1fr;}
   .community-stats{width:100%;justify-content:space-around;}
-  .fp-title{font-size:18px;}
 }
 </style>
 </head>
@@ -163,33 +177,32 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <div class="topbar">
   <div class="topbar-inner">
     <div class="topbar-left">
-      <span>📅 Wed, Apr 29, 2026</span>
-      <span>🌐 London Open</span>
-      <span>⚡ Live Sentiment</span>
+      <span id="topbar-date">📅 Loading...</span>
+      <span>🌐 Live Markets</span>
     </div>
     <div class="topbar-right">
       <a href="/about.html">About</a>
-<a href="/contact.html">Contact</a>
+      <a href="/contact.html">Contact</a>
     </div>
   </div>
 </div>
 
 <header>
   <div class="header-inner">
-    <a href="index.html" class="logo">FX<span>News</span>Bias</a>
+    <a href="/" class="logo">FX<span>News</span>Bias</a>
     <nav>
       <ul>
         <li><a href="/">Markets</a></li>
-<li><a href="/currencies.html">Currencies</a></li>
-<li><a href="/pairs.html">Pairs</a></li>
-<li><a href="/calendar.html">Calendar</a></li>
-<li><a href="/news.html">News</a></li>
-<li><a href="/community.html">Community</a></li>
+        <li><a href="/currencies.html">Currencies</a></li>
+        <li><a href="/pairs.html">Pairs</a></li>
+        <li><a href="/calendar.html">Calendar</a></li>
+        <li><a href="/news.html">News</a></li>
+        <li><a href="/community.html" class="active">Community</a></li>
       </ul>
     </nav>
     <div class="nav-actions">
       <a href="/login.html" class="btn btn-outline">Login</a>
-<a href="/register.html" class="btn btn-primary">Register</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>
       <button class="burger">☰</button>
     </div>
   </div>
@@ -207,279 +220,75 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     <div class="ticker-item"><span class="pair">XAU/USD</span><span>2342.18</span><span class="up">+0.84%</span></div>
     <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
     <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
   </div>
 </div>
 
 <section class="page-head">
   <div class="page-head-inner">
     <div class="page-head-left">
-      <div class="breadcrumb"><a href="index.html">Home</a> · Community</div>
+      <div class="breadcrumb"><a href="/">Home</a> · Community</div>
       <h1 class="page-title">Trader Community</h1>
-      <p class="page-sub">Share analysis, learn from traders, discuss markets. Strictly moderated for quality.</p>
+      <p class="page-sub">Share analysis, learn from traders, discuss markets.</p>
     </div>
     <div class="community-stats">
       <div class="cstat">
-        <div class="cstat-value">2.4K</div>
-        <div class="cstat-label">Members</div>
-      </div>
-      <div class="cstat">
-        <div class="cstat-value">847</div>
+        <div class="cstat-value" id="stat-posts">0</div>
         <div class="cstat-label">Posts</div>
       </div>
       <div class="cstat">
-        <div class="cstat-value">156</div>
-        <div class="cstat-label">Online Now</div>
+        <div class="cstat-value" id="stat-traders">0</div>
+        <div class="cstat-label">Traders</div>
+      </div>
+      <div class="cstat">
+        <div class="cstat-value" id="stat-likes">0</div>
+        <div class="cstat-label">Total Likes</div>
       </div>
     </div>
   </div>
 </section>
 
 <div class="cat-tabs">
-  <div class="cat-tab active">All Posts</div>
-  <div class="cat-tab">🔥 Trending</div>
-  <div class="cat-tab">⭐ Featured</div>
-  <div class="cat-tab">📊 Technical Analysis</div>
-  <div class="cat-tab">🌍 Fundamental</div>
-  <div class="cat-tab">📅 Economic Events</div>
-  <div class="cat-tab">💱 Pair Analysis</div>
-  <div class="cat-tab">📰 News Breakdown</div>
+  <div class="cat-tab active" data-filter="all">All Posts</div>
+  <div class="cat-tab" data-filter="trending">🔥 Trending</div>
+  <div class="cat-tab" data-filter="featured">⭐ Featured</div>
+  <div class="cat-tab" data-filter="my" id="my-posts-tab" style="display:none;">📌 My Posts</div>
 </div>
 
 <main class="main">
   <div>
 
-    <!-- CTA Banner -->
     <div class="cta-banner">
       <div class="cta-text">
         <h3>📝 Share Your Analysis</h3>
         <p>Got a great trade idea? Post your analysis and help fellow traders!</p>
       </div>
-      <a href="/register.html" class="btn btn-primary btn-lg">+ Write Post</a>
+      <button class="btn btn-primary btn-lg" id="write-post-btn">+ Write Post</button>
     </div>
 
-    <!-- Featured Post -->
-    <div class="featured-post">
-      <span class="featured-tag">⭐ Featured Analysis</span>
-      <div class="fp-author">
-        <div class="fp-avatar">A</div>
-        <div class="fp-author-info">
-          <div class="fp-author-name">TraderAhmad <span class="verified-badge">✓ Verified</span></div>
-          <div class="fp-author-meta">📍 Malaysia · 234 followers · Posted 2 hours ago</div>
-        </div>
-      </div>
-      <h2 class="fp-title">EUR/USD Weekly Outlook: Why I'm Positioning Long Above 1.0820</h2>
-      <p class="fp-summary">With ECB signaling a hawkish stance last Thursday and USD showing weakness after NFP miss, the setup for EUR/USD bulls looks compelling. Key levels to watch this week, fundamental drivers, and risk events that could change the picture...</p>
-      <div class="fp-tags">
-        <span class="fp-tag bias-bull">Bullish</span>
-        <span class="fp-tag">EUR/USD</span>
-        <span class="fp-tag">Fundamental</span>
-        <span class="fp-tag">Weekly Outlook</span>
-      </div>
-      <div class="fp-meta">
-        <span>👍 89 likes</span>
-        <span>💬 23 comments</span>
-        <span>👁️ 1.2K views</span>
-        <span>🔖 Save</span>
-      </div>
-    </div>
-
-    <!-- Posts -->
-    <div class="section-title">Latest Posts</div>
-
-    <div class="post-card">
-      <div class="post-author">
-        <div class="post-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">M</div>
-        <div>
-          <div class="post-author-name">MacroMike</div>
-          <div class="post-meta">Posted 4 hours ago · 5 min read</div>
-        </div>
-      </div>
-      <h3 class="post-title">Disagreeing With The EUR/USD Bulls — Here's My Bearish Case</h3>
-      <p class="post-summary">Eurozone PMI data this Friday will likely disappoint. France political risk also weighing on the euro. I'm short EUR/USD from 1.0860 looking for 1.0780 target. Here's my full analysis...</p>
-      <div class="post-tags">
-        <span class="fp-tag bias-bear">Bearish</span>
-        <span class="fp-tag">EUR/USD</span>
-        <span class="fp-tag">Fundamental</span>
-      </div>
-      <div class="post-meta-bottom">
-        <span>👍 42</span>
-        <span>💬 18 comments</span>
-        <span>👁️ 612 views</span>
-      </div>
-    </div>
-
-    <div class="post-card">
-      <div class="post-author">
-        <div class="post-avatar" style="background:linear-gradient(135deg,#10b981,#065f46);">S</div>
-        <div>
-          <div class="post-author-name">SwingTraderSiti <span class="verified-badge">✓</span></div>
-          <div class="post-meta">Posted 6 hours ago · 8 min read</div>
-        </div>
-      </div>
-      <h3 class="post-title">JPY Strength Is Real — Why Safe-Haven Flows Will Continue</h3>
-      <p class="post-summary">Middle East tensions combined with BOJ shifting hawkish creates the perfect storm for JPY bulls. Watching USD/JPY for shorts below 150.00. Risk-off sentiment globally supports continued yen demand...</p>
-      <div class="post-tags">
-        <span class="fp-tag bias-bull">Bullish JPY</span>
-        <span class="fp-tag">USD/JPY</span>
-        <span class="fp-tag">Geopolitical</span>
-      </div>
-      <div class="post-meta-bottom">
-        <span>👍 67</span>
-        <span>💬 31 comments</span>
-        <span>👁️ 894 views</span>
-      </div>
-    </div>
-
-    <!-- Ad -->
-    <div class="ad-slot">📢 Advertisement Space — 728×90</div>
-
-    <div class="post-card">
-      <div class="post-author">
-        <div class="post-avatar" style="background:linear-gradient(135deg,#ef4444,#991b1b);">R</div>
-        <div>
-          <div class="post-author-name">RiskOffRamesh</div>
-          <div class="post-meta">Posted 8 hours ago · 4 min read</div>
-        </div>
-      </div>
-      <h3 class="post-title">Watch Out For Risk-Off Reversal — USD Could Surprise Bulls</h3>
-      <p class="post-summary">Despite Fed dovishness, escalating geopolitical tensions could drive USD demand as the ultimate safe haven. EUR/USD rally feels exhausted around 1.0850. Cautious here, taking profits on longs...</p>
-      <div class="post-tags">
-        <span class="fp-tag bias-bear">Bearish EUR</span>
-        <span class="fp-tag">EUR/USD</span>
-        <span class="fp-tag">Risk Management</span>
-      </div>
-      <div class="post-meta-bottom">
-        <span>👍 28</span>
-        <span>💬 12 comments</span>
-        <span>👁️ 445 views</span>
-      </div>
-    </div>
-
-    <div class="post-card">
-      <div class="post-author">
-        <div class="post-avatar" style="background:linear-gradient(135deg,#8b5cf6,#5b21b6);">P</div>
-        <div>
-          <div class="post-author-name">PriceActionPradeep</div>
-          <div class="post-meta">Posted 10 hours ago · 6 min read</div>
-        </div>
-      </div>
-      <h3 class="post-title">GBP/JPY: The Perfect Bearish Storm Setting Up</h3>
-      <p class="post-summary">UK unemployment rising + BOE turning dovish + JPY safe-haven demand = strong bearish setup for GBP/JPY. Targeting 186.00 from current 189.30. Stop above 191.00. Risk-reward of 1:3...</p>
-      <div class="post-tags">
-        <span class="fp-tag bias-bear">Bearish</span>
-        <span class="fp-tag">GBP/JPY</span>
-        <span class="fp-tag">Pair Analysis</span>
-      </div>
-      <div class="post-meta-bottom">
-        <span>👍 54</span>
-        <span>💬 19 comments</span>
-        <span>👁️ 723 views</span>
-      </div>
-    </div>
-
-    <div class="post-card">
-      <div class="post-author">
-        <div class="post-avatar" style="background:linear-gradient(135deg,#06b6d4,#0e7490);">N</div>
-        <div>
-          <div class="post-author-name">NewbieNathan</div>
-          <div class="post-meta">Posted 12 hours ago · 3 min read</div>
-        </div>
-      </div>
-      <h3 class="post-title">Question: How Do You Read Central Bank Statements?</h3>
-      <p class="post-summary">New to fundamental analysis. Can experienced traders share their process for analyzing Fed/ECB/BOJ statements? What words signal hawkish vs dovish? Looking for tips from this great community...</p>
-      <div class="post-tags">
-        <span class="fp-tag">Question</span>
-        <span class="fp-tag">Education</span>
-        <span class="fp-tag">Central Banks</span>
-      </div>
-      <div class="post-meta-bottom">
-        <span>👍 35</span>
-        <span>💬 28 comments</span>
-        <span>👁️ 567 views</span>
-      </div>
-    </div>
-
-    <div class="post-card">
-      <div class="post-author">
-        <div class="post-avatar" style="background:linear-gradient(135deg,#ec4899,#9d174d);">L</div>
-        <div>
-          <div class="post-author-name">LongTermLisa <span class="verified-badge">✓</span></div>
-          <div class="post-meta">Posted 14 hours ago · 10 min read</div>
-        </div>
-      </div>
-      <h3 class="post-title">Quarterly Macro Outlook: Major Currency Themes for Q2 2026</h3>
-      <p class="post-summary">Comprehensive look at the major themes shaping currencies this quarter. Rate differential narratives, geopolitical drivers, commodity cycles, and policy divergences. Big picture view for swing/position traders...</p>
-      <div class="post-tags">
-        <span class="fp-tag">Quarterly</span>
-        <span class="fp-tag">Macro</span>
-        <span class="fp-tag">Position Trading</span>
-      </div>
-      <div class="post-meta-bottom">
-        <span>👍 124</span>
-        <span>💬 47 comments</span>
-        <span>👁️ 2.1K views</span>
+    <div id="posts-container">
+      <div class="empty-state">
+        <h3>Loading posts...</h3>
       </div>
     </div>
 
   </div>
 
-  <!-- Sidebar -->
   <aside>
-
-    <!-- Top Traders -->
     <div class="sidebar-card">
       <h3>🏆 Top Contributors This Week</h3>
-      <div class="trader-row">
-        <span class="trader-rank gold">1</span>
-        <div class="trader-avatar-sm" style="background:linear-gradient(135deg,#3b82f6,#1e40af);">A</div>
-        <div class="trader-info">
-          <div class="trader-name">TraderAhmad <span class="verified-badge">✓</span></div>
-          <div class="trader-stats">12 posts · 892 likes</div>
-        </div>
-      </div>
-      <div class="trader-row">
-        <span class="trader-rank silver">2</span>
-        <div class="trader-avatar-sm" style="background:linear-gradient(135deg,#10b981,#065f46);">S</div>
-        <div class="trader-info">
-          <div class="trader-name">SwingTraderSiti <span class="verified-badge">✓</span></div>
-          <div class="trader-stats">8 posts · 645 likes</div>
-        </div>
-      </div>
-      <div class="trader-row">
-        <span class="trader-rank bronze">3</span>
-        <div class="trader-avatar-sm" style="background:linear-gradient(135deg,#ec4899,#9d174d);">L</div>
-        <div class="trader-info">
-          <div class="trader-name">LongTermLisa <span class="verified-badge">✓</span></div>
-          <div class="trader-stats">5 posts · 521 likes</div>
-        </div>
-      </div>
-      <div class="trader-row">
-        <span class="trader-rank">4</span>
-        <div class="trader-avatar-sm" style="background:linear-gradient(135deg,#f59e0b,#d97706);">M</div>
-        <div class="trader-info">
-          <div class="trader-name">MacroMike</div>
-          <div class="trader-stats">15 posts · 412 likes</div>
-        </div>
-      </div>
-      <div class="trader-row">
-        <span class="trader-rank">5</span>
-        <div class="trader-avatar-sm" style="background:linear-gradient(135deg,#8b5cf6,#5b21b6);">P</div>
-        <div class="trader-info">
-          <div class="trader-name">PriceActionPradeep</div>
-          <div class="trader-stats">9 posts · 367 likes</div>
-        </div>
+      <div id="top-contributors">
+        <div style="text-align:center;color:#9ca3af;font-size:12px;padding:20px 0;">Loading...</div>
       </div>
     </div>
 
     <div class="ad-slot">📢 Ad 300×250</div>
 
-    <!-- Community Rules -->
     <div class="rules-card">
       <h3>📜 Community Rules</h3>
       <ul class="rules-list">
         <li>Share original analysis</li>
         <li>Be respectful to others</li>
-        <li>Use appropriate tags</li>
         <li>Cite your sources</li>
         <li class="no">No financial advice</li>
         <li class="no">No signal selling</li>
@@ -489,32 +298,58 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </ul>
     </div>
 
-    <!-- Trending Topics -->
-    <div class="sidebar-card">
-      <h3>🔥 Trending Topics</h3>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        <span class="fp-tag">#EURUSD</span>
-        <span class="fp-tag">#JPYStrength</span>
-        <span class="fp-tag">#FedDovish</span>
-        <span class="fp-tag">#ECBHawkish</span>
-        <span class="fp-tag">#OilSurge</span>
-        <span class="fp-tag">#RiskOff</span>
-        <span class="fp-tag">#GBPJPY</span>
-        <span class="fp-tag">#NFP</span>
-        <span class="fp-tag">#BOJHike</span>
-        <span class="fp-tag">#CADBullish</span>
-      </div>
-    </div>
-
-    <!-- Join CTA -->
     <div class="sidebar-card" style="background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;border:none;">
       <h3 style="color:#fff;">🚀 Join The Community</h3>
-      <p style="font-size:12px;color:#94a3b8;line-height:1.5;margin-bottom:12px;">Free account · Post analysis · Comment on pairs · Build reputation · Get verified badge</p>
+      <p style="font-size:12px;color:#94a3b8;line-height:1.5;margin-bottom:12px;">Free account · Post analysis · Build reputation · Get verified</p>
       <a href="/register.html" class="btn btn-primary" style="width:100%;text-align:center;">Register Free</a>
     </div>
-
   </aside>
 </main>
+
+<!-- WRITE POST MODAL -->
+<div class="modal-overlay" id="post-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📝 Write a Post</div>
+      <button class="modal-close" id="modal-close-btn">×</button>
+    </div>
+    <div class="modal-body">
+      <label class="form-label">Title (Required)</label>
+      <input type="text" class="form-input" id="post-title" placeholder="e.g. EUR/USD: Bullish Outlook for Q2" maxlength="100">
+      <div class="char-count" id="title-count">0 / 100</div>
+
+      <label class="form-label">Your Bias (Optional)</label>
+      <div class="bias-row">
+        <button type="button" class="bias-btn" data-b="Bullish">🟢 Bullish</button>
+        <button type="button" class="bias-btn" data-b="Bearish">🔴 Bearish</button>
+        <button type="button" class="bias-btn" data-b="Neutral">🟡 Neutral</button>
+      </div>
+
+      <label class="form-label">Content (Required)</label>
+      <textarea class="form-textarea" id="post-content" placeholder="Share your detailed analysis, trade setup, market thoughts... Min 30 characters." maxlength="5000"></textarea>
+      <div class="char-count" id="content-count">0 / 5000</div>
+
+      <label class="form-label">Image (Optional, max 10MB)</label>
+      <label class="image-upload" id="image-upload-label">
+        <input type="file" id="image-input" accept="image/*">
+        <div id="upload-text">📷 Click to upload chart or screenshot</div>
+      </label>
+      <div class="image-preview" id="image-preview" style="display:none;">
+        <img id="preview-img" alt="">
+        <button class="image-remove" id="remove-image-btn">×</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="cancel-btn">Cancel</button>
+      <button class="btn btn-primary" id="submit-post-btn">Post</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE LIGHTBOX -->
+<div class="image-modal" id="image-lightbox">
+  <img id="lightbox-img" alt="">
+</div>
 
 <footer>
   <div class="footer-inner">
@@ -523,153 +358,53 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <h4>FXNewsBias</h4>
         <ul>
           <li><a href="/about.html">About Us</a></li>
-<li><a href="/how.html">How It Works</a></li>
-<li><a href="/contact.html">Contact</a></li>
+          <li><a href="/how.html">How It Works</a></li>
+          <li><a href="/contact.html">Contact</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Markets</h4>
         <ul>
           <li><a href="/currencies.html">Currencies</a></li>
-<li><a href="/pairs.html">Pairs</a></li>
-<li><a href="/calendar.html">Calendar</a></li>
-<li><a href="/news.html">News</a></li>
+          <li><a href="/pairs.html">Pairs</a></li>
+          <li><a href="/calendar.html">Calendar</a></li>
+          <li><a href="/news.html">News</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Community</h4>
         <ul>
           <li><a href="/community.html">Latest Posts</a></li>
-<li><a href="/community.html">Top Traders</a></li>
-<li><a href="/community.html">Guidelines</a></li>
+          <li><a href="/community.html">Top Contributors</a></li>
+          <li><a href="/community.html">Guidelines</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>Legal</h4>
         <ul>
           <li><a href="/disclaimer.html">Disclaimer</a></li>
-<li><a href="/privacy.html">Privacy Policy</a></li>
-<li><a href="/terms.html">Terms of Service</a></li>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
         </ul>
       </div>
     </div>
-    <div class="footer-bottom">
-      © 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.
-    </div>
+    <div class="footer-bottom">© 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.</div>
   </div>
 </footer>
 
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
+
 <script>
-// Category tabs filter posts
-const catTabs = document.querySelectorAll('.cat-tab');
-const postCards = document.querySelectorAll('.post-card');
-const featuredPost = document.querySelector('.featured-post');
-
-catTabs.forEach((tab, index) => {
-  tab.addEventListener('click', () => {
-    catTabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-
-    const filter = tab.textContent.trim();
-
-    if (index === 0) {
-      // All posts
-      postCards.forEach(card => card.style.display = 'block');
-      if (featuredPost) featuredPost.style.display = 'block';
-    } else if (index === 1) {
-      // Trending - show most liked
-      postCards.forEach(card => card.style.display = 'block');
-      if (featuredPost) featuredPost.style.display = 'none';
-    } else if (index === 2) {
-      // Featured only
-      postCards.forEach(card => card.style.display = 'none');
-      if (featuredPost) featuredPost.style.display = 'block';
-    } else {
-      // Filter by category tag
-      const categoryMap = {
-        3: 'Technical Analysis',
-        4: 'Fundamental',
-        5: 'Economic Events',
-        6: 'Pair Analysis',
-        7: 'News Breakdown'
-      };
-      const category = categoryMap[index];
-      postCards.forEach(card => {
-        const tags = card.querySelectorAll('.fp-tag');
-        const hasCategory = Array.from(tags).some(t =>
-          t.textContent.includes(category)
-        );
-        card.style.display = hasCategory ? 'block' : 'none';
-      });
-      if (featuredPost) featuredPost.style.display = 'none';
-    }
-  });
-});
-
-// Make post cards clickable
-postCards.forEach(card => {
-  card.style.cursor = 'pointer';
-  card.addEventListener('click', () => {
-    window.location.href = '/community.html';
-  });
-});
-
-// Featured post clickable
-if (featuredPost) {
-  featuredPost.style.cursor = 'pointer';
-  featuredPost.addEventListener('click', () => {
-    window.location.href = '/community.html';
-  });
+const topbarDate = document.getElementById('topbar-date');
+if (topbarDate) {
+  const now = new Date();
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  topbarDate.textContent = `📅 ${dayNames[now.getDay()]}, ${monthNames[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
 }
 
-// Trader rows clickable
-const traderRows = document.querySelectorAll('.trader-row');
-traderRows.forEach(row => {
-  row.style.cursor = 'pointer';
-  row.addEventListener('click', () => {
-    window.location.href = '/community.html';
-  });
-});
-
-// Write post button
-const writeBtn = document.querySelector('.btn-lg');
-if (writeBtn) {
-  writeBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    window.location.href = '/register.html';
-  });
-}
-  // Disable like/comment/save/views actions (Coming Soon)
-document.querySelectorAll('.fp-meta span, .post-meta-bottom span').forEach(action => {
-  action.style.cursor = 'default';
-  action.title = 'Coming soon — feature in development';
-  action.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const existing = document.getElementById('coming-soon-toast');
-    if (existing) existing.remove();
-    const toast = document.createElement('div');
-    toast.id = 'coming-soon-toast';
-    toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#fef3c7;color:#92400e;padding:14px 20px;border-radius:8px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-size:13px;border:1px solid #fcd34d;';
-    toast.textContent = '🔒 This feature is coming soon!';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
-  });
-});
-// Hide ads for Pro users
-window.addEventListener('userLoaded', (e) => {
-  if (e.detail.isPro) {
-    document.querySelectorAll('.ad-slot').forEach(ad => {
-      ad.style.display = 'none';
-    });
-  }
-}); 
-</script>
-  <script>
 const SUPABASE_URL_TICKER = 'https://vtbmtxtgtdprpbilragm.supabase.co';
 const SUPABASE_ANON_TICKER = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
 
@@ -700,5 +435,552 @@ async function loadTickerPrices() {
 loadTickerPrices();
 setInterval(loadTickerPrices, 300000);
 </script>
+
+<!-- LIVE COMMUNITY POSTS -->
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, where, limit, onSnapshot, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
+  authDomain: "fxnewsbias.firebaseapp.com",
+  projectId: "fxnewsbias",
+  storageBucket: "fxnewsbias.firebasestorage.app",
+  messagingSenderId: "414710041736",
+  appId: "1:414710041736:web:00e79ccc58fdb94e98633d"
+};
+
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+let currentUser = null;
+let userProfile = null;
+let allPosts = [];
+let currentFilter = 'all';
+let userLikes = new Set();
+let userSaves = new Set();
+let viewedPosts = new Set();
+let selectedBias = '';
+let selectedImage = null;
+
+const postsContainer = document.getElementById('posts-container');
+const writePostBtn = document.getElementById('write-post-btn');
+const postModal = document.getElementById('post-modal');
+const titleInput = document.getElementById('post-title');
+const contentInput = document.getElementById('post-content');
+const imageInput = document.getElementById('image-input');
+const imagePreview = document.getElementById('image-preview');
+const previewImg = document.getElementById('preview-img');
+const titleCount = document.getElementById('title-count');
+const contentCount = document.getElementById('content-count');
+const imageLightbox = document.getElementById('image-lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
+
+function showToast(msg, type) {
+  const existing = document.getElementById('post-toast');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'post-toast';
+  el.style.cssText = 'position:fixed;top:20px;right:20px;padding:14px 20px;border-radius:8px;font-weight:600;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-size:13px;' + (type === 'success' ? 'background:#d1fae5;color:#065f46;border:1px solid #10b981;' : 'background:#fee2e2;color:#991b1b;border:1px solid #ef4444;');
+  el.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function timeAgo(date) {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  if (diff < 604800) return Math.floor(diff/86400) + 'd ago';
+  return Math.floor(diff/604800) + 'w ago';
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// AUTH STATE
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  const myPostsTab = document.getElementById('my-posts-tab');
+  
+  if (user) {
+    if (myPostsTab) myPostsTab.style.display = 'block';
+    
+    // Load profile
+    try {
+      const docId = user.email.replace(/[.#$[\]@]/g, '_');
+      const userDoc = await getDoc(doc(db, 'users', docId));
+      if (userDoc.exists()) userProfile = userDoc.data();
+    } catch(e) { console.log('Profile load:', e); }
+    
+    // Load likes/saves
+    try {
+      const likesQuery = query(collection(db, 'likes'), where('userEmail', '==', user.email));
+      const likesSnap = await getDocs(likesQuery);
+      likesSnap.forEach(d => userLikes.add(d.data().itemId));
+      
+      const savesQuery = query(collection(db, 'saves'), where('userEmail', '==', user.email));
+      const savesSnap = await getDocs(savesQuery);
+      savesSnap.forEach(d => userSaves.add(d.data().itemId));
+    } catch(e) { console.log('Likes/saves load:', e); }
+    
+    renderPosts();
+  } else {
+    if (myPostsTab) myPostsTab.style.display = 'none';
+    if (currentFilter === 'my') currentFilter = 'all';
+    renderPosts();
+  }
+});
+
+// WRITE POST BUTTON
+writePostBtn.addEventListener('click', () => {
+  if (!currentUser) {
+    window.location.href = '/login.html';
+    return;
+  }
+  postModal.classList.add('show');
+});
+
+document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+document.getElementById('cancel-btn').addEventListener('click', closeModal);
+postModal.addEventListener('click', (e) => {
+  if (e.target === postModal) closeModal();
+});
+
+function closeModal() {
+  postModal.classList.remove('show');
+  resetForm();
+}
+
+function resetForm() {
+  titleInput.value = '';
+  contentInput.value = '';
+  selectedBias = '';
+  selectedImage = null;
+  imageInput.value = '';
+  imagePreview.style.display = 'none';
+  document.getElementById('upload-text').textContent = '📷 Click to upload chart or screenshot';
+  titleCount.textContent = '0 / 100';
+  contentCount.textContent = '0 / 5000';
+  document.querySelectorAll('.bias-btn').forEach(b => b.classList.remove('selected'));
+}
+
+// CHAR COUNTERS
+titleInput.addEventListener('input', () => {
+  const len = titleInput.value.length;
+  titleCount.textContent = `${len} / 100`;
+  titleCount.classList.toggle('warn', len > 90);
+});
+contentInput.addEventListener('input', () => {
+  const len = contentInput.value.length;
+  contentCount.textContent = `${len} / 5000`;
+  contentCount.classList.toggle('warn', len > 4800);
+});
+
+// BIAS BUTTONS
+document.querySelectorAll('.bias-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('selected')) {
+      btn.classList.remove('selected');
+      selectedBias = '';
+    } else {
+      document.querySelectorAll('.bias-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedBias = btn.dataset.b;
+    }
+  });
+});
+
+// IMAGE UPLOAD
+imageInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('Image too large! Max 10MB.', 'error');
+    imageInput.value = '';
+    return;
+  }
+  if (!file.type.startsWith('image/')) {
+    showToast('Please select an image.', 'error');
+    imageInput.value = '';
+    return;
+  }
+  selectedImage = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    previewImg.src = e.target.result;
+    imagePreview.style.display = 'block';
+    document.getElementById('upload-text').textContent = '✅ Image selected. Click to change.';
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('remove-image-btn').addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  selectedImage = null;
+  imageInput.value = '';
+  imagePreview.style.display = 'none';
+  document.getElementById('upload-text').textContent = '📷 Click to upload chart or screenshot';
+});
+
+// SUBMIT POST
+document.getElementById('submit-post-btn').addEventListener('click', async () => {
+  if (!currentUser) { window.location.href = '/login.html'; return; }
+  
+  const title = titleInput.value.trim();
+  const content = contentInput.value.trim();
+  
+  if (!title) { showToast('Title is required', 'error'); return; }
+  if (title.length < 5) { showToast('Title too short (min 5 chars)', 'error'); return; }
+  if (!content) { showToast('Content is required', 'error'); return; }
+  if (content.length < 30) { showToast('Content too short (min 30 chars)', 'error'); return; }
+  
+  const submitBtn = document.getElementById('submit-post-btn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Posting...';
+  
+  try {
+    let imageURL = null;
+    
+    // Upload image if selected
+    if (selectedImage) {
+      submitBtn.textContent = 'Uploading image...';
+      const docId = currentUser.email.replace(/[.#$[\]@]/g, '_');
+      const filename = `${Date.now()}_${selectedImage.name.replace(/[^a-z0-9.]/gi, '_')}`;
+      const fileRef = storageRef(storage, `post-images/${docId}/${filename}`);
+      await uploadBytes(fileRef, selectedImage);
+      imageURL = await getDownloadURL(fileRef);
+    }
+    
+    submitBtn.textContent = 'Saving...';
+    const username = currentUser.displayName || (userProfile && userProfile.username) || currentUser.email.split('@')[0];
+    
+    await addDoc(collection(db, 'posts'), {
+      title: title,
+      content: content,
+      bias: selectedBias || null,
+      imageURL: imageURL,
+      authorEmail: currentUser.email,
+      authorName: username,
+      authorPhoto: (userProfile && userProfile.photoURL) || null,
+      createdAt: serverTimestamp(),
+      likes: 0,
+      views: 0,
+      comments: 0
+    });
+    
+    closeModal();
+    showToast('Post published!', 'success');
+  } catch(e) {
+    console.log('Post error:', e);
+    showToast('Error posting: ' + e.message, 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Post';
+  }
+});
+
+// FILTER TABS
+document.querySelectorAll('.cat-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentFilter = tab.dataset.filter;
+    renderPosts();
+  });
+});
+
+// RENDER POSTS
+function renderPosts() {
+  let filtered = [...allPosts];
+  
+  if (currentFilter === 'trending') {
+    // Posts from last 7 days, sorted by likes
+    const weekAgo = Date.now() - 7*24*60*60*1000;
+    filtered = filtered.filter(p => {
+      const date = p.createdAt && p.createdAt.toMillis ? p.createdAt.toMillis() : 0;
+      return date > weekAgo;
+    }).sort((a, b) => (b.likes || 0) - (a.likes || 0));
+  } else if (currentFilter === 'featured') {
+    // Posts with 5+ likes
+    filtered = filtered.filter(p => (p.likes || 0) >= 5).sort((a, b) => (b.likes || 0) - (a.likes || 0));
+  } else if (currentFilter === 'my' && currentUser) {
+    filtered = filtered.filter(p => p.authorEmail === currentUser.email);
+  }
+  
+  if (!filtered.length) {
+    let msg = 'No posts yet. Be the first to share!';
+    if (currentFilter === 'trending') msg = 'No trending posts this week. Post something to start!';
+    else if (currentFilter === 'featured') msg = 'No featured posts yet (need 5+ likes to feature)';
+    else if (currentFilter === 'my') msg = 'You haven\'t posted yet. Click "Write Post" to start!';
+    
+    postsContainer.innerHTML = `<div class="empty-state"><h3>📭 ${msg}</h3></div>`;
+    return;
+  }
+  
+  const colors = [{bg:'#dbeafe',color:'#1e40af'},{bg:'#fef3c7',color:'#92400e'},{bg:'#d1fae5',color:'#065f46'},{bg:'#fee2e2',color:'#991b1b'},{bg:'#e0e7ff',color:'#4338ca'},{bg:'#fce7f3',color:'#9d174d'}];
+  
+  postsContainer.innerHTML = filtered.map(p => {
+    const date = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate() : new Date();
+    const time = timeAgo(date);
+    const initial = (p.authorName || 'U')[0].toUpperCase();
+    const colorIdx = (p.authorName || 'U').charCodeAt(0) % colors.length;
+    const col = colors[colorIdx];
+    const isFeatured = (p.likes || 0) >= 5;
+    const liked = userLikes.has(p.id);
+    const saved = userSaves.has(p.id);
+    const isOwn = currentUser && currentUser.email === p.authorEmail;
+    const biasClass = p.bias === 'Bullish' ? 'bias-bull' : p.bias === 'Bearish' ? 'bias-bear' : 'bias-neut';
+    const biasShow = p.bias ? `<span class="post-bias ${biasClass}">${p.bias}</span>` : '';
+    const isLong = p.content && p.content.length > 300;
+    
+    const avatarHtml = p.authorPhoto ?
+      `<div class="post-avatar"><img src="${escapeHtml(p.authorPhoto)}" alt=""></div>` :
+      `<div class="post-avatar" style="background:${col.bg};color:${col.color};">${initial}</div>`;
+    
+    const imageHtml = p.imageURL ? `<img src="${escapeHtml(p.imageURL)}" class="post-image" data-img="${escapeHtml(p.imageURL)}" alt="">` : '';
+    const featuredHtml = isFeatured ? '<div class="featured-tag">⭐ Featured</div>' : '';
+    
+    return `
+      <div class="post-card ${isFeatured ? 'featured' : ''}" data-id="${p.id}">
+        ${featuredHtml}
+        <div class="post-author">
+          ${avatarHtml}
+          <div class="post-author-info">
+            <div class="post-author-name">${escapeHtml(p.authorName || 'Anonymous')}</div>
+            <div class="post-meta">${time} · ${(p.views || 0)} views</div>
+          </div>
+          ${isOwn ? `<span class="delete-post" data-delete="${p.id}">🗑️ Delete</span>` : ''}
+        </div>
+        ${biasShow}
+        <h2 class="post-title">${escapeHtml(p.title)}</h2>
+        ${imageHtml}
+        <div class="post-content ${isLong ? 'collapsed' : ''}" data-content="${p.id}">${escapeHtml(p.content)}</div>
+        ${isLong ? `<span class="read-more" data-expand="${p.id}">Read more →</span>` : ''}
+        <div class="post-meta-bottom">
+          <span class="post-action like-btn ${liked ? 'active' : ''}" data-id="${p.id}">${liked ? '❤️' : '🤍'} ${p.likes || 0}</span>
+          <span class="post-action save-btn ${saved ? 'active' : ''}" data-id="${p.id}">${saved ? '🔖' : '📑'} ${saved ? 'Saved' : 'Save'}</span>
+          <span class="post-action">👁️ ${p.views || 0}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  attachPostHandlers();
+  trackViews(filtered);
+}
+
+function attachPostHandlers() {
+  // Like
+  document.querySelectorAll('.like-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!currentUser) { window.location.href = '/login.html'; return; }
+      await togglePostLike(btn.dataset.id);
+    });
+  });
+  
+  // Save
+  document.querySelectorAll('.save-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!currentUser) { window.location.href = '/login.html'; return; }
+      await togglePostSave(btn.dataset.id);
+    });
+  });
+  
+  // Delete
+  document.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!confirm('Delete this post? This cannot be undone.')) return;
+      try {
+        await deleteDoc(doc(db, 'posts', btn.dataset.delete));
+        showToast('Post deleted', 'success');
+      } catch(e) {
+        showToast('Error deleting', 'error');
+      }
+    });
+  });
+  
+  // Image lightbox
+  document.querySelectorAll('.post-image').forEach(img => {
+    img.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightboxImg.src = img.dataset.img;
+      imageLightbox.classList.add('show');
+    });
+  });
+  
+  // Read more
+  document.querySelectorAll('[data-expand]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const content = document.querySelector(`[data-content="${btn.dataset.expand}"]`);
+      content.classList.remove('collapsed');
+      btn.style.display = 'none';
+    });
+  });
+}
+
+// Image lightbox close
+imageLightbox.addEventListener('click', () => {
+  imageLightbox.classList.remove('show');
+});
+
+async function togglePostLike(postId) {
+  if (!currentUser) return;
+  const userDocId = currentUser.email.replace(/[.#$[\]@]/g, '_');
+  const likeId = `${userDocId}_${postId}`;
+  const likeRef = doc(db, 'likes', likeId);
+  const postRef = doc(db, 'posts', postId);
+  
+  try {
+    const likeDoc = await getDoc(likeRef);
+    if (likeDoc.exists()) {
+      await deleteDoc(likeRef);
+      await updateDoc(postRef, { likes: increment(-1) });
+      userLikes.delete(postId);
+    } else {
+      await setDoc(likeRef, {
+        userEmail: currentUser.email,
+        itemId: postId,
+        itemType: 'post',
+        createdAt: serverTimestamp()
+      });
+      await updateDoc(postRef, { likes: increment(1) });
+      userLikes.add(postId);
+    }
+  } catch(e) { console.log('Like error:', e); }
+}
+
+async function togglePostSave(postId) {
+  if (!currentUser) return;
+  const userDocId = currentUser.email.replace(/[.#$[\]@]/g, '_');
+  const saveId = `${userDocId}_${postId}`;
+  const saveRef = doc(db, 'saves', saveId);
+  
+  try {
+    const saveDoc = await getDoc(saveRef);
+    if (saveDoc.exists()) {
+      await deleteDoc(saveRef);
+      userSaves.delete(postId);
+      showToast('Removed from saved', 'success');
+    } else {
+      await setDoc(saveRef, {
+        userEmail: currentUser.email,
+        itemId: postId,
+        itemType: 'post',
+        createdAt: serverTimestamp()
+      });
+      userSaves.add(postId);
+      showToast('Saved!', 'success');
+    }
+    renderPosts();
+  } catch(e) { console.log('Save error:', e); }
+}
+
+async function trackViews(posts) {
+  for (const p of posts) {
+    if (viewedPosts.has(p.id)) continue;
+    viewedPosts.add(p.id);
+    try {
+      await updateDoc(doc(db, 'posts', p.id), { views: increment(1) });
+    } catch(e) { /* silent */ }
+  }
+}
+
+// REAL-TIME POSTS LISTENER
+const postsQuery = query(collection(db, 'posts'), limit(100));
+
+onSnapshot(postsQuery, (snapshot) => {
+  allPosts = [];
+  snapshot.forEach(d => allPosts.push({ id: d.id, ...d.data() }));
+  
+  // Sort by createdAt desc
+  allPosts.sort((a, b) => {
+    const aTime = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+    const bTime = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+    return bTime - aTime;
+  });
+  
+  // Update stats
+  document.getElementById('stat-posts').textContent = allPosts.length;
+  const uniqueAuthors = new Set(allPosts.map(p => p.authorEmail)).size;
+  document.getElementById('stat-traders').textContent = uniqueAuthors;
+  const totalLikes = allPosts.reduce((sum, p) => sum + (p.likes || 0), 0);
+  document.getElementById('stat-likes').textContent = totalLikes;
+  
+  renderPosts();
+  renderTopContributors();
+}, (err) => {
+  console.log('Posts listen error:', err);
+  postsContainer.innerHTML = '<div class="empty-state"><h3>Error loading posts</h3><p>' + err.message + '</p></div>';
+});
+
+// TOP CONTRIBUTORS
+function renderTopContributors() {
+  const container = document.getElementById('top-contributors');
+  if (!container) return;
+  
+  // Aggregate by author
+  const authors = {};
+  allPosts.forEach(p => {
+    if (!p.authorEmail) return;
+    if (!authors[p.authorEmail]) {
+      authors[p.authorEmail] = {
+        email: p.authorEmail,
+        name: p.authorName || 'Anonymous',
+        photo: p.authorPhoto || null,
+        posts: 0,
+        likes: 0
+      };
+    }
+    authors[p.authorEmail].posts++;
+    authors[p.authorEmail].likes += (p.likes || 0);
+  });
+  
+  const sorted = Object.values(authors).sort((a, b) => {
+    return (b.likes - a.likes) || (b.posts - a.posts);
+  }).slice(0, 5);
+  
+  if (!sorted.length) {
+    container.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:12px;padding:20px 0;">No contributors yet</div>';
+    return;
+  }
+  
+  const colors = [{bg:'#dbeafe',color:'#1e40af'},{bg:'#fef3c7',color:'#92400e'},{bg:'#d1fae5',color:'#065f46'},{bg:'#fee2e2',color:'#991b1b'},{bg:'#e0e7ff',color:'#4338ca'}];
+  
+  container.innerHTML = sorted.map((a, i) => {
+    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const initial = a.name[0].toUpperCase();
+    const colorIdx = a.name.charCodeAt(0) % colors.length;
+    const col = colors[colorIdx];
+    const avatarHtml = a.photo ?
+      `<div class="trader-avatar-sm"><img src="${escapeHtml(a.photo)}" alt=""></div>` :
+      `<div class="trader-avatar-sm" style="background:${col.bg};color:${col.color};">${initial}</div>`;
+    
+    return `
+      <div class="trader-row">
+        <span class="trader-rank ${rankClass}">${i+1}</span>
+        ${avatarHtml}
+        <div class="trader-info">
+          <div class="trader-name">${escapeHtml(a.name)}</div>
+          <div class="trader-stats">${a.posts} posts · ${a.likes} likes</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+</script>
+
 </body>
 </html>
+
