@@ -482,29 +482,49 @@ async function loadAllCurrencies() {
       // Draw mini chart
       setTimeout(() => {
         const ctx = document.getElementById(`mini-${curr}`).getContext('2d');
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: scores.map((_, i) => i),
-            datasets: [{
-              data: scores,
-              borderColor: latest.bias === 'Bullish' ? '#10b981' : latest.bias === 'Bearish' ? '#ef4444' : '#f59e0b',
-              backgroundColor: 'transparent',
-              borderWidth: 2,
-              pointRadius: 0,
-              tension: 0.4
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            scales: {
-              x: { display: false },
-              y: { display: false, min: 0, max: 100 }
-            }
-          }
-        });
+        const minScore = Math.min(...scores);
+const maxScore = Math.max(...scores);
+const padding = Math.max(5, (maxScore - minScore) * 0.2);
+
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: scores.map((_, i) => i),
+    datasets: [{
+      data: scores,
+      borderColor: latest.bias === 'Bullish' ? '#10b981' : latest.bias === 'Bearish' ? '#ef4444' : '#f59e0b',
+      backgroundColor: latest.bias === 'Bullish' ? 'rgba(16,185,129,0.1)' : latest.bias === 'Bearish' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
+      borderWidth: 2,
+      pointRadius: 3,
+      pointBackgroundColor: latest.bias === 'Bullish' ? '#10b981' : latest.bias === 'Bearish' ? '#ef4444' : '#f59e0b',
+      pointHoverRadius: 5,
+      tension: 0.2,
+      fill: true
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { 
+      legend: { display: false }, 
+      tooltip: { 
+        enabled: true,
+        callbacks: {
+          title: () => '',
+          label: (ctx) => 'Score: ' + ctx.parsed.y
+        }
+      } 
+    },
+    scales: {
+      x: { display: false },
+      y: { 
+        display: false, 
+        min: Math.max(0, minScore - padding), 
+        max: Math.min(100, maxScore + padding) 
+      }
+    }
+  }
+});
       }, 100);
     });
 
