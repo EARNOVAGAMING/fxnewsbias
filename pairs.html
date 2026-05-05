@@ -522,44 +522,13 @@ catTabs.forEach((tab, index) => {
 });
 </script>
 
-<!-- Live Ticker -->
-<script>
-const SUPABASE_URL_TICKER = 'https://vtbmtxtgtdprpbilragm.supabase.co';
-const SUPABASE_ANON_TICKER = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
-
-async function loadTickerPrices() {
-  try {
-    const res = await fetch(SUPABASE_URL_TICKER + '/rest/v1/prices?order=id.desc&limit=50', {
-      headers: { 'apikey': SUPABASE_ANON_TICKER, 'Authorization': 'Bearer ' + SUPABASE_ANON_TICKER }
-    });
-    const allData = await res.json();
-    if (!allData || allData.length === 0) return;
-    const pricesByPair = {};
-    allData.forEach(p => { if (!pricesByPair[p.pair]) pricesByPair[p.pair] = p; });
-    document.querySelectorAll('.ticker-item').forEach(item => {
-      const pairEl = item.querySelector('.pair');
-      if (!pairEl) return;
-      const pairName = pairEl.textContent.trim();
-      const data = pricesByPair[pairName];
-      if (data) {
-        const allSpans = item.querySelectorAll('span');
-        if (allSpans[1]) {
-          const price = parseFloat(data.price);
-          allSpans[1].textContent = price.toFixed(pairName.includes('JPY') ? 3 : pairName.includes('XAU') ? 2 : 5);
-        }
-      }
-    });
-  } catch(e) { console.log('Ticker error:', e); }
-}
-loadTickerPrices();
-setInterval(loadTickerPrices, 300000);
-</script>
-
 <!-- LIVE COMMENTS SYSTEM -->
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, orderBy, limit, onSnapshot, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, limit, onSnapshot, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+console.log('💬 Comments script starting...');
 
 const firebaseConfig = {
   apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
@@ -586,6 +555,8 @@ const userAvatar = document.getElementById('user-comment-avatar');
 const commentList = document.getElementById('comment-list');
 const commentsCount = document.getElementById('comments-count');
 
+console.log('💬 Elements:', { textarea: !!textarea, postBtn: !!postBtn, commentList: !!commentList });
+
 function timeAgoComment(date) {
   const diff = Math.floor((Date.now() - date.getTime()) / 1000);
   if (diff < 60) return 'just now';
@@ -605,7 +576,6 @@ function showToast(msg, type) {
   setTimeout(() => el.remove(), 3000);
 }
 
-// Bias buttons
 document.querySelectorAll('.bias-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.bias-btn').forEach(b => {
@@ -619,6 +589,7 @@ document.querySelectorAll('.bias-btn').forEach(btn => {
 });
 
 onAuthStateChanged(auth, async (user) => {
+  console.log('💬 Auth state:', user ? user.email : 'logged out');
   currentUser = user;
   if (user) {
     try {
@@ -628,22 +599,28 @@ onAuthStateChanged(auth, async (user) => {
     } catch(e) { console.log('Profile load:', e); }
 
     const username = user.displayName || (userProfile && userProfile.username) || user.email.split('@')[0];
-    textarea.disabled = false;
-    textarea.placeholder = 'Share your view (mention pair like EUR/USD)... Min 10 characters';
-    postBtn.disabled = false;
-    postBtn.textContent = 'Post View';
-    postBtn.style.opacity = '1';
-    postBtn.style.cursor = 'pointer';
-    biasSelector.style.display = 'flex';
+    if (textarea) {
+      textarea.disabled = false;
+      textarea.placeholder = 'Share your view (mention pair like EUR/USD)... Min 10 characters';
+    }
+    if (postBtn) {
+      postBtn.disabled = false;
+      postBtn.textContent = 'Post View';
+      postBtn.style.opacity = '1';
+      postBtn.style.cursor = 'pointer';
+    }
+    if (biasSelector) biasSelector.style.display = 'flex';
 
-    if (userProfile && userProfile.photoURL) {
-      userAvatar.innerHTML = `<img src="${userProfile.photoURL}" alt="">`;
-      userAvatar.style.padding = '0';
-    } else {
-      userAvatar.textContent = username[0].toUpperCase();
-      userAvatar.style.background = 'linear-gradient(135deg,#2563eb,#60a5fa)';
-      userAvatar.style.color = '#fff';
-      userAvatar.style.border = 'none';
+    if (userAvatar) {
+      if (userProfile && userProfile.photoURL) {
+        userAvatar.innerHTML = `<img src="${userProfile.photoURL}" alt="">`;
+        userAvatar.style.padding = '0';
+      } else {
+        userAvatar.textContent = username[0].toUpperCase();
+        userAvatar.style.background = 'linear-gradient(135deg,#2563eb,#60a5fa)';
+        userAvatar.style.color = '#fff';
+        userAvatar.style.border = 'none';
+      }
     }
 
     try {
@@ -652,76 +629,71 @@ onAuthStateChanged(auth, async (user) => {
       likesSnap.forEach(d => userLikes.add(d.data().itemId));
     } catch(e) { console.log('Likes load:', e); }
   } else {
-    textarea.disabled = true;
-    textarea.placeholder = '🔒 Login to share your view';
+    if (textarea) {
+      textarea.disabled = true;
+      textarea.placeholder = '🔒 Login to share your view';
+    }
+    if (postBtn) {
+      postBtn.disabled = true;
+      postBtn.textContent = '🔒 Login to Post';
+      postBtn.style.opacity = '0.6';
+      postBtn.style.cursor = 'not-allowed';
+    }
+    if (biasSelector) biasSelector.style.display = 'none';
+    if (userAvatar) userAvatar.textContent = '👤';
+  }
+});
+
+if (postBtn) {
+  postBtn.addEventListener('click', async () => {
+    if (!currentUser) { window.location.href = '/login.html'; return; }
+    const text = textarea.value.trim();
+    if (!text) { showToast('Please write something!', 'error'); return; }
+    if (text.length < 10) { showToast('Comment too short (min 10 chars)', 'error'); return; }
+    if (text.length > 1000) { showToast('Comment too long (max 1000 chars)', 'error'); return; }
+
     postBtn.disabled = true;
-    postBtn.textContent = '🔒 Login to Post';
-    postBtn.style.opacity = '0.6';
-    postBtn.style.cursor = 'not-allowed';
-    biasSelector.style.display = 'none';
-    userAvatar.textContent = '👤';
-  }
-});
+    postBtn.textContent = 'Posting...';
 
-postBtn.addEventListener('click', async () => {
-  if (!currentUser) {
-    window.location.href = '/login.html';
-    return;
-  }
-  const text = textarea.value.trim();
-  if (!text) { showToast('Please write something!', 'error'); return; }
-  if (text.length < 10) { showToast('Comment too short (min 10 chars)', 'error'); return; }
-  if (text.length > 1000) { showToast('Comment too long (max 1000 chars)', 'error'); return; }
-
-  postBtn.disabled = true;
-  postBtn.textContent = 'Posting...';
-
-  try {
-    const username = currentUser.displayName || (userProfile && userProfile.username) || currentUser.email.split('@')[0];
-    await addDoc(collection(db, 'comments'), {
-      text: text,
-      bias: selectedBias,
-      authorEmail: currentUser.email,
-      authorName: username,
-      authorPhoto: (userProfile && userProfile.photoURL) || null,
-      section: 'pairs',
-      createdAt: serverTimestamp(),
-      likes: 0
-    });
-    textarea.value = '';
-    selectedBias = 'Neutral';
-    document.querySelectorAll('.bias-btn').forEach(b => {
-      b.classList.remove('active-bull', 'active-bear', 'active-neut');
-    });
-    showToast('Posted!', 'success');
-  } catch(e) {
-    console.log('Post error:', e);
-    showToast('Error posting. Try again.', 'error');
-  } finally {
-    postBtn.disabled = false;
-    postBtn.textContent = 'Post View';
-  }
-});
+    try {
+      const username = currentUser.displayName || (userProfile && userProfile.username) || currentUser.email.split('@')[0];
+      await addDoc(collection(db, 'comments'), {
+        text: text,
+        bias: selectedBias,
+        authorEmail: currentUser.email,
+        authorName: username,
+        authorPhoto: (userProfile && userProfile.photoURL) || null,
+        section: 'pairs',
+        createdAt: serverTimestamp(),
+        likes: 0
+      });
+      textarea.value = '';
+      selectedBias = 'Neutral';
+      document.querySelectorAll('.bias-btn').forEach(b => {
+        b.classList.remove('active-bull', 'active-bear', 'active-neut');
+      });
+      showToast('Posted!', 'success');
+    } catch(e) {
+      console.log('Post error:', e);
+      showToast('Error posting: ' + e.message, 'error');
+    } finally {
+      postBtn.disabled = false;
+      postBtn.textContent = 'Post View';
+    }
+  });
+}
 
 function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function renderComments(comments) {
+  if (!commentList) return;
   if (!comments.length) {
     commentList.innerHTML = '<div class="empty-comments">No comments yet. Be the first to share your view!</div>';
     return;
   }
-
-  const colors = [
-    {bg:'#dbeafe',color:'#1e40af'},
-    {bg:'#fef3c7',color:'#92400e'},
-    {bg:'#d1fae5',color:'#065f46'},
-    {bg:'#fee2e2',color:'#991b1b'},
-    {bg:'#e0e7ff',color:'#4338ca'},
-    {bg:'#fce7f3',color:'#9d174d'}
-  ];
-
+  const colors = [{bg:'#dbeafe',color:'#1e40af'},{bg:'#fef3c7',color:'#92400e'},{bg:'#d1fae5',color:'#065f46'},{bg:'#fee2e2',color:'#991b1b'},{bg:'#e0e7ff',color:'#4338ca'},{bg:'#fce7f3',color:'#9d174d'}];
   commentList.innerHTML = comments.map(c => {
     const date = c.createdAt && c.createdAt.toDate ? c.createdAt.toDate() : new Date();
     const time = timeAgoComment(date);
@@ -732,11 +704,9 @@ function renderComments(comments) {
     const biasShow = c.bias && c.bias !== 'Neutral' ? `<span class="comment-bias ${biasClass}">${c.bias}</span>` : '';
     const liked = userLikes.has(c.id);
     const isOwn = currentUser && currentUser.email === c.authorEmail;
-
     const avatarHtml = c.authorPhoto ?
       `<div class="comment-avatar" style="padding:0;"><img src="${escapeHtml(c.authorPhoto)}" alt=""></div>` :
       `<div class="comment-avatar" style="background:${col.bg};color:${col.color};border:none;">${initial}</div>`;
-
     return `
       <div class="comment" data-id="${c.id}">
         ${avatarHtml}
@@ -756,7 +726,6 @@ function renderComments(comments) {
     `;
   }).join('');
 
-  // Like handlers
   document.querySelectorAll('.like-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -764,17 +733,13 @@ function renderComments(comments) {
       await toggleLike(btn.dataset.id);
     });
   });
-
-  // Delete handlers
   document.querySelectorAll('[data-delete]').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete this comment?')) return;
       try {
         await deleteDoc(doc(db, 'comments', btn.dataset.delete));
         showToast('Comment deleted', 'success');
-      } catch(e) {
-        showToast('Error deleting', 'error');
-      }
+      } catch(e) { showToast('Error deleting', 'error'); }
     });
   });
 }
@@ -785,7 +750,6 @@ async function toggleLike(commentId) {
   const likeId = `${userDocId}_${commentId}`;
   const likeRef = doc(db, 'likes', likeId);
   const commentRef = doc(db, 'comments', commentId);
-
   try {
     const likeDoc = await getDoc(likeRef);
     if (likeDoc.exists()) {
@@ -793,43 +757,31 @@ async function toggleLike(commentId) {
       await updateDoc(commentRef, { likes: increment(-1) });
       userLikes.delete(commentId);
     } else {
-      await setDoc(likeRef, {
-        userEmail: currentUser.email,
-        itemId: commentId,
-        itemType: 'comment',
-        createdAt: serverTimestamp()
-      });
+      await setDoc(likeRef, { userEmail: currentUser.email, itemId: commentId, itemType: 'comment', createdAt: serverTimestamp() });
       await updateDoc(commentRef, { likes: increment(1) });
       userLikes.add(commentId);
     }
-  } catch(e) {
-    console.log('Like error:', e);
-  }
+  } catch(e) { console.log('Like error:', e); }
 }
 
+console.log('💬 Setting up comments listener...');
+const commentsQuery = query(collection(db, 'comments'), where('section', '==', 'pairs'), limit(100));
+
 onSnapshot(commentsQuery, (snapshot) => {
+  console.log('💬 Snapshot received! Size:', snapshot.size);
   const comments = [];
   snapshot.forEach(d => comments.push({ id: d.id, ...d.data() }));
-  // Sort by createdAt desc in JavaScript
   comments.sort((a, b) => {
     const aTime = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
     const bTime = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
     return bTime - aTime;
   });
   renderComments(comments);
-  commentsCount.textContent = comments.length + ' comments';
+  if (commentsCount) commentsCount.textContent = comments.length + ' comments';
 }, (err) => {
-
-onSnapshot(commentsQuery, (snapshot) => {
-  const comments = [];
-  snapshot.forEach(d => comments.push({ id: d.id, ...d.data() }));
-  renderComments(comments);
-  commentsCount.textContent = comments.length + ' comments';
-}, (err) => {
-  console.log('Comments listen error:', err);
-  commentList.innerHTML = '<div class="empty-comments">Comments unavailable. Refresh page.</div>';
+  console.log('❌ Comments listen error:', err);
+  if (commentList) commentList.innerHTML = '<div class="empty-comments">Error: ' + err.message + '</div>';
 });
 </script>
-
 </body>
 </html>
