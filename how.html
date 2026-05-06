@@ -37,6 +37,9 @@ nav a:hover{color:var(--accent);}
 .pair{font-weight:600;}
 .up{color:var(--bull);font-weight:600;}
 .down{color:var(--bear);font-weight:600;}
+.price{color:var(--text);}
+.loading-pulse{animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 
 .hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:60px 20px;text-align:center;}
 .hero h1{font-size:42px;font-weight:800;margin-bottom:14px;letter-spacing:-1px;}
@@ -108,8 +111,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
 <div class="topbar">
   <div class="topbar-inner">
     <div class="topbar-left">
-      <span>📅 Wed, Apr 29, 2026</span>
-      <span>🌐 London Open</span>
+      <span id="topbar-date">📅 Loading...</span>
+      <span id="topbar-session">🌐 Loading...</span>
+      <span>⚡ Live Sentiment</span>
     </div>
     <div class="topbar-right">
       <a href="/about.html">About</a>
@@ -140,15 +144,19 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
 </header>
 
 <div class="ticker">
-  <div class="ticker-inner">
-    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
-    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
-    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
-    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
-    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
-    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
-    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
-    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+  <div class="ticker-inner" id="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/CAD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">NZD/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">XAU/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span class="price loading-pulse">Loading...</span></div>
   </div>
 </div>
 
@@ -380,5 +388,78 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script> 
+<script>
+// ============================================
+// LIVE TOPBAR + TICKER (matches index.html)
+// ============================================
+const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+
+function updateDateTime() {
+  const now = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const el = document.getElementById('topbar-date');
+  if (el) el.textContent = `📅 ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+}
+
+function updateSessions() {
+  const sessionEl = document.getElementById('topbar-session');
+  if (!sessionEl) return;
+  const utcHour = new Date().getUTCHours();
+  const sessions = {
+    sydney: { open: 21, close: 6 },
+    tokyo:  { open: 0,  close: 9 },
+    london: { open: 7,  close: 16 },
+    newyork:{ open: 12, close: 21 }
+  };
+  function isOpen(s) {
+    if (s.open < s.close) return utcHour >= s.open && utcHour < s.close;
+    return utcHour >= s.open || utcHour < s.close;
+  }
+  if (isOpen(sessions.london)) sessionEl.textContent = '🌐 London Open';
+  else if (isOpen(sessions.newyork)) sessionEl.textContent = '🌐 New York Open';
+  else if (isOpen(sessions.tokyo)) sessionEl.textContent = '🌐 Tokyo Open';
+  else if (isOpen(sessions.sydney)) sessionEl.textContent = '🌐 Sydney Open';
+  else sessionEl.textContent = '🌐 Markets Closed';
+}
+
+async function loadPrices() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/prices?order=id.desc&limit=50`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const allData = await res.json();
+    if (!allData || allData.length === 0) return;
+    const pricesByPair = {};
+    allData.forEach(p => { if (!pricesByPair[p.pair]) pricesByPair[p.pair] = p; });
+    document.querySelectorAll('.ticker-item').forEach(item => {
+      const pairEl = item.querySelector('.pair');
+      const priceEl = item.querySelector('.price');
+      if (!pairEl || !priceEl) return;
+      const pairName = pairEl.textContent.trim();
+      const data = pricesByPair[pairName];
+      if (data) {
+        const price = parseFloat(data.price);
+        priceEl.textContent = price.toFixed(pairName.includes('JPY') ? 3 : pairName.includes('XAU') ? 2 : 5);
+        priceEl.classList.remove('loading-pulse');
+      }
+    });
+  } catch(e) {
+    console.log('Prices error:', e);
+  }
+}
+
+// Initial load
+updateDateTime();
+updateSessions();
+loadPrices();
+
+// Refresh intervals
+setInterval(updateDateTime, 60000);   // every 1 min
+setInterval(updateSessions, 60000);   // every 1 min
+setInterval(loadPrices, 300000);      // every 5 min
+</script>
 </body>
 </html>
