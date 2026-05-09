@@ -191,6 +191,27 @@ window.registerUser = async function(email, password, username) {
 window.loginWithGoogle = async function() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
+    const user = result.user;
+
+    // Create or update Firestore profile for Google users
+    const docId = user.email.replace(/[.#$[\]@]/g, '_');
+    const docRef = doc(db, 'users', docId);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      // First time — create full profile
+      await setDoc(docRef, {
+        username: user.displayName || user.email.split('@')[0],
+        email: user.email,
+        photoURL: user.photoURL || null,
+        createdAt: new Date().toISOString(),
+        isPro: false
+      });
+    } else {
+      // Returning Google user — just sync latest photoURL in case it changed
+      await setDoc(docRef, { photoURL: user.photoURL || null }, { merge: true });
+    }
+
     showMessage('Logged in with Google! Welcome!', 'success');
     setTimeout(() => window.location.href = '/', 1000);
     return result;
