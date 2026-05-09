@@ -2,6 +2,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebas
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
+const mobileNavStyle = document.createElement('style');
+mobileNavStyle.textContent = `
+  @media(max-width:900px){
+    .user-menu-name { display: none !important; }
+    #user-menu { gap: 6px !important; }
+  }
+`;
+document.head.appendChild(mobileNavStyle);
+
 const firebaseConfig = {
   apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
   authDomain: "fxnewsbias.firebaseapp.com",
