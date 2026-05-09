@@ -201,24 +201,28 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
 <script>
-window.handleLogin = async function() {
+window.handleForgotPassword = async function(e) {
+  e.preventDefault();
   const email = document.querySelector('input[type="email"]').value;
-  const password = document.querySelector('input[type="password"]').value;
-  if (!email || !password) {
-    alert('Please enter email and password!');
+  if (!email) { alert('Enter your email address first!'); return; }
+  const lastSent = localStorage.getItem('reset_cooldown');
+  if (lastSent && Date.now() - parseInt(lastSent) < 60000) {
+    const secs = Math.ceil((60000 - (Date.now() - parseInt(lastSent))) / 1000);
+    alert(`Wait ${secs} seconds before requesting again.`);
     return;
   }
   let attempts = 0;
-const waitForFirebase = setInterval(async () => {
-  attempts++;
-  if (window.loginUser) {
-    clearInterval(waitForFirebase);
-    await window.loginUser(email, password);
-  } else if (attempts > 50) {
-    clearInterval(waitForFirebase);
-    alert('Failed to load. Please refresh the page.');
-  }
-}, 100);
+  const wait = setInterval(async () => {
+    attempts++;
+    if (window.resetPassword) {
+      clearInterval(wait);
+      await window.resetPassword(email);
+      localStorage.setItem('reset_cooldown', Date.now().toString());
+    } else if (attempts > 50) {
+      clearInterval(wait);
+      alert('Failed to load. Please refresh.');
+    }
+  }, 100);
 }
 </script>
 </body>
