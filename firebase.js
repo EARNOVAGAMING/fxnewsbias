@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 const mobileNavStyle = document.createElement('style');
 mobileNavStyle.textContent = `
@@ -167,6 +167,14 @@ window.registerUser = async function(email, password, username) {
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName: username });
+    const docId = email.replace(/[.#$[\]@]/g, '_');
+    await setDoc(doc(db, 'users', docId), {
+      username: username,
+      email: email,
+      photoURL: null,
+      createdAt: new Date().toISOString(),
+      isPro: false
+    });
     showMessage('Account created! Welcome to FXNewsBias!', 'success');
     setTimeout(() => window.location.href = '/', 1500);
     return result;
