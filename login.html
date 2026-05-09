@@ -201,6 +201,22 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 <script src="/cookie.js"></script>
 <script type="module" src="/firebase.js"></script>
 <script>
+window.handleLogin = async function() {
+  const email = document.querySelector('input[type="email"]').value.trim();
+  const password = document.querySelector('input[type="password"]').value;
+  if (!email || !password) { alert('Please enter your email and password!'); return; }
+  let attempts = 0;
+  const wait = setInterval(async () => {
+    attempts++;
+    if (window.loginUser) {
+      clearInterval(wait);
+      await window.loginUser(email, password);
+    } else if (attempts > 50) {
+      clearInterval(wait);
+      alert('Failed to load. Please refresh the page.');
+    }
+  }, 100);
+}
 window.handleForgotPassword = async function(e) {
   e.preventDefault();
   const email = document.querySelector('input[type="email"]').value;
