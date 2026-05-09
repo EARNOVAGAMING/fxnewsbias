@@ -287,18 +287,18 @@ window.handleRegister = async function() {
     return;
   }
 
-  // Wait for firebase to load then register
   let attempts = 0;
-const waitForFirebase = setInterval(async () => {
-  attempts++;
-  if (window.loginUser) {
-    clearInterval(waitForFirebase);
-    await window.loginUser(email, password);
-  } else if (attempts > 50) {
-    clearInterval(waitForFirebase);
-    alert('Failed to load. Please refresh the page.');
-  }
-}, 100);
-</script> 
+  const waitForFirebase = setInterval(async () => {
+    attempts++;
+    if (window.registerUser) {
+      clearInterval(waitForFirebase);
+      await window.registerUser(email, password, username);
+    } else if (attempts > 50) {
+      clearInterval(waitForFirebase);
+      alert('Failed to load. Please refresh the page.');
+    }
+  }, 100);
+}
+</script>
 </body>
 </html>
