@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -194,6 +194,15 @@ window.logoutUser = async function() {
 };
 
 window.getCurrentUser = function() { return auth.currentUser; };
+
+window.resetPassword = async function(email) {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    showMessage('Reset email sent! Check your inbox.', 'success');
+  } catch(e) {
+    showMessage('Error: ' + e.message, 'error');
+  }
+};
 
 window.checkProStatus = async function(email) {
   const targetEmail = email || (auth.currentUser ? auth.currentUser.email : null);
