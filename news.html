@@ -605,7 +605,7 @@ async function loadNews() {
       card.style.cursor = 'pointer';
       card.onclick = () => {
         if (item.url) window.open(item.url, '_blank');
-        else window.location.href = '/news.html';
+        else window.location.href = '/news';
       };
 
       if (index === 2 && adSlot) parent.appendChild(adSlot);
