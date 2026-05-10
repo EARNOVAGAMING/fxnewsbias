@@ -149,6 +149,7 @@ window.loginUser = async function(email, password) {
   try {
     const result = await signInWithEmailAndPassword(auth, email, password);
     showMessage('Login successful! Welcome back!', 'success');
+    if (window.trackLoginSuccess) window.trackLoginSuccess('email');
     setTimeout(() => window.location.href = '/', 1000);
     return result;
   } catch (error) {
@@ -159,6 +160,7 @@ window.loginUser = async function(email, password) {
     if (error.code === 'auth/too-many-requests') msg = 'Too many attempts. Please try again later.';
     if (error.code === 'auth/invalid-credential') msg = 'Invalid email or password.';
     showMessage(msg, 'error');
+    if (window.trackLoginFailed) window.trackLoginFailed(error.code);
     throw error;
   }
 };
@@ -176,6 +178,7 @@ window.registerUser = async function(email, password, username) {
       isPro: false
     });
     showMessage('Account created! Welcome to FXNewsBias!', 'success');
+    if (window.trackRegisterSuccess) window.trackRegisterSuccess();
     setTimeout(() => window.location.href = '/', 1500);
     return result;
   } catch (error) {
@@ -213,6 +216,7 @@ window.loginWithGoogle = async function() {
     }
 
     showMessage('Logged in with Google! Welcome!', 'success');
+    if (window.trackLoginSuccess) window.trackLoginSuccess('google');
     setTimeout(() => window.location.href = '/', 1000);
     return result;
   } catch (error) {
