@@ -19,11 +19,6 @@ const firebaseConfig = {
   messagingSenderId: "414710041736",
   appId: "1:414710041736:web:00e79ccc58fdb94e98633d"
 };
-if (localStorage.getItem('fxnb_logged_in') === 'true') {
-  const style = document.createElement('style');
-  style.textContent = 'a[href="/login"], a[href="/register"] { display: none !important; }';
-  document.head.appendChild(style);
-}
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
