@@ -631,10 +631,11 @@ async function loadSentiment() {
         badge.className = 'sent-badge ' + (bias === 'Bullish' ? 'bull-bg' : bias === 'Bearish' ? 'bear-bg' : 'neut-bg');
       }
 
-      // Driver
+      // Driver (normalize: accept array, string, or null)
       const driver = card.querySelector('.sent-driver');
-      if (driver && drivers && drivers.length > 0) {
-        driver.textContent = drivers[0];
+      const driversArr = Array.isArray(drivers) ? drivers : (drivers ? [drivers] : []);
+      if (driver && driversArr.length > 0) {
+        driver.textContent = driversArr[0];
         driver.classList.remove('loading-pulse');
       }
     });
@@ -666,9 +667,18 @@ async function loadSentiment() {
       lastUpdatedEl.textContent = mins < 60 ? `${mins}m ago` : `${Math.floor(mins/60)}h ago`;
     }
 
-    // News count
+    // News count (real count from Supabase)
     const newsCountEl = document.getElementById('news-count');
-    if (newsCountEl) newsCountEl.textContent = Math.floor(Math.random() * 20) + 35;
+    if (newsCountEl) {
+      try {
+        const cntRes = await fetch(`${SUPABASE_URL}/rest/v1/news?select=id`, {
+          headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}`, 'Prefer': 'count=exact', 'Range': '0-0' }
+        });
+        const range = cntRes.headers.get('content-range');
+        const total = range ? parseInt(range.split('/')[1]) : 0;
+        newsCountEl.textContent = total > 0 ? total : '--';
+      } catch(e) { newsCountEl.textContent = '--'; }
+    }
 
     // Update hot pairs
     updateHotPairs(data);
