@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "fxnewsbias",
   "compatibility_date": "2026-04-29",
+"html_handling": "none"
   "observability": {
     "enabled": true
   },
