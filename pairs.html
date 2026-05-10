@@ -333,7 +333,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div>
     </div>
 
-    <div class="comment-list" id="comment-list">
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;">Filter:</label><select id="pair-filter" style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;background:#fff;cursor:pointer;"><option value="all">All Pairs</option><option value="EUR/USD">EUR/USD</option><option value="GBP/USD">GBP/USD</option><option value="USD/JPY">USD/JPY</option><option value="USD/CHF">USD/CHF</option><option value="AUD/USD">AUD/USD</option><option value="USD/CAD">USD/CAD</option><option value="NZD/USD">NZD/USD</option><option value="EUR/GBP">EUR/GBP</option><option value="EUR/JPY">EUR/JPY</option><option value="GBP/JPY">GBP/JPY</option><option value="XAU/USD">XAU/USD (Gold)</option></select></div><div class="comment-list" id="comment-list">
       <div class="empty-comments">Loading comments...</div>
     </div>
   </div>
@@ -596,6 +596,8 @@ let currentUser = null;
 let userProfile = null;
 let selectedBias = 'Neutral';
 let userLikes = new Set();
+let lastComments = [];
+let currentPairFilter = 'all';
 
 const textarea = document.getElementById('comment-textarea');
 const postBtn = document.getElementById('post-comment-btn');
@@ -676,6 +678,7 @@ onAuthStateChanged(auth, async (user) => {
       const likesQuery = query(collection(db, 'likes'), where('userEmail', '==', user.email));
       const likesSnap = await getDocs(likesQuery);
       likesSnap.forEach(d => userLikes.add(d.data().itemId));
+      if (lastComments.length) renderComments(filterByPair(lastComments));
     } catch(e) { console.log('Likes load:', e); }
   } else {
     if (textarea) {
@@ -713,6 +716,7 @@ if (postBtn) {
         authorName: username,
         authorPhoto: (userProfile && userProfile.photoURL) || null,
         section: 'pairs',
+        pair: currentPairFilter !== 'all' ? currentPairFilter : null,
         createdAt: serverTimestamp(),
         likes: 0
       });
@@ -730,6 +734,11 @@ if (postBtn) {
       postBtn.textContent = 'Post View';
     }
   });
+}
+
+function filterByPair(comments) {
+  if (currentPairFilter === 'all') return comments;
+  return comments.filter(c => (c.pair || 'all') === currentPairFilter);
 }
 
 function escapeHtml(str) {
@@ -825,8 +834,20 @@ onSnapshot(commentsQuery, (snapshot) => {
     const bTime = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
     return bTime - aTime;
   });
-  renderComments(comments);
-  if (commentsCount) commentsCount.textContent = comments.length + ' comments';
+  lastComments = comments;
+  const filtered = filterByPair(comments);
+  renderComments(filtered);
+  if (commentsCount) commentsCount.textContent = filtered.length + ' comments';
+  const pf = document.getElementById('pair-filter');
+  if (pf && !pf.dataset.bound) {
+    pf.dataset.bound = '1';
+    pf.addEventListener('change', e => {
+      currentPairFilter = e.target.value;
+      const filtered = filterByPair(lastComments);
+      renderComments(filtered);
+      if (commentsCount) commentsCount.textContent = filtered.length + ' comments';
+    });
+  }
 }, (err) => {
   console.log('❌ Comments listen error:', err);
   if (commentList) commentList.innerHTML = '<div class="empty-comments">Error: ' + err.message + '</div>';
