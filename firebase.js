@@ -24,6 +24,98 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
+const SB_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+
+async function checkSentimentAlerts(navActions) {
+  if (!navActions) return;
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/sentiment?order=id.desc&limit=8`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+    });
+    const data = await res.json();
+    if (!data || data.length === 0) return;
+
+    const current = {};
+    data.forEach(d => { current[d.currency] = d.bias; });
+
+    const lastRaw = localStorage.getItem('fxnb_last_sentiment');
+    localStorage.setItem('fxnb_last_sentiment', JSON.stringify(current));
+    if (!lastRaw) return;
+
+    const last = JSON.parse(lastRaw);
+    const changes = [];
+    Object.keys(current).forEach(cur => {
+      if (last[cur] && last[cur] !== current[cur]) {
+        changes.push({ currency: cur, from: last[cur], to: current[cur] });
+      }
+    });
+    if (changes.length === 0) return;
+
+    const seenKey = changes.map(c => c.currency + c.from + c.to).sort().join('|');
+    if (localStorage.getItem('fxnb_alerts_seen') === seenKey) return;
+
+    renderBell(navActions, changes, seenKey);
+  } catch(e) {}
+}
+
+function biasPill(bias) {
+  const bg = bias === 'Bullish' ? '#dcfce7' : bias === 'Bearish' ? '#fee2e2' : '#fef3c7';
+  const color = bias === 'Bullish' ? '#166534' : bias === 'Bearish' ? '#991b1b' : '#92400e';
+  return `<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:${bg};color:${color};font-weight:700;">${bias}</span>`;
+}
+
+function renderBell(navActions, changes, seenKey) {
+  const existing = document.getElementById('nav-bell');
+  if (existing) existing.remove();
+
+  const bell = document.createElement('div');
+  bell.id = 'nav-bell';
+  bell.style.cssText = 'position:relative;display:inline-flex;align-items:center;';
+
+  bell.innerHTML = `
+    <button id="bell-btn" aria-label="Sentiment alerts" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 6px;line-height:1;position:relative;">
+      🔔
+      <span id="bell-badge" style="position:absolute;top:-1px;right:-2px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;border-radius:999px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;pointer-events:none;">${changes.length}</span>
+    </button>
+    <div id="bell-dropdown" style="display:none;position:absolute;top:calc(100% + 10px);right:0;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,0.13);width:270px;z-index:9999;overflow:hidden;">
+      <div style="padding:10px 14px;font-size:11px;font-weight:700;color:#64748b;letter-spacing:.06em;border-bottom:1px solid #f1f5f9;">SENTIMENT CHANGES</div>
+      ${changes.map(c => `
+        <div style="padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f8fafc;">
+          <span style="font-weight:700;font-size:13px;min-width:38px;color:#0f172a;">${c.currency}</span>
+          ${biasPill(c.from)}
+          <span style="color:#cbd5e1;font-size:13px;">→</span>
+          ${biasPill(c.to)}
+        </div>
+      `).join('')}
+      <div style="padding:9px 14px;font-size:11px;color:#94a3b8;text-align:center;">Since your last visit</div>
+    </div>
+  `;
+
+  bell.querySelector('#bell-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    const dd = document.getElementById('bell-dropdown');
+    const opening = dd.style.display === 'none';
+    dd.style.display = opening ? 'block' : 'none';
+    if (opening) {
+      localStorage.setItem('fxnb_alerts_seen', seenKey);
+      const badge = document.getElementById('bell-badge');
+      if (badge) badge.style.display = 'none';
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!bell.contains(e.target)) {
+      const dd = document.getElementById('bell-dropdown');
+      if (dd) dd.style.display = 'none';
+    }
+  });
+
+  const userMenu = document.getElementById('user-menu');
+  if (userMenu) navActions.insertBefore(bell, userMenu);
+  else navActions.appendChild(bell);
+}
+
 async function checkProStatus(email) {
   try {
     if (!email) return false;
@@ -82,6 +174,8 @@ onAuthStateChanged(auth, async (user) => {
     window.userIsPro = isPro;
     window.userEmail = user.email;
 
+    checkSentimentAlerts(navActions);
+
     if (proGate && proContent) {
       if (isPro) {
         proGate.style.display = 'none';
@@ -130,6 +224,8 @@ onAuthStateChanged(auth, async (user) => {
     if (profileLink) profileLink.remove();
     const userMenu = document.getElementById('user-menu');
     if (userMenu) userMenu.remove();
+    const bell = document.getElementById('nav-bell');
+    if (bell) bell.remove();
     window.userIsPro = false;
     window.userEmail = null;
 
