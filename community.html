@@ -706,6 +706,7 @@ document.getElementById('submit-post-btn').addEventListener('click', async () =>
     
     closeModal();
     showToast('Post published!', 'success');
+    if (window.trackCommunityPostCreated) window.trackCommunityPostCreated(selectedBias);
   } catch(e) {
     console.log('Post error:', e);
     showToast('Error posting: ' + e.message, 'error');
