@@ -21,7 +21,7 @@ const firebaseConfig = {
 };
 if (localStorage.getItem('fxnb_logged_in') === 'true') {
   const style = document.createElement('style');
-  style.textContent = 'a[href="/login.html"], a[href="/register.html"] { display: none !important; }';
+  style.textContent = 'a[href="/login"], a[href="/register"] { display: none !important; }';
   document.head.appendChild(style);
 }
 const app = initializeApp(firebaseConfig);
@@ -44,8 +44,8 @@ async function checkProStatus(email) {
 }
 
 onAuthStateChanged(auth, async (user) => {
-  const loginBtn = document.querySelector('a[href="/login.html"]');
-  const registerBtn = document.querySelector('a[href="/register.html"]');
+  const loginBtn = document.querySelector('a[href="/login"]');
+  const registerBtn = document.querySelector('a[href="/register"]');
   const navActions = document.querySelector('.nav-actions');
   const proGate = document.getElementById('pro-gate');
   const proContent = document.getElementById('pro-content');
@@ -59,7 +59,7 @@ onAuthStateChanged(auth, async (user) => {
     if (topbarRight && !document.getElementById('topbar-profile-link')) {
       const profileLink = document.createElement('a');
       profileLink.id = 'topbar-profile-link';
-      profileLink.href = '/profile.html';
+      profileLink.href = '/profile';
       profileLink.textContent = '👤 Profile';
       profileLink.style.cssText = 'color:#94a3b8;text-decoration:none;';
       topbarRight.insertBefore(profileLink, topbarRight.firstChild);
@@ -116,12 +116,12 @@ onAuthStateChanged(auth, async (user) => {
   if (navUl && !document.getElementById('pro-history-link')) {
     const historyLink = document.createElement('li');
     historyLink.id = 'pro-history-link';
-    historyLink.innerHTML = '<a href="/history.html" style="color:#f59e0b;">📊 History</a>';
+    historyLink.innerHTML = '<a href="/history" style="color:#f59e0b;">📊 History</a>';
     navUl.appendChild(historyLink);
 
     const reportLink = document.createElement('li');
     reportLink.id = 'pro-report-link';
-    reportLink.innerHTML = '<a href="/report.html" style="color:#f59e0b;font-weight:600;">📄 Report</a>';
+    reportLink.innerHTML = '<a href="/report" style="color:#f59e0b;font-weight:600;">📄 Report</a>';
     navUl.appendChild(reportLink);
   }
 }
