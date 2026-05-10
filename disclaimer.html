@@ -100,7 +100,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
 <div class="topbar">
   <div class="topbar-inner">
     <div class="topbar-left">
-      <span>📅 Wed, Apr 29, 2026</span>
+      <span id="topbar-date">📅 Loading...</span>
       <span>🌐 London Open</span>
     </div>
     <div class="topbar-right">
@@ -325,5 +325,12 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
 <script src="/cookie.js"></script>
 <script src="/analytics.js"></script>
 <script type="module" src="/firebase.js"></script>
+</script>
+<script>
+const _d = new Date();
+const _days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const _months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('topbar-date').textContent = `📅 ${_days[_d.getDay()]}, ${_months[_d.getMonth()]} ${_d.getDate()}, ${_d.getFullYear()}`;
+</script>
 </body>
 </html>
