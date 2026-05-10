@@ -1,9 +1,10 @@
-// FXNewsBias - Global Analytics Event Tracking
+// FXNewsBias - Complete Analytics Event Tracking
+// Version 1.0
 
 document.addEventListener('DOMContentLoaded', function() {
 
   // ============================================
-  // PAGE VIEW WITH PAGE NAME
+  // PAGE NAME MAPPER
   // ============================================
   const pageMap = {
     '/': 'Dashboard',
@@ -13,248 +14,484 @@ document.addEventListener('DOMContentLoaded', function() {
     '/news.html': 'News',
     '/calendar.html': 'Calendar',
     '/community.html': 'Community',
-    '/history.html': 'History (Pro)',
-    '/report.html': 'Report (Pro)',
+    '/history.html': 'History_Pro',
+    '/report.html': 'Report_Pro',
     '/login.html': 'Login',
     '/register.html': 'Register',
     '/profile.html': 'Profile',
     '/about.html': 'About',
-    '/how.html': 'How It Works',
-    '/contact.html': 'Contact'
+    '/how.html': 'How_It_Works',
+    '/contact.html': 'Contact',
+    '/disclaimer.html': 'Disclaimer',
+    '/privacy.html': 'Privacy',
+    '/terms.html': 'Terms'
   };
   const pageName = pageMap[window.location.pathname] || window.location.pathname;
-  gtag('event', 'page_viewed', { page_name: pageName });
 
   // ============================================
-  // PRO UPGRADE CLICKED (conversion — most important)
+  // HELPER FUNCTION
   // ============================================
+  function track(eventName, params) {
+    if (typeof gtag !== 'undefined') {
+      gtag('event', eventName, { page_name: pageName, ...params });
+    }
+  }
+
+  // ============================================
+  // 🔴 CONVERSION EVENTS
+  // ============================================
+
+  // Pro Upgrade Button Clicked
   document.querySelectorAll('a[href*="buy.stripe.com"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      gtag('event', 'pro_upgrade_clicked', {
-        page_name: pageName,
-        button_text: btn.textContent.trim().substring(0, 50)
+      track('pro_upgrade_clicked', {
+        button_text: btn.textContent.trim().substring(0, 50),
+        source_page: pageName
       });
     });
   });
 
-  // ============================================
-  // TELEGRAM SUBSCRIBE CLICKED
-  // ============================================
+  // Telegram Subscribe Clicked
   document.querySelectorAll('a[href*="t.me"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      gtag('event', 'telegram_subscribe_clicked', {
-        page_name: pageName
+      track('telegram_subscribe_clicked', {
+        source_page: pageName
+      });
+    });
+  });
+
+  // Google Login Clicked
+  document.querySelectorAll('button[onclick*="loginWithGoogle"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      track('google_login_clicked', {
+        source_page: pageName
       });
     });
   });
 
   // ============================================
-  // NAV LINKS CLICKED
+  // 🟡 AUTH EVENTS
   // ============================================
+
+  // Login Button Clicked
+  const loginBtn = document.querySelector('a[href="/login.html"]');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', () => {
+      track('login_button_clicked');
+    });
+  }
+
+  // Register Button Clicked
+  const registerBtn = document.querySelector('a[href="/register.html"]');
+  if (registerBtn) {
+    registerBtn.addEventListener('click', () => {
+      track('register_button_clicked');
+    });
+  }
+
+  // Forgot Password Clicked
+  const forgotBtn = document.querySelector('a[onclick*="handleForgotPassword"]');
+  if (forgotBtn) {
+    forgotBtn.addEventListener('click', () => {
+      track('password_reset_requested');
+    });
+  }
+
+  // Logout Clicked
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.textContent.trim() === 'Logout') {
+      track('logout_clicked');
+    }
+  });
+
+  // ============================================
+  // 🟡 COOKIE CONSENT EVENTS
+  // ============================================
+  const cookieAccept = document.getElementById('cookie-accept');
+  if (cookieAccept) {
+    cookieAccept.addEventListener('click', () => {
+      track('cookie_accepted');
+    });
+  }
+  const cookieDecline = document.getElementById('cookie-decline');
+  if (cookieDecline) {
+    cookieDecline.addEventListener('click', () => {
+      track('cookie_declined');
+    });
+  }
+
+  // ============================================
+  // 🟢 NAVIGATION EVENTS
+  // ============================================
+
+  // Nav Links
   document.querySelectorAll('nav a').forEach(link => {
     link.addEventListener('click', () => {
-      gtag('event', 'nav_link_clicked', {
-        page_name: pageName,
+      track('nav_link_clicked', {
         destination: link.textContent.trim()
       });
     });
   });
 
-  // ============================================
-  // LOGIN / REGISTER BUTTONS CLICKED
-  // ============================================
-  const loginBtn = document.querySelector('a[href="/login.html"]');
-  if (loginBtn) {
-    loginBtn.addEventListener('click', () => {
-      gtag('event', 'login_button_clicked', { page_name: pageName });
-    });
-  }
-
-  const registerBtn = document.querySelector('a[href="/register.html"]');
-  if (registerBtn) {
-    registerBtn.addEventListener('click', () => {
-      gtag('event', 'register_button_clicked', { page_name: pageName });
-    });
-  }
-
-  // ============================================
-  // LOGOUT CLICKED
-  // ============================================
-  document.addEventListener('click', function(e) {
-    if (e.target && e.target.textContent === 'Logout') {
-      gtag('event', 'logout_clicked', { page_name: pageName });
-    }
-  });
-
-  // ============================================
-  // BURGER MENU OPENED (mobile usage tracking)
-  // ============================================
+  // Mobile Burger Menu
   const burger = document.querySelector('.burger');
   if (burger) {
     burger.addEventListener('click', () => {
-      gtag('event', 'mobile_menu_opened', { page_name: pageName });
+      track('mobile_menu_opened');
     });
   }
 
-  // ============================================
-  // FOOTER LINKS CLICKED
-  // ============================================
+  // Footer Links
   document.querySelectorAll('footer a').forEach(link => {
     link.addEventListener('click', () => {
-      gtag('event', 'footer_link_clicked', {
-        page_name: pageName,
+      track('footer_link_clicked', {
         link_text: link.textContent.trim()
       });
     });
   });
 
   // ============================================
-  // COMMUNITY PAGE SPECIFIC
+  // 📊 INDEX / DASHBOARD PAGE
   // ============================================
-  if (window.location.pathname.includes('community')) {
-    // Write post button
-    const writeBtn = document.getElementById('write-post-btn');
-    if (writeBtn) {
-      writeBtn.addEventListener('click', () => {
-        gtag('event', 'community_write_post_clicked', { page_name: pageName });
-      });
-    }
-    // Filter tabs
-    document.querySelectorAll('.cat-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        gtag('event', 'community_filter_used', {
-          filter: tab.textContent.trim()
-        });
-      });
-    });
-  }
+  if (pageName === 'Dashboard') {
 
-  // ============================================
-  // NEWS PAGE SPECIFIC
-  // ============================================
-  if (window.location.pathname.includes('news')) {
-    // Category tabs
-    document.querySelectorAll('.cat-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        gtag('event', 'news_filter_used', {
-          filter: tab.textContent.trim()
-        });
-      });
-    });
-    // News article clicked
-    document.querySelectorAll('.news-card').forEach(card => {
+    // Sentiment cards clicked
+    document.querySelectorAll('.sent-card').forEach(card => {
       card.addEventListener('click', () => {
-        const title = card.querySelector('.news-title');
-        gtag('event', 'news_article_clicked', {
-          article_title: title ? title.textContent.trim().substring(0, 100) : 'unknown'
+        const curr = card.getAttribute('data-currency');
+        track('currency_card_clicked', { currency: curr });
+      });
+    });
+
+    // News items clicked
+    document.querySelectorAll('.news-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const title = item.querySelector('.news-title');
+        track('news_item_clicked', {
+          title: title ? title.textContent.trim().substring(0, 100) : 'unknown'
         });
       });
     });
+
+    // Hot pairs clicked
+    document.querySelectorAll('#hot-pairs .session-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const pair = row.querySelector('span');
+        track('hot_pair_clicked', {
+          pair: pair ? pair.textContent.trim() : 'unknown'
+        });
+      });
+    });
+
+    // Sentiment loaded successfully
+    window.trackSentimentLoaded = function(mood) {
+      track('sentiment_data_loaded', { market_mood: mood });
+    };
   }
 
   // ============================================
-  // CURRENCIES PAGE SPECIFIC
+  // 💱 CURRENCIES PAGE
   // ============================================
-  if (window.location.pathname.includes('currencies')) {
+  if (pageName === 'Currencies') {
+
     // Filter buttons
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        gtag('event', 'currency_filter_used', {
+        track('currency_filter_used', {
           filter: btn.textContent.trim()
         });
       });
     });
-    // Currency card clicked
+
+    // Currency cards
     document.querySelectorAll('.curr-card').forEach(card => {
       card.addEventListener('click', () => {
         const curr = card.querySelector('h3');
-        gtag('event', 'currency_card_clicked', {
+        track('currency_card_clicked', {
           currency: curr ? curr.textContent.trim() : 'unknown'
         });
+      });
+    });
+
+    // Deep dive clicked
+    document.querySelectorAll('.curr-arrow').forEach(link => {
+      link.addEventListener('click', () => {
+        track('currency_deep_dive_clicked');
       });
     });
   }
 
   // ============================================
-  // PAIRS PAGE SPECIFIC
+  // 📈 PAIRS PAGE
   // ============================================
-  if (window.location.pathname.includes('pairs')) {
+  if (pageName === 'Pairs') {
+
     // Tab switched
     document.querySelectorAll('.cat-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        gtag('event', 'pairs_tab_switched', {
+        track('pairs_tab_switched', {
           tab: tab.textContent.trim()
         });
       });
     });
+
     // Pair row clicked
     document.addEventListener('click', function(e) {
       const row = e.target.closest('.pair-row');
       if (row) {
         const pair = row.querySelector('.pair-name');
-        gtag('event', 'pair_row_clicked', {
+        track('pair_row_clicked', {
           pair: pair ? pair.textContent.trim().substring(0, 20) : 'unknown'
         });
       }
     });
+
+    // Comment posted
+    window.trackPairCommentPosted = function(bias) {
+      track('pairs_comment_posted', { bias: bias });
+    };
+
+    // Comment liked
+    window.trackPairCommentLiked = function() {
+      track('pairs_comment_liked');
+    };
   }
 
   // ============================================
-  // CALENDAR PAGE SPECIFIC
+  // 📰 NEWS PAGE
   // ============================================
-  if (window.location.pathname.includes('calendar')) {
-    gtag('event', 'calendar_page_viewed');
-    const iframe = document.querySelector('.cal-embed iframe');
-    if (iframe) {
-      iframe.addEventListener('load', () => {
-        gtag('event', 'calendar_iframe_loaded');
+  if (pageName === 'News') {
+
+    // Category tabs
+    document.querySelectorAll('.cat-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        track('news_filter_used', {
+          filter: tab.textContent.trim()
+        });
+      });
+    });
+
+    // News cards clicked
+    document.addEventListener('click', function(e) {
+      const card = e.target.closest('.news-card');
+      if (card) {
+        const title = card.querySelector('.news-title');
+        track('news_article_clicked', {
+          title: title ? title.textContent.trim().substring(0, 100) : 'unknown'
+        });
+      }
+    });
+
+    // Trending clicked
+    document.addEventListener('click', function(e) {
+      const trending = e.target.closest('.trending-item');
+      if (trending) {
+        const title = trending.querySelector('.trending-title');
+        track('news_trending_clicked', {
+          title: title ? title.textContent.trim().substring(0, 100) : 'unknown'
+        });
+      }
+    });
+
+    // Source filter clicked
+    document.querySelectorAll('.source-tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        const name = tag.querySelector('.source-name');
+        track('news_source_filtered', {
+          source: name ? name.textContent.trim() : 'unknown'
+        });
+      });
+    });
+
+    // Featured story clicked
+    const featured = document.querySelector('.featured');
+    if (featured) {
+      featured.addEventListener('click', () => {
+        track('news_featured_clicked');
       });
     }
   }
 
   // ============================================
-  // HISTORY PAGE SPECIFIC (Pro)
+  // 📅 CALENDAR PAGE
   // ============================================
-  if (window.location.pathname.includes('history')) {
+  if (pageName === 'Calendar') {
+    track('calendar_page_viewed');
+
+    const iframe = document.querySelector('.cal-embed iframe');
+    if (iframe) {
+      iframe.addEventListener('load', () => {
+        track('calendar_iframe_loaded');
+      });
+    }
+  }
+
+  // ============================================
+  // 👥 COMMUNITY PAGE
+  // ============================================
+  if (pageName === 'Community') {
+
+    // Write post button
+    const writeBtn = document.getElementById('write-post-btn');
+    if (writeBtn) {
+      writeBtn.addEventListener('click', () => {
+        track('community_write_post_clicked');
+      });
+    }
+
+    // Filter tabs
+    document.querySelectorAll('.cat-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        track('community_filter_used', {
+          filter: tab.textContent.trim()
+        });
+      });
+    });
+
+    // Post submitted
+    window.trackCommunityPostCreated = function(bias) {
+      track('community_post_created', { bias: bias || 'none' });
+    };
+
+    // Post liked
+    window.trackCommunityPostLiked = function() {
+      track('community_post_liked');
+    };
+
+    // Post saved
+    window.trackCommunityPostSaved = function() {
+      track('community_post_saved');
+    };
+
+    // Image uploaded in post
+    window.trackCommunityImageUploaded = function() {
+      track('community_post_image_uploaded');
+    };
+
+    // Post deleted
+    window.trackCommunityPostDeleted = function() {
+      track('community_post_deleted');
+    };
+  }
+
+  // ============================================
+  // 📊 HISTORY PAGE (Pro)
+  // ============================================
+  if (pageName === 'History_Pro') {
+
+    // Currency tab switched
     document.querySelectorAll('.curr-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        gtag('event', 'history_currency_changed', {
+        track('history_currency_changed', {
           currency: tab.getAttribute('data-curr')
         });
       });
     });
+
+    // Range changed
     document.querySelectorAll('.range-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        gtag('event', 'history_range_changed', {
+        track('history_range_changed', {
           range: tab.getAttribute('data-days') + 'D'
         });
       });
     });
+
+    // Pro gate seen vs content seen
+    window.trackProGateViewed = function() {
+      track('pro_gate_viewed', { feature: 'History' });
+    };
+    window.trackProContentViewed = function() {
+      track('pro_content_viewed', { feature: 'History' });
+    };
   }
 
   // ============================================
-  // REPORT PAGE SPECIFIC (Pro)
+  // 📄 REPORT PAGE (Pro)
   // ============================================
-  if (window.location.pathname.includes('report')) {
+  if (pageName === 'Report_Pro') {
+
+    // PDF downloaded
     const downloadBtn = document.querySelector('.download-btn');
     if (downloadBtn) {
       downloadBtn.addEventListener('click', () => {
-        gtag('event', 'report_pdf_downloaded');
+        track('report_pdf_downloaded');
       });
     }
+
+    // Pro gate seen vs content seen
+    window.trackProGateViewed = function() {
+      track('pro_gate_viewed', { feature: 'Report' });
+    };
+    window.trackProContentViewed = function() {
+      track('pro_content_viewed', { feature: 'Report' });
+    };
+  }
+
+  // ============================================
+  // 👤 PROFILE PAGE
+  // ============================================
+  if (pageName === 'Profile') {
+
+    // Username edit clicked
+    window.trackUsernameEditClicked = function() {
+      track('username_edit_clicked');
+    };
+
+    // Username saved
+    window.trackUsernameSaved = function() {
+      track('username_updated');
+    };
+
+    // Profile picture updated
+    window.trackProfilePictureUpdated = function() {
+      track('profile_picture_updated');
+    };
+
+    // Upgrade from profile
+    document.querySelectorAll('a[href*="buy.stripe.com"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        track('pro_upgrade_clicked', {
+          source_page: 'Profile',
+          button_text: btn.textContent.trim().substring(0, 50)
+        });
+      });
+    });
   }
 
 });
 
 // ============================================
-// LOGIN / REGISTER SUCCESS (called from firebase.js)
+// 🔴 GLOBAL TRACKING FUNCTIONS
+// Called from firebase.js and other scripts
 // ============================================
+
 window.trackLoginSuccess = function(method) {
-  gtag('event', 'login_success', { method: method || 'email' });
+  if (typeof gtag !== 'undefined') {
+    gtag('event', 'login_success', {
+      method: method || 'email'
+    });
+  }
 };
+
+window.trackLoginFailed = function(reason) {
+  if (typeof gtag !== 'undefined') {
+    gtag('event', 'login_failed', {
+      reason: reason || 'unknown'
+    });
+  }
+};
+
 window.trackRegisterSuccess = function() {
-  gtag('event', 'register_success');
+  if (typeof gtag !== 'undefined') {
+    gtag('event', 'register_success');
+  }
 };
-window.trackLoginFailed = function() {
-  gtag('event', 'login_failed');
+
+window.trackRegisterFailed = function(reason) {
+  if (typeof gtag !== 'undefined') {
+    gtag('event', 'register_failed', {
+      reason: reason || 'unknown'
+    });
+  }
 };
