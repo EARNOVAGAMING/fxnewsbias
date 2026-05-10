@@ -4,6 +4,50 @@
 document.addEventListener('DOMContentLoaded', function() {
 
   // ============================================
+  // 📏 SCROLL DEPTH TRACKING (25/50/75/100%)
+  // ============================================
+  const scrollMilestones = [25, 50, 75, 100];
+  const scrollFired = {};
+  let scrollTimer = null;
+  function checkScrollDepth() {
+    const docHeight = Math.max(
+      document.body.scrollHeight, document.documentElement.scrollHeight,
+      document.body.offsetHeight, document.documentElement.offsetHeight
+    );
+    const winHeight = window.innerHeight;
+    const scrolled = window.scrollY + winHeight;
+    const percent = Math.min(100, Math.round((scrolled / docHeight) * 100));
+    scrollMilestones.forEach(m => {
+      if (percent >= m && !scrollFired[m]) {
+        scrollFired[m] = true;
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'scroll_depth', {
+            page_name: pageName,
+            depth_percent: m
+          });
+        }
+      }
+    });
+  }
+  window.addEventListener('scroll', () => {
+    if (scrollTimer) return;
+    scrollTimer = setTimeout(() => { checkScrollDepth(); scrollTimer = null; }, 250);
+  }, { passive: true });
+
+  // ============================================
+  // ⏱️ ENGAGED TIME TRACKING (30s milestone)
+  // ============================================
+  let engaged30Fired = false;
+  setTimeout(() => {
+    if (!engaged30Fired && document.visibilityState === 'visible') {
+      engaged30Fired = true;
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'engaged_30s', { page_name: pageName });
+      }
+    }
+  }, 30000);
+
+  // ============================================
   // PAGE NAME MAPPER
   // ============================================
   const pageMap = {
