@@ -92,6 +92,10 @@ function renderBell(navActions, changes, seenKey) {
     </div>
   `;
 
+  if (typeof gtag !== 'undefined') {
+    gtag('event', 'sentiment_alert_shown', { alert_count: changes.length });
+  }
+
   bell.querySelector('#bell-btn').addEventListener('click', e => {
     e.stopPropagation();
     const dd = document.getElementById('bell-dropdown');
@@ -101,6 +105,16 @@ function renderBell(navActions, changes, seenKey) {
       localStorage.setItem('fxnb_alerts_seen', seenKey);
       const badge = document.getElementById('bell-badge');
       if (badge) badge.style.display = 'none';
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'sentiment_alert_viewed', {
+          alert_count: changes.length,
+          currencies_changed: changes.map(c => c.currency).join(',')
+        });
+      }
+    } else {
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'sentiment_bell_clicked');
+      }
     }
   });
 
