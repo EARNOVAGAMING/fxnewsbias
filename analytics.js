@@ -8,23 +8,22 @@ document.addEventListener('DOMContentLoaded', function() {
   // ============================================
   const pageMap = {
     '/': 'Dashboard',
-    '/index.html': 'Dashboard',
-    '/currencies.html': 'Currencies',
-    '/pairs.html': 'Pairs',
-    '/news.html': 'News',
-    '/calendar.html': 'Calendar',
-    '/community.html': 'Community',
-    '/history.html': 'History_Pro',
-    '/report.html': 'Report_Pro',
-    '/login.html': 'Login',
-    '/register.html': 'Register',
-    '/profile.html': 'Profile',
-    '/about.html': 'About',
-    '/how.html': 'How_It_Works',
-    '/contact.html': 'Contact',
-    '/disclaimer.html': 'Disclaimer',
-    '/privacy.html': 'Privacy',
-    '/terms.html': 'Terms'
+    '/currencies': 'Currencies',
+    '/pairs': 'Pairs',
+    '/news': 'News',
+    '/calendar': 'Calendar',
+    '/community': 'Community',
+    '/history': 'History_Pro',
+    '/report': 'Report_Pro',
+    '/login': 'Login',
+    '/register': 'Register',
+    '/profile': 'Profile',
+    '/about': 'About',
+    '/how': 'How_It_Works',
+    '/contact': 'Contact',
+    '/disclaimer': 'Disclaimer',
+    '/privacy': 'Privacy',
+    '/terms': 'Terms'
   };
   const pageName = pageMap[window.location.pathname] || window.location.pathname;
 
@@ -74,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // ============================================
 
   // Login Button Clicked
-  const loginBtn = document.querySelector('a[href="/login.html"]');
+  const loginBtn = document.querySelector('a[href="/login"]');
   if (loginBtn) {
     loginBtn.addEventListener('click', () => {
       track('login_button_clicked');
@@ -82,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Register Button Clicked
-  const registerBtn = document.querySelector('a[href="/register.html"]');
+  const registerBtn = document.querySelector('a[href="/register"]');
   if (registerBtn) {
     registerBtn.addEventListener('click', () => {
       track('register_button_clicked');
