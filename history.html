@@ -130,7 +130,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <div class="topbar">
   <div class="topbar-inner">
     <div class="topbar-left">
-      <span>📅 FXNewsBias Pro</span>
+      <span id="topbar-date">📅 Loading...</span>
       <span>⭐ Pro Feature</span>
     </div>
     <div class="topbar-right">
@@ -558,6 +558,11 @@ new Chart(ctx, {
   }
 }
 </script>
-
+<script>
+const _d = new Date();
+const _days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const _months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('topbar-date').textContent = `📅 ${_days[_d.getDay()]}, ${_months[_d.getMonth()]} ${_d.getDate()}, ${_d.getFullYear()}`;
+</script>
 </body>
 </html>
