@@ -831,6 +831,13 @@ function attachPostHandlers() {
       e.stopPropagation();
       if (!confirm('Delete this post? This cannot be undone.')) return;
       try {
+        const postSnap = await getDoc(doc(db, 'posts', btn.dataset.delete));
+        if (postSnap.exists() && postSnap.data().imageURL) {
+          try {
+            const imgRef = storageRef(storage, postSnap.data().imageURL);
+            await deleteObject(imgRef);
+          } catch(imgErr) { console.log('Image delete failed:', imgErr); }
+        }
         await deleteDoc(doc(db, 'posts', btn.dataset.delete));
         showToast('Post deleted', 'success');
       } catch(e) {
