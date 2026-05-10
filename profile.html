@@ -193,7 +193,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 </header>
 
 <div class="ticker">
-  <div class="ticker-inner">
+  <div class="ticker-inner" id="ticker-inner">
     <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
     <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
     <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
@@ -305,6 +305,24 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     <div class="danger-zone">
       <div class="section-title">Account Actions</div>
       <button class="btn-danger" onclick="window.logoutUser()">Logout</button>
+      <button class="btn-danger" onclick="openDeleteAccountModal()" style="background:#7f1d1d;margin-left:8px;">🗑️ Delete Account</button>
+    </div>
+
+    <div id="delete-account-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:28px;max-width:460px;width:92%;box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+        <h3 style="font-size:20px;font-weight:800;color:#991b1b;margin-bottom:12px;">⚠️ Delete Your Account?</h3>
+        <p style="font-size:14px;color:#374151;margin-bottom:14px;line-height:1.6;">This action is <strong>permanent and cannot be undone</strong>. Your account, profile, posts, comments, likes, and saved items will be deleted forever.</p>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:16px;">For security, please confirm by typing <strong style="color:#991b1b;">DELETE</strong> below:</p>
+        <input type="text" id="delete-confirm-input" placeholder="Type DELETE" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:8px;">
+        <div id="delete-password-row" style="display:none;margin-bottom:8px;">
+          <p style="font-size:12px;color:#6b7280;margin-bottom:6px;">Re-enter your password (required by Firebase):</p>
+          <input type="password" id="delete-password-input" placeholder="Your password" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+          <button onclick="closeDeleteAccountModal()" style="padding:10px 18px;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#374151;font-weight:600;cursor:pointer;">Cancel</button>
+          <button id="delete-confirm-btn" onclick="confirmDeleteAccount()" style="padding:10px 18px;border-radius:6px;border:none;background:#991b1b;color:#fff;font-weight:600;cursor:pointer;">Delete Forever</button>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -357,10 +375,10 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/ticker.js" defer></script>
 <script type="module" src="/firebase.js"></script>
 <script type="module">
-import { getAuth, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, updateProfile, EmailAuthProvider, reauthenticateWithCredential, GoogleAuthProvider, reauthenticateWithPopup, deleteUser } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
@@ -549,6 +567,75 @@ window.toggleEditUsername = function() {
 window.cancelEditUsername = function() {
   document.getElementById('username-display').style.display = 'block';
   document.getElementById('username-edit').style.display = 'none';
+};
+
+window.openDeleteAccountModal = function() {
+  const user = auth.currentUser;
+  if (!user) { showToast('You must be logged in.', 'error'); return; }
+  const modal = document.getElementById('delete-account-modal');
+  document.getElementById('delete-confirm-input').value = '';
+  const pwInput = document.getElementById('delete-password-input');
+  if (pwInput) pwInput.value = '';
+  const isGoogle = (user.providerData[0]?.providerId === 'google.com');
+  document.getElementById('delete-password-row').style.display = isGoogle ? 'none' : 'block';
+  modal.style.display = 'flex';
+};
+
+window.closeDeleteAccountModal = function() {
+  document.getElementById('delete-account-modal').style.display = 'none';
+};
+
+window.confirmDeleteAccount = async function() {
+  const confirmText = document.getElementById('delete-confirm-input').value.trim();
+  if (confirmText !== 'DELETE') { showToast('Please type DELETE to confirm.', 'error'); return; }
+  const user = auth.currentUser;
+  if (!user) { showToast('Not logged in.', 'error'); return; }
+  const btn = document.getElementById('delete-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Deleting...';
+  try {
+    // Step 1: reauthenticate (required by Firebase for sensitive ops)
+    const isGoogle = (user.providerData && user.providerData[0]?.providerId === 'google.com');
+    if (isGoogle) {
+      await reauthenticateWithPopup(user, new GoogleAuthProvider());
+    } else {
+      const pw = document.getElementById('delete-password-input').value;
+      if (!pw) { showToast('Password required.', 'error'); btn.disabled=false; btn.textContent='Delete Forever'; return; }
+      const cred = EmailAuthProvider.credential(user.email, pw);
+      await reauthenticateWithCredential(user, cred);
+    }
+
+    // Step 2: clean up Firestore data
+    const email = user.email;
+    const docId = email.replace(/[.#$[\]@]/g, '_');
+    try { await deleteDoc(doc(db, 'users', docId)); } catch(e) { console.log('User doc delete:', e.message); }
+
+    const collections = [
+      { name: 'posts', field: 'authorEmail' },
+      { name: 'likes', field: 'userEmail' },
+      { name: 'saves', field: 'userEmail' },
+      { name: 'comments', field: 'authorEmail' }
+    ];
+    for (const c of collections) {
+      try {
+        const snap = await getDocs(query(collection(db, c.name), where(c.field, '==', email)));
+        for (const d of snap.docs) { await deleteDoc(d.ref); }
+        console.log(`Deleted ${snap.docs.length} from ${c.name}`);
+      } catch(e) { console.log(`${c.name} cleanup:`, e.message); }
+    }
+
+    // Step 3: delete Firebase auth user
+    await deleteUser(user);
+    localStorage.removeItem('fxnb_logged_in');
+    showToast('Account deleted. Goodbye!', 'success');
+    setTimeout(() => window.location.href = '/', 1500);
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Delete Forever';
+    let msg = e.message || 'Delete failed.';
+    if (e.code === 'auth/wrong-password') msg = 'Incorrect password.';
+    if (e.code === 'auth/popup-closed-by-user') msg = 'Re-authentication cancelled.';
+    if (e.code === 'auth/requires-recent-login') msg = 'Please log out, log back in, and try again.';
+    showToast(msg, 'error');
+  }
 };
 
 window.saveUsername = async function() {

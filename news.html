@@ -207,7 +207,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 </header>
 
 <div class="ticker">
-  <div class="ticker-inner">
+  <div class="ticker-inner" id="ticker-inner">
     <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
     <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
     <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
@@ -494,7 +494,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div>
     </div>
 
-    <div class="sidebar-card">
+    <div class="sidebar-card" id="daily-brief-card">
       <h3>📧 Get Daily Brief</h3>
       <p style="font-size:12px;color:var(--text-soft);line-height:1.5;margin-bottom:12px;">Top forex news + sentiment delivered to your inbox every morning.</p>
       <input type="email" placeholder="your@email.com" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;margin-bottom:8px;">
@@ -767,12 +767,16 @@ async function loadTrending() {
 loadNews();
 loadTrending(); 
 setupFilters(); // Always setup filters regardless
-// Hide ads for Pro users
+// Hide ads for Pro users + hide subscribe card for any logged-in user
 window.addEventListener('userLoaded', (e) => {
-  if (e.detail.isPro) {
+  if (e.detail && e.detail.isPro) {
     document.querySelectorAll('.ad-slot').forEach(ad => {
       ad.style.display = 'none';
     });
+  }
+  if (e.detail && (e.detail.email || e.detail.uid)) {
+    const briefCard = document.getElementById('daily-brief-card');
+    if (briefCard) briefCard.style.display = 'none';
   }
 }); 
 </script>
