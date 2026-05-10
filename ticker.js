@@ -1,18 +1,33 @@
 (function() {
   'use strict';
 
-  const PAIRS_CONFIG = {
-    'EUR/USD': { from: 'EUR', to: 'USD' },
-    'GBP/USD': { from: 'GBP', to: 'USD' },
-    'USD/JPY': { from: 'USD', to: 'JPY' },
-    'USD/CHF': { from: 'USD', to: 'CHF' },
-    'AUD/USD': { from: 'AUD', to: 'USD' },
-    'USD/CAD': { from: 'USD', to: 'CAD' },
-    'NZD/USD': { from: 'NZD', to: 'USD' }
-  };
+  const BASE = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json';
+  const FALLBACK = 'https://latest.currency-api.pages.dev/v1/currencies/usd.json';
+
+  function fmtDate(d) {
+    return d.toISOString().slice(0, 10);
+  }
+
+  function ydUrls() {
+    const yd = fmtDate(new Date(Date.now() - 86400000));
+    return [
+      `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${yd}/v1/currencies/usd.json`,
+      `https://${yd}.currency-api.pages.dev/v1/currencies/usd.json`
+    ];
+  }
+
+  async function fetchJson(urls) {
+    for (const u of urls) {
+      try {
+        const r = await fetch(u);
+        if (r.ok) return await r.json();
+      } catch(e) {}
+    }
+    throw new Error('All endpoints failed');
+  }
 
   function formatPair(pair, now, prev) {
-    const decimals = pair.includes('JPY') ? 2 : 4;
+    const decimals = pair.includes('JPY') ? 2 : (pair.includes('XAU') ? 2 : 4);
     const price = now.toFixed(decimals);
     const pct = ((now - prev) / prev) * 100;
     const cls = pct >= 0 ? 'up' : 'down';
@@ -20,45 +35,38 @@
     return `<span class="pair">${pair}</span><span>${price}</span><span class="${cls}">${sign}${pct.toFixed(2)}%</span>`;
   }
 
-  function fmtDate(d) {
-    return d.toISOString().slice(0, 10);
-  }
-
   async function loadTicker() {
     const ticker = document.getElementById('ticker-inner');
     if (!ticker) return;
-
     try {
-      const ydate = new Date(Date.now() - 86400000);
       const [today, yesterday] = await Promise.all([
-        fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,GBP,JPY,CHF,CAD,AUD,NZD').then(r => r.json()),
-        fetch(`https://api.frankfurter.app/${fmtDate(ydate)}?from=USD&to=EUR,GBP,JPY,CHF,CAD,AUD,NZD`).then(r => r.json())
+        fetchJson([BASE, FALLBACK]),
+        fetchJson(ydUrls())
       ]);
+      const r = today.usd || {};
+      const y = yesterday.usd || {};
 
-      const r = today.rates || {};
-      const y = yesterday.rates || {};
+      // XAU rate is "USD per gram" — invert and *31.1035 for USD per troy ounce
+      const xauNow = r.xau ? (1 / r.xau) * 31.1034768 : null;
+      const xauPrev = y.xau ? (1 / y.xau) * 31.1034768 : null;
 
       const pairData = {
-        'EUR/USD': r.EUR && y.EUR ? { now: 1 / r.EUR, prev: 1 / y.EUR } : null,
-        'GBP/USD': r.GBP && y.GBP ? { now: 1 / r.GBP, prev: 1 / y.GBP } : null,
-        'USD/JPY': r.JPY && y.JPY ? { now: r.JPY, prev: y.JPY } : null,
-        'USD/CHF': r.CHF && y.CHF ? { now: r.CHF, prev: y.CHF } : null,
-        'AUD/USD': r.AUD && y.AUD ? { now: 1 / r.AUD, prev: 1 / y.AUD } : null,
-        'USD/CAD': r.CAD && y.CAD ? { now: r.CAD, prev: y.CAD } : null,
-        'NZD/USD': r.NZD && y.NZD ? { now: 1 / r.NZD, prev: 1 / y.NZD } : null
+        'EUR/USD': r.eur && y.eur ? { now: 1 / r.eur, prev: 1 / y.eur } : null,
+        'GBP/USD': r.gbp && y.gbp ? { now: 1 / r.gbp, prev: 1 / y.gbp } : null,
+        'USD/JPY': r.jpy && y.jpy ? { now: r.jpy, prev: y.jpy } : null,
+        'USD/CHF': r.chf && y.chf ? { now: r.chf, prev: y.chf } : null,
+        'AUD/USD': r.aud && y.aud ? { now: 1 / r.aud, prev: 1 / y.aud } : null,
+        'USD/CAD': r.cad && y.cad ? { now: r.cad, prev: y.cad } : null,
+        'NZD/USD': r.nzd && y.nzd ? { now: 1 / r.nzd, prev: 1 / y.nzd } : null,
+        'XAU/USD': xauNow && xauPrev ? { now: xauNow, prev: xauPrev } : null
       };
 
-      const items = ticker.querySelectorAll('.ticker-item');
-      items.forEach(item => {
+      ticker.querySelectorAll('.ticker-item').forEach(item => {
         const pairEl = item.querySelector('.pair');
         if (!pairEl) return;
         const pair = pairEl.textContent.trim();
         const data = pairData[pair];
-        if (data) {
-          item.innerHTML = formatPair(pair, data.now, data.prev);
-        } else if (pair === 'XAU/USD') {
-          item.innerHTML = `<span class="pair">XAU/USD</span><span>—</span>`;
-        }
+        if (data) item.innerHTML = formatPair(pair, data.now, data.prev);
       });
     } catch (e) {
       console.warn('Ticker fetch failed:', e);
@@ -70,6 +78,5 @@
   } else {
     loadTicker();
   }
-
   setInterval(loadTicker, 5 * 60 * 1000);
 })();
