@@ -188,6 +188,8 @@ onAuthStateChanged(auth, async (user) => {
     window.userIsPro = isPro;
     window.userEmail = user.email;
 
+    window.dispatchEvent(new CustomEvent('userLoaded', { detail: { isPro: isPro, email: user.email, uid: user.uid } }));
+
     checkSentimentAlerts(navActions);
 
     if (proGate && proContent) {
@@ -240,8 +242,13 @@ onAuthStateChanged(auth, async (user) => {
     if (userMenu) userMenu.remove();
     const bell = document.getElementById('nav-bell');
     if (bell) bell.remove();
+    const proHistory = document.getElementById('pro-history-link');
+    if (proHistory) proHistory.remove();
+    const proReport = document.getElementById('pro-report-link');
+    if (proReport) proReport.remove();
     window.userIsPro = false;
     window.userEmail = null;
+    window.dispatchEvent(new CustomEvent('userLoaded', { detail: { isPro: false } }));
 
     if (proGate && proContent) {
       proGate.style.display = 'block';
