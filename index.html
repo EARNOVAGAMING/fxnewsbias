@@ -815,7 +815,7 @@ function updateNextRunTime() {
 
   // Countdown subtitle
   if (nextUpdateSub) {
-    const totalMins = Math.max(0, Math.round((next - now) / 60000));
+    const totalMins = Math.max(0, Math.ceil((next - now) / 60000));
     const h = Math.floor(totalMins / 60);
     const m = totalMins % 60;
     nextUpdateSub.textContent = h > 0 ? `in ${h}h ${String(m).padStart(2,'0')}m` : `in ${m}m`;
