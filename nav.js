@@ -28,14 +28,14 @@
         .nav-actions > #user-menu{display:none !important;}
 
         nav ul.fxnb-mobile{position:fixed;top:0;right:0;height:100vh;width:min(86vw,360px);
-          background:#fff;flex-direction:column;align-items:stretch;gap:0;padding:72px 0 0;
-          margin:0;list-style:none;box-shadow:-12px 0 40px rgba(0,0,0,.12);
+          background:#0f172a;flex-direction:column;align-items:stretch;gap:0;padding:72px 0 0;
+          margin:0;list-style:none;box-shadow:-12px 0 40px rgba(0,0,0,.4);
           transform:translateX(100%);transition:transform .42s cubic-bezier(.65,.05,.36,1);
-          z-index:1001;overflow-y:auto;display:flex;
+          z-index:1001;overflow-y:auto;display:flex;color:#e2e8f0;
           -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
         nav ul.fxnb-mobile.is-open{transform:translateX(0);}
         nav ul.fxnb-mobile li{opacity:0;transform:translateX(20px);
-          transition:opacity .3s ease,transform .3s ease;border-bottom:1px solid #f1f5f9;
+          transition:opacity .3s ease,transform .3s ease;border-bottom:1px solid rgba(255,255,255,.06);
           list-style:none;}
         nav ul.fxnb-mobile.is-open li{opacity:1;transform:translateX(0);}
         nav ul.fxnb-mobile.is-open li:nth-child(1){transition-delay:.06s;}
@@ -51,84 +51,91 @@
 
         nav ul.fxnb-mobile a,
         nav ul.fxnb-mobile button{display:block;width:100%;padding:15px 24px;font-size:15px;
-          font-weight:600;color:#1a1a1a;text-decoration:none;text-align:left;background:none;
+          font-weight:600;color:#e2e8f0;text-decoration:none;text-align:left;background:none;
           border:none;cursor:pointer;transition:background .15s ease,color .15s ease,
           padding-left .2s ease;font-family:inherit;}
         nav ul.fxnb-mobile a:hover,nav ul.fxnb-mobile a:active,
         nav ul.fxnb-mobile button:hover,nav ul.fxnb-mobile button:active{
-          background:#f8fafc;color:#2563eb;padding-left:30px;}
+          background:rgba(37,99,235,.12);color:#60a5fa;padding-left:30px;}
 
         /* TOP CTA - Join Telegram */
-        nav ul.fxnb-mobile li.fxnb-top-cta{padding:14px 16px;border-bottom:1px solid #f1f5f9;
-          background:#fff;}
+        nav ul.fxnb-mobile li.fxnb-top-cta{padding:14px 16px;
+          border-bottom:1px solid rgba(255,255,255,.06);background:#0f172a;}
         nav ul.fxnb-mobile li.fxnb-top-cta a{display:flex;align-items:center;gap:10px;
-          padding:12px 14px;background:linear-gradient(135deg,#eff6ff,#dbeafe);
-          border:1px solid #bfdbfe;border-radius:10px;color:#1e3a8a;font-size:13px;
+          padding:12px 14px;background:linear-gradient(135deg,#1e3a8a,#2563eb);
+          border:1px solid rgba(96,165,250,.4);border-radius:10px;color:#fff;font-size:13px;
           font-weight:700;line-height:1.3;}
         nav ul.fxnb-mobile li.fxnb-top-cta a:hover,
-        nav ul.fxnb-mobile li.fxnb-top-cta a:active{padding-left:14px;background:#dbeafe;
-          color:#1e3a8a;}
+        nav ul.fxnb-mobile li.fxnb-top-cta a:active{padding-left:14px;
+          background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;}
+        nav ul.fxnb-mobile li.fxnb-top-cta a span{color:#fff !important;}
+        nav ul.fxnb-mobile li.fxnb-top-cta a span span{color:#bfdbfe !important;}
         nav ul.fxnb-mobile li.fxnb-top-cta .cta-icon{font-size:22px;flex:0 0 auto;}
         nav ul.fxnb-mobile li.fxnb-top-cta .cta-arrow{margin-left:auto;font-size:18px;
-          color:#2563eb;}
+          color:#fff;}
 
         /* AUTH section divider */
-        nav ul.fxnb-mobile li.fxnb-auth-divider{border-top:8px solid #f8fafc;
+        nav ul.fxnb-mobile li.fxnb-auth-divider{border-top:8px solid #020617;
           border-bottom:none;padding:0;height:0;margin-top:8px;}
-        nav ul.fxnb-mobile li.fxnb-auth-user{padding:16px 24px;background:#f8fafc;
-          font-size:14px;font-weight:600;color:#0f172a;display:flex;align-items:center;
-          gap:8px;flex-wrap:wrap;border-bottom:1px solid #f1f5f9;}
-        nav ul.fxnb-mobile li.fxnb-auth-user .pro-badge{background:#f59e0b;color:#fff;
+        nav ul.fxnb-mobile li.fxnb-auth-user{padding:16px 24px;background:rgba(255,255,255,.04);
+          font-size:14px;font-weight:600;color:#f8fafc;display:flex;align-items:center;
+          gap:8px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.06);}
+        nav ul.fxnb-mobile li.fxnb-auth-user .pro-badge{background:#f59e0b;color:#0f172a;
           font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
-        nav ul.fxnb-mobile li.fxnb-auth-login a{color:#2563eb;}
+        nav ul.fxnb-mobile li.fxnb-auth-login a{color:#60a5fa;}
         nav ul.fxnb-mobile li.fxnb-auth-register a{color:#fff;background:#2563eb;}
         nav ul.fxnb-mobile li.fxnb-auth-register a:hover,
         nav ul.fxnb-mobile li.fxnb-auth-register a:active{background:#1d4ed8;color:#fff;}
-        nav ul.fxnb-mobile li.fxnb-auth-logout button{color:#ef4444;}
+        nav ul.fxnb-mobile li.fxnb-auth-logout button{color:#fca5a5;}
+        nav ul.fxnb-mobile li.fxnb-auth-logout button:hover,
+        nav ul.fxnb-mobile li.fxnb-auth-logout button:active{color:#f87171;
+          background:rgba(239,68,68,.1);}
 
         /* BOTTOM section: Pepperstone, Upgrade, Social, Footer */
-        nav ul.fxnb-mobile li.fxnb-bottom-divider{border-top:8px solid #f8fafc;
+        nav ul.fxnb-mobile li.fxnb-bottom-divider{border-top:8px solid #020617;
           border-bottom:none;padding:0;height:0;}
-        nav ul.fxnb-mobile li.fxnb-pepperstone{padding:16px 24px;border-bottom:1px solid #f1f5f9;}
+        nav ul.fxnb-mobile li.fxnb-pepperstone{padding:16px 24px;
+          border-bottom:1px solid rgba(255,255,255,.06);}
         nav ul.fxnb-mobile li.fxnb-pepperstone a{display:inline-flex;align-items:center;gap:6px;
-          padding:0;color:#1e40af;font-size:14px;font-weight:600;text-decoration:underline;
-          text-underline-offset:2px;}
+          padding:0;color:#60a5fa;font-size:14px;font-weight:600;text-decoration:underline;
+          text-underline-offset:2px;width:auto;}
         nav ul.fxnb-mobile li.fxnb-pepperstone a:hover,
         nav ul.fxnb-mobile li.fxnb-pepperstone a:active{padding-left:0;background:none;
-          color:#1e3a8a;}
-        nav ul.fxnb-mobile li.fxnb-pepperstone .ext{font-size:11px;opacity:.7;}
-        nav ul.fxnb-mobile li.fxnb-pepperstone .sub{display:block;color:#64748b;
+          color:#93c5fd;}
+        nav ul.fxnb-mobile li.fxnb-pepperstone .ext{font-size:11px;opacity:.8;}
+        nav ul.fxnb-mobile li.fxnb-pepperstone .sub{display:block;color:#94a3b8;
           font-size:12px;font-weight:400;margin-top:4px;text-decoration:none;}
 
-        nav ul.fxnb-mobile li.fxnb-upgrade{padding:16px;border-bottom:1px solid #f1f5f9;}
+        nav ul.fxnb-mobile li.fxnb-upgrade{padding:16px;
+          border-bottom:1px solid rgba(255,255,255,.06);}
         nav ul.fxnb-mobile li.fxnb-upgrade a{display:flex;align-items:center;justify-content:center;
-          gap:8px;padding:14px 16px;background:linear-gradient(135deg,#1e40af,#2563eb);
-          color:#fff;font-size:15px;font-weight:700;border-radius:10px;text-align:center;
-          box-shadow:0 4px 12px rgba(37,99,235,.25);}
+          gap:8px;padding:14px 16px;background:linear-gradient(135deg,#f59e0b,#fbbf24);
+          color:#0f172a;font-size:15px;font-weight:700;border-radius:10px;text-align:center;
+          box-shadow:0 4px 12px rgba(245,158,11,.3);}
         nav ul.fxnb-mobile li.fxnb-upgrade a:hover,
-        nav ul.fxnb-mobile li.fxnb-upgrade a:active{padding-left:16px;color:#fff;
-          background:linear-gradient(135deg,#1e3a8a,#1d4ed8);}
+        nav ul.fxnb-mobile li.fxnb-upgrade a:active{padding-left:16px;color:#0f172a;
+          background:linear-gradient(135deg,#d97706,#f59e0b);}
 
         nav ul.fxnb-mobile li.fxnb-social{padding:14px 24px;display:flex;gap:10px;
-          border-bottom:1px solid #f1f5f9;}
+          border-bottom:1px solid rgba(255,255,255,.06);}
         nav ul.fxnb-mobile li.fxnb-social a{flex:1;display:flex;align-items:center;
-          justify-content:center;gap:6px;padding:10px 8px;background:#f8fafc;
-          border:1px solid #e2e8f0;border-radius:8px;color:#475569;font-size:12px;
+          justify-content:center;gap:6px;padding:10px 8px;background:rgba(255,255,255,.05);
+          border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#cbd5e1;font-size:12px;
           font-weight:600;}
         nav ul.fxnb-mobile li.fxnb-social a:hover,
-        nav ul.fxnb-mobile li.fxnb-social a:active{padding-left:8px;background:#eff6ff;
-          color:#2563eb;border-color:#bfdbfe;}
+        nav ul.fxnb-mobile li.fxnb-social a:active{padding-left:8px;
+          background:rgba(37,99,235,.15);color:#60a5fa;border-color:rgba(96,165,250,.4);}
 
-        nav ul.fxnb-mobile li.fxnb-footer{padding:16px 24px 14px;border-bottom:none;
-          background:#f8fafc;}
+        nav ul.fxnb-mobile li.fxnb-footer{padding:16px 24px 20px;border-bottom:none;
+          background:#020617;}
         nav ul.fxnb-mobile li.fxnb-footer .links{display:flex;flex-wrap:wrap;gap:6px 12px;
           margin-bottom:10px;}
-        nav ul.fxnb-mobile li.fxnb-footer .links a{padding:0;color:#64748b;font-size:12px;
+        nav ul.fxnb-mobile li.fxnb-footer .links a{padding:0;color:#94a3b8;font-size:12px;
           font-weight:500;width:auto;display:inline;}
         nav ul.fxnb-mobile li.fxnb-footer .links a:hover,
         nav ul.fxnb-mobile li.fxnb-footer .links a:active{padding-left:0;background:none;
-          color:#2563eb;}
-        nav ul.fxnb-mobile li.fxnb-footer .copy{color:#94a3b8;font-size:11px;}
+          color:#60a5fa;}
+        nav ul.fxnb-mobile li.fxnb-footer .copy{color:#64748b;font-size:11px;}
 
         body.fxnb-nav-locked{overflow:hidden;}
         body.fxnb-nav-locked header{z-index:1003 !important;}
@@ -231,7 +238,7 @@
       topCta.innerHTML =
         `<a href="${TELEGRAM_URL}" target="_blank" rel="noopener noreferrer">
            <span class="cta-icon">📱</span>
-           <span>Free FX alerts<br><span style="font-size:11px;font-weight:500;color:#475569;">on Telegram every 3 hours</span></span>
+           <span>Free FX alerts<br><span style="font-size:11px;font-weight:500;">on Telegram every 3 hours</span></span>
            <span class="cta-arrow">›</span>
          </a>`;
       navMenu.insertBefore(topCta, navMenu.firstChild);
