@@ -98,11 +98,10 @@ nav a.active{font-weight:600;}
 
 .news-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:12px;cursor:pointer;transition:all .2s;display:flex;gap:16px;}
 .news-card:hover{border-color:var(--accent);box-shadow:0 4px 12px rgba(37,99,235,.06);}
-.news-img{width:120px;height:90px;flex-shrink:0;border-radius:8px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);display:flex;align-items:center;justify-content:center;font-size:32px;}
-.news-img.red{background:linear-gradient(135deg,#fee2e2,#fecaca);}
-.news-img.green{background:linear-gradient(135deg,#d1fae5,#a7f3d0);}
-.news-img.yellow{background:linear-gradient(135deg,#fef3c7,#fde68a);}
-.news-img.purple{background:linear-gradient(135deg,#ede9fe,#ddd6fe);}
+.news-img{width:96px;height:96px;flex-shrink:0;border-radius:10px;background:#f8fafc;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+.news-img img{width:48px;height:48px;object-fit:contain;}
+.news-img .fav-fallback{font-size:11px;font-weight:800;color:#64748b;text-align:center;padding:4px;line-height:1.2;letter-spacing:.3px;}
+.news-img .src-badge{position:absolute;bottom:0;left:0;right:0;background:rgba(15,23,42,.85);color:#fff;font-size:9px;font-weight:600;padding:3px 4px;text-align:center;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .news-content{flex:1;min-width:0;}
 .news-meta-top{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text-muted);margin-bottom:6px;flex-wrap:wrap;}
 .news-impact{padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
@@ -570,17 +569,39 @@ function timeAgo(dateStr) {
   return `${Math.floor(diff/1440)}d ago`;
 }
 
-function sourceEmoji(source) {
-  const map = {
-    'reuters': '📰', 'bbc': '📺', 'cnbc': '📡',
-    'fxstreet': '💹', 'dailyfx': '📊', 'bloomberg': '💼',
-    'marketwatch': '📈', 'investing': '💰'
-  };
-  const key = (source || '').toLowerCase();
-  for (const [k, v] of Object.entries(map)) {
-    if (key.includes(k)) return v;
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function decodeEntities(s){
+  if(!s) return '';
+  const t = document.createElement('textarea'); t.innerHTML = String(s); return t.value;
+}
+
+function getHost(url){
+  try { return new URL(url).hostname.replace(/^www\./,''); } catch(e) { return ''; }
+}
+
+function favicon(url, size){
+  const host = getHost(url);
+  if(!host) return '';
+  return `https://www.google.com/s2/favicons?domain=${host}&sz=${size||64}`;
+}
+
+function sourceLogoHTML(item){
+  const host = getHost(item.url);
+  const src = item.source || host || 'News';
+  const initials = src.replace(/[^A-Za-z ]/g,'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase() || 'N';
+  if(host){
+    return `<img src="${esc(favicon(item.url, 128))}" alt="${esc(src)}" loading="lazy" onerror="this.outerHTML='<div class=\\'fav-fallback\\'>${esc(initials)}</div>'"><div class="src-badge" title="${esc(src)}">${esc(src)}</div>`;
   }
-  return '📰';
+  return `<div class="fav-fallback">${esc(initials)}</div><div class="src-badge">${esc(src)}</div>`;
+}
+
+function pillsForCurrencies(arr, impact){
+  if(!Array.isArray(arr) || arr.length===0) return '';
+  const isHigh = (impact||'').toLowerCase()==='high';
+  const cls = isHigh ? 'affect-bear' : 'affect-bull';
+  const arrow = isHigh ? '⬇' : '⬆';
+  return arr.slice(0,6).map(c => `<span class="affect-pill ${cls}">${esc(c)} ${arrow}</span>`).join('');
 }
 
 async function loadNews() {
@@ -596,18 +617,25 @@ async function loadNews() {
     const featured = document.querySelector('.featured');
     if (featured && data[0]) {
       const top = data[0];
+      const topTitle = decodeEntities(top.title);
+      const affected = Array.isArray(top.currencies_affected) ? top.currencies_affected : [];
       featured.innerHTML = `
-        <span class="featured-tag">🔥 Breaking · ${top.impact || 'Medium'} Impact</span>
-        <h2 class="featured-title">${top.title}</h2>
-        <p class="featured-summary">Click to read the full article from ${top.source || 'News Source'}.</p>
+        <span class="featured-tag">🔥 Top Story · ${esc(top.impact || 'Medium')} Impact</span>
+        <h2 class="featured-title">${esc(topTitle)}</h2>
+        <p class="featured-summary">Latest from ${esc(top.source || 'News Source')} — tap to read the full article on the publisher's site.</p>
         <div class="featured-meta">
-          <span>${sourceEmoji(top.source)} ${top.source || 'News Source'}</span>
-          <span>⏰ ${timeAgo(top.created_at)}</span>
+          <span>📰 ${esc(top.source || 'News Source')}</span>
+          <span>⏰ ${esc(timeAgo(top.created_at))}</span>
+          ${pillsForCurrencies(affected, top.impact)}
         </div>
       `;
       featured.style.cursor = 'pointer';
-      featured.onclick = () => { if (top.url) window.open(top.url, '_blank'); };
+      featured.onclick = () => { if (top.url) window.open(top.url, '_blank', 'noopener'); };
     }
+
+    // Update "Last Updated" timestamp from real data
+    const updEl = document.querySelector('.section-update');
+    if (updEl) updEl.textContent = `⏱ Updated ${timeAgo(data[0].created_at)}`;
 
     // Find parent and remove old static cards
     const existingCards = document.querySelectorAll('.news-card');
@@ -620,27 +648,34 @@ async function loadNews() {
     data.forEach((item, index) => {
       const card = document.createElement('div');
       card.className = 'news-card';
+      const titleClean = decodeEntities(item.title);
+      const affected = Array.isArray(item.currencies_affected) ? item.currencies_affected : [];
       card.setAttribute('data-source', (item.source || '').toLowerCase());
       card.setAttribute('data-impact', (item.impact || 'medium').toLowerCase());
-      card.setAttribute('data-title', item.title.toLowerCase());
+      card.setAttribute('data-title', titleClean.toLowerCase());
+      card.setAttribute('data-currencies', affected.join(',').toLowerCase());
+
+      const summaryLine = affected.length
+        ? `Affecting <b>${esc(affected.join(', '))}</b> — tap to read the full article on ${esc(item.source || 'the source')}.`
+        : `Tap to read the full article on ${esc(item.source || 'the source')}.`;
 
       card.innerHTML = `
-        <div class="news-img blue">${sourceEmoji(item.source)}</div>
+        <div class="news-img">${sourceLogoHTML(item)}</div>
         <div class="news-content">
           <div class="news-meta-top">
-            <span class="news-impact ${getImpactClass(item.impact)}">${item.impact || 'Medium'} Impact</span>
-            <span>${sourceEmoji(item.source)} ${item.source || 'News'}</span>
-            <span>⏰ ${timeAgo(item.created_at)}</span>
+            <span class="news-impact ${getImpactClass(item.impact)}">${esc(item.impact || 'Medium')} Impact</span>
+            <span>📰 ${esc(item.source || 'News')}</span>
+            <span>⏰ ${esc(timeAgo(item.created_at))}</span>
           </div>
-          <h3 class="news-title">${item.title}</h3>
-          <p class="news-summary">Click to read the full article.</p>
+          <h3 class="news-title">${esc(titleClean)}</h3>
+          <p class="news-summary">${summaryLine}</p>
+          <div class="news-affects">${pillsForCurrencies(affected, item.impact)}</div>
         </div>
       `;
 
       card.style.cursor = 'pointer';
       card.onclick = () => {
-        if (item.url) window.open(item.url, '_blank');
-        else window.location.href = '/news';
+        if (item.url) window.open(item.url, '_blank', 'noopener');
       };
 
       if (index === 2 && adSlot) parent.appendChild(adSlot);
@@ -675,9 +710,18 @@ function setupFilters() {
         8: ['jpy', 'yen', 'boj', 'japan']
       };
       const keywords = filterMap[index] || [];
+      // Currency tabs (5-8) check the real currencies_affected list first
+      const currencyMap = { 5:'usd', 6:'eur', 7:'gbp', 8:'jpy' };
+      const wantedCurrency = currencyMap[index];
       newsCards.forEach(card => {
         const title = (card.getAttribute('data-title') || '').toLowerCase();
-        const matches = keywords.some(kw => title.includes(kw));
+        const currs = (card.getAttribute('data-currencies') || '').toLowerCase();
+        let matches;
+        if (wantedCurrency) {
+          matches = currs.split(',').includes(wantedCurrency) || keywords.some(kw => title.includes(kw));
+        } else {
+          matches = keywords.some(kw => title.includes(kw));
+        }
         card.style.display = matches ? 'flex' : 'none';
       });
     });
