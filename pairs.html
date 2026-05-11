@@ -9,7 +9,7 @@
 <link rel="icon" href="/favicon.ico">
 <title>Forex Pairs Sentiment | EURUSD GBPUSD News Sentiment - FXNewsBias</title>
 <meta name="description" content="Live forex pairs news sentiment analysis. Check EURUSD, GBPUSD, USDJPY and all major pairs sentiment from latest forex news and fundamentals.">
-<meta name="keywords" content="forex news sentiment, forex sentiment, forex news, news sentiment, market news sentiment, currency sentiment, forex sentiment analysis, real-time forex sentiment, live forex sentiment, forex market sentiment, currency news sentiment, forex fundamental analysis, forex news analysis, currency strength, forex bias, market sentiment tracker, forex sentiment dashboard, forex sentiment indicator, daily forex sentiment, forex news tracker, currency market news, forex market news, forex trading sentiment, sentiment analysis forex, forex sentiment tool, free forex sentiment, forex news today, forex market analysis, economic news sentiment, trading news sentiment, forex signal sentiment, forex outlook, forex market mood, risk on risk off forex, forex news feed, live forex news, forex market update, USD sentiment, EUR sentiment, GBP sentiment, JPY sentiment, AUD sentiment, CAD sentiment, CHF sentiment, NZD sentiment, EURUSD news sentiment, GBPUSD news sentiment, USDJPY news sentiment, AUDUSD news sentiment, USDCAD news sentiment, USDCHF news sentiment, NZDUSD news sentiment, GBPJPY news sentiment, EURJPY news sentiment, EURGBP news sentiment, EURCAD news sentiment, EURAUD news sentiment, EURCHF news sentiment, AUDCAD news sentiment, AUDNZD news sentiment, CADJPY news sentiment, GBPAUD news sentiment, GBPCAD news sentiment, GBPCHF news sentiment, NZDJPY news sentiment, EURUSD sentiment, GBPUSD sentiment, USDJPY sentiment, AUDUSD sentiment, forex calendar, forex economic calendar, forex news calendar, forex calendar today, high impact forex news, forex calendar events, economic calendar forex, forex event calendar, forex latest news, latest forex news, forex news live, today forex news, breaking forex news, forex news update, forex news bias, currency news bias, forex bias analysis, news based forex trading, forex news strategy, forex news trading strategy, trade forex with news, how to trade forex news, forex fundamental strategy, trading forex with fundamentals, forex news impact, high impact news forex, forex trading strategy, forex strategy news, fundamental forex strategy, news driven forex, forex news signals, forex news based signals, forex market fundamentals, forex economic news, central bank news forex, fed news forex, ecb news sentiment, interest rate forex sentiment, inflation forex news, nfp forex sentiment, cpi forex news, gdp forex sentiment, forex risk sentiment, safe haven sentiment forex, risk on sentiment forex, risk off sentiment forex">
+<meta name="keywords" content="forex news sentiment, forex pair sentiment, EURUSD sentiment, GBPUSD sentiment, USDJPY sentiment, currency strength, forex bias, market sentiment tracker, EUR/USD news, GBP/USD news, currency cross sentiment, forex pair analysis, forex pair forecast">
 <meta name="robots" content="index, follow">
 <meta name="author" content="FXNewsBias">
 <link rel="canonical" href="https://fxnewsbias.com/pairs">
@@ -22,17 +22,17 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://fxnewsbias.com/og-image.png">
 <meta name="twitter:title" content="Forex Pairs Sentiment | EURUSD GBPUSD News Sentiment - FXNewsBias">
-<meta name="twitter:description" content="Live sentiment for EURUSD, GBPUSD, USDJPY and all major forex pairs from latest news."> 
+<meta name="twitter:description" content="Live sentiment for EURUSD, GBPUSD, USDJPY and all major forex pairs from latest news.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
 :root{
   --bg-soft:#f8f9fa;
-  --border:#e5e7eb; --border-strong:#d1d5db;
-  --text:#1a1a1a; --text-soft:#6b7280; --text-muted:#9ca3af;
+  --border:#e5e7eb;--border-strong:#d1d5db;
+  --text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;
   --accent:#2563eb;
-  --bull:#10b981; --bear:#ef4444; --neutral:#f59e0b;
+  --bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;
 }
 
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
@@ -66,40 +66,102 @@ nav a.active{font-weight:600;}
 .up{color:var(--bull);font-weight:600;}
 .down{color:var(--bear);font-weight:600;}
 
-.page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:36px 0;}
+.page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:36px 0 24px;}
 .page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .breadcrumb{font-size:12px;color:#94a3b8;margin-bottom:10px;}
 .breadcrumb a{color:#94a3b8;text-decoration:none;}
 .breadcrumb a:hover{color:#fff;}
 .page-title{font-size:32px;font-weight:800;margin-bottom:8px;}
-.page-sub{color:#94a3b8;font-size:14px;max-width:700px;}
+.page-sub{color:#94a3b8;font-size:14px;max-width:760px;margin-bottom:22px;}
 
-.cat-tabs{max-width:1280px;margin:24px auto 0;padding:0 20px;display:flex;gap:6px;border-bottom:2px solid var(--border);overflow-x:auto;}
-.cat-tab{padding:12px 18px;font-size:14px;font-weight:600;color:var(--text-soft);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .2s;}
-.cat-tab:hover{color:var(--accent);}
-.cat-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+/* Market mood strip in hero */
+.mood-strip{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px;margin-top:8px;}
+.mood-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;}
+.mood-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:6px;}
+.mood-value{font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;}
+.mood-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+.mood-sub{font-size:11px;color:#94a3b8;margin-top:4px;}
+.mood-bar{height:4px;background:rgba(255,255,255,.08);border-radius:3px;margin-top:8px;overflow:hidden;}
+.mood-fill{height:100%;border-radius:3px;}
 
+/* Top movers strip */
+.movers-section{max-width:1280px;margin:24px auto 0;padding:0 20px;}
+.movers-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:12px;}
+.movers-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.mover-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.mover-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.tag-bull{color:#065f46;}
+.tag-bear{color:#991b1b;}
+.tag-up{color:var(--bull);}
+.tag-down{color:var(--bear);}
+.mover-pair{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;margin-bottom:2px;}
+.mover-meta{font-size:12px;color:var(--text-soft);font-family:'JetBrains Mono',monospace;}
+
+/* Filter / sort bar */
+.filter-bar{max-width:1280px;margin:24px auto 14px;padding:0 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.filter-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-right:4px;}
+.filter-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;color:var(--text);transition:all .15s;}
+.filter-btn:hover{border-color:var(--accent);color:var(--accent);}
+.filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.filter-spacer{flex:1;}
+.sort-select{padding:6px 12px;border:1px solid var(--border);border-radius:20px;font-size:13px;font-weight:600;background:#fff;cursor:pointer;color:var(--text);}
+.filter-update{font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;margin-left:8px;}
+
+/* Pair card grid */
+.pair-grid{max-width:1280px;margin:0 auto 32px;padding:0 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;}
+.pair-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;transition:all .15s;position:relative;}
+.pair-card:hover{border-color:var(--accent);box-shadow:0 6px 20px rgba(37,99,235,.08);}
+.pair-card.high-conviction{border-left:3px solid var(--accent);}
+.pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;gap:10px;}
+.pc-id{display:flex;align-items:center;gap:10px;min-width:0;}
+.pc-flags{font-size:22px;line-height:1;}
+.pc-name{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;letter-spacing:-0.5px;}
+.pc-derived{font-size:9px;font-weight:700;color:var(--text-muted);background:var(--bg-soft);padding:2px 6px;border-radius:4px;margin-left:6px;text-transform:uppercase;letter-spacing:0.5px;}
+.pc-fav{background:none;border:none;font-size:18px;cursor:pointer;padding:2px;color:#cbd5e1;line-height:1;}
+.pc-fav.on{color:#f59e0b;}
+.pc-fav:hover{color:#f59e0b;}
+.pc-bias{text-align:right;flex-shrink:0;}
+.pc-badge{padding:4px 10px;border-radius:5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:inline-block;}
+.bull-bg{background:#d1fae5;color:#065f46;}
+.bear-bg{background:#fee2e2;color:#991b1b;}
+.neut-bg{background:#fef3c7;color:#92400e;}
+.pc-conviction{font-size:11px;color:var(--text-muted);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+
+.pc-price-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.pc-price{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;letter-spacing:-0.5px;}
+.pc-change{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;}
+.pc-no-price{font-size:13px;color:var(--text-muted);font-style:italic;}
+
+/* Strength face-off */
+.faceoff{margin-bottom:14px;}
+.faceoff-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;}
+.faceoff-bars{display:flex;flex-direction:column;gap:8px;}
+.fb-row{display:grid;grid-template-columns:50px 1fr 28px;gap:10px;align-items:center;font-size:12px;}
+.fb-curr{font-weight:700;font-family:'JetBrains Mono',monospace;}
+.fb-track{height:8px;background:var(--bg-soft);border-radius:5px;overflow:hidden;position:relative;}
+.fb-fill{height:100%;border-radius:5px;transition:width .3s;}
+.fb-score{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;text-align:right;}
+
+.pc-rationale{font-size:12px;color:var(--text-soft);line-height:1.5;background:var(--bg-soft);padding:10px 12px;border-radius:6px;margin-bottom:12px;}
+.pc-rationale strong{color:var(--text);}
+
+.pc-drivers{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+.driver-chip{font-size:11px;padding:3px 9px;border-radius:12px;background:var(--bg-soft);color:var(--text-soft);border:1px solid var(--border);}
+.driver-chip.dr-bull{background:#ecfdf5;color:#065f46;border-color:#a7f3d0;}
+.driver-chip.dr-bear{background:#fef2f2;color:#991b1b;border-color:#fecaca;}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);font-size:14px;grid-column:1/-1;}
+
+/* INFO + COMMENTS */
 .section{max-width:1280px;margin:24px auto;padding:0 20px;}
 .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
 .section-update{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted);}
 
-.pairs-table{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px;}
-.table-header{display:grid;grid-template-columns:140px 1fr 110px 110px 110px 100px;gap:12px;padding:14px 18px;background:var(--bg-soft);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);}
-.pair-row{display:grid;grid-template-columns:140px 1fr 110px 110px 110px 100px;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .15s;}
-.pair-row:hover{background:#f9fafb;}
-.pair-row:last-child{border-bottom:none;}
-.pair-name{font-weight:700;font-size:15px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:6px;}
-.pair-flags{font-size:14px;}
-.pair-driver{font-size:12px;color:var(--text-soft);line-height:1.5;}
-.pair-price{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;}
-.pair-change{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;}
-.bias-badge{padding:4px 10px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;text-align:center;}
-.bull-bg{background:#d1fae5;color:#065f46;}
-.bear-bg{background:#fee2e2;color:#991b1b;}
-.neut-bg{background:#fef3c7;color:#92400e;}
-.go-arrow{color:var(--accent);font-size:16px;text-align:right;}
+.info-box{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:18px 22px;display:flex;gap:14px;margin:0 auto 12px;max-width:1280px;}
+.info-icon{font-size:24px;line-height:1;}
+.info-content h4{font-size:14px;font-weight:700;margin-bottom:4px;color:#1e40af;}
+.info-content p{font-size:13px;color:#1e3a8a;line-height:1.6;}
 
-/* COMMENT SECTION */
 .comments-section{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:24px;}
 .comments-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
 .comments-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
@@ -159,15 +221,22 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   .burger{display:block;}
   .topbar-left span:nth-child(n+2){display:none;}
   .page-title{font-size:24px;}
-  .table-header{display:none;}
-  .pair-row{grid-template-columns:1fr auto;gap:6px;padding:14px;}
-  .pair-row .pair-driver,.pair-row .pair-change{display:none;}
-  .pair-row .go-arrow{grid-row:1/3;align-self:center;}
+  .mood-strip{grid-template-columns:1fr;}
+  .movers-grid{grid-template-columns:repeat(2,1fr);}
+  .pair-grid{grid-template-columns:1fr;}
   #user-menu span:first-child{display:none !important;}
   #user-menu{gap:6px !important;}
   #user-menu button{padding:6px 10px !important;font-size:12px !important;}
 }
-@media(max-width:768px){.ad-leaderboard{display:none !important;}}</style>
+@media(max-width:768px){.ad-leaderboard{display:none !important;}}
+@media(max-width:480px){
+  .movers-grid{grid-template-columns:1fr 1fr;gap:8px;}
+  .mover-card{padding:10px 12px;}
+  .mover-pair{font-size:15px;}
+  .mover-meta{font-size:11px;}
+  .filter-update{display:none;}
+}
+</style>
 <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
     <script>
@@ -235,68 +304,97 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <section class="page-head">
   <div class="page-head-inner">
     <div class="breadcrumb"><a href="/">Home</a> · Pairs</div>
-    <h1 class="page-title">Forex Pair Sentiment</h1>
-    <p class="page-sub">Live fundamental sentiment for major and minor pairs. Click any pair for deep analysis, historical sentiment, and trader discussions.</p>
+    <h1 class="page-title">Forex Pair Bias &amp; Strength Face-Off</h1>
+    <p class="page-sub">Each pair compares two currencies head-to-head. We pull live news sentiment for both sides, score the gap, and tell you which one has the upper hand right now.</p>
+
+    <div class="mood-strip" id="mood-strip">
+      <div class="mood-card">
+        <div class="mood-label">Market Mood</div>
+        <div class="mood-value" id="mood-value"><span class="mood-dot" style="background:#94a3b8;"></span>Loading…</div>
+        <div class="mood-sub" id="mood-sub">Calculating from latest sentiment</div>
+      </div>
+      <div class="mood-card">
+        <div class="mood-label">USD Strength</div>
+        <div class="mood-value" id="usd-strength">—</div>
+        <div class="mood-bar"><div class="mood-fill" id="usd-fill" style="width:0;background:#94a3b8;"></div></div>
+      </div>
+      <div class="mood-card">
+        <div class="mood-label">Strongest vs Weakest</div>
+        <div class="mood-value" id="vs-value" style="font-size:16px;">—</div>
+        <div class="mood-sub" id="vs-sub">—</div>
+      </div>
+    </div>
   </div>
 </section>
 
-<div class="cat-tabs">
-  <div class="cat-tab active">Major Pairs</div>
-  <div class="cat-tab">Minor Pairs</div>
-  <div class="cat-tab">JPY Crosses</div>
-  <div class="cat-tab">Commodity Pairs</div>
+<!-- TOP MOVERS -->
+<section class="movers-section">
+  <div class="movers-title">⚡ Today's Standouts</div>
+  <div class="movers-grid" id="movers-grid">
+    <div class="mover-card"><div class="mover-tag">Loading…</div><div class="mover-pair">—</div><div class="mover-meta">—</div></div>
+    <div class="mover-card"><div class="mover-tag">Loading…</div><div class="mover-pair">—</div><div class="mover-meta">—</div></div>
+    <div class="mover-card"><div class="mover-tag">Loading…</div><div class="mover-pair">—</div><div class="mover-meta">—</div></div>
+    <div class="mover-card"><div class="mover-tag">Loading…</div><div class="mover-pair">—</div><div class="mover-meta">—</div></div>
+  </div>
+</section>
+
+<!-- FILTER + SORT BAR -->
+<div class="filter-bar">
+  <span class="filter-label">Show:</span>
+  <button class="filter-btn active" data-filter="all">All Pairs</button>
+  <button class="filter-btn" data-filter="major">Majors</button>
+  <button class="filter-btn" data-filter="jpy">JPY Crosses</button>
+  <button class="filter-btn" data-filter="commodity">Commodity</button>
+  <button class="filter-btn" data-filter="bullish">🟢 Bullish</button>
+  <button class="filter-btn" data-filter="bearish">🔴 Bearish</button>
+  <button class="filter-btn" data-filter="conviction">🔥 High Conviction</button>
+  <button class="filter-btn" data-filter="watchlist">⭐ Watchlist</button>
+  <span class="filter-spacer"></span>
+  <select class="sort-select" id="sort-select">
+    <option value="conviction">Sort: Conviction</option>
+    <option value="change">Sort: 24h Change</option>
+    <option value="alpha">Sort: A → Z</option>
+  </select>
+  <span class="filter-update" id="last-update">⏱ Loading…</span>
 </div>
 
-<section class="section" id="tab-major">
-  <div class="section-title">
-    <span>Major Pairs</span>
-    <span class="section-update">⏱ Updated 14m ago</span>
+<!-- PAIR GRID -->
+<section class="pair-grid" id="pair-grid">
+  <div class="empty-state">Loading pairs…</div>
+</section>
+
+<!-- AD -->
+<div class="section">
+  <div class="ad-slot ad-leaderboard" style="background:none;border:none;padding:0;text-align:center;overflow:hidden;margin:0 0 16px;">
+    <ins class='dcmads' style='display:inline-block;width:728px;height:90px'
+      data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381909257'
+      data-dcm-rendering-mode='iframe'
+      data-dcm-https-only
+      data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5514"
+      data-dcm-api-frameworks='[APIFRAMEWORKS]'
+      data-dcm-omid-partner='[OMIDPARTNER]'
+      data-dcm-gdpr-applies='gdpr=${GDPR}'
+      data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}'
+      data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}'
+      data-dcm-ltd='false'
+      data-dcm-resettable-device-id=''
+      data-dcm-app-id=''>
+      <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
+    </ins>
+    <img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5514" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
   </div>
-  <div class="pairs-table">
-    <div class="table-header">
-      <div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div>
+</div>
+
+<!-- HOW TO READ -->
+<div class="section" style="padding:0 20px;">
+  <div class="info-box" style="margin:0;">
+    <div class="info-icon">💡</div>
+    <div class="info-content">
+      <h4>How to read these cards</h4>
+      <p>Each card pits the <strong>base</strong> currency against the <strong>quote</strong> currency. The bigger the strength gap, the higher the conviction. <em>"Conviction"</em> shows how decisive the call is (gap of 30+ = high). Cross-pair prices marked <strong>DERIVED</strong> are calculated from live USD pairs — accurate but not for execution.</p>
     </div>
   </div>
-  <div class="ad-slot ad-leaderboard" style="background:none;border:none;padding:0;text-align:center;overflow:hidden;margin:16px 0;">
-      <ins class='dcmads' style='display:inline-block;width:728px;height:90px'
-        data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381909257'
-        data-dcm-rendering-mode='iframe'
-        data-dcm-https-only
-        data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5514"
-        data-dcm-api-frameworks='[APIFRAMEWORKS]'
-        data-dcm-omid-partner='[OMIDPARTNER]'
-        data-dcm-gdpr-applies='gdpr=${GDPR}'
-        data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}'
-        data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}'
-        data-dcm-ltd='false'
-        data-dcm-resettable-device-id=''
-        data-dcm-app-id=''>
-        <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
-      </ins>
-      <img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5514" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
-    </div>
-</section>
-
-<section class="section" id="tab-minor" style="display:none;">
-  <div class="section-title"><span>Minor Pairs (Cross Currencies)</span><span class="section-update">⏱ Updated 14m ago</span></div>
-  <div class="pairs-table">
-    <div class="table-header"><div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div></div>
-  </div>
-</section>
-
-<section class="section" id="tab-jpy" style="display:none;">
-  <div class="section-title"><span>JPY Crosses</span><span class="section-update">⏱ Updated 14m ago</span></div>
-  <div class="pairs-table">
-    <div class="table-header"><div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div></div>
-  </div>
-</section>
-
-<section class="section" id="tab-commodity" style="display:none;">
-  <div class="section-title"><span>Commodity Pairs</span><span class="section-update">⏱ Updated 14m ago</span></div>
-  <div class="pairs-table">
-    <div class="table-header"><div>Pair</div><div>Key Driver</div><div>Price</div><div>24h Change</div><div>Bias</div><div></div></div>
-  </div>
-</section>
+</div>
 
 <!-- LIVE Comments Section -->
 <section class="section">
@@ -389,6 +487,10 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script type="module" src="/firebase.js"></script>
 
 <script>
+// =====================================================
+// PAIRS PAGE - data, cross-derivation, rendering
+// =====================================================
+
 // Topbar date
 const topbarDate = document.getElementById('topbar-date');
 if (topbarDate) {
@@ -398,47 +500,42 @@ if (topbarDate) {
   topbarDate.textContent = `📅 ${dayNames[now.getDay()]}, ${monthNames[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
 }
 
-// Pair data from Supabase
 const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
 
-const PAIRS_CONFIG = {
-  major: [
-    { pair: 'EUR/USD', base: 'EUR', quote: 'USD', flags: '🇪🇺🇺🇸' },
-    { pair: 'GBP/USD', base: 'GBP', quote: 'USD', flags: '🇬🇧🇺🇸' },
-    { pair: 'USD/JPY', base: 'USD', quote: 'JPY', flags: '🇺🇸🇯🇵' },
-    { pair: 'USD/CHF', base: 'USD', quote: 'CHF', flags: '🇺🇸🇨🇭' },
-    { pair: 'AUD/USD', base: 'AUD', quote: 'USD', flags: '🇦🇺🇺🇸' },
-    { pair: 'USD/CAD', base: 'USD', quote: 'CAD', flags: '🇺🇸🇨🇦' },
-    { pair: 'NZD/USD', base: 'NZD', quote: 'USD', flags: '🇳🇿🇺🇸' }
-  ],
-  minor: [
-    { pair: 'EUR/GBP', base: 'EUR', quote: 'GBP', flags: '🇪🇺🇬🇧' },
-    { pair: 'EUR/JPY', base: 'EUR', quote: 'JPY', flags: '🇪🇺🇯🇵' },
-    { pair: 'GBP/JPY', base: 'GBP', quote: 'JPY', flags: '🇬🇧🇯🇵' },
-    { pair: 'AUD/JPY', base: 'AUD', quote: 'JPY', flags: '🇦🇺🇯🇵' },
-    { pair: 'EUR/CHF', base: 'EUR', quote: 'CHF', flags: '🇪🇺🇨🇭' },
-    { pair: 'GBP/CAD', base: 'GBP', quote: 'CAD', flags: '🇬🇧🇨🇦' }
-  ],
-  jpy: [
-    { pair: 'USD/JPY', base: 'USD', quote: 'JPY', flags: '🇺🇸🇯🇵' },
-    { pair: 'EUR/JPY', base: 'EUR', quote: 'JPY', flags: '🇪🇺🇯🇵' },
-    { pair: 'GBP/JPY', base: 'GBP', quote: 'JPY', flags: '🇬🇧🇯🇵' },
-    { pair: 'AUD/JPY', base: 'AUD', quote: 'JPY', flags: '🇦🇺🇯🇵' },
-    { pair: 'CAD/JPY', base: 'CAD', quote: 'JPY', flags: '🇨🇦🇯🇵' },
-    { pair: 'CHF/JPY', base: 'CHF', quote: 'JPY', flags: '🇨🇭🇯🇵' },
-    { pair: 'NZD/JPY', base: 'NZD', quote: 'JPY', flags: '🇳🇿🇯🇵' }
-  ],
-  commodity: [
-    { pair: 'AUD/USD', base: 'AUD', quote: 'USD', flags: '🇦🇺🇺🇸' },
-    { pair: 'USD/CAD', base: 'USD', quote: 'CAD', flags: '🇺🇸🇨🇦' },
-    { pair: 'NZD/USD', base: 'NZD', quote: 'USD', flags: '🇳🇿🇺🇸' },
-    { pair: 'XAU/USD', base: 'XAU', quote: 'USD', flags: '🥇🇺🇸' }
-  ]
+const FLAGS = {
+  USD:'🇺🇸', EUR:'🇪🇺', GBP:'🇬🇧', JPY:'🇯🇵', AUD:'🇦🇺',
+  CAD:'🇨🇦', CHF:'🇨🇭', NZD:'🇳🇿', XAU:'🥇'
 };
 
-let sentimentData = {};
-let pricesData = {};
+const ALL_PAIRS = [
+  // majors
+  { pair:'EUR/USD', cat:'major' }, { pair:'GBP/USD', cat:'major' }, { pair:'USD/JPY', cat:'major' },
+  { pair:'USD/CHF', cat:'major' }, { pair:'AUD/USD', cat:'major' }, { pair:'USD/CAD', cat:'major' },
+  { pair:'NZD/USD', cat:'major' },
+  // jpy crosses
+  { pair:'EUR/JPY', cat:'jpy' }, { pair:'GBP/JPY', cat:'jpy' }, { pair:'AUD/JPY', cat:'jpy' },
+  { pair:'CAD/JPY', cat:'jpy' }, { pair:'CHF/JPY', cat:'jpy' }, { pair:'NZD/JPY', cat:'jpy' },
+  // crosses
+  { pair:'EUR/GBP', cat:'major' }, { pair:'EUR/CHF', cat:'major' }, { pair:'GBP/CAD', cat:'major' },
+  // commodity
+  { pair:'XAU/USD', cat:'commodity' }
+];
+
+let sentimentData = {};   // currency -> {bias, score, created_at}
+let pricesData = {};      // pair -> {price, change_24h, derived}
+let activeFilter = 'all';
+let activeSort = 'conviction';
+
+// localStorage watchlist
+function getWatchlist(){ try { return JSON.parse(localStorage.getItem('fxnb_pair_watchlist')||'[]'); } catch(e){ return []; } }
+function setWatchlist(list){ try { localStorage.setItem('fxnb_pair_watchlist', JSON.stringify(list)); } catch(e){} }
+function toggleWatch(pair){
+  const w = getWatchlist();
+  const i = w.indexOf(pair);
+  if (i >= 0) w.splice(i,1); else w.push(pair);
+  setWatchlist(w); render();
+}
 
 function timeAgo(dateStr) {
   const diff = Math.floor((Date.now() - new Date(dateStr)) / 60000);
@@ -447,128 +544,331 @@ function timeAgo(dateStr) {
   return Math.floor(diff/1440) + 'd ago';
 }
 
-async function loadAllData() {
+// ----- price lookup with cross-derivation -----
+// Returns { price, change_24h, derived } or null.
+// Math: P(B/Q) = P(B/USD) / P(Q/USD).
+// 24h % change: combine the two underlying %changes.
+function getPairPrice(pair){
+  if (pricesData[pair]) return { ...pricesData[pair], derived: false };
+  const [b, q] = pair.split('/');
+  const baseUsd = priceVsUsd(b);
+  const quoteUsd = priceVsUsd(q);
+  if (!baseUsd || !quoteUsd) return null;
+  const price = baseUsd.price / quoteUsd.price;
+  // Combined %: when computing B/Q from (B/USD) / (Q/USD), the change is
+  // approximately (1+chgB)/(1+chgQ) - 1 ≈ chgB - chgQ for small values.
+  const cB = baseUsd.change_24h || 0;
+  const cQ = quoteUsd.change_24h || 0;
+  const change_24h = ((1 + cB/100) / (1 + cQ/100) - 1) * 100;
+  return { price, change_24h, derived: true };
+}
+
+// Returns currency value vs USD (i.e. price of 1 unit in USD), and its 24h % change.
+function priceVsUsd(curr){
+  if (curr === 'USD') return { price: 1, change_24h: 0 };
+  // Direct: CURR/USD
+  if (pricesData[curr + '/USD']) {
+    return { price: pricesData[curr+'/USD'].price, change_24h: pricesData[curr+'/USD'].change_24h };
+  }
+  // Inverted: USD/CURR -> 1/x, change inverted
+  if (pricesData['USD/' + curr]) {
+    const p = pricesData['USD/'+curr];
+    const chg = p.change_24h || 0;
+    return { price: 1 / p.price, change_24h: ((1/(1+chg/100)) - 1) * 100 };
+  }
+  return null;
+}
+
+// ----- data load -----
+async function loadAllData(){
   try {
-    const sentRes = await fetch(SUPABASE_URL + '/rest/v1/sentiment?order=id.desc&limit=8', {
-      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+    // Latest sentiment row per currency (8 rows total — order desc, take first occurrence)
+    const sentRes = await fetch(SUPABASE_URL + '/rest/v1/sentiment?order=created_at.desc&limit=80', {
+      headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + SUPABASE_ANON }
     });
     const sentArr = await sentRes.json();
     sentArr.forEach(s => { if (!sentimentData[s.currency]) sentimentData[s.currency] = s; });
 
-    const priceRes = await fetch(SUPABASE_URL + '/rest/v1/prices?order=id.desc&limit=500', {
-      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + SUPABASE_ANON }
+    const priceRes = await fetch(SUPABASE_URL + '/rest/v1/prices?order=updated_at.desc&limit=200', {
+      headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + SUPABASE_ANON }
     });
     const priceArr = await priceRes.json();
-
-    const grouped = {};
     priceArr.forEach(p => {
-      if (!grouped[p.pair]) grouped[p.pair] = [];
-      grouped[p.pair].push(p);
-    });
-
-    Object.keys(grouped).forEach(pair => {
-      const records = grouped[pair];
-      const current = records[0];
-      const currentPrice = parseFloat(current.price);
-      const dayAgo = Date.now() - 24*60*60*1000;
-      let oldRecord = null;
-      for (const r of records) {
-        if (new Date(r.created_at).getTime() < dayAgo) { oldRecord = r; break; }
-      }
-      if (!oldRecord && records.length > 1) oldRecord = records[records.length - 1];
-      let change = null;
-      if (oldRecord && oldRecord !== current) {
-        const oldPrice = parseFloat(oldRecord.price);
-        if (oldPrice > 0) change = ((currentPrice - oldPrice) / oldPrice) * 100;
-      }
-      pricesData[pair] = { price: currentPrice, change_24h: change, created_at: current.created_at };
+      if (!pricesData[p.pair]) pricesData[p.pair] = {
+        price: parseFloat(p.price),
+        change_24h: parseFloat(p.change_pct || 0),
+        updated_at: p.updated_at
+      };
     });
 
     if (sentArr[0]) {
-      const t = '⏱ Updated ' + timeAgo(sentArr[0].created_at);
-      document.querySelectorAll('.section-update').forEach(el => {
-        if (el.textContent.includes('Updated')) el.textContent = t;
-      });
+      const el = document.getElementById('last-update');
+      if (el) el.textContent = '⏱ Sentiment ' + timeAgo(sentArr[0].created_at);
     }
 
-    renderAllTabs();
-  } catch(e) { console.log('Pairs load error:', e); }
+    renderMood();
+    renderMovers();
+    render();
+  } catch(e){
+    console.log('Pairs load error:', e);
+    document.getElementById('pair-grid').innerHTML = '<div class="empty-state">Could not load pair data. Please refresh.</div>';
+  }
 }
 
-function computePairBias(base, quote) {
-  const baseSent = sentimentData[base];
-  const quoteSent = sentimentData[quote];
-  if (!baseSent && base !== 'XAU' && base !== 'XAG' && base !== 'WTI') {
-    return { bias: 'Neutral', driver: 'Sentiment data loading...' };
+// ----- bias computation -----
+function computePairBias(base, quote){
+  // commodity special-case: XAU bias is inverse of USD strength
+  if (base === 'XAU' || base === 'XAG' || base === 'WTI'){
+    const usd = sentimentData['USD'];
+    if (!usd) return null;
+    const inferredScore = 100 - usd.score; // gold strength roughly inversely related to USD
+    const gap = inferredScore - usd.score;
+    const bias = gap > 10 ? 'Bullish' : gap < -10 ? 'Bearish' : 'Neutral';
+    return {
+      bias,
+      gap,
+      baseScore: inferredScore, baseBias: bias,
+      quoteScore: usd.score, quoteBias: usd.bias,
+      drivers: { pos: [], neg: [] }
+    };
   }
-  if (base === 'XAU' || base === 'XAG' || base === 'WTI') {
-    const usdSent = sentimentData['USD'];
-    if (!usdSent) return { bias: 'Neutral', driver: 'Loading...' };
-    const bias = usdSent.score < 50 ? 'Bullish' : 'Bearish';
-    const driver = base === 'XAU' ? `Gold vs USD (${usdSent.score})` : base === 'XAG' ? `Silver vs USD (${usdSent.score})` : `Oil vs USD (${usdSent.score})`;
-    return { bias, driver };
-  }
-  if (!quoteSent) return { bias: 'Neutral', driver: 'Sentiment data loading...' };
-  const diff = baseSent.score - quoteSent.score;
-  let bias = 'Neutral';
-  if (diff > 10) bias = 'Bullish';
-  else if (diff < -10) bias = 'Bearish';
-  const driver = `${base} ${baseSent.bias} (${baseSent.score}) · ${quote} ${quoteSent.bias} (${quoteSent.score})`;
-  return { bias, driver };
+  const b = sentimentData[base];
+  const q = sentimentData[quote];
+  if (!b || !q) return null;
+  const gap = b.score - q.score;
+  const bias = gap > 10 ? 'Bullish' : gap < -10 ? 'Bearish' : 'Neutral';
+  return {
+    bias, gap,
+    baseScore: b.score, baseBias: b.bias,
+    quoteScore: q.score, quoteBias: q.bias,
+    drivers: {}
+  };
 }
 
-function renderTab(tabKey) {
-  const config = PAIRS_CONFIG[tabKey];
-  const section = document.getElementById('tab-' + tabKey);
-  if (!section) return;
-  const table = section.querySelector('.pairs-table');
-  if (!table) return;
-  const header = table.querySelector('.table-header');
-  table.innerHTML = '';
-  if (header) table.appendChild(header);
-  config.forEach(p => {
-    const { bias, driver } = computePairBias(p.base, p.quote);
-    const price = pricesData[p.pair];
-    let priceVal = '—';
-    if (price) {
-      const num = parseFloat(price.price);
-      priceVal = p.pair.includes('JPY') ? num.toFixed(2) : (p.pair === 'XAU/USD') ? num.toFixed(2) : num.toFixed(4);
+function biasClass(b){ return b === 'Bullish' ? 'bull-bg' : b === 'Bearish' ? 'bear-bg' : 'neut-bg'; }
+function fillColor(score){
+  if (score >= 60) return '#10b981';
+  if (score <= 40) return '#ef4444';
+  return '#f59e0b';
+}
+function formatPrice(pair, num){
+  if (pair.includes('JPY')) return num.toFixed(2);
+  if (pair === 'XAU/USD') return num.toFixed(2);
+  return num.toFixed(4);
+}
+function rationale(pair, b){
+  const [base, quote] = pair.split('/');
+  if (base === 'XAU') {
+    return b.bias === 'Bullish'
+      ? `<strong>USD weak</strong> (${b.quoteScore}) → gold tends to <strong>rise</strong> as a hedge.`
+      : b.bias === 'Bearish'
+      ? `<strong>USD strong</strong> (${b.quoteScore}) → gold under <strong>pressure</strong>.`
+      : `USD score is balanced — <strong>no clear edge</strong> for gold.`;
+  }
+  const baseLine = `<strong>${base}</strong> ${b.baseBias.toLowerCase()} (${b.baseScore})`;
+  const quoteLine = `<strong>${quote}</strong> ${b.quoteBias.toLowerCase()} (${b.quoteScore})`;
+  if (b.bias === 'Bullish') {
+    return `${baseLine} vs ${quoteLine} → ${base} has the edge, <strong>${pair} bias up</strong>.`;
+  }
+  if (b.bias === 'Bearish') {
+    return `${baseLine} vs ${quoteLine} → ${quote} has the edge, <strong>${pair} bias down</strong>.`;
+  }
+  return `${baseLine} vs ${quoteLine} → strength is <strong>balanced</strong>, range-bound.`;
+}
+
+// ----- mood, movers -----
+function renderMood(){
+  const moodVal = document.getElementById('mood-value');
+  const moodSub = document.getElementById('mood-sub');
+  const usdEl = document.getElementById('usd-strength');
+  const usdFill = document.getElementById('usd-fill');
+  const vsVal = document.getElementById('vs-value');
+  const vsSub = document.getElementById('vs-sub');
+
+  const usd = sentimentData['USD'];
+  const jpy = sentimentData['JPY'];
+  const chf = sentimentData['CHF'];
+  if (!usd){ return; }
+
+  // Risk on/off: average of risk currencies (AUD, NZD, CAD) vs safe havens (JPY, CHF, USD)
+  const risk = ['AUD','NZD','CAD'].map(c => sentimentData[c] && sentimentData[c].score).filter(x=>x!=null);
+  const safe = ['JPY','CHF','USD'].map(c => sentimentData[c] && sentimentData[c].score).filter(x=>x!=null);
+  const riskAvg = risk.reduce((a,b)=>a+b,0)/(risk.length||1);
+  const safeAvg = safe.reduce((a,b)=>a+b,0)/(safe.length||1);
+  const diff = riskAvg - safeAvg;
+  let mood, dot, sub;
+  if (diff > 8){ mood='Risk-On'; dot='#10b981'; sub='Risk currencies leading — appetite for yield.'; }
+  else if (diff < -8){ mood='Risk-Off'; dot='#ef4444'; sub='Safe havens bid — defensive flows dominate.'; }
+  else { mood='Mixed'; dot='#f59e0b'; sub='No clear risk regime — trade individual stories.'; }
+  moodVal.innerHTML = `<span class="mood-dot" style="background:${dot};"></span>${mood}`;
+  moodSub.textContent = sub;
+
+  // USD strength
+  usdEl.textContent = `${usd.score} · ${usd.bias}`;
+  usdFill.style.width = usd.score + '%';
+  usdFill.style.background = fillColor(usd.score);
+
+  // Strongest vs weakest
+  const arr = Object.values(sentimentData).filter(s => s.currency).sort((a,b)=>b.score-a.score);
+  if (arr.length >= 2){
+    const top = arr[0], bot = arr[arr.length-1];
+    vsVal.textContent = `${top.currency} ${top.score} vs ${bot.currency} ${bot.score}`;
+    const suggestedPair = `${top.currency}/${bot.currency}`;
+    vsSub.textContent = `Watch ${suggestedPair} — biggest strength gap (${top.score - bot.score} pts)`;
+  }
+}
+
+function renderMovers(){
+  const grid = document.getElementById('movers-grid');
+  if (!grid) return;
+  const cards = ALL_PAIRS.map(p => {
+    const b = computePairBias(p.pair.split('/')[0], p.pair.split('/')[1]);
+    const pr = getPairPrice(p.pair);
+    return { pair: p.pair, b, pr };
+  }).filter(x => x.b);
+
+  const mostBull = [...cards].filter(x=>x.b.bias==='Bullish').sort((a,b)=>b.b.gap-a.b.gap)[0];
+  const mostBear = [...cards].filter(x=>x.b.bias==='Bearish').sort((a,b)=>a.b.gap-b.b.gap)[0];
+  const withChg = cards.filter(x => x.pr && x.pr.change_24h != null);
+  const topGain = [...withChg].sort((a,b)=>b.pr.change_24h - a.pr.change_24h)[0];
+  const topLoss = [...withChg].sort((a,b)=>a.pr.change_24h - b.pr.change_24h)[0];
+
+  function card(tag, tagClass, item, kind){
+    if (!item) return `<div class="mover-card"><div class="mover-tag ${tagClass}">${tag}</div><div class="mover-pair">—</div><div class="mover-meta">No data</div></div>`;
+    let meta = '';
+    if (kind === 'bias') meta = `Gap ${item.b.gap > 0 ? '+' : ''}${item.b.gap} pts`;
+    else if (item.pr) {
+      const c = item.pr.change_24h;
+      const sign = c > 0 ? '+' : '';
+      meta = `${formatPrice(item.pair, item.pr.price)}  ${sign}${c.toFixed(2)}%`;
     }
-    const change = price && price.change_24h !== null && price.change_24h !== undefined ? parseFloat(price.change_24h) : null;
-    const changeClass = change > 0 ? 'up' : 'down';
-    const changeText = change !== null ? (change > 0 ? '+' : '') + change.toFixed(2) + '%' : '—';
-    const biasClass = bias === 'Bullish' ? 'bull-bg' : bias === 'Bearish' ? 'bear-bg' : 'neut-bg';
-    const row = document.createElement('div');
-    row.className = 'pair-row';
-    row.innerHTML = `
-      <div class="pair-name"><span class="pair-flags">${p.flags}</span>${p.pair}</div>
-      <div class="pair-driver">${driver}</div>
-      <div class="pair-price">${priceVal}</div>
-      <div class="pair-change ${changeClass}">${changeText}</div>
-      <div class="bias-badge ${biasClass}">${bias}</div>
-      <div class="go-arrow">→</div>
-    `;
-    table.appendChild(row);
+    return `<div class="mover-card"><div class="mover-tag ${tagClass}">${tag}</div><div class="mover-pair">${item.pair}</div><div class="mover-meta">${meta}</div></div>`;
+  }
+
+  grid.innerHTML =
+    card('🟢 Strongest Bullish', 'tag-bull', mostBull, 'bias') +
+    card('🔴 Strongest Bearish', 'tag-bear', mostBear, 'bias') +
+    card('▲ Biggest Gainer 24h', 'tag-up', topGain, 'price') +
+    card('▼ Biggest Loser 24h', 'tag-down', topLoss, 'price');
+}
+
+// ----- card render -----
+function pairCard(p){
+  const [base, quote] = p.pair.split('/');
+  const b = computePairBias(base, quote);
+  const pr = getPairPrice(p.pair);
+  const watch = getWatchlist().includes(p.pair);
+
+  if (!b) return '';
+  const conv = Math.abs(b.gap);
+  const convLabel = conv >= 30 ? 'High' : conv >= 15 ? 'Medium' : 'Low';
+  const isHigh = conv >= 30;
+
+  let priceBlock = '';
+  if (pr){
+    const sign = pr.change_24h > 0 ? '+' : '';
+    const chgClass = pr.change_24h > 0 ? 'up' : pr.change_24h < 0 ? 'down' : '';
+    priceBlock = `
+      <div class="pc-price-row">
+        <div>
+          <div class="pc-price">${formatPrice(p.pair, pr.price)}</div>
+          ${pr.derived ? '<span class="pc-derived" title="Calculated from live USD pairs">DERIVED</span>' : ''}
+        </div>
+        <div class="pc-change ${chgClass}">${sign}${pr.change_24h.toFixed(2)}% <span style="font-size:10px;color:var(--text-muted);font-weight:500;">24h</span></div>
+      </div>`;
+  } else {
+    priceBlock = `<div class="pc-price-row"><div class="pc-no-price">Price unavailable</div></div>`;
+  }
+
+  // strength bars - face off
+  const baseFlag = FLAGS[base] || '';
+  const quoteFlag = FLAGS[quote] || '';
+  const faceoff = `
+    <div class="faceoff">
+      <div class="faceoff-label">Strength face-off</div>
+      <div class="faceoff-bars">
+        <div class="fb-row">
+          <div class="fb-curr">${baseFlag} ${base}</div>
+          <div class="fb-track"><div class="fb-fill" style="width:${b.baseScore}%;background:${fillColor(b.baseScore)};"></div></div>
+          <div class="fb-score">${b.baseScore}</div>
+        </div>
+        <div class="fb-row">
+          <div class="fb-curr">${quoteFlag} ${quote}</div>
+          <div class="fb-track"><div class="fb-fill" style="width:${b.quoteScore}%;background:${fillColor(b.quoteScore)};"></div></div>
+          <div class="fb-score">${b.quoteScore}</div>
+        </div>
+      </div>
+    </div>`;
+
+  return `
+    <div class="pair-card ${isHigh ? 'high-conviction' : ''}" data-pair="${p.pair}">
+      <div class="pc-top">
+        <div class="pc-id">
+          <span class="pc-flags">${baseFlag}${quoteFlag}</span>
+          <span class="pc-name">${p.pair}</span>
+          <button class="pc-fav ${watch ? 'on' : ''}" data-watch="${p.pair}" title="${watch ? 'Remove from watchlist' : 'Add to watchlist'}">${watch ? '★' : '☆'}</button>
+        </div>
+        <div class="pc-bias">
+          <span class="pc-badge ${biasClass(b.bias)}">${b.bias}</span>
+          <div class="pc-conviction">${convLabel} · gap ${b.gap > 0 ? '+' : ''}${b.gap}</div>
+        </div>
+      </div>
+      ${priceBlock}
+      ${faceoff}
+      <div class="pc-rationale">${rationale(p.pair, b)}</div>
+    </div>`;
+}
+
+function render(){
+  const grid = document.getElementById('pair-grid');
+  if (!grid) return;
+  const watch = getWatchlist();
+  let items = ALL_PAIRS.map(p => {
+    const [b, q] = p.pair.split('/');
+    return { ...p, _b: computePairBias(b, q), _pr: getPairPrice(p.pair) };
+  }).filter(x => x._b);
+
+  // filter
+  if (activeFilter === 'major') items = items.filter(x => x.cat === 'major');
+  else if (activeFilter === 'jpy') items = items.filter(x => x.cat === 'jpy');
+  else if (activeFilter === 'commodity') items = items.filter(x => x.cat === 'commodity');
+  else if (activeFilter === 'bullish') items = items.filter(x => x._b.bias === 'Bullish');
+  else if (activeFilter === 'bearish') items = items.filter(x => x._b.bias === 'Bearish');
+  else if (activeFilter === 'conviction') items = items.filter(x => Math.abs(x._b.gap) >= 30);
+  else if (activeFilter === 'watchlist') items = items.filter(x => watch.includes(x.pair));
+
+  // sort
+  if (activeSort === 'conviction') items.sort((a,b) => Math.abs(b._b.gap) - Math.abs(a._b.gap));
+  else if (activeSort === 'change') items.sort((a,b) => ((b._pr && b._pr.change_24h) || -999) - ((a._pr && a._pr.change_24h) || -999));
+  else items.sort((a,b) => a.pair.localeCompare(b.pair));
+
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-state">No pairs match this filter${activeFilter==='watchlist' ? '. Tap ☆ on any pair to add it to your watchlist.' : '.'}</div>`;
+  } else {
+    grid.innerHTML = items.map(pairCard).join('');
+  }
+
+  // bind favorite buttons
+  grid.querySelectorAll('.pc-fav').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); toggleWatch(btn.dataset.watch); });
   });
 }
 
-function renderAllTabs() { Object.keys(PAIRS_CONFIG).forEach(key => renderTab(key)); }
-loadAllData();
-
-const catTabs = document.querySelectorAll('.cat-tab');
-const tabSections = { 0: 'tab-major', 1: 'tab-minor', 2: 'tab-jpy', 3: 'tab-commodity' };
-catTabs.forEach((tab, index) => {
-  tab.addEventListener('click', () => {
-    catTabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    Object.values(tabSections).forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-    const target = document.getElementById(tabSections[index]);
-    if (target) target.style.display = 'block';
+// filter button bindings
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    render();
   });
 });
+document.getElementById('sort-select').addEventListener('change', e => {
+  activeSort = e.target.value;
+  render();
+});
+
+loadAllData();
 </script>
 
 <!-- LIVE COMMENTS SYSTEM -->
@@ -606,8 +906,6 @@ const userAvatar = document.getElementById('user-comment-avatar');
 const commentList = document.getElementById('comment-list');
 const commentsCount = document.getElementById('comments-count');
 
-console.log('💬 Elements:', { textarea: !!textarea, postBtn: !!postBtn, commentList: !!commentList });
-
 function timeAgoComment(date) {
   const diff = Math.floor((Date.now() - date.getTime()) / 1000);
   if (diff < 60) return 'just now';
@@ -640,7 +938,6 @@ document.querySelectorAll('.bias-btn').forEach(btn => {
 });
 
 onAuthStateChanged(auth, async (user) => {
-  console.log('💬 Auth state:', user ? user.email : 'logged out');
   currentUser = user;
   if (user) {
     try {
@@ -822,11 +1119,9 @@ async function toggleLike(commentId) {
   } catch(e) { console.log('Like error:', e); }
 }
 
-console.log('💬 Setting up comments listener...');
 const commentsQuery = query(collection(db, 'comments'), where('section', '==', 'pairs'), limit(100));
 
 onSnapshot(commentsQuery, (snapshot) => {
-  console.log('💬 Snapshot received! Size:', snapshot.size);
   const comments = [];
   snapshot.forEach(d => comments.push({ id: d.id, ...d.data() }));
   comments.sort((a, b) => {
