@@ -180,37 +180,45 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       <h2>📬 Send a Message</h2>
       <p>We respond within 1-2 business days.</p>
 
-      <div class="form-group">
-        <label class="form-label">Your Name</label>
-        <input type="text" class="form-input" placeholder="John Smith">
-      </div>
+      <form id="contact-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="cf-name">Your Name</label>
+          <input type="text" id="cf-name" name="name" class="form-input" placeholder="John Smith" required maxlength="100">
+        </div>
 
-      <div class="form-group">
-        <label class="form-label">Email Address</label>
-        <input type="email" class="form-input" placeholder="you@email.com">
-      </div>
+        <div class="form-group">
+          <label class="form-label" for="cf-email">Email Address</label>
+          <input type="email" id="cf-email" name="email" class="form-input" placeholder="you@email.com" required maxlength="200">
+        </div>
 
-      <div class="form-group">
-        <label class="form-label">Subject</label>
-        <select class="form-select">
-          <option>General Question</option>
-          <option>Bug Report</option>
-          <option>Feature Request</option>
-          <option>Partnership Inquiry</option>
-          <option>Advertising Inquiry</option>
-          <option>Data or API Access</option>
-          <option>Community / Moderation</option>
-          <option>Privacy or Legal</option>
-          <option>Other</option>
-        </select>
-      </div>
+        <div class="form-group">
+          <label class="form-label" for="cf-subject">Subject</label>
+          <select id="cf-subject" name="subject" class="form-select" required>
+            <option value="General Question">General Question</option>
+            <option value="Bug Report">Bug Report</option>
+            <option value="Feature Request">Feature Request</option>
+            <option value="Partnership Inquiry">Partnership Inquiry</option>
+            <option value="Advertising Inquiry">Advertising Inquiry</option>
+            <option value="Data or API Access">Data or API Access</option>
+            <option value="Community / Moderation">Community / Moderation</option>
+            <option value="Privacy or Legal">Privacy or Legal</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
 
-      <div class="form-group">
-        <label class="form-label">Message</label>
-        <textarea class="form-textarea" placeholder="Tell us how we can help..."></textarea>
-      </div>
+        <div class="form-group">
+          <label class="form-label" for="cf-message">Message</label>
+          <textarea id="cf-message" name="message" class="form-textarea" placeholder="Tell us how we can help..." required minlength="10" maxlength="5000"></textarea>
+        </div>
 
-      <button class="form-submit">Send Message →</button>
+        <!-- Honeypot field: hidden from real users, bots fill it in -->
+        <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+          <label>Website (leave blank)<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+
+        <button type="submit" class="form-submit" id="cf-submit">Send Message →</button>
+        <div id="cf-status" style="margin-top:14px;font-size:14px;text-align:center;display:none;"></div>
+      </form>
     </div>
 
     <!-- Info Cards -->
@@ -339,5 +347,71 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/analytics.js"></script>
 <script src="/ticker.js" defer></script>
 <script type="module" src="/firebase.js"></script>
+
+<script>
+(function() {
+  const WORKER_URL = 'https://fxnewsbias-cron.dineshsanther123gf.workers.dev/contact-submit';
+  const form = document.getElementById('contact-form');
+  const status = document.getElementById('cf-status');
+  const submitBtn = document.getElementById('cf-submit');
+  if (!form) return;
+
+  function showStatus(msg, isError) {
+    status.textContent = msg;
+    status.style.display = 'block';
+    status.style.color = isError ? '#ef4444' : '#10b981';
+  }
+
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    status.style.display = 'none';
+
+    const data = {
+      name: form.name.value.trim(),
+      email: form.email.value.trim(),
+      subject: form.subject.value,
+      message: form.message.value.trim(),
+      website: form.website.value
+    };
+
+    if (!data.name || !data.email || !data.message) {
+      showStatus('Please fill in all required fields.', true);
+      return;
+    }
+    if (data.message.length < 10) {
+      showStatus('Please write at least 10 characters in your message.', true);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      showStatus('Please enter a valid email address.', true);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json().catch(() => ({}));
+
+      if (res.ok && json.success) {
+        showStatus('✅ Message sent! We\'ll reply to ' + data.email + ' within 1-2 business days.', false);
+        form.reset();
+      } else {
+        showStatus('❌ ' + (json.error || 'Could not send. Please try again or email us directly.'), true);
+      }
+    } catch (err) {
+      showStatus('❌ Network error. Please check your connection and try again.', true);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Message →';
+    }
+  });
+})();
+</script>
 </body>
 </html>
