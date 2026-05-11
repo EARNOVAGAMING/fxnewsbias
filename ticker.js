@@ -8,11 +8,10 @@
     return d.toISOString().slice(0, 10);
   }
 
-  function ydUrls() {
-    const yd = fmtDate(new Date(Date.now() - 86400000));
+  function dayUrls(yyyymmdd) {
     return [
-      `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${yd}/v1/currencies/usd.json`,
-      `https://${yd}.currency-api.pages.dev/v1/currencies/usd.json`
+      `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${yyyymmdd}/v1/currencies/usd.json`,
+      `https://${yyyymmdd}.currency-api.pages.dev/v1/currencies/usd.json`
     ];
   }
 
@@ -24,6 +23,21 @@
       } catch(e) {}
     }
     throw new Error('All endpoints failed');
+  }
+
+  // Find the most recent past day whose EUR rate differs from `today` (skips
+  // weekends/holidays where the API just repeats Friday's close → 0% change).
+  async function fetchPrev(todayDate, todayEur) {
+    const anchor = new Date(todayDate + 'T00:00:00Z');
+    for (let i = 1; i <= 7; i++) {
+      const d = fmtDate(new Date(anchor.getTime() - i * 86400000));
+      try {
+        const j = await fetchJson(dayUrls(d));
+        const eur = j.usd && j.usd.eur;
+        if (eur && eur !== todayEur) return j;
+      } catch(e) {}
+    }
+    return null;
   }
 
   function formatPair(pair, now, prev) {
@@ -39,12 +53,10 @@
     const ticker = document.getElementById('ticker-inner');
     if (!ticker) return;
     try {
-      const [today, yesterday] = await Promise.all([
-        fetchJson([BASE, FALLBACK]),
-        fetchJson(ydUrls())
-      ]);
+      const today = await fetchJson([BASE, FALLBACK]);
       const r = today.usd || {};
-      const y = yesterday.usd || {};
+      const yesterday = await fetchPrev(today.date || fmtDate(new Date()), r.eur);
+      const y = (yesterday && yesterday.usd) || {};
 
       // XAU rate is "USD per gram" — invert and *31.1035 for USD per troy ounce
       const xauNow = r.xau ? (1 / r.xau) * 31.1034768 : null;
