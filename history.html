@@ -221,17 +221,17 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="stat-sub" id="stat-bias">Loading...</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">7D Average</div>
+        <div class="stat-label" id="stat-avg-label">7D Average</div>
         <div class="stat-value" id="stat-avg">--</div>
         <div class="stat-sub">Average sentiment</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">7D High</div>
+        <div class="stat-label" id="stat-high-label">7D High</div>
         <div class="stat-value bull-color" id="stat-high">--</div>
         <div class="stat-sub">Most bullish</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">7D Low</div>
+        <div class="stat-label" id="stat-low-label">7D Low</div>
         <div class="stat-value bear-color" id="stat-low">--</div>
         <div class="stat-sub">Most bearish</div>
       </div>
@@ -260,7 +260,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     <div class="chart-header" style="margin-bottom:14px;">
       <div>
         <div class="chart-title">All Currencies Overview</div>
-        <div class="chart-subtitle">Latest sentiment scores across all 8 major currencies</div>
+        <div class="chart-subtitle">Last ~10 readings per currency (≈ last 30 hours) · click a flag above to see full history</div>
       </div>
     </div>
     <div class="all-grid" id="all-grid">
@@ -385,6 +385,11 @@ async function loadHistory(currency, days) {
     document.getElementById('stat-avg').textContent = avg;
     document.getElementById('stat-high').textContent = high;
     document.getElementById('stat-low').textContent = low;
+    const lbl = days + 'D';
+    document.getElementById('stat-avg-label').textContent = lbl + ' Average';
+    document.getElementById('stat-high-label').textContent = lbl + ' High';
+    document.getElementById('stat-low-label').textContent = lbl + ' Low';
+    document.getElementById('stat-trend-sub').textContent = 'vs first half of ' + lbl;
 
     // Trend
     const firstHalf = scores.slice(0, Math.floor(scores.length / 2));
@@ -437,13 +442,18 @@ async function loadHistory(currency, days) {
                 return `Score: ${score} (${bias})`;
               }
             }
-          }
+          },
+          annotation: false
         },
         scales: {
           y: {
             min: 0,
             max: 100,
-            grid: { color: '#f1f5f9' },
+            grid: {
+              color: (ctx) => ctx.tick.value === 50 ? '#f59e0b' : '#f1f5f9',
+              lineWidth: (ctx) => ctx.tick.value === 50 ? 1.5 : 1,
+              borderDash: (ctx) => ctx.tick.value === 50 ? [5,5] : []
+            },
             ticks: {
               callback: (val) => {
                 if (val === 0) return 'Bearish';
