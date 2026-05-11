@@ -81,6 +81,16 @@ nav a:hover{color:var(--accent);}
 .form-submit:hover{background:#1d4ed8;}
 
 /* INFO CARDS */
+.email-direct{background:linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%);border:1px solid #bfdbfe;border-radius:12px;padding:24px;margin-bottom:32px;}
+.email-direct h2{font-size:18px;font-weight:800;margin-bottom:6px;color:#0f172a;}
+.email-direct .lead{font-size:13px;color:var(--text-soft);margin-bottom:18px;}
+.email-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.email-item{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:4px;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s;}
+.email-item:hover{border-color:var(--accent);transform:translateY(-1px);}
+.email-item .label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);}
+.email-item .addr{font-size:14px;font-weight:600;color:var(--accent);word-break:break-all;}
+.email-item .desc{font-size:12px;color:var(--text-soft);margin-top:2px;}
+@media(max-width:700px){.email-list{grid-template-columns:1fr;}}
 .info-cards{display:flex;flex-direction:column;gap:14px;}
 .info-card{background:var(--bg-soft);border-radius:10px;padding:18px;display:flex;gap:14px;align-items:flex-start;}
 .info-icon{font-size:24px;flex-shrink:0;}
@@ -172,6 +182,29 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 </section>
 
 <div class="content">
+
+  <!-- Direct email addresses (for users who prefer their own mail client) -->
+  <div class="email-direct">
+    <h2>✉️ Prefer to email us directly?</h2>
+    <p class="lead">Use any of these addresses from your own email app. They all reach our team.</p>
+    <div class="email-list">
+      <a class="email-item" href="mailto:support@fxnewsbias.com">
+        <span class="label">Support</span>
+        <span class="addr">support@fxnewsbias.com</span>
+        <span class="desc">Account help, bugs, technical issues</span>
+      </a>
+      <a class="email-item" href="mailto:contact@fxnewsbias.com">
+        <span class="label">General</span>
+        <span class="addr">contact@fxnewsbias.com</span>
+        <span class="desc">Questions, feedback, partnerships</span>
+      </a>
+      <a class="email-item" href="mailto:admin@fxnewsbias.com">
+        <span class="label">Admin</span>
+        <span class="addr">admin@fxnewsbias.com</span>
+        <span class="desc">Privacy, legal, moderation</span>
+      </a>
+    </div>
+  </div>
 
   <div class="contact-grid">
 
