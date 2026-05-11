@@ -825,6 +825,7 @@ const email = stripCtrl(data.email).slice(0, 200);
 const subject = stripCtrl(data.subject || 'General Question').slice(0, 100);
 const message = String(data.message || '').trim().slice(0, 5000);
 const honeypot = String(data.website || '').trim();
+const turnstileToken = String(data.turnstileToken || '').trim();
 
 // Honeypot: real users leave this blank; bots fill it. Pretend success so bots don't retry.
 if (honeypot) {
@@ -842,10 +843,38 @@ if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
 return contactJson({ error: 'Invalid email address' }, 400);
 }
 
+// Cloudflare Turnstile verification - blocks bots and abuse.
+if (!env.TURNSTILE_SECRET) {
+console.log('Contact form: TURNSTILE_SECRET not configured');
+return contactJson({ error: 'Security check not configured' }, 500);
+}
+if (!turnstileToken) {
+return contactJson({ error: 'Security check failed. Please refresh and try again.' }, 400);
+}
+try {
+const tsForm = new FormData();
+tsForm.append('secret', env.TURNSTILE_SECRET);
+tsForm.append('response', turnstileToken);
+const ip = request.headers.get('CF-Connecting-IP');
+if (ip) tsForm.append('remoteip', ip);
+const tsResp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+method: 'POST', body: tsForm
+});
+const tsJson = await tsResp.json();
+if (!tsJson.success) {
+console.log('Turnstile rejected:', JSON.stringify(tsJson['error-codes'] || []));
+return contactJson({ error: 'Security check failed. Please refresh and try again.' }, 403);
+}
+} catch (e) {
+console.log('Turnstile verify error:', e.message);
+return contactJson({ error: 'Security check unavailable. Please try again later.' }, 502);
+}
+
 // Subject allowlist (must match the <select> in contact.html). Anything else falls back.
 const ALLOWED_SUBJECTS = new Set([
 'General Question', 'Bug Report', 'Feature Request',
-'Pro Subscription', 'Partnership', 'Other'
+'Partnership Inquiry', 'Advertising Inquiry', 'Data or API Access',
+'Community / Moderation', 'Privacy or Legal', 'Other'
 ]);
 const safeSubject = ALLOWED_SUBJECTS.has(subject) ? subject : 'General Question';
 
