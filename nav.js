@@ -3,6 +3,9 @@
 
   if (!document.getElementById('fxnb-nav-styles')) {
     const css = `
+      .logo{display:inline-flex;align-items:center;line-height:0;}
+      .logo img{height:38px;width:auto;display:block;}
+      @media(max-width:640px){.logo img{height:32px;}}
       .burger{background:none;border:none;cursor:pointer;width:40px;height:40px;
         padding:0;position:relative;z-index:1002;-webkit-tap-highlight-color:transparent;
         font-size:0;line-height:0;color:transparent;}
@@ -35,8 +38,15 @@
         .nav-actions > a.btn,
         .nav-actions > #user-menu{display:none !important;}
 
+        nav ul.fxnb-mobile li.fxnb-drawer-logo{padding:18px 16px 14px;display:flex;
+          justify-content:center;align-items:center;background:linear-gradient(180deg,#0b1222,#0f172a);
+          border-bottom:1px solid rgba(255,255,255,.08);}
+        nav ul.fxnb-mobile li.fxnb-drawer-logo img{max-height:48px;width:auto;display:block;
+          filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
+        nav ul.fxnb-mobile li.fxnb-drawer-logo:hover{background:linear-gradient(180deg,#0b1222,#0f172a);}
+
         nav ul.fxnb-mobile{position:fixed;top:0;right:0;height:100vh;width:min(86vw,360px);
-          background:#0f172a;flex-direction:column;align-items:stretch;gap:0;padding:72px 0 0;
+          background:#0f172a;flex-direction:column;align-items:stretch;gap:0;padding:56px 0 0;
           margin:0;list-style:none;box-shadow:-12px 0 40px rgba(0,0,0,.4);
           transform:translateX(100%);transition:transform .42s cubic-bezier(.65,.05,.36,1);
           z-index:1001;overflow-y:auto;display:flex;color:#e2e8f0;
@@ -250,6 +260,12 @@
            <span class="cta-arrow">›</span>
          </a>`;
       navMenu.insertBefore(topCta, navMenu.firstChild);
+
+      // -------- DRAWER LOGO (very top, above CTA) --------
+      const drawerLogo = document.createElement('li');
+      drawerLogo.className = 'fxnb-extra fxnb-drawer-logo';
+      drawerLogo.innerHTML = '<a href="/" aria-label="FXNB Home" style="padding:0;background:none;"><img src="/logo-fxnb.png" alt="FXNB"></a>';
+      navMenu.insertBefore(drawerLogo, navMenu.firstChild);
 
       // -------- AUTH section --------
       const authDivider = document.createElement('li');

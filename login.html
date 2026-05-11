@@ -52,8 +52,8 @@ nav a:hover{color:#60a5fa;}
 .login-wrap{display:grid;grid-template-columns:1fr 1fr;max-width:900px;width:100%;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.08);}
 
 .login-left{background:linear-gradient(135deg,#0f172a,#1e293b);padding:48px;display:flex;flex-direction:column;justify-content:space-between;}
-.login-logo{font-size:28px;font-weight:800;color:#fff;text-decoration:none;margin-bottom:12px;display:block;}
-.login-logo span{color:var(--accent);}
+.login-logo{display:inline-block;margin-bottom:12px;line-height:0;text-decoration:none;}
+.login-logo img{height:54px;width:auto;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.3));}
 .login-tagline{color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:32px;}
 .login-features{display:flex;flex-direction:column;gap:14px;margin-bottom:32px;}
 .login-feature{display:flex;align-items:center;gap:12px;color:#cbd5e1;font-size:13px;}
@@ -114,7 +114,7 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 
 <header>
   <div class="header-inner">
-    <a href="/" class="logo">FX<span>News</span>Bias</a>
+    <a href="/" class="logo"><img src="/logo-fxnb.png" alt="FXNB"></a>
     <nav>
       <ul>
         <li><a href="/">Markets</a></li>
@@ -138,7 +138,7 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 
     <div class="login-left">
       <div>
-        <a href="/" class="login-logo">FX<span>News</span>Bias</a>
+        <a href="/" class="login-logo"><img src="/logo-fxnb.png" alt="FXNB"></a>
         <p class="login-tagline">The free forex news sentiment platform for serious retail traders.</p>
       </div>
       <div class="login-features">
