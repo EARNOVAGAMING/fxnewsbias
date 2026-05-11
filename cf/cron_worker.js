@@ -682,39 +682,54 @@ currencies_affected: ccyRegexes.filter(([,r]) => r.test(item.title)).map(([c]) =
 }
 
 async function sendTelegramAlert(env, sentiment) {
+// HTML parse mode is far more forgiving than Markdown - only &, <, > need
+// escaping inside text, and unbalanced tags don't blow up the whole message.
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 try {
+if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHANNEL_ID) {
+console.log('Telegram: missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHANNEL_ID');
+return { ok: false, reason: 'missing-credentials' };
+}
 let msg = '';
 if (!sentiment) {
-msg = '🚀 *FXNewsBias Alert System*\n\nAlert system is working correctly!\n\n🔗 [View Dashboard](https://fxnewsbias.com)';
+msg = '🚀 <b>FXNewsBias Alert System</b>\n\nAlert system is working correctly!\n\n🔗 <a href="https://fxnewsbias.com">View Dashboard</a>';
 } else {
 const currencies = Object.entries(sentiment);
-msg = '📊 *FXNewsBias Sentiment Update*\n\n';
+msg = '📊 <b>FXNewsBias Sentiment Update</b>\n\n';
 currencies.forEach(([currency, data]) => {
 const emoji = data.bias === 'Bullish' ? '🟢' : data.bias === 'Bearish' ? '🔴' : '🟡';
-msg += `${emoji} *${currency}* — ${data.bias} ${data.score}/100\n`;
+msg += `${emoji} <b>${esc(currency)}</b> — ${esc(data.bias)} ${esc(data.score)}/100\n`;
 });
 const bullish = currencies.filter(([, d]) => d.bias === 'Bullish').length;
 const bearish = currencies.filter(([, d]) => d.bias === 'Bearish').length;
 msg += '\n';
-if (bullish > bearish) msg += '🌍 *Market Mood: Risk-On* 🟢\n';
-else if (bearish > bullish) msg += '🌍 *Market Mood: Risk-Off* 🔴\n';
-else msg += '🌍 *Market Mood: Mixed* 🟡\n';
-msg += '\n🔗 [View Full Analysis](https://fxnewsbias.com)';
-msg += '\n_Updated every 3 hours • FXNewsBias_';
+if (bullish > bearish) msg += '🌍 <b>Market Mood: Risk-On</b> 🟢\n';
+else if (bearish > bullish) msg += '🌍 <b>Market Mood: Risk-Off</b> 🔴\n';
+else msg += '🌍 <b>Market Mood: Mixed</b> 🟡\n';
+msg += '\n🔗 <a href="https://fxnewsbias.com">View Full Analysis</a>';
+msg += '\n<i>Updated every 3 hours • FXNewsBias</i>';
 }
 
-await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({
 chat_id: env.TELEGRAM_CHANNEL_ID,
 text: msg,
-parse_mode: 'Markdown',
+parse_mode: 'HTML',
 disable_web_page_preview: false
 })
 });
+const body = await r.text();
+if (!r.ok) {
+console.log('Telegram API error:', r.status, body.slice(0, 500));
+return { ok: false, status: r.status, body: body.slice(0, 500) };
+}
+console.log('Telegram alert sent OK');
+return { ok: true, status: r.status };
 } catch(e) {
 console.log('Telegram error:', e.message);
+return { ok: false, reason: 'exception', message: e.message };
 }
 }
 
