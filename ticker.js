@@ -90,5 +90,5 @@
   } else {
     loadTicker();
   }
-  setInterval(loadTicker, 5 * 60 * 1000);
+  setInterval(loadTicker, 60 * 1000);
 })();
