@@ -76,6 +76,9 @@
         nav ul.fxnb-mobile li.fxnb-auth-logout button{color:#ef4444;}
 
         body.fxnb-nav-locked{overflow:hidden;}
+        /* Lift the header (which contains the drawer) above the backdrop so
+           taps reach the drawer items instead of the invisible overlay. */
+        body.fxnb-nav-locked header{z-index:1003 !important;}
       }
     `;
     const style = document.createElement('style');
