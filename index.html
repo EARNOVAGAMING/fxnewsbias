@@ -231,7 +231,8 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div>
       <div class="hero-stat">
         <div class="hero-stat-label">Next Update</div>
-        <div class="hero-stat-value" id="next-update">3h 00m</div>
+        <div class="hero-stat-value" id="next-update">--:--</div>
+        <div id="next-update-sub" style="font-size:10px;color:#64748b;margin-top:2px;letter-spacing:0.5px;">--</div>
       </div>
     </div>
   </div>
@@ -798,26 +799,27 @@ loadNews();
 // ============================================
 function updateNextRunTime() {
   const nextUpdateEl = document.getElementById('next-update');
+  const nextUpdateSub = document.getElementById('next-update-sub');
   if (!nextUpdateEl) return;
 
-  // Sentiment runs every 3 hours: 0, 3, 6, 9, 12, 15, 18, 21 UTC
+  // Sentiment cron runs every 3 hours UTC: 0, 3, 6, 9, 12, 15, 18, 21
   const now = new Date();
+  const next = new Date(now);
   const utcHour = now.getUTCHours();
-  const utcMin = now.getUTCMinutes();
-  const utcSec = now.getUTCSeconds();
+  const nextUtcHour = Math.floor(utcHour / 3) * 3 + 3;
+  next.setUTCHours(nextUtcHour, 0, 0, 0);
 
-  // Find next 3-hour mark
-  const nextHour = Math.ceil((utcHour + 1) / 3) * 3;
-  const hoursUntil = nextHour - utcHour - 1;
-  const minsUntil = 60 - utcMin - 1;
-  const secsUntil = 60 - utcSec;
+  // Format clock time in user's local timezone (12-hour with AM/PM)
+  const clock = next.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  nextUpdateEl.textContent = clock;
 
-  let totalMins = hoursUntil * 60 + minsUntil;
-  if (secsUntil < 60) totalMins += 0;
-
-  const h = Math.floor(totalMins / 60);
-  const m = totalMins % 60;
-  nextUpdateEl.textContent = `${h}h ${String(m).padStart(2,'0')}m`;
+  // Countdown subtitle
+  if (nextUpdateSub) {
+    const totalMins = Math.max(0, Math.round((next - now) / 60000));
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    nextUpdateSub.textContent = h > 0 ? `in ${h}h ${String(m).padStart(2,'0')}m` : `in ${m}m`;
+  }
 }
 updateNextRunTime();
 setInterval(updateNextRunTime, 60000); // Update every minute
