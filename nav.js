@@ -5,8 +5,9 @@
   // without needing to edit each HTML file's <style> block.
   if (!document.getElementById('fxnb-nav-styles')) {
     const css = `
-      .burger{display:none;background:none;border:none;cursor:pointer;width:40px;height:40px;
-        padding:0;position:relative;z-index:1002;-webkit-tap-highlight-color:transparent;}
+      .burger{background:none;border:none;cursor:pointer;width:40px;height:40px;
+        padding:0;position:relative;z-index:1002;-webkit-tap-highlight-color:transparent;
+        font-size:0;line-height:0;color:transparent;}
       .burger-box{position:relative;width:24px;height:18px;margin:0 auto;display:block;}
       .burger-line{position:absolute;left:0;width:100%;height:2px;background:#0f172a;
         border-radius:2px;transition:transform .35s cubic-bezier(.65,.05,.36,1),
@@ -25,6 +26,7 @@
         pointer-events:auto;}
 
       @media(max-width:900px){
+        .burger{display:flex !important;align-items:center;justify-content:center;}
         nav ul.fxnb-mobile{position:fixed;top:0;right:0;height:100vh;width:min(82vw,340px);
           background:#fff;flex-direction:column;align-items:stretch;gap:0;padding:80px 0 24px;
           margin:0;list-style:none;box-shadow:-12px 0 40px rgba(0,0,0,.12);
