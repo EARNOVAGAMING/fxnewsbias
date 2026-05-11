@@ -181,6 +181,8 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       <p>We respond within 1-2 business days.</p>
 
       <form id="contact-form" novalidate>
+        <!-- Cloudflare Turnstile (anti-bot, invisible for most users) -->
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADM_Zwt7Tdb0zCT3" data-size="flexible" style="margin-bottom:16px;"></div>
         <div class="form-group">
           <label class="form-label" for="cf-name">Your Name</label>
           <input type="text" id="cf-name" name="name" class="form-input" placeholder="John Smith" required maxlength="100">
@@ -342,6 +344,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   </div>
 </footer>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="/nav.js"></script>
 <script src="/cookie.js"></script>
 <script src="/analytics.js"></script>
@@ -366,12 +369,16 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     e.preventDefault();
     status.style.display = 'none';
 
+    const tokenInput = form.querySelector('[name="cf-turnstile-response"]');
+    const turnstileToken = tokenInput ? tokenInput.value : '';
+
     const data = {
       name: form.name.value.trim(),
       email: form.email.value.trim(),
       subject: form.subject.value,
       message: form.message.value.trim(),
-      website: form.website.value
+      website: form.website.value,
+      turnstileToken: turnstileToken
     };
 
     if (!data.name || !data.email || !data.message) {
@@ -384,6 +391,10 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       showStatus('Please enter a valid email address.', true);
+      return;
+    }
+    if (!turnstileToken) {
+      showStatus('Please wait a moment for the security check to load, then try again.', true);
       return;
     }
 
@@ -401,11 +412,14 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       if (res.ok && json.success) {
         showStatus('✅ Message sent! We\'ll reply to ' + data.email + ' within 1-2 business days.', false);
         form.reset();
+        if (window.turnstile) try { window.turnstile.reset(); } catch (e) {}
       } else {
         showStatus('❌ ' + (json.error || 'Could not send. Please try again or email us directly.'), true);
+        if (window.turnstile) try { window.turnstile.reset(); } catch (e) {}
       }
     } catch (err) {
       showStatus('❌ Network error. Please check your connection and try again.', true);
+      if (window.turnstile) try { window.turnstile.reset(); } catch (e) {}
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Send Message →';
