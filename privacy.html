@@ -152,7 +152,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
 <section class="hero">
   <h1>Privacy Policy</h1>
   <p>How we collect, use, and protect your data</p>
-  <div class="last-updated">Last updated: April 29, 2026</div>
+  <div class="last-updated">Last updated: May 11, 2026</div>
 </section>
 
 <div class="content">
@@ -182,32 +182,37 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
     <h2>1. Information We Collect</h2>
     <p><strong>Information you provide directly:</strong></p>
     <ul>
-      <li>Email address (if you register or subscribe to newsletter)</li>
-      <li>Username and password (for community features)</li>
-      <li>Profile information (country, trading experience — optional)</li>
-      <li>Content you post (community posts, comments)</li>
+      <li>Email address (when you register, subscribe to the newsletter, or contact us)</li>
+      <li>Display name and password (managed via Firebase Authentication; passwords are never stored on our servers in plain text)</li>
+      <li>Profile information (country, trading experience — all optional)</li>
+      <li>Telegram chat ID (only if you opt in to Telegram alerts)</li>
+      <li>Payment details (collected and stored by Stripe — we never see or store your full card number)</li>
+      <li>Community posts and comments you publish</li>
       <li>Messages you send through contact forms</li>
     </ul>
     <p><strong>Information collected automatically:</strong></p>
     <ul>
-      <li>IP address and approximate location</li>
-      <li>Device type, browser, operating system</li>
-      <li>Pages visited, time spent, click patterns</li>
+      <li>IP address and approximate location (city / country level)</li>
+      <li>Device type, browser, operating system, screen size</li>
+      <li>Pages visited, time spent, click and scroll patterns</li>
       <li>Referring website (how you found us)</li>
       <li>Date and time of visits</li>
+      <li>Subscription tier (Free / Pro) for feature gating</li>
     </ul>
   </div>
 
   <div class="section" id="use">
     <h2>2. How We Use Your Information</h2>
     <ul>
-      <li><strong>Provide our service</strong> — display sentiment dashboard, deliver content</li>
-      <li><strong>Account management</strong> — login, password reset, account features</li>
-      <li><strong>Communication</strong> — respond to inquiries, send newsletters (if subscribed)</li>
-      <li><strong>Improve the platform</strong> — analyze usage to make better features</li>
-      <li><strong>Display ads</strong> — show relevant advertisements (Google AdSense)</li>
-      <li><strong>Security</strong> — detect fraud, abuse, and unauthorized access</li>
-      <li><strong>Legal compliance</strong> — comply with applicable laws</li>
+      <li><strong>Provide our service</strong> — display the sentiment dashboard, Market Pulse, Divergence detector, Streaks, news feed, calendar, and community.</li>
+      <li><strong>Account management</strong> — login, password reset, subscription status, profile features.</li>
+      <li><strong>Send alerts</strong> — deliver email digests and Telegram notifications you opt in to.</li>
+      <li><strong>Process payments</strong> — handle Pro subscription billing through Stripe.</li>
+      <li><strong>Communication</strong> — respond to inquiries, send service-related and (if subscribed) marketing emails.</li>
+      <li><strong>Improve the platform</strong> — analyze aggregated usage to refine features.</li>
+      <li><strong>Display ads</strong> — show relevant advertisements on the free tier (Google AdSense and partner ad networks).</li>
+      <li><strong>Security</strong> — detect fraud, abuse, automated scraping, and unauthorized access.</li>
+      <li><strong>Legal compliance</strong> — comply with applicable laws and respond to lawful requests.</li>
     </ul>
     <div class="highlight-box">
       <p><strong>We never sell your personal data to third parties.</strong></p>
@@ -215,24 +220,33 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="cookies">
-    <h2>3. Cookies & Tracking</h2>
+    <h2>3. Cookies & Local Storage</h2>
+    <p>We use a small number of cookies and browser <em>localStorage</em> entries:</p>
     <ul>
-      <li><strong>Essential cookies</strong> — required for the site to function</li>
-      <li><strong>Analytics cookies</strong> — help us understand usage (Google Analytics)</li>
-      <li><strong>Advertising cookies</strong> — used by ad networks to show relevant ads</li>
-      <li><strong>Preference cookies</strong> — remember your settings</li>
+      <li><strong>Essential</strong> — <code>fxnb_logged_in</code> (login state flag), cookie-consent decision, and Firebase Authentication session tokens. Required for the site to function.</li>
+      <li><strong>Analytics</strong> — Google Analytics 4 (<code>_ga</code>, <code>_ga_*</code>) to measure aggregated traffic.</li>
+      <li><strong>Advertising</strong> — Google AdSense and partner ad networks (e.g. DCM/Pepperstone Partners) set cookies to serve relevant ads on the free tier. Disabled for Pro subscribers.</li>
+      <li><strong>Preference</strong> — UI choices (e.g. tab selection, dismissed banners) stored in localStorage on your device only.</li>
     </ul>
-    <p>You can control cookies through your browser settings.</p>
+    <p>You can decline non-essential cookies via the consent banner shown on your first visit, and you can clear cookies at any time through your browser settings. Declining analytics/advertising cookies does not affect the core dashboard functionality.</p>
   </div>
 
   <div class="section" id="third">
     <h2>4. Third-Party Services</h2>
+    <p>We use a small set of vendors to operate FXNewsBias. Each receives only the data needed for their specific role:</p>
     <ul>
-      <li><strong>Google Analytics</strong> — website usage analytics</li>
-      <li><strong>Google AdSense</strong> — display advertising</li>
-      <li><strong>Cloudflare</strong> — hosting, CDN, and security</li>
-      <li><strong>Firebase (Google)</strong> — user authentication and database</li>
-      <li><strong>Anthropic Claude</strong> — AI sentiment analysis</li>
+      <li><strong>Cloudflare Pages & Workers</strong> — static hosting, CDN, DDoS protection, and the scheduled jobs that refresh sentiment, prices, and news.</li>
+      <li><strong>Firebase Authentication (Google)</strong> — secure email/password and social login; receives your email and a hashed password.</li>
+      <li><strong>Supabase</strong> — Postgres database that stores sentiment scores, prices, news headlines, community posts, and your profile/subscription metadata.</li>
+      <li><strong>Anthropic Claude</strong> — AI engine that scores news sentiment. Public news headlines (no personal data) are sent for analysis.</li>
+      <li><strong>TwelveData</strong> — provides live and historical forex price quotes.</li>
+      <li><strong>Stripe</strong> — processes Pro subscription payments. Card data is collected on Stripe's servers; we receive only a customer ID and subscription status.</li>
+      <li><strong>Resend</strong> — sends transactional emails (verification, password reset, Daily Brief, alerts). Receives your email address and message contents.</li>
+      <li><strong>Telegram Bot API</strong> — delivers Telegram alerts to users who opt in. Receives your Telegram chat ID and the alert message.</li>
+      <li><strong>Google Analytics 4</strong> — anonymized traffic and behaviour analytics.</li>
+      <li><strong>Google AdSense / Google Ad Manager and partner ad networks</strong> — display advertising on the free tier (disabled for Pro subscribers).</li>
+      <li><strong>Google Favicon Service (s2/favicons)</strong> — when news cards render, your browser fetches each publisher's favicon from <code>google.com/s2/favicons</code>. This is a passive request to Google and may be logged by Google per their own privacy policy.</li>
+      <li><strong>Investing.com Calendar widget</strong> — embedded as an iframe on the calendar page; subject to Investing.com's own cookie and tracking policies.</li>
     </ul>
   </div>
 
@@ -250,11 +264,25 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   <div class="section" id="security">
     <h2>6. Data Security</h2>
     <ul>
-      <li>HTTPS encryption for all data transmission</li>
-      <li>Secure password hashing</li>
-      <li>Limited access to personal data</li>
-      <li>Regular security reviews</li>
-      <li>Cloudflare DDoS protection and firewall</li>
+      <li>HTTPS / TLS encryption for all data transmission.</li>
+      <li>Passwords are hashed and managed by Firebase Authentication — we never see them in plain text.</li>
+      <li>Payment details are tokenised by Stripe and never stored on our servers.</li>
+      <li>Database access (Supabase) is restricted by row-level security and service-role keys held only by the backend worker.</li>
+      <li>Cloudflare DDoS protection, WAF, and bot mitigation in front of the entire platform.</li>
+      <li>Limited internal access to personal data on a need-to-know basis.</li>
+      <li>Regular dependency and security reviews.</li>
+    </ul>
+    <p>No system is 100% secure. In the event of a data breach affecting your personal information, we will notify affected users and the relevant authorities as required by applicable law.</p>
+  </div>
+
+  <div class="section" id="retention">
+    <h2>6.1 Data Retention</h2>
+    <ul>
+      <li><strong>Account data</strong> — kept for as long as your account is active. Deleted within 30 days of account closure (some records may be retained longer for legal, tax, or fraud-prevention reasons).</li>
+      <li><strong>Sentiment, price, and news data</strong> — public market data, retained indefinitely for historical charts.</li>
+      <li><strong>Payment records</strong> — retained by Stripe and by us for at least 7 years to meet financial record-keeping obligations.</li>
+      <li><strong>Analytics</strong> — Google Analytics retains aggregated data for up to 14 months by default.</li>
+      <li><strong>Email logs</strong> — Resend retains delivery metadata for up to 90 days.</li>
     </ul>
   </div>
 

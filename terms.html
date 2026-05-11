@@ -163,7 +163,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
 <section class="hero">
   <h1>Terms of Service</h1>
   <p>Rules and conditions for using FXNewsBias</p>
-  <div class="last-updated">Last updated: April 29, 2026</div>
+  <div class="last-updated">Last updated: May 11, 2026</div>
 </section>
 
 <div class="content">
@@ -172,11 +172,13 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
     <h3>📋 Table of Contents</h3>
     <ol>
       <li><a href="#acceptance">Acceptance of Terms</a></li>
-      <li><a href="#service">Use of Service</a></li>
+      <li><a href="#service">Use of Service & Features</a></li>
       <li><a href="#accounts">User Accounts</a></li>
+      <li><a href="#subscription">Pro Subscription & Payments</a></li>
+      <li><a href="#alerts">Email & Telegram Alerts</a></li>
       <li><a href="#community">Community Rules</a></li>
       <li><a href="#content">User Content</a></li>
-      <li><a href="#intellectual">Intellectual Property</a></li>
+      <li><a href="#intellectual">Intellectual Property & Data Sources</a></li>
       <li><a href="#termination">Termination</a></li>
       <li><a href="#liability">Limitation of Liability</a></li>
       <li><a href="#changes">Changes to Terms</a></li>
@@ -191,18 +193,28 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="service">
-    <h2>2. Use of Service</h2>
-    <p>FXNewsBias provides forex news sentiment analysis for informational purposes only. By using this Service you agree that:</p>
+    <h2>2. Use of Service & Features</h2>
+    <p>FXNewsBias provides AI-assisted forex news sentiment analysis for informational and educational purposes only. The Service currently includes:</p>
     <ul>
-      <li>You are at least 18 years of age</li>
-      <li>You will not use the Service for any illegal purpose</li>
-      <li>You will not attempt to disrupt or damage the Service</li>
-      <li>You understand this is NOT financial advice</li>
-      <li>You are solely responsible for your trading decisions</li>
-      <li>You will comply with all applicable local laws</li>
+      <li><strong>Currency Sentiment Dashboard</strong> — AI-generated bullish/bearish scores for 8 major currencies, refreshed via scheduled jobs.</li>
+      <li><strong>Market Pulse</strong> — a Risk-On / Risk-Off gauge derived from the relative sentiment of risk vs safe-haven currencies.</li>
+      <li><strong>Sentiment vs Price Divergence Detector</strong> — flags pairs where 24h sentiment direction disagrees with 24h price direction by a meaningful margin.</li>
+      <li><strong>Sentiment Streaks</strong> — counts consecutive days a currency has stayed in the same sentiment regime.</li>
+      <li><strong>24h Top Movers</strong> — biggest sentiment shifts over the last 24 hours.</li>
+      <li><strong>Live News Feed</strong> — forex-relevant headlines aggregated from public RSS sources, with publisher favicons fetched via Google's public favicon service.</li>
+      <li><strong>Economic Calendar, Currency Pages, Pair Pages, Historical Reports.</strong></li>
+      <li><strong>Community Forum</strong> for registered users.</li>
+    </ul>
+    <p>By using this Service you agree that:</p>
+    <ul>
+      <li>You are at least 18 years of age.</li>
+      <li>You will not use the Service for any illegal purpose, automated scraping, or to build a competing product.</li>
+      <li>You will not attempt to disrupt, reverse engineer, or damage the Service.</li>
+      <li>You understand the Service is <strong>not financial advice</strong> and you are solely responsible for your trading decisions.</li>
+      <li>You will comply with all applicable local laws and broker regulations.</li>
     </ul>
     <div class="highlight-box">
-      <p><strong>FXNewsBias is an information service only.</strong> Nothing on this platform constitutes financial advice, investment advice, or a recommendation to buy or sell any financial instrument.</p>
+      <p><strong>FXNewsBias is an information service only.</strong> Sentiment scores, gauges, divergence flags, streaks, and movers are descriptive market metrics — not buy/sell signals, predictions, or recommendations.</p>
     </div>
   </div>
 
@@ -215,11 +227,33 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
       <li>Notifying us immediately of any unauthorized use</li>
       <li>Keeping your contact information up to date</li>
     </ul>
-    <p>We reserve the right to terminate accounts that violate these terms, contain false information, or have been inactive for more than 12 months.</p>
+    <p>We reserve the right to terminate accounts that violate these terms, contain false information, or have been inactive for more than 12 months. Authentication is provided through Firebase (Google).</p>
+  </div>
+
+  <div class="section" id="subscription">
+    <h2>4. Pro Subscription & Payments</h2>
+    <p>FXNewsBias offers an optional <strong>Pro</strong> subscription that removes advertising and unlocks premium features such as Telegram alerts, the Daily Brief, and extended historical access. Payment processing is handled by <strong>Stripe</strong>; we do not store your card details on our servers.</p>
+    <ul>
+      <li><strong>Billing:</strong> Subscriptions renew automatically until cancelled. Charges appear under "FXNewsBias" or our merchant name.</li>
+      <li><strong>Cancellation:</strong> You may cancel at any time from your profile page or via the Stripe customer portal. Access continues until the end of the current billing period.</li>
+      <li><strong>Refunds:</strong> Subscription fees are generally non-refundable. We may issue pro-rated refunds at our discretion for proven service outages or billing errors.</li>
+      <li><strong>Pricing changes:</strong> We may adjust subscription pricing with at least 14 days advance email notice; the new price applies at your next renewal.</li>
+      <li><strong>Free tier:</strong> The free tier is supported by advertising. We may change the features available on the free tier at any time.</li>
+    </ul>
+  </div>
+
+  <div class="section" id="alerts">
+    <h2>5. Email & Telegram Alerts</h2>
+    <p>Registered users may opt in to receive notifications:</p>
+    <ul>
+      <li><strong>Email alerts and the Daily Brief</strong> are delivered via <strong>Resend</strong>. You can unsubscribe at any time via the link in any email.</li>
+      <li><strong>Telegram alerts</strong> require linking a Telegram chat ID to your account and are delivered via the Telegram Bot API.</li>
+    </ul>
+    <p>Alerts are sent on a best-effort basis. We do not guarantee delivery, timeliness, or that you will receive every event. Alerts are <strong>not</strong> trading signals — do not place trades automatically based on them.</p>
   </div>
 
   <div class="section" id="community">
-    <h2>4. Community Rules</h2>
+    <h2>6. Community Rules</h2>
     <p>FXNewsBias has a strict community moderation policy. All posts and comments must follow these rules:</p>
     <div class="rules-grid">
       <div class="rules-card allowed">
@@ -253,7 +287,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="content">
-    <h2>5. User Content</h2>
+    <h2>7. User Content</h2>
     <p>By posting content on FXNewsBias, you grant us a non-exclusive, worldwide, royalty-free license to use, display, and distribute that content on our platform. You represent that:</p>
     <ul>
       <li>You own or have rights to post the content</li>
@@ -265,20 +299,22 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="intellectual">
-    <h2>6. Intellectual Property</h2>
-    <p>The FXNewsBias platform, including its design, logo, sentiment analysis system, and original content, is owned by FXNewsBias and protected by intellectual property laws.</p>
+    <h2>8. Intellectual Property & Data Sources</h2>
+    <p>The FXNewsBias platform — including its design, logo, sentiment scoring methodology, Market Pulse gauge, Divergence detector, Streaks calculator, and original written content — is owned by FXNewsBias and protected by intellectual property laws.</p>
+    <p><strong>Third-party data:</strong> Currency price quotes are sourced from TwelveData. News headlines are aggregated from publicly available RSS feeds owned by their respective publishers (Reuters, Bloomberg, BBC, MarketWatch, Yahoo Finance, FXStreet, and others). Publisher favicons displayed alongside news cards are loaded directly from Google's public favicon service. We claim no ownership of third-party headlines, prices, logos, or trademarks; clicking a news card opens the original article on the publisher's site.</p>
     <p>You may not:</p>
     <ul>
-      <li>Copy or reproduce our platform design</li>
-      <li>Use our logo or branding without permission</li>
-      <li>Scrape or bulk download our sentiment data</li>
-      <li>Republish our analysis without attribution</li>
-      <li>Build competing products using our data</li>
+      <li>Copy or reproduce our platform design.</li>
+      <li>Use our logo or branding without written permission.</li>
+      <li>Scrape, crawl, or bulk download our sentiment data, prices, or news feed via automated means.</li>
+      <li>Republish our analysis without clear attribution and a link back.</li>
+      <li>Resell or redistribute our data feeds, alerts, or AI outputs.</li>
+      <li>Build competing products using our data.</li>
     </ul>
   </div>
 
   <div class="section" id="termination">
-    <h2>7. Termination</h2>
+    <h2>9. Termination</h2>
     <p>We may terminate or suspend your account immediately, without prior notice, for conduct that we believe:</p>
     <ul>
       <li>Violates these Terms of Service</li>
@@ -290,7 +326,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="liability">
-    <h2>8. Limitation of Liability</h2>
+    <h2>10. Limitation of Liability</h2>
     <p>To the maximum extent permitted by law, FXNewsBias shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the Service, including but not limited to:</p>
     <ul>
       <li>Trading losses based on our sentiment data</li>
@@ -305,12 +341,12 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="changes">
-    <h2>9. Changes to Terms</h2>
+    <h2>11. Changes to Terms</h2>
     <p>We reserve the right to modify these terms at any time. We will notify registered users of significant changes via email. Continued use of the Service after changes constitutes acceptance of the new terms.</p>
   </div>
 
   <div class="section" id="contact">
-    <h2>10. Contact</h2>
+    <h2>12. Contact</h2>
     <p>If you have questions about these Terms of Service, please contact us through our <a href="/contact" style="color:var(--accent);">contact page</a>.</p>
   </div>
 
