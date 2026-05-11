@@ -992,30 +992,37 @@ console.log('writeSystemState error:', e.message);
 // FETCH ALL NEWS — 12 SOURCES, PARALLEL FETCH
 // ============================================
 async function fetchAllNews() {
+// 13 verified-working feeds (audited 2026-05-11). Each call lifts up to
+// PER_SOURCE_CAP items so we don't truncate a busy feed (BBC publishes 47,
+// CNBC 30, ActionForex 20). Overall cap of 100 is what Claude sees.
+const PER_SOURCE_CAP = 15;
+const TOTAL_CAP = 100;
 const feeds = [
-// Original 6 sources (proven working)
+// Forex / FX-specific
 { url: 'https://www.fxstreet.com/rss/news', source: 'FXStreet' },
+{ url: 'https://www.forexlive.com/feed/', source: 'ForexLive' },
+{ url: 'https://www.actionforex.com/feed/', source: 'Action Forex' },
+{ url: 'https://www.forexcrunch.com/feed/', source: 'Forex Crunch' },
+// Macro / financial press
 { url: 'https://feeds.bbci.co.uk/news/business/rss.xml', source: 'BBC News' },
 { url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html', source: 'CNBC' },
+{ url: 'https://www.cnbc.com/id/100727362/device/rss/rss.html', source: 'CNBC Currencies' },
+{ url: 'https://www.cnbc.com/id/15839135/device/rss/rss.html', source: 'CNBC Markets' },
 { url: 'https://www.marketwatch.com/rss/topstories', source: 'MarketWatch' },
-{ url: 'https://www.dailyfx.com/feeds/all', source: 'DailyFX' },
+{ url: 'https://feeds.a.dj.com/rss/RSSWSJD.xml', source: 'WSJ' },
 { url: 'https://www.investing.com/rss/news.rss', source: 'Investing.com' },
-// New 6 sources (free RSS, no API keys)
-{ url: 'https://finance.yahoo.com/news/rssindex', source: 'Yahoo Finance' },
-{ url: 'https://www.forexlive.com/feed/news', source: 'ForexLive' },
-{ url: 'https://www.actionforex.com/feed/', source: 'Action Forex' },
-{ url: 'https://www.fxempire.com/api/v1/en/articles/rss', source: 'FX Empire' },
 { url: 'https://www.nasdaq.com/feed/rssoutbound', source: 'Nasdaq' },
-{ url: 'https://www.forexcrunch.com/feed/', source: 'Forex Crunch' },
+{ url: 'https://finance.yahoo.com/news/rssindex', source: 'Yahoo Finance' },
 ];
 
-// Fetch all 12 feeds in parallel for speed
+// Fetch all feeds in parallel for speed
 const results = await Promise.allSettled(
 feeds.map(async (feed) => {
 try {
 const response = await fetch(feed.url, {
-headers: { 'User-Agent': 'FXNewsBias/1.0' },
-signal: AbortSignal.timeout(5000)
+headers: { 'User-Agent': 'Mozilla/5.0 FXNewsBias/1.0' },
+redirect: 'follow',
+signal: AbortSignal.timeout(7000)
 });
 if (!response.ok) {
 console.log(`Skipped ${feed.source}: HTTP ${response.status}`);
@@ -1024,7 +1031,7 @@ return [];
 const text = await response.text();
 const items = parseRSS(text, feed.source);
 console.log(`${feed.source}: fetched ${items.length} items`);
-return items.slice(0, 5);
+return items.slice(0, PER_SOURCE_CAP);
 } catch (error) {
 console.log(`Failed ${feed.source}:`, error.message);
 return [];
@@ -1040,8 +1047,16 @@ allNews.push(...r.value);
 }
 });
 
-console.log(`Total news collected: ${allNews.length}`);
-return allNews.slice(0, 60);
+// Within-batch dedupe by title to keep Claude's input clean
+const seen = new Set();
+const unique = [];
+for (const n of allNews) {
+const k = (n.title || '').toLowerCase().replace(/\s+/g,' ').trim();
+if (k && !seen.has(k)) { seen.add(k); unique.push(n); }
+}
+
+console.log(`Total news collected: ${allNews.length} (unique: ${unique.length})`);
+return unique.slice(0, TOTAL_CAP);
 }
 
 function parseRSS(xml, feedSource) {
@@ -1136,7 +1151,24 @@ drivers: data.drivers
 }
 
 async function saveNews(news, env) {
-const forexKeywords = ['fed','federal reserve','rate','interest','ecb','boe','boj','snb','rba','boc','rbnz','pboc','central bank','nfp','non-farm','payroll','inflation','cpi','ppi','gdp','recession','tariff','trade war','sanctions','opec','dollar','euro','sterling','pound','yen','yuan','franc','aussie','kiwi','loonie','currency','currencies','forex','fx','exchange rate','treasury','bond yield','jobless','unemployment','employment','pmi','retail sales','trade balance','gold','oil','crude','wti','brent','xau','usd','eur','gbp','jpy','chf','aud','cad','nzd'];
+const forexKeywords = [
+// central banks + policy
+'fed','federal reserve','fomc','powell','rate cut','rate hike','rate','interest','ecb','lagarde','boe','bailey','boj','ueda','snb','rba','boc','rbnz','pboc','central bank','jackson hole','beige book','dot plot','quantitative','qt','balance sheet','hawkish','dovish',
+// macro data
+'nfp','non-farm','payroll','inflation','cpi','ppi','pce','gdp','recession','jobless','unemployment','employment','pmi','retail sales','trade balance','consumer confidence','ism','adp',
+// fiscal / geopolitics that drive risk
+'tariff','trade war','sanctions','geopolitical','war','conflict','iran','israel','russia','ukraine','china','japan','germany','trump','biden','election','debt ceiling','government shutdown','budget',
+// energy + commodities
+'opec','oil','crude','wti','brent','natural gas','gold','bullion','silver',
+// FX-direct vocabulary
+'dollar','dxy','euro','sterling','pound','yen','yuan','renminbi','franc','aussie','kiwi','loonie','currency','currencies','forex','fx','exchange rate','intervention','carry trade',
+// rates / bonds
+'treasury','bond yield','yields','spread','jgb','bund','gilt',
+// risk regime
+'risk-on','risk-off','safe haven','flight to quality',
+// 3-letter codes + gold ticker
+'xau','usd','eur','gbp','jpy','chf','aud','cad','nzd','cny'
+];
 const forexRegex = new RegExp('\\b(' + forexKeywords.join('|') + ')\\b', 'i');
 const currencyMap = [
 ['USD',['usd','dollar','fed','federal reserve','nfp','non-farm','treasury','jobless','ppi','cpi','powell','fomc']],
