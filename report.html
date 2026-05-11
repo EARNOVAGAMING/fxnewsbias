@@ -190,6 +190,14 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   #user-menu{gap:6px !important;}
   #user-menu button{padding:6px 10px !important;font-size:12px !important;}
 }
+@media(max-width:600px){
+  .topbar{font-size:11px;padding:5px 0;}
+  .topbar-inner{padding:0 12px;gap:8px;}
+  .topbar-left{gap:10px;flex:1;min-width:0;}
+  .topbar-left span:nth-child(2){display:none;}
+  #topbar-date{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .topbar-right{gap:10px;flex-shrink:0;}
+}
 @media print {
   header, .topbar, footer, .download-btn, nav, .nav-actions, .burger { display: none !important; }
   body { background: #fff; }
