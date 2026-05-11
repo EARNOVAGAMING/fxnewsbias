@@ -2,7 +2,7 @@
 // Handles: sentiment analysis, prices, Telegram alerts, Stripe webhooks, Firebase Pro updates
 
 export default {
-async fetch(request, env) {
+async fetch(request, env, ctx) {
 const url = new URL(request.url);
 
 if (url.pathname === '/webhook' && request.method === 'POST') {
@@ -79,6 +79,10 @@ const result = await cleanupSentiment(env);
 return new Response(JSON.stringify(result, null, 2), {
 status: 200, headers: { 'Content-Type': 'application/json' }
 });
+}
+// Weekly Pro report endpoint — public, edge-cached 6h
+if (url.pathname === '/api/weekly-report') {
+return handleWeeklyReport(request, env, ctx);
 }
 return new Response('FXNewsBias Cron Worker Running', { status: 200 });
 },
@@ -991,6 +995,247 @@ console.log('writeSystemState error:', e.message);
 // ============================================
 // FETCH ALL NEWS — 12 SOURCES, PARALLEL FETCH
 // ============================================
+// =====================================================================
+// WEEKLY PRO REPORT — aggregates 7-14 days of sentiment + Claude narrative
+// =====================================================================
+async function handleWeeklyReport(request, env, ctx) {
+const cors = {
+'Access-Control-Allow-Origin': '*',
+'Access-Control-Allow-Methods': 'GET, OPTIONS',
+'Access-Control-Allow-Headers': 'Content-Type',
+'Vary': 'Origin'
+};
+if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+
+const url = new URL(request.url);
+const bypass = url.searchParams.get('refresh') === '1';
+const cacheUrl = new URL(url.origin + '/api/weekly-report');
+const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
+const cache = caches.default;
+
+if (!bypass) {
+const cached = await cache.match(cacheKey);
+if (cached) {
+const r = new Response(cached.body, cached);
+Object.entries(cors).forEach(([k,v]) => r.headers.set(k,v));
+r.headers.set('X-Cache', 'HIT');
+return r;
+}
+}
+
+try {
+const report = await buildWeeklyReport(env);
+const body = JSON.stringify(report);
+const resp = new Response(body, {
+status: 200,
+headers: {
+'Content-Type': 'application/json',
+'Cache-Control': 'public, max-age=21600',
+...cors,
+'X-Cache': 'MISS'
+}
+});
+if (ctx && ctx.waitUntil) ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+return resp;
+} catch (e) {
+console.log('Weekly report build failed:', e.message, e.stack);
+return new Response(JSON.stringify({ error: e.message, stack: e.stack }), {
+status: 500, headers: { 'Content-Type': 'application/json', ...cors }
+});
+}
+}
+
+async function buildWeeklyReport(env) {
+const now = new Date();
+const weekStart = new Date(now); weekStart.setUTCDate(now.getUTCDate() - 7);
+const lastWeekStart = new Date(now); lastWeekStart.setUTCDate(now.getUTCDate() - 14);
+
+// Pull 14 days of sentiment for delta + this-week trend
+const sentRes = await fetch(
+`${env.SUPABASE_URL}/rest/v1/sentiment?select=created_at,currency,score,bias,drivers&created_at=gte.${lastWeekStart.toISOString()}&order=created_at.asc&limit=4000`,
+{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
+);
+const sentData = await sentRes.json();
+
+const newsRes = await fetch(
+`${env.SUPABASE_URL}/rest/v1/news?select=title,source,created_at,impact&order=id.desc&limit=80`,
+{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
+);
+const newsData = await newsRes.json();
+
+const currencies = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD'];
+const weekStartTs = weekStart.getTime();
+const perCurrency = {};
+const flipsTimeline = [];
+
+for (const ccy of currencies) {
+const rows = (sentData || []).filter(r => r.currency === ccy);
+const thisWeek = rows.filter(r => new Date(r.created_at).getTime() >= weekStartTs);
+const lastWeek = rows.filter(r => new Date(r.created_at).getTime() < weekStartTs);
+
+// Daily averages for sparkline (7 days)
+const days = [];
+for (let d = 6; d >= 0; d--) {
+const dayStart = new Date(now); dayStart.setUTCDate(now.getUTCDate() - d); dayStart.setUTCHours(0,0,0,0);
+const dayEnd = new Date(dayStart); dayEnd.setUTCDate(dayStart.getUTCDate() + 1);
+const dayRows = thisWeek.filter(r => {
+const t = new Date(r.created_at).getTime();
+return t >= dayStart.getTime() && t < dayEnd.getTime();
+});
+days.push(dayRows.length ? Math.round(dayRows.reduce((s,r)=>s+r.score,0)/dayRows.length) : null);
+}
+
+const thisAvg = thisWeek.length ? Math.round(thisWeek.reduce((s,r)=>s+r.score,0)/thisWeek.length) : 50;
+const lastAvg = lastWeek.length ? Math.round(lastWeek.reduce((s,r)=>s+r.score,0)/lastWeek.length) : null;
+const current = thisWeek.length ? thisWeek[thisWeek.length-1] : null;
+const weekOpen = thisWeek.length ? thisWeek[0].score : null;
+
+let flips = 0; let lastBias = null;
+for (const r of thisWeek) {
+if (lastBias && lastBias !== r.bias) {
+flips++;
+flipsTimeline.push({ ts: r.created_at, currency: ccy, from: lastBias, to: r.bias });
+}
+lastBias = r.bias;
+}
+
+const biasCounts = { Bullish: 0, Bearish: 0, Neutral: 0 };
+for (const r of thisWeek) biasCounts[r.bias] = (biasCounts[r.bias] || 0) + 1;
+const total = Math.max(thisWeek.length, 1);
+
+// Last-week's final bias (for change-state column)
+const lastWeekFinalBias = lastWeek.length ? lastWeek[lastWeek.length-1].bias : null;
+
+perCurrency[ccy] = {
+this_week_avg: thisAvg,
+last_week_avg: lastAvg,
+delta: lastAvg !== null ? thisAvg - lastAvg : null,
+week_open_score: weekOpen,
+week_change: weekOpen !== null && current ? current.score - weekOpen : 0,
+current_score: current ? current.score : null,
+current_bias: current ? current.bias : 'Neutral',
+last_week_final_bias: lastWeekFinalBias,
+current_drivers: current ? (current.drivers || []) : [],
+sparkline: days,
+bias_flips: flips,
+pct_bullish: Math.round(100 * biasCounts.Bullish / total),
+pct_bearish: Math.round(100 * biasCounts.Bearish / total),
+pct_neutral: Math.round(100 * biasCounts.Neutral / total),
+samples: thisWeek.length
+};
+}
+
+const topGainer = currencies.map(c => ({ currency: c, change: perCurrency[c].week_change }))
+.sort((a,b) => b.change - a.change)[0];
+const topLoser = currencies.map(c => ({ currency: c, change: perCurrency[c].week_change }))
+.sort((a,b) => a.change - b.change)[0];
+const mostVolatile = currencies.map(c => ({ currency: c, flips: perCurrency[c].bias_flips }))
+.sort((a,b) => b.flips - a.flips)[0];
+const ranked = currencies.map(c => ({ currency: c, score: perCurrency[c].current_score ?? 50 }))
+.sort((a,b) => b.score - a.score);
+const strongest = ranked[0];
+const weakest = ranked[ranked.length - 1];
+
+// 8x8 cross-pair heatmap (B/Q score = 50 + (B-Q)/2)
+const heatmap = {};
+for (const B of currencies) for (const Q of currencies) {
+if (B === Q) continue;
+const bScore = perCurrency[B].current_score ?? 50;
+const qScore = perCurrency[Q].current_score ?? 50;
+heatmap[B+Q] = Math.max(0, Math.min(100, Math.round(50 + (bScore - qScore) / 2)));
+}
+
+// Trade setups from "interesting" pairs sorted by conviction
+const interesting = ['EURUSD','GBPUSD','USDJPY','AUDUSD','USDCAD','USDCHF','NZDUSD','EURJPY','GBPJPY','EURGBP','AUDJPY','CADJPY','AUDNZD','EURCHF'];
+const setups = interesting.map(p => {
+const B = p.slice(0,3), Q = p.slice(3);
+const score = heatmap[p];
+return {
+pair: p, B, Q, score,
+conviction: Math.abs((score ?? 50) - 50),
+direction: score > 55 ? 'Long' : score < 45 ? 'Short' : 'Neutral',
+B_bias: perCurrency[B].current_bias,
+Q_bias: perCurrency[Q].current_bias,
+B_score: perCurrency[B].current_score,
+Q_score: perCurrency[Q].current_score
+};
+}).filter(s => s.direction !== 'Neutral')
+.sort((a,b) => b.conviction - a.conviction)
+.slice(0, 5);
+
+const sampleNews = (newsData || []).slice(0, 30).map(n => `- [${n.source}] ${n.title}`).join('\n');
+
+const ctxBlock = currencies.map(c => {
+const p = perCurrency[c];
+const arrow = p.delta === null ? '~' : p.delta > 2 ? 'UP' : p.delta < -2 ? 'DOWN' : 'flat';
+return `${c}: this-wk avg ${p.this_week_avg} (${arrow} from ${p.last_week_avg ?? 'n/a'}), now ${p.current_score} ${p.current_bias}, ${p.bias_flips} bias flips, time bull/bear/neut: ${p.pct_bullish}%/${p.pct_bearish}%/${p.pct_neutral}%`;
+}).join('\n');
+
+const claudePrompt = `You are a senior FX strategist writing the FXNewsBias Pro Weekly Report for the week ending ${now.toISOString().slice(0,10)}.
+
+PER-CURRENCY WEEK DATA (sentiment scores, 0=very bearish, 50=neutral, 100=very bullish):
+${ctxBlock}
+
+WEEK HIGHLIGHTS:
+- Strongest currency now: ${strongest.currency} (${strongest.score})
+- Weakest currency now: ${weakest.currency} (${weakest.score})
+- Top gainer this week: ${topGainer.currency} (${topGainer.change > 0 ? '+' : ''}${topGainer.change} pts vs Mon open)
+- Top loser this week: ${topLoser.currency} (${topLoser.change} pts)
+- Most volatile (most bias flips): ${mostVolatile.currency} (${mostVolatile.flips} flips)
+
+RECENT NEWS HEADLINES (last 30, most recent first):
+${sampleNews}
+
+Write a JSON response with three sections:
+
+1. "narrative" — exactly 3 paragraphs in plain trader-friendly English (180-260 words total):
+   • Para 1: What happened this week — tie the biggest sentiment moves to specific news/themes from the headlines above. Name names.
+   • Para 2: Where the market stands now — what the strongest/weakest currencies imply, what regime we are in (risk-on / risk-off / mixed). Reference actual scores.
+   • Para 3: Setup for next week — what to watch, key risks, what could change the picture.
+   Use real specifics from the data, not generic phrases. Do not use the words "in conclusion" or "overall".
+
+2. "key_events" — array of 4 to 7 high-impact economic events likely in the NEXT 7 days. Use the news context plus your knowledge of standard release schedules (NFP first Friday of month, FOMC meeting weeks, ECB calendar, BOE, BOJ etc.). For each: { "event": short name, "currency": 3-letter code, "day": "Mon"|"Tue"|"Wed"|"Thu"|"Fri", "impact": "High"|"Medium", "why": one-sentence trader takeaway }.
+
+3. "regime_warning" — one sentence (max 30 words) flagging the single biggest risk for traders this week given current sentiment + news (e.g. "JPY intervention risk elevated near 155", "Watch Fed-speak whiplash with multiple FOMC members on circuit").
+
+Respond ONLY with strict JSON, no markdown, no preamble:
+{
+  "narrative": "...",
+  "key_events": [{"event":"...","currency":"USD","day":"Fri","impact":"High","why":"..."}],
+  "regime_warning": "..."
+}`;
+
+let claudeOut = { narrative: '', key_events: [], regime_warning: '' };
+try {
+const cRes = await fetch('https://api.anthropic.com/v1/messages', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
+body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: claudePrompt }] })
+});
+const cData = await cRes.json();
+const text = cData.content?.[0]?.text || '';
+const m = text.match(/\{[\s\S]*\}/);
+if (m) claudeOut = JSON.parse(m[0]);
+} catch (e) {
+console.log('Claude weekly narrative failed:', e.message);
+claudeOut.narrative = 'The weekly narrative is being generated. Please refresh in a few minutes.';
+}
+
+return {
+week_start: weekStart.toISOString(),
+week_end: now.toISOString(),
+generated_at: now.toISOString(),
+per_currency: perCurrency,
+movers: { strongest, weakest, top_gainer: topGainer, top_loser: topLoser, most_volatile: mostVolatile },
+bias_flips_timeline: flipsTimeline.slice(-15).reverse(),
+pair_heatmap: heatmap,
+trade_setups: setups,
+narrative: claudeOut.narrative || '',
+key_events: claudeOut.key_events || [],
+regime_warning: claudeOut.regime_warning || ''
+};
+}
+
 async function fetchAllNews() {
 // 13 verified-working feeds (audited 2026-05-11). Each call lifts up to
 // PER_SOURCE_CAP items so we don't truncate a busy feed (BBC publishes 47,
