@@ -27,9 +27,55 @@ if (!_authed()) return new Response('Unauthorized', { status: 401 });
 await sendTelegramAlert(env, null);
 return new Response('Telegram test sent!', { status: 200 });
 }
+if (url.pathname === '/test-staleness-alert') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const sentAt = new Date().toISOString();
+const text = `🧪 *FXNewsBias staleness alert — TEST*\n\n`
++ `This is a test message sent from \`/test-staleness-alert\` at \`${sentAt}\`.\n`
++ `No action is required. If you received this, the channel is wired up correctly.`;
+const result = await sendStalenessNotification(env, text);
+const status = result.sent > 0 && result.failed === 0
+? 200
+: (result.sent > 0 ? 207 : (result.results.length === 0 ? 503 : 502));
+return new Response(JSON.stringify({
+test: true,
+sent_at: sentAt,
+configured_channels: result.results.length,
+delivered: result.sent,
+failed: result.failed,
+results: result.results
+}, null, 2), {
+status, headers: { 'Content-Type': 'application/json' }
+});
+}
 if (url.pathname === '/check-staleness') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const result = await checkSentimentFreshness(env);
+return new Response(JSON.stringify(result, null, 2), {
+status: 200, headers: { 'Content-Type': 'application/json' }
+});
+}
+if (url.pathname === '/incidents') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+return handleIncidentsView(url, env);
+}
+if (url.pathname === '/cleanup-system-state') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await cleanupSystemState(env);
+return new Response(JSON.stringify(result, null, 2), {
+status: 200, headers: { 'Content-Type': 'application/json' }
+});
+}
+if (url.pathname === '/cleanup-news') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await cleanupNews(env);
+return new Response(JSON.stringify(result, null, 2), {
+status: 200, headers: { 'Content-Type': 'application/json' }
+});
+}
+if (url.pathname === '/cleanup-sentiment') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await cleanupSentiment(env);
 return new Response(JSON.stringify(result, null, 2), {
 status: 200, headers: { 'Content-Type': 'application/json' }
 });
@@ -45,6 +91,13 @@ const tasks = [];
 if (event.cron === '0 */3 * * *') {
 tasks.push(runSentimentAnalysis(env));
 tasks.push(updatePrices(env));
+// Once every 3 hours is plenty for a retention sweep — system_state is
+// tiny and only needs to be pruned occasionally.
+tasks.push(cleanupSystemState(env).catch(e => console.log('Cleanup error:', e.message)));
+// News and sentiment grow unbounded with every cron tick — sweep them
+// on the same 3-hourly cadence so the Supabase tables stay manageable.
+tasks.push(cleanupNews(env).catch(e => console.log('cleanupNews error:', e.message)));
+tasks.push(cleanupSentiment(env).catch(e => console.log('cleanupSentiment error:', e.message)));
 } else {
 tasks.push(updatePrices(env));
 }
@@ -260,13 +313,20 @@ const news = await fetchAllNews();
 console.log(`Fetched ${news.length} news items from 12 sources`);
 const sentiment = await analyzeSentiment(news, env);
 console.log('Sentiment analysis complete');
-await saveSentiment(sentiment, env);
-await saveNews(news, env);
-console.log('Data saved to Supabase');
-await sendTelegramAlert(env, sentiment);
-console.log('Telegram alert sent');
+
+// Each downstream step is isolated - one failing must not block the others.
+// Telegram (user-visible) is fired FIRST so a saveNews/saveSentiment hiccup
+// can never silently kill the alert (this has bitten us twice already).
+try { await sendTelegramAlert(env, sentiment); console.log('Telegram alert sent'); }
+catch(e) { console.log('Telegram step failed:', e.message); }
+
+try { await saveSentiment(sentiment, env); console.log('Sentiment saved'); }
+catch(e) { console.log('saveSentiment failed:', e.message); }
+
+try { await saveNews(news, env); console.log('News saved'); }
+catch(e) { console.log('saveNews failed:', e.message); }
 } catch (error) {
-console.error('Error in sentiment analysis:', error);
+console.error('Error in sentiment analysis (top-level):', error && error.message);
 }
 }
 
@@ -289,6 +349,10 @@ console.error('Error in sentiment analysis:', error);
 //
 // Optional env vars (in addition to TELEGRAM_BOT_TOKEN/TELEGRAM_CHANNEL_ID):
 //   STALENESS_WEBHOOK_URL   - optional generic webhook (Slack-compatible JSON)
+//   SLACK_WEBHOOK_URL       - optional Slack incoming webhook URL
+//   ALERT_EMAIL_TO          - optional comma-separated list of recipient emails
+//                             (requires RESEND_API_KEY; uses ALERT_EMAIL_FROM or
+//                              CONTACT_FROM_EMAIL or 'noreply@fxnewsbias.com')
 //   SENTIMENT_CADENCE_MS    - override cadence (default: derived, fallback 3h)
 //   STALENESS_MULTIPLIER    - override multiplier (default 1.5)
 async function checkSentimentFreshness(env) {
@@ -370,12 +434,21 @@ const text = `🚨 *FXNewsBias sentiment feed is stalled*\n\n`
 + `Late by: *${Math.round(lateBy / 60000)} min*\n\n`
 + `The sentiment cron has not produced a fresh row. Check the worker logs / Anthropic API / Supabase writes.`;
 await sendStalenessNotification(env, text);
+const startedAt = new Date().toISOString();
 await writeSystemState(env, STATE_KEY, {
 active_for_id: latest.id,
-alerted_at: new Date().toISOString(),
+alerted_at: startedAt,
 latest_at: latest.created_at,
 age_minutes: summary.age_minutes,
 threshold_minutes: summary.threshold_minutes
+});
+await recordIncidentStart(env, STATE_KEY, startedAt, {
+sentiment_id: latest.id,
+latest_at: latest.created_at,
+age_minutes: summary.age_minutes,
+cadence_minutes: summary.cadence_minutes,
+threshold_minutes: summary.threshold_minutes,
+late_by_minutes: Math.round(lateBy / 60000)
 });
 console.log('Staleness: alert sent for sentiment id', latest.id);
 summary.action = 'alert-sent';
@@ -387,9 +460,15 @@ if (activeAlertId && activeAlertId !== latest.id) {
 const text = `✅ *FXNewsBias sentiment feed recovered*\n\n`
 + `Fresh sentiment row at \`${latest.created_at}\` (age ${Math.round(ageMs / 60000)} min). Alerts resolved.`;
 await sendStalenessNotification(env, text);
+const resolvedAt = new Date().toISOString();
+await recordIncidentResolved(env, STATE_KEY, resolvedAt, {
+recovered_sentiment_id: latest.id,
+latest_at: latest.created_at,
+age_minutes_at_recovery: summary.age_minutes
+});
 await writeSystemState(env, STATE_KEY, {
 active_for_id: null,
-resolved_at: new Date().toISOString(),
+resolved_at: resolvedAt,
 latest_at: latest.created_at
 });
 console.log('Staleness: incident resolved.');
@@ -402,9 +481,15 @@ return summary;
 }
 
 async function sendStalenessNotification(env, text) {
-const tasks = [];
+// Fan out to every configured channel. Each channel is wrapped so a single
+// failure (HTTP error, timeout, missing config) doesn't prevent the others
+// from receiving the alert. Per-channel success/failure is logged.
+const channels = [];
+
 if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHANNEL_ID) {
-tasks.push(fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+channels.push({
+name: 'telegram',
+send: () => fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({
@@ -413,20 +498,93 @@ text,
 parse_mode: 'Markdown',
 disable_web_page_preview: true
 })
-}).catch(e => console.log('Staleness telegram error:', e.message)));
+})
+});
 }
+
 if (env.STALENESS_WEBHOOK_URL) {
-tasks.push(fetch(env.STALENESS_WEBHOOK_URL, {
+channels.push({
+name: 'webhook',
+send: () => fetch(env.STALENESS_WEBHOOK_URL, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({ text })
-}).catch(e => console.log('Staleness webhook error:', e.message)));
+})
+});
 }
-if (!tasks.length) {
-console.log('Staleness: no notification channel configured (TELEGRAM_* or STALENESS_WEBHOOK_URL).');
-return;
+
+if (env.SLACK_WEBHOOK_URL) {
+channels.push({
+name: 'slack',
+send: () => fetch(env.SLACK_WEBHOOK_URL, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ text, mrkdwn: true })
+})
+});
 }
-await Promise.all(tasks);
+
+if (env.ALERT_EMAIL_TO && env.RESEND_API_KEY) {
+const recipients = String(env.ALERT_EMAIL_TO)
+.split(',')
+.map(s => s.trim())
+.filter(Boolean);
+if (recipients.length) {
+const fromEmail = env.ALERT_EMAIL_FROM || env.CONTACT_FROM_EMAIL || 'noreply@fxnewsbias.com';
+const subject = /\bTEST\b/.test(text)
+? 'FXNewsBias: test staleness alert'
+: (/recovered/i.test(text)
+? 'FXNewsBias: sentiment feed recovered'
+: 'FXNewsBias: sentiment feed stalled');
+const htmlBody = `<pre style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;white-space:pre-wrap;">${escapeHtml(text)}</pre>`;
+channels.push({
+name: 'email',
+send: () => fetch('https://api.resend.com/emails', {
+method: 'POST',
+headers: {
+'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+'Content-Type': 'application/json'
+},
+body: JSON.stringify({
+from: `FXNewsBias Alerts <${fromEmail}>`,
+to: recipients,
+subject,
+text,
+html: htmlBody
+})
+})
+});
+}
+} else if (env.ALERT_EMAIL_TO && !env.RESEND_API_KEY) {
+console.log('Staleness email: ALERT_EMAIL_TO is set but RESEND_API_KEY is missing; skipping email channel.');
+}
+
+if (!channels.length) {
+console.log('Staleness: no notification channel configured (TELEGRAM_*, STALENESS_WEBHOOK_URL, SLACK_WEBHOOK_URL, or ALERT_EMAIL_TO+RESEND_API_KEY).');
+return { sent: 0, failed: 0, results: [] };
+}
+
+const settled = await Promise.all(channels.map(async (ch) => {
+try {
+const resp = await ch.send();
+if (resp && typeof resp.ok === 'boolean' && !resp.ok) {
+let detail = '';
+try { detail = (await resp.text()).slice(0, 200); } catch (_) {}
+console.log(`Staleness ${ch.name}: failed HTTP ${resp.status} ${detail}`);
+return { channel: ch.name, ok: false, status: resp.status };
+}
+console.log(`Staleness ${ch.name}: delivered`);
+return { channel: ch.name, ok: true, status: resp && resp.status };
+} catch (e) {
+console.log(`Staleness ${ch.name}: error ${e.message}`);
+return { channel: ch.name, ok: false, error: e.message };
+}
+}));
+
+const sent = settled.filter(r => r.ok).length;
+const failed = settled.length - sent;
+console.log(`Staleness notification fan-out: ${sent}/${settled.length} channels delivered (${failed} failed).`);
+return { sent, failed, results: settled };
 }
 
 async function readSystemState(env, key) {
@@ -441,6 +599,374 @@ return rows && rows[0] ? rows[0].value : null;
 } catch (e) {
 console.log('readSystemState error:', e.message);
 return null;
+}
+}
+
+// ============================================
+// STALENESS INCIDENT HISTORY
+// ============================================
+// Append-only log of incidents in the `staleness_incidents` table. Helpers
+// here are best-effort: a failure to write history must NEVER prevent the
+// alert / state machine in checkSentimentFreshness from making progress.
+// See cf/staleness_incidents.sql for the table DDL.
+
+async function recordIncidentStart(env, key, startedAt, summary) {
+try {
+const r = await fetch(`${env.SUPABASE_URL}/rest/v1/staleness_incidents`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+apikey: env.SUPABASE_SERVICE_KEY,
+Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+Prefer: 'return=minimal'
+},
+body: JSON.stringify({ key, started_at: startedAt, summary: summary || {} })
+});
+if (!r.ok) console.log('recordIncidentStart non-ok:', r.status, (await r.text()).slice(0, 200));
+} catch (e) {
+console.log('recordIncidentStart error:', e.message);
+}
+}
+
+async function recordIncidentResolved(env, key, resolvedAt, extraSummary) {
+// Find the most recent open incident for this key and close it.
+try {
+const findResp = await fetch(
+`${env.SUPABASE_URL}/rest/v1/staleness_incidents`
++ `?key=eq.${encodeURIComponent(key)}`
++ `&resolved_at=is.null`
++ `&order=started_at.desc&limit=1&select=id,started_at,summary`,
+{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
+);
+if (!findResp.ok) {
+console.log('recordIncidentResolved find non-ok:', findResp.status);
+return;
+}
+const rows = await findResp.json();
+const open = Array.isArray(rows) && rows[0];
+if (!open) {
+console.log('recordIncidentResolved: no open incident found for', key);
+return;
+}
+const startedMs = Date.parse(open.started_at);
+const resolvedMs = Date.parse(resolvedAt);
+const durationMs = isFinite(startedMs) && isFinite(resolvedMs)
+? Math.max(0, resolvedMs - startedMs) : null;
+const mergedSummary = { ...(open.summary || {}), ...(extraSummary || {}) };
+const r = await fetch(
+`${env.SUPABASE_URL}/rest/v1/staleness_incidents?id=eq.${open.id}`,
+{
+method: 'PATCH',
+headers: {
+'Content-Type': 'application/json',
+apikey: env.SUPABASE_SERVICE_KEY,
+Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+Prefer: 'return=minimal'
+},
+body: JSON.stringify({
+resolved_at: resolvedAt,
+duration_ms: durationMs,
+summary: mergedSummary
+})
+}
+);
+if (!r.ok) console.log('recordIncidentResolved patch non-ok:', r.status, (await r.text()).slice(0, 200));
+} catch (e) {
+console.log('recordIncidentResolved error:', e.message);
+}
+}
+
+async function listRecentIncidents(env, key, limit) {
+const params = new URLSearchParams();
+params.set('select', 'id,key,started_at,resolved_at,duration_ms,summary');
+params.set('order', 'started_at.desc');
+params.set('limit', String(limit));
+if (key) params.set('key', `eq.${key}`);
+try {
+const r = await fetch(
+`${env.SUPABASE_URL}/rest/v1/staleness_incidents?${params.toString()}`,
+{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
+);
+if (!r.ok) {
+console.log('listRecentIncidents non-ok:', r.status);
+return [];
+}
+const rows = await r.json();
+return Array.isArray(rows) ? rows : [];
+} catch (e) {
+console.log('listRecentIncidents error:', e.message);
+return [];
+}
+}
+
+async function handleIncidentsView(url, env) {
+const key = url.searchParams.get('incident_key') || '';
+const limitRaw = parseInt(url.searchParams.get('limit'), 10);
+const limit = Math.min(Math.max(isFinite(limitRaw) ? limitRaw : 50, 1), 200);
+const format = (url.searchParams.get('format') || 'html').toLowerCase();
+
+let rows;
+if (key) {
+rows = await listRecentIncidents(env, key, limit);
+} else {
+// "Last N per key": pull a generous window then group/cap per key in JS
+// so we don't need a window function or a SQL view.
+const all = await listRecentIncidents(env, null, Math.max(limit * 4, 200));
+const perKey = new Map();
+for (const r of all) {
+const arr = perKey.get(r.key) || [];
+if (arr.length < limit) arr.push(r);
+perKey.set(r.key, arr);
+}
+rows = [];
+for (const arr of perKey.values()) rows.push(...arr);
+rows.sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at));
+}
+
+if (format === 'json') {
+return new Response(JSON.stringify({ key: key || null, limit, count: rows.length, incidents: rows }, null, 2), {
+status: 200, headers: { 'Content-Type': 'application/json' }
+});
+}
+
+return new Response(renderIncidentsHtml(rows, key, limit), {
+status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' }
+});
+}
+
+function formatDurationMs(ms) {
+if (ms == null || !isFinite(ms)) return '—';
+const totalSec = Math.round(ms / 1000);
+const h = Math.floor(totalSec / 3600);
+const m = Math.floor((totalSec % 3600) / 60);
+const s = totalSec % 60;
+if (h > 0) return `${h}h ${m}m`;
+if (m > 0) return `${m}m ${s}s`;
+return `${s}s`;
+}
+
+function renderIncidentsHtml(rows, key, limit) {
+const heading = key
+? `Last ${limit} staleness incidents for <code>${escapeHtml(key)}</code>`
+: `Last ${limit} staleness incidents per key`;
+const body = rows.length === 0
+? `<p class="empty">No incidents recorded yet.</p>`
+: `<table>
+<thead><tr>
+<th>Key</th><th>Started</th><th>Resolved</th><th>Duration</th><th>Summary</th>
+</tr></thead>
+<tbody>
+${rows.map(r => `<tr>
+<td><code>${escapeHtml(r.key)}</code></td>
+<td>${escapeHtml(r.started_at || '')}</td>
+<td>${r.resolved_at ? escapeHtml(r.resolved_at) : '<span class="open">ongoing</span>'}</td>
+<td>${escapeHtml(formatDurationMs(r.duration_ms))}</td>
+<td><pre>${escapeHtml(JSON.stringify(r.summary || {}, null, 2))}</pre></td>
+</tr>`).join('')}
+</tbody>
+</table>`;
+return `<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Staleness Incidents</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:24px;color:#0f172a;background:#f8fafc;}
+h1{font-size:18px;margin:0 0 16px;}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13px;}
+th,td{border:1px solid #e5e7eb;padding:8px 10px;vertical-align:top;text-align:left;}
+th{background:#f1f5f9;}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+pre{margin:0;font-size:12px;white-space:pre-wrap;word-break:break-word;max-width:480px;}
+.open{color:#b45309;font-weight:600;}
+.empty{color:#64748b;}
+.meta{color:#64748b;font-size:12px;margin-bottom:12px;}
+</style></head>
+<body>
+<h1>${heading}</h1>
+<p class="meta">${rows.length} row(s). Append <code>&amp;format=json</code> for JSON, <code>&amp;incident_key=sentiment_alert</code> to filter.</p>
+${body}
+</body></html>`;
+}
+
+// ============================================
+// SYSTEM_STATE RETENTION / CLEANUP
+// ============================================
+// `system_state` is upserted on every cron tick (one row per monitored
+// `key`, e.g. `sentiment_alert`). Over months a key that is no longer
+// monitored leaves a stale row behind, cluttering the Supabase table
+// view. This sweep deletes rows whose `updated_at` is older than the
+// retention window AND whose alert is NOT currently active (i.e.
+// `value->>active_for_id` IS NULL — see checkSentimentFreshness for
+// the schema). Active-alert rows are always preserved so we never
+// resurrect an already-fired alert by losing its dedupe state.
+//
+// Retention window: SYSTEM_STATE_RETENTION_DAYS env var, default 30 days.
+// Triggered by the 3-hourly cron tick and exposed manually at
+// /cleanup-system-state?key=... for ops.
+const DEFAULT_SYSTEM_STATE_RETENTION_DAYS = 30;
+
+// Parse the row count from a PostgREST DELETE response that used
+// `Prefer: count=exact`. The header looks like "Content-Range: 0-41/42"
+// or "*/0" when nothing matched. Returns null if the count cannot be
+// determined so callers can distinguish "0 deleted" from "unknown".
+function parseDeletedCount(resp) {
+const cr = resp.headers && resp.headers.get && resp.headers.get('Content-Range');
+if (!cr) return null;
+const slash = cr.lastIndexOf('/');
+if (slash < 0) return null;
+const n = parseInt(cr.slice(slash + 1), 10);
+return isNaN(n) ? null : n;
+}
+
+async function cleanupSystemState(env) {
+const days = parseInt(env.SYSTEM_STATE_RETENTION_DAYS, 10) || DEFAULT_SYSTEM_STATE_RETENTION_DAYS;
+const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+try {
+const url = `${env.SUPABASE_URL}/rest/v1/system_state`
++ `?updated_at=lt.${encodeURIComponent(cutoff)}`
++ `&value->>active_for_id=is.null`;
+const r = await fetch(url, {
+method: 'DELETE',
+headers: {
+apikey: env.SUPABASE_SERVICE_KEY,
+Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+Prefer: 'return=minimal,count=exact'
+}
+});
+if (!r.ok) {
+const errText = await r.text();
+console.log('cleanupSystemState non-ok:', r.status, errText);
+return { ok: false, status: r.status, error: errText, cutoff, retention_days: days };
+}
+const count = parseDeletedCount(r);
+console.log(`cleanupSystemState: deleted ${count} row(s) older than ${cutoff} (retention=${days}d)`);
+return { ok: true, deleted: count, cutoff, retention_days: days };
+} catch (e) {
+console.log('cleanupSystemState error:', e.message);
+return { ok: false, error: e.message, cutoff, retention_days: days };
+}
+}
+
+// ============================================
+// NEWS / SENTIMENT RETENTION SWEEP
+// ============================================
+// `news` and `sentiment` are append-only tables that grow with every
+// 3-hourly cron tick (~8x/day). Without a sweep they accumulate
+// indefinitely and become the dominant cost/clutter in Supabase
+// (system_state is tiny by comparison — see cleanupSystemState above).
+//
+// These sweeps run alongside cleanupSystemState on the 3-hourly tick
+// and are also exposed at /cleanup-news and /cleanup-sentiment for
+// manual ops.
+//
+// Retention windows (env-configurable):
+//   NEWS_RETENTION_DAYS       default 30  — last ~30d of headlines
+//   SENTIMENT_RETENTION_DAYS  default 90  — last ~90d of scores
+// Defaults are intentionally conservative: the dashboard only renders
+// the most recent rows, but staleness incidents (see
+// staleness_incidents.summary.sentiment_id) reference sentiment ids
+// that may be days old. Anything currently referenced by an *active*
+// staleness incident is preserved regardless of age.
+const DEFAULT_NEWS_RETENTION_DAYS = 30;
+const DEFAULT_SENTIMENT_RETENTION_DAYS = 90;
+
+// Returns the set of sentiment row ids that an active staleness
+// incident currently depends on. The source of truth is
+// `system_state.value.active_for_id` (the dedupe key written by
+// checkSentimentFreshness), NOT the append-only `staleness_incidents`
+// history table — system_state is what would resurrect a fired alert
+// if the referenced sentiment row were deleted.
+async function getActiveIncidentSentimentIds(env) {
+try {
+const r = await fetch(
+`${env.SUPABASE_URL}/rest/v1/system_state`
++ `?select=value&value->>active_for_id=not.is.null`,
+{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
+);
+if (!r.ok) {
+console.log('getActiveIncidentSentimentIds non-ok:', r.status);
+return [];
+}
+const rows = await r.json();
+const ids = [];
+for (const row of (Array.isArray(rows) ? rows : [])) {
+const id = row && row.value && row.value.active_for_id;
+if (id !== null && id !== undefined && id !== '') ids.push(id);
+}
+return ids;
+} catch (e) {
+console.log('getActiveIncidentSentimentIds error:', e.message);
+return [];
+}
+}
+
+async function cleanupNews(env) {
+const days = parseInt(env.NEWS_RETENTION_DAYS, 10) || DEFAULT_NEWS_RETENTION_DAYS;
+const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+try {
+// `news` rows are not referenced by any incident today, but if that
+// ever changes the same active-id guard used for sentiment should be
+// added here. For now: pure time-based sweep on created_at.
+const url = `${env.SUPABASE_URL}/rest/v1/news`
++ `?created_at=lt.${encodeURIComponent(cutoff)}`;
+// Use return=minimal so a large sweep doesn't ship every deleted
+// row back to the worker; PostgREST still reports the row count
+// in the Content-Range header (e.g. "0-41/42").
+const r = await fetch(url, {
+method: 'DELETE',
+headers: {
+apikey: env.SUPABASE_SERVICE_KEY,
+Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+Prefer: 'return=minimal,count=exact'
+}
+});
+if (!r.ok) {
+const errText = await r.text();
+console.log('cleanupNews non-ok:', r.status, errText);
+return { ok: false, status: r.status, error: errText, cutoff, retention_days: days };
+}
+const count = parseDeletedCount(r);
+console.log(`cleanupNews: deleted ${count} row(s) older than ${cutoff} (retention=${days}d)`);
+return { ok: true, deleted: count, cutoff, retention_days: days };
+} catch (e) {
+console.log('cleanupNews error:', e.message);
+return { ok: false, error: e.message, cutoff, retention_days: days };
+}
+}
+
+async function cleanupSentiment(env) {
+const days = parseInt(env.SENTIMENT_RETENTION_DAYS, 10) || DEFAULT_SENTIMENT_RETENTION_DAYS;
+const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+try {
+const protectedIds = await getActiveIncidentSentimentIds(env);
+let url = `${env.SUPABASE_URL}/rest/v1/sentiment`
++ `?created_at=lt.${encodeURIComponent(cutoff)}`;
+if (protectedIds.length) {
+// PostgREST `not.in.(...)` filter — quote each id defensively in
+// case ids are ever non-numeric.
+const list = protectedIds.map(id => `"${String(id).replace(/"/g, '\\"')}"`).join(',');
+url += `&id=not.in.(${encodeURIComponent(list)})`;
+}
+const r = await fetch(url, {
+method: 'DELETE',
+headers: {
+apikey: env.SUPABASE_SERVICE_KEY,
+Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+Prefer: 'return=minimal,count=exact'
+}
+});
+if (!r.ok) {
+const errText = await r.text();
+console.log('cleanupSentiment non-ok:', r.status, errText);
+return { ok: false, status: r.status, error: errText, cutoff, retention_days: days, protected_ids: protectedIds };
+}
+const count = parseDeletedCount(r);
+console.log(`cleanupSentiment: deleted ${count} row(s) older than ${cutoff} (retention=${days}d, protected=${protectedIds.length})`);
+return { ok: true, deleted: count, cutoff, retention_days: days, protected_ids: protectedIds };
+} catch (e) {
+console.log('cleanupSentiment error:', e.message);
+return { ok: false, error: e.message, cutoff, retention_days: days };
 }
 }
 
