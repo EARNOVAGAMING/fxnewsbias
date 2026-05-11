@@ -902,6 +902,16 @@ async function loadNews() {
 // MARKET PULSE: Risk-On/Off Gauge + Divergence Detection
 // ============================================
 async function loadMarketPulse() {
+  // Tiny HTML-escape helper. All Supabase strings are escaped before they hit
+  // innerHTML to neutralise any "<script>" or attribute-injection payloads
+  // that could land in the sentiment/news tables.
+  const esc = (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  // Coerce score-like fields to numbers; Postgres numeric arrives as a string
+  // through PostgREST and string concatenation here would corrupt the gauge.
+  const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+
   try {
     const sinceIso = new Date(Date.now() - 30 * 86400000).toISOString();
     const [sentRes, priceRes] = await Promise.all([
@@ -911,113 +921,101 @@ async function loadMarketPulse() {
         { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } })
     ]);
     const sent = await sentRes.json();
-    const prices = await priceRes.json();
-    if (!sent.length || !prices.length) return;
+    const prices = (await priceRes.json()) || [];
+    if (!Array.isArray(sent) || sent.length === 0) return;
 
-    // Latest sentiment per currency
+    // Latest sentiment per currency, plus the most recent reading from >=24h ago.
     const latest = {};
     const yesterday = {};
     const cutoff = Date.now() - 24 * 3600000;
     for (const r of sent) {
+      const score = num(r.score);
+      if (score == null) continue;
+      const row = { ...r, score };
       const t = new Date(r.created_at).getTime();
-      if (!latest[r.currency]) latest[r.currency] = r;
-      if (!yesterday[r.currency] && t <= cutoff) yesterday[r.currency] = r;
+      if (!latest[r.currency]) latest[r.currency] = row;
+      if (!yesterday[r.currency] && t <= cutoff) yesterday[r.currency] = row;
     }
 
     // ---- Risk-On/Off score ----
+    // Need at least one risk and one safe currency in `latest` to be meaningful.
     const risk = ['AUD', 'NZD', 'CAD'];
     const safe = ['USD', 'JPY', 'CHF'];
-    const avg = (arr) => arr.reduce((a,b) => a+b, 0) / arr.length;
-    const riskAvg = avg(risk.filter(c => latest[c]).map(c => latest[c].score));
-    const safeAvg = avg(safe.filter(c => latest[c]).map(c => latest[c].score));
-    let riskOnScore = Math.round(50 + (riskAvg - safeAvg) / 2);
-    riskOnScore = Math.max(0, Math.min(100, riskOnScore));
-
-    // Update gauge
+    const riskScores = risk.filter(c => latest[c]).map(c => latest[c].score);
+    const safeScores = safe.filter(c => latest[c]).map(c => latest[c].score);
     const gaugeFill = document.getElementById('gauge-fill');
     const needle = document.getElementById('gauge-needle');
-    const arcLen = Math.PI * 110; // half-circle arc length
-    const fillLen = arcLen * (riskOnScore / 100);
-    gaugeFill.setAttribute('stroke-dasharray', `${fillLen} 999`);
-    const needleAngle = -90 + (riskOnScore / 100) * 180; // -90 (left) to +90 (right)
-    needle.setAttribute('transform', `rotate(${needleAngle} 140 140)`);
-    needle.style.transition = 'transform 0.8s ease-out';
-
-    let mode, modeColor, explainer;
-    if (riskOnScore >= 65) { mode = 'RISK-ON'; modeColor = '#10b981';
-      explainer = 'Traders are buying risk currencies (AUD/NZD/CAD). Safe-havens (USD/JPY/CHF) under pressure.'; }
-    else if (riskOnScore <= 35) { mode = 'RISK-OFF'; modeColor = '#ef4444';
-      explainer = 'Flight to safety. USD/JPY/CHF in demand, commodity currencies under selling pressure.'; }
-    else { mode = 'BALANCED'; modeColor = '#f59e0b';
-      explainer = 'No clear risk regime. Markets mixed between risk-on and risk-off positioning.'; }
-
-    document.getElementById('pulse-score').textContent = riskOnScore;
-    document.getElementById('pulse-score').style.color = modeColor;
+    const scoreEl = document.getElementById('pulse-score');
     const modeEl = document.getElementById('pulse-mode');
-    modeEl.textContent = mode;
-    modeEl.style.color = modeColor;
-    document.getElementById('pulse-explainer').textContent = explainer;
+    const explainerEl = document.getElementById('pulse-explainer');
 
-    // ---- Divergence Detection ----
-    // Compare each pair: did pair sentiment 24h ago differ from now in same direction as price moved?
-    const pairBaseQuote = {
-      'EUR/USD': ['EUR','USD'], 'GBP/USD': ['GBP','USD'], 'AUD/USD': ['AUD','USD'],
-      'NZD/USD': ['NZD','USD'], 'USD/JPY': ['USD','JPY'], 'USD/CHF': ['USD','CHF'],
-      'USD/CAD': ['USD','CAD']
-    };
-    const divergences = [];
-    for (const p of prices) {
-      const bq = pairBaseQuote[p.pair];
-      if (!bq) continue;
-      const [B, Q] = bq;
-      if (!latest[B] || !latest[Q] || !yesterday[B] || !yesterday[Q]) continue;
-      const sentNow = (latest[B].score - latest[Q].score);   // bullish for pair if positive
-      const sentYest = (yesterday[B].score - yesterday[Q].score);
-      const sentDelta = sentNow - sentYest;                  // pair sentiment direction
-      const priceDelta = p.change_pct || 0;                  // pair price direction (% today)
-      // Need both moves to be material AND opposite
-      if (Math.abs(sentDelta) < 6) continue;
-      if (Math.abs(priceDelta) < 0.15) continue;
-      if (Math.sign(sentDelta) === Math.sign(priceDelta)) continue;
-      // It's a divergence
-      const sentArrow = sentDelta > 0 ? 'up' : 'down';
-      const priceArrow = priceDelta > 0 ? 'up' : 'down';
-      const text = sentDelta > 0
-        ? `News favours ${B} but price falling — possible reversal up if sentiment leads`
-        : `News turning against ${B} but price rising — fade-the-rally setup forming`;
-      divergences.push({
-        pair: p.pair, sentDelta, priceDelta, sentArrow, priceArrow,
-        text, score: Math.abs(sentDelta) + Math.abs(priceDelta) * 30
-      });
+    if (riskScores.length === 0 || safeScores.length === 0) {
+      // Insufficient data — show a neutral placeholder rather than NaN math.
+      if (scoreEl) { scoreEl.textContent = '--'; scoreEl.style.color = 'var(--text-muted)'; }
+      if (modeEl)  { modeEl.textContent = 'INSUFFICIENT DATA'; modeEl.style.color = 'var(--text-muted)'; }
+      if (explainerEl) explainerEl.textContent = 'Waiting for sentiment readings on the risk and safe-haven currency baskets.';
+    } else {
+      const avg = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+      const riskAvg = avg(riskScores);
+      const safeAvg = avg(safeScores);
+      let riskOnScore = Math.round(50 + (riskAvg - safeAvg) / 2);
+      riskOnScore = Math.max(0, Math.min(100, riskOnScore));
+
+      if (gaugeFill) {
+        const arcLen = Math.PI * 110;
+        gaugeFill.setAttribute('stroke-dasharray', `${arcLen * (riskOnScore / 100)} 999`);
+      }
+      if (needle) {
+        const needleAngle = -90 + (riskOnScore / 100) * 180;
+        needle.setAttribute('transform', `rotate(${needleAngle} 140 140)`);
+        needle.style.transition = 'transform 0.8s ease-out';
+      }
+
+      let mode, modeColor, explainer;
+      if (riskOnScore >= 65) { mode = 'RISK-ON'; modeColor = '#10b981';
+        explainer = 'Traders are buying risk currencies (AUD/NZD/CAD). Safe-havens (USD/JPY/CHF) under pressure.'; }
+      else if (riskOnScore <= 35) { mode = 'RISK-OFF'; modeColor = '#ef4444';
+        explainer = 'Flight to safety. USD/JPY/CHF in demand, commodity currencies under selling pressure.'; }
+      else { mode = 'BALANCED'; modeColor = '#f59e0b';
+        explainer = 'No clear risk regime. Markets mixed between risk-on and risk-off positioning.'; }
+
+      if (scoreEl) { scoreEl.textContent = riskOnScore; scoreEl.style.color = modeColor; }
+      if (modeEl) { modeEl.textContent = mode; modeEl.style.color = modeColor; }
+      if (explainerEl) explainerEl.textContent = explainer;
     }
-    divergences.sort((a, b) => b.score - a.score);
 
     // ---- Sentiment Streaks (per currency) ----
-    // Group rows by currency in chronological order, then count how many of the
-    // most-recent consecutive readings share the same bias.
+    // Bucket each currency's history by UTC day, take the LATEST bias per day,
+    // then count how many of the most-recent days share the current bias.
     const byCurr = {};
     for (const r of sent) {
       (byCurr[r.currency] = byCurr[r.currency] || []).push(r);
     }
+    const dayKey = (ts) => new Date(ts).toISOString().slice(0, 10);
     Object.keys(byCurr).forEach(c => {
-      // Already desc-sorted by created_at because the fetch is order=desc
-      const rows = byCurr[c];
+      const rows = byCurr[c]; // desc by created_at
       if (!rows.length) return;
-      const currentBias = rows[0].bias;
-      // Bucket by UTC day so multiple intra-day updates count once toward the streak
-      const dayKey = (ts) => new Date(ts).toISOString().slice(0,10);
-      let streakDays = 0;
-      let lastDay = null;
+      // Walk rows once; each new UTC day records the bias of its FIRST seen row,
+      // which is the latest row of that day because the source list is desc.
+      const dayBias = []; // [{day, bias}] from newest to oldest
+      const seen = new Set();
       for (const r of rows) {
-        if (r.bias !== currentBias) break;
         const dk = dayKey(r.created_at);
-        if (dk !== lastDay) { streakDays++; lastDay = dk; }
+        if (seen.has(dk)) continue;
+        seen.add(dk);
+        dayBias.push({ day: dk, bias: r.bias });
+      }
+      const currentBias = dayBias[0]?.bias;
+      let streakDays = 0;
+      for (const d of dayBias) {
+        if (d.bias !== currentBias) break;
+        streakDays++;
       }
       const card = document.querySelector(`.sent-card[data-currency="${c}"]`);
       if (!card) return;
       const pill = card.querySelector('.sent-streak');
       if (!pill) return;
-      if (streakDays < 2) {
+      if (!currentBias || streakDays < 2) {
         pill.textContent = '';
         pill.className = 'sent-streak';
         return;
@@ -1029,13 +1027,13 @@ async function loadMarketPulse() {
     });
 
     // ---- 24h Top Movers ----
-    // Largest absolute score change between latest reading and one ~24h ago.
+    // Independent of price data — uses sentiment only.
     const movers = [];
     Object.keys(latest).forEach(c => {
       if (!yesterday[c]) return;
       const delta = latest[c].score - yesterday[c].score;
       if (Math.abs(delta) < 3) return; // ignore noise
-      movers.push({ currency: c, delta, score: latest[c].score });
+      movers.push({ currency: c, delta });
     });
     movers.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
     const moversEl = document.getElementById('movers-list');
@@ -1048,24 +1046,59 @@ async function loadMarketPulse() {
           const arrow = up ? '▲' : '▼';
           const cls = up ? 'mover-up' : 'mover-down';
           const sign = up ? '+' : '';
-          return `<span class="mover-item"><span class="mover-curr">${m.currency}</span><span class="mover-arrow ${cls}">${arrow}</span><span class="mover-delta ${cls}">${sign}${m.delta.toFixed(0)} pts</span></span>`;
+          return `<span class="mover-item"><span class="mover-curr">${esc(m.currency)}</span><span class="mover-arrow ${cls}">${arrow}</span><span class="mover-delta ${cls}">${sign}${m.delta.toFixed(0)} pts</span></span>`;
         }).join('');
       }
     }
 
+    // ---- Divergence Detection ----
+    // Dedupe prices by pair (latest only) so a pair never appears twice.
+    const latestPrice = {};
+    for (const p of prices) {
+      if (!latestPrice[p.pair]) latestPrice[p.pair] = p;
+    }
+    const pairBaseQuote = {
+      'EUR/USD': ['EUR','USD'], 'GBP/USD': ['GBP','USD'], 'AUD/USD': ['AUD','USD'],
+      'NZD/USD': ['NZD','USD'], 'USD/JPY': ['USD','JPY'], 'USD/CHF': ['USD','CHF'],
+      'USD/CAD': ['USD','CAD']
+    };
+    const divergences = [];
+    Object.entries(pairBaseQuote).forEach(([pair, [B, Q]]) => {
+      const p = latestPrice[pair];
+      if (!p) return;
+      if (!latest[B] || !latest[Q] || !yesterday[B] || !yesterday[Q]) return;
+      const sentDelta = (latest[B].score - latest[Q].score) - (yesterday[B].score - yesterday[Q].score);
+      const priceDelta = num(p.change_pct) || 0;
+      if (Math.abs(sentDelta) < 6) return;
+      if (Math.abs(priceDelta) < 0.15) return;
+      if (Math.sign(sentDelta) === Math.sign(priceDelta)) return;
+      const sentArrow = sentDelta > 0 ? 'up' : 'down';
+      const priceArrow = priceDelta > 0 ? 'up' : 'down';
+      const text = sentDelta > 0
+        ? `News favours ${B} but price falling — possible reversal up if sentiment leads`
+        : `News turning against ${B} but price rising — fade-the-rally setup forming`;
+      divergences.push({
+        pair, sentDelta, sentArrow, priceArrow, text,
+        score: Math.abs(sentDelta) + Math.abs(priceDelta) * 30
+      });
+    });
+    divergences.sort((a, b) => b.score - a.score);
+
     const list = document.getElementById('divg-list');
-    if (divergences.length === 0) {
-      list.innerHTML = `<div class="divg-empty">✓ No divergences right now — sentiment and price are aligned across all pairs.</div>`;
-    } else {
-      list.innerHTML = divergences.slice(0, 4).map(d => `
-        <div class="divg-item ${d.sentDelta > 0 ? 'bull' : 'bear'}">
-          <div class="divg-pair">${d.pair}</div>
-          <div class="divg-text">${d.text}</div>
-          <div class="divg-arrows">
-            <span title="News sentiment direction"><span class="${d.sentArrow === 'up' ? 'divg-up' : 'divg-down'}">News ${d.sentArrow === 'up' ? '▲' : '▼'}</span></span>
-            <span title="Price direction"><span class="${d.priceArrow === 'up' ? 'divg-up' : 'divg-down'}">Price ${d.priceArrow === 'up' ? '▲' : '▼'}</span></span>
-          </div>
-        </div>`).join('');
+    if (list) {
+      if (divergences.length === 0) {
+        list.innerHTML = `<div class="divg-empty">✓ No divergences right now — sentiment and price are aligned across all pairs.</div>`;
+      } else {
+        list.innerHTML = divergences.slice(0, 4).map(d => `
+          <div class="divg-item ${d.sentDelta > 0 ? 'bull' : 'bear'}">
+            <div class="divg-pair">${esc(d.pair)}</div>
+            <div class="divg-text">${esc(d.text)}</div>
+            <div class="divg-arrows">
+              <span title="News sentiment direction"><span class="${d.sentArrow === 'up' ? 'divg-up' : 'divg-down'}">News ${d.sentArrow === 'up' ? '▲' : '▼'}</span></span>
+              <span title="Price direction"><span class="${d.priceArrow === 'up' ? 'divg-up' : 'divg-down'}">Price ${d.priceArrow === 'up' ? '▲' : '▼'}</span></span>
+            </div>
+          </div>`).join('');
+      }
     }
   } catch (e) {
     console.log('Market pulse error:', e);
