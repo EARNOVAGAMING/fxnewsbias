@@ -76,6 +76,10 @@ nav a:hover{color:var(--accent);}
 .hero-stat{text-align:right;}
 .hero-stat-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
 .hero-stat-value{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;}
+.hero-stat-sub{color:#64748b;}
+.hero-stat.is-stale .hero-stat-value,.hero-stat.is-stale .hero-stat-sub{color:#f59e0b;}
+.hero-stat.is-stale .hero-stat-label::after{content:" • delayed";color:#f59e0b;font-weight:700;}
+.hero-stat[title]{cursor:help;}
 
 .main{max-width:1280px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:24px;}
 .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
@@ -116,6 +120,33 @@ nav a:hover{color:var(--accent);}
 .closed-status{background:#f3f4f6;color:#6b7280;}
 
 .ad-slot{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:8px;padding:24px;text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:24px;}
+
+/* MARKET PULSE */
+.pulse-wrap{max-width:1280px;margin:24px auto 0;padding:0 20px;}
+.pulse-grid{display:grid;grid-template-columns:340px 1fr;gap:18px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.03);}
+.pulse-gauge-card{display:flex;flex-direction:column;align-items:center;padding-right:18px;border-right:1px solid var(--border);}
+.pulse-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;}
+.pulse-title{font-size:16px;font-weight:800;margin-bottom:14px;}
+.pulse-score{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:800;line-height:1;margin-top:8px;margin-bottom:4px;}
+.pulse-mode{font-size:13px;font-weight:700;letter-spacing:0.5px;margin-bottom:8px;text-transform:uppercase;}
+.pulse-explainer{font-size:11px;color:var(--text-muted);text-align:center;line-height:1.5;max-width:280px;}
+.pulse-divg{display:flex;flex-direction:column;}
+.divg-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.divg-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:6px;}
+.divg-help{font-size:11px;color:var(--text-muted);}
+.divg-list{display:flex;flex-direction:column;gap:8px;}
+.divg-item{background:var(--bg-soft);border-left:3px solid #f59e0b;border-radius:6px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.divg-item.bull{border-left-color:#10b981;}
+.divg-item.bear{border-left-color:#ef4444;}
+.divg-pair{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:14px;min-width:80px;}
+.divg-text{font-size:12px;color:var(--text-soft);flex:1;line-height:1.4;}
+.divg-arrows{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;display:flex;gap:8px;flex-shrink:0;}
+.divg-up{color:var(--bull);}.divg-down{color:var(--bear);}.divg-flat{color:var(--text-muted);}
+.divg-empty{color:var(--text-muted);font-size:13px;text-align:center;padding:18px;font-style:italic;}
+@media(max-width:760px){
+  .pulse-grid{grid-template-columns:1fr;padding:16px;}
+  .pulse-gauge-card{padding-right:0;padding-bottom:18px;border-right:none;border-bottom:1px solid var(--border);}
+}
 
 .loading-pulse{animation:pulse 1.5s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
@@ -221,7 +252,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div>
     </div>
     <div class="hero-stats">
-      <div class="hero-stat">
+      <div class="hero-stat" id="last-updated-stat">
         <div class="hero-stat-label">Last Updated</div>
         <div class="hero-stat-value" id="last-updated">--</div>
       </div>
@@ -229,10 +260,49 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="hero-stat-label">News Analyzed</div>
         <div class="hero-stat-value" id="news-count">--</div>
       </div>
-      <div class="hero-stat">
+      <div class="hero-stat" id="next-update-stat">
         <div class="hero-stat-label">Next Update</div>
         <div class="hero-stat-value" id="next-update">--:--</div>
-        <div id="next-update-sub" style="font-size:10px;color:#64748b;margin-top:2px;letter-spacing:0.5px;">--</div>
+        <div id="next-update-sub" class="hero-stat-sub" style="font-size:10px;margin-top:2px;letter-spacing:0.5px;">--</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Market Pulse -->
+<section class="pulse-wrap">
+  <div class="pulse-grid">
+    <div class="pulse-gauge-card">
+      <div class="pulse-label">Market Pulse</div>
+      <div class="pulse-title">Risk Appetite Right Now</div>
+      <div id="pulse-gauge-svg">
+        <svg width="280" height="160" viewBox="0 0 280 160">
+          <defs>
+            <linearGradient id="riskGrad" x1="0" x2="1">
+              <stop offset="0%" stop-color="#ef4444"/>
+              <stop offset="50%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#10b981"/>
+            </linearGradient>
+          </defs>
+          <path d="M 30 140 A 110 110 0 0 1 250 140" stroke="#e5e7eb" stroke-width="22" fill="none" stroke-linecap="round"/>
+          <path id="gauge-fill" d="M 30 140 A 110 110 0 0 1 250 140" stroke="url(#riskGrad)" stroke-width="22" fill="none" stroke-linecap="round" stroke-dasharray="0 999"/>
+          <text x="30" y="158" font-size="10" fill="#9ca3af" font-family="Inter, sans-serif">Risk-Off</text>
+          <text x="220" y="158" font-size="10" fill="#9ca3af" font-family="Inter, sans-serif">Risk-On</text>
+          <line id="gauge-needle" x1="140" y1="140" x2="140" y2="50" stroke="#0f172a" stroke-width="3" stroke-linecap="round" transform="rotate(-90 140 140)"/>
+          <circle cx="140" cy="140" r="6" fill="#0f172a"/>
+        </svg>
+      </div>
+      <div id="pulse-score" class="pulse-score">--</div>
+      <div id="pulse-mode" class="pulse-mode" style="color:#6b7280;">Loading...</div>
+      <div id="pulse-explainer" class="pulse-explainer">Risk currencies (AUD, NZD, CAD) vs safe-havens (USD, JPY, CHF)</div>
+    </div>
+    <div class="pulse-divg">
+      <div class="divg-head">
+        <div class="divg-title">⚠️ Sentiment vs Price Divergence</div>
+        <span class="divg-help" title="When news sentiment moves one way but price moves the other — often signals a reversal or fade">last 24h · what is this?</span>
+      </div>
+      <div id="divg-list" class="divg-list">
+        <div class="divg-empty">⏳ Scanning pairs for divergence...</div>
       </div>
     </div>
   </div>
@@ -587,6 +657,8 @@ async function loadSentiment() {
     // Track bullish/bearish for mood
     let bullishCount = 0;
     let bearishCount = 0;
+    let scoreSum = 0;
+    let scoreN = 0;
 
     data.forEach(item => {
       const { currency, score, bias, drivers, created_at } = item;
@@ -594,6 +666,8 @@ async function loadSentiment() {
       // Count for mood
       if (bias === 'Bullish') bullishCount++;
       else if (bias === 'Bearish') bearishCount++;
+      const numScore = Number(score);
+      if (!Number.isNaN(numScore)) { scoreSum += numScore; scoreN++; }
 
       const card = document.querySelector(`[data-currency="${currency}"]`);
       if (!card) return;
@@ -633,18 +707,21 @@ async function loadSentiment() {
     const moodTitle = document.getElementById('mood-title');
     const moodDesc = document.getElementById('mood-desc');
 
-    if (bullishCount > bearishCount) {
+    const avgScore = scoreN > 0 ? Math.round(scoreSum / scoreN) : 50;
+    const summary = `${bullishCount} bullish · ${bearishCount} bearish · avg score ${avgScore}`;
+
+    if (avgScore > 55) {
       moodIcon.textContent = '🟢';
       moodTitle.textContent = 'Market Mood: Risk-On';
-      moodDesc.textContent = 'Bullish sentiment dominates · Risk appetite high';
-    } else if (bearishCount > bullishCount) {
+      moodDesc.textContent = `${summary} · Risk appetite high`;
+    } else if (avgScore < 45) {
       moodIcon.textContent = '🔴';
       moodTitle.textContent = 'Market Mood: Risk-Off';
-      moodDesc.textContent = 'Bearish sentiment dominates · Safe-haven demand rising';
+      moodDesc.textContent = `${summary} · Safe-haven demand rising`;
     } else {
       moodIcon.textContent = '⚠️';
       moodTitle.textContent = 'Market Mood: Mixed';
-      moodDesc.textContent = 'Mixed signals · Trade with caution';
+      moodDesc.textContent = `${summary} · Trade with caution`;
     }
 
     // Last updated
@@ -786,6 +863,119 @@ async function loadNews() {
 }
 
 // ============================================
+// MARKET PULSE: Risk-On/Off Gauge + Divergence Detection
+// ============================================
+async function loadMarketPulse() {
+  try {
+    const sinceIso = new Date(Date.now() - 30 * 86400000).toISOString();
+    const [sentRes, priceRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/sentiment?created_at=gte.${sinceIso}&order=created_at.desc&limit=500`,
+        { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }),
+      fetch(`${SUPABASE_URL}/rest/v1/prices?order=updated_at.desc&limit=50`,
+        { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } })
+    ]);
+    const sent = await sentRes.json();
+    const prices = await priceRes.json();
+    if (!sent.length || !prices.length) return;
+
+    // Latest sentiment per currency
+    const latest = {};
+    const yesterday = {};
+    const cutoff = Date.now() - 24 * 3600000;
+    for (const r of sent) {
+      const t = new Date(r.created_at).getTime();
+      if (!latest[r.currency]) latest[r.currency] = r;
+      if (!yesterday[r.currency] && t <= cutoff) yesterday[r.currency] = r;
+    }
+
+    // ---- Risk-On/Off score ----
+    const risk = ['AUD', 'NZD', 'CAD'];
+    const safe = ['USD', 'JPY', 'CHF'];
+    const avg = (arr) => arr.reduce((a,b) => a+b, 0) / arr.length;
+    const riskAvg = avg(risk.filter(c => latest[c]).map(c => latest[c].score));
+    const safeAvg = avg(safe.filter(c => latest[c]).map(c => latest[c].score));
+    let riskOnScore = Math.round(50 + (riskAvg - safeAvg) / 2);
+    riskOnScore = Math.max(0, Math.min(100, riskOnScore));
+
+    // Update gauge
+    const gaugeFill = document.getElementById('gauge-fill');
+    const needle = document.getElementById('gauge-needle');
+    const arcLen = Math.PI * 110; // half-circle arc length
+    const fillLen = arcLen * (riskOnScore / 100);
+    gaugeFill.setAttribute('stroke-dasharray', `${fillLen} 999`);
+    const needleAngle = -90 + (riskOnScore / 100) * 180; // -90 (left) to +90 (right)
+    needle.setAttribute('transform', `rotate(${needleAngle} 140 140)`);
+    needle.style.transition = 'transform 0.8s ease-out';
+
+    let mode, modeColor, explainer;
+    if (riskOnScore >= 65) { mode = 'RISK-ON'; modeColor = '#10b981';
+      explainer = 'Traders are buying risk currencies (AUD/NZD/CAD). Safe-havens (USD/JPY/CHF) under pressure.'; }
+    else if (riskOnScore <= 35) { mode = 'RISK-OFF'; modeColor = '#ef4444';
+      explainer = 'Flight to safety. USD/JPY/CHF in demand, commodity currencies under selling pressure.'; }
+    else { mode = 'BALANCED'; modeColor = '#f59e0b';
+      explainer = 'No clear risk regime. Markets mixed between risk-on and risk-off positioning.'; }
+
+    document.getElementById('pulse-score').textContent = riskOnScore;
+    document.getElementById('pulse-score').style.color = modeColor;
+    const modeEl = document.getElementById('pulse-mode');
+    modeEl.textContent = mode;
+    modeEl.style.color = modeColor;
+    document.getElementById('pulse-explainer').textContent = explainer;
+
+    // ---- Divergence Detection ----
+    // Compare each pair: did pair sentiment 24h ago differ from now in same direction as price moved?
+    const pairBaseQuote = {
+      'EUR/USD': ['EUR','USD'], 'GBP/USD': ['GBP','USD'], 'AUD/USD': ['AUD','USD'],
+      'NZD/USD': ['NZD','USD'], 'USD/JPY': ['USD','JPY'], 'USD/CHF': ['USD','CHF'],
+      'USD/CAD': ['USD','CAD']
+    };
+    const divergences = [];
+    for (const p of prices) {
+      const bq = pairBaseQuote[p.pair];
+      if (!bq) continue;
+      const [B, Q] = bq;
+      if (!latest[B] || !latest[Q] || !yesterday[B] || !yesterday[Q]) continue;
+      const sentNow = (latest[B].score - latest[Q].score);   // bullish for pair if positive
+      const sentYest = (yesterday[B].score - yesterday[Q].score);
+      const sentDelta = sentNow - sentYest;                  // pair sentiment direction
+      const priceDelta = p.change_pct || 0;                  // pair price direction (% today)
+      // Need both moves to be material AND opposite
+      if (Math.abs(sentDelta) < 6) continue;
+      if (Math.abs(priceDelta) < 0.15) continue;
+      if (Math.sign(sentDelta) === Math.sign(priceDelta)) continue;
+      // It's a divergence
+      const sentArrow = sentDelta > 0 ? 'up' : 'down';
+      const priceArrow = priceDelta > 0 ? 'up' : 'down';
+      const text = sentDelta > 0
+        ? `News favours ${B} but price falling — possible reversal up if sentiment leads`
+        : `News turning against ${B} but price rising — fade-the-rally setup forming`;
+      divergences.push({
+        pair: p.pair, sentDelta, priceDelta, sentArrow, priceArrow,
+        text, score: Math.abs(sentDelta) + Math.abs(priceDelta) * 30
+      });
+    }
+    divergences.sort((a, b) => b.score - a.score);
+
+    const list = document.getElementById('divg-list');
+    if (divergences.length === 0) {
+      list.innerHTML = `<div class="divg-empty">✓ No divergences right now — sentiment and price are aligned across all pairs.</div>`;
+    } else {
+      list.innerHTML = divergences.slice(0, 4).map(d => `
+        <div class="divg-item ${d.sentDelta > 0 ? 'bull' : 'bear'}">
+          <div class="divg-pair">${d.pair}</div>
+          <div class="divg-text">${d.text}</div>
+          <div class="divg-arrows">
+            <span title="News sentiment direction"><span class="${d.sentArrow === 'up' ? 'divg-up' : 'divg-down'}">News ${d.sentArrow === 'up' ? '▲' : '▼'}</span></span>
+            <span title="Price direction"><span class="${d.priceArrow === 'up' ? 'divg-up' : 'divg-down'}">Price ${d.priceArrow === 'up' ? '▲' : '▼'}</span></span>
+          </div>
+        </div>`).join('');
+    }
+  } catch (e) {
+    console.log('Market pulse error:', e);
+  }
+}
+
+// ============================================
 // INIT
 // ============================================
 updateDateTime();
@@ -793,36 +983,117 @@ updateSessions();
 loadSentiment();
 loadPrices();
 loadNews();
+loadMarketPulse();
 
 // ============================================
-// NEXT UPDATE COUNTDOWN (3-hour cycle)
+// NEXT UPDATE TIME (derived from actual sentiment timestamps)
 // ============================================
+// Single source of truth: the real cadence of the sentiment cron is read from
+// the two most recent distinct `created_at` timestamps in Supabase. If the
+// cron in `.local/cf/cron_worker_clean.js` changes, this updates automatically.
+let nextUpdateState = { lastRunMs: null, intervalMs: null };
+
+async function loadNextRunSchedule() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/sentiment?select=created_at&order=created_at.desc&limit=50`,
+      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
+    );
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) return;
+
+    // Bucket timestamps to the minute so all currencies in one run collapse together.
+    const seen = new Set();
+    const distinct = [];
+    for (const r of rows) {
+      const t = new Date(r.created_at).getTime();
+      if (!Number.isFinite(t)) continue;
+      const bucket = Math.floor(t / 60000);
+      if (seen.has(bucket)) continue;
+      seen.add(bucket);
+      distinct.push(t);
+      if (distinct.length >= 2) break;
+    }
+    if (distinct.length === 0) return;
+
+    nextUpdateState.lastRunMs = distinct[0];
+    if (distinct.length >= 2) {
+      const delta = distinct[0] - distinct[1];
+      // Sanity-clamp the interval to [5 min, 24 h] to ignore one-off gaps.
+      if (delta >= 5 * 60000 && delta <= 24 * 3600000) {
+        nextUpdateState.intervalMs = delta;
+      }
+    }
+    updateNextRunTime();
+  } catch (e) {
+    console.log('Next-update schedule error:', e);
+  }
+}
+
 function updateNextRunTime() {
   const nextUpdateEl = document.getElementById('next-update');
   const nextUpdateSub = document.getElementById('next-update-sub');
+  const nextStat = document.getElementById('next-update-stat');
+  const lastStat = document.getElementById('last-updated-stat');
   if (!nextUpdateEl) return;
 
-  // Sentiment cron runs every 3 hours UTC: 0, 3, 6, 9, 12, 15, 18, 21
-  const now = new Date();
-  const next = new Date(now);
-  const utcHour = now.getUTCHours();
-  const nextUtcHour = Math.floor(utcHour / 3) * 3 + 3;
-  next.setUTCHours(nextUtcHour, 0, 0, 0);
+  const now = Date.now();
+  const { lastRunMs, intervalMs } = nextUpdateState;
 
-  // Format clock time in user's local timezone (12-hour with AM/PM)
-  const clock = next.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  nextUpdateEl.textContent = clock;
+  // Detect a stalled cron: last run is more than 1.5x the observed interval ago.
+  const isStale = !!(lastRunMs && intervalMs && (now - lastRunMs) > 1.5 * intervalMs);
+  const staleTip = isStale
+    ? 'Sentiment feed is behind schedule — the latest update is more than one cycle late.'
+    : '';
+  for (const el of [nextStat, lastStat]) {
+    if (!el) continue;
+    el.classList.toggle('is-stale', isStale);
+    if (isStale) el.setAttribute('title', staleTip);
+    else el.removeAttribute('title');
+  }
 
-  // Countdown subtitle
+  let nextMs;
+  if (lastRunMs && intervalMs) {
+    // Step forward from the last real run by the observed interval.
+    nextMs = lastRunMs + intervalMs;
+    while (nextMs <= now) nextMs += intervalMs;
+  } else if (lastRunMs) {
+    // We know when the last run was, but not the cadence yet.
+    nextUpdateEl.textContent = 'soon';
+    if (nextUpdateSub) nextUpdateSub.textContent = 'schedule unavailable';
+    return;
+  } else {
+    // No data loaded yet — keep neutral placeholders.
+    nextUpdateEl.textContent = '--:--';
+    if (nextUpdateSub) nextUpdateSub.textContent = '--';
+    return;
+  }
+
+  const next = new Date(nextMs);
+  const utcClock =
+    String(next.getUTCHours()).padStart(2, '0') + ':' +
+    String(next.getUTCMinutes()).padStart(2, '0') + ' UTC';
+  nextUpdateEl.textContent = isStale ? 'overdue' : utcClock;
+
   if (nextUpdateSub) {
-    const totalMins = Math.max(0, Math.ceil((next - now) / 60000));
-    const h = Math.floor(totalMins / 60);
-    const m = totalMins % 60;
-    nextUpdateSub.textContent = h > 0 ? `in ${h}h ${String(m).padStart(2,'0')}m` : `in ${m}m`;
+    if (isStale) {
+      const lateMins = Math.floor((now - lastRunMs - intervalMs) / 60000);
+      const h = Math.floor(lateMins / 60);
+      const m = lateMins % 60;
+      nextUpdateSub.textContent = h > 0
+        ? `late by ${h}h ${String(m).padStart(2,'0')}m`
+        : `late by ${m}m`;
+    } else {
+      const totalMins = Math.max(0, Math.ceil((nextMs - now) / 60000));
+      const h = Math.floor(totalMins / 60);
+      const m = totalMins % 60;
+      nextUpdateSub.textContent = h > 0 ? `in ${h}h ${String(m).padStart(2,'0')}m` : `in ${m}m`;
+    }
   }
 }
-updateNextRunTime();
-setInterval(updateNextRunTime, 60000); // Update every minute
+loadNextRunSchedule();
+setInterval(updateNextRunTime, 60000); // Refresh countdown every minute
+setInterval(loadNextRunSchedule, 15 * 60000); // Re-check actual schedule every 15 minutes
 // Hide Pro banner and ads for Pro users
 window.addEventListener('userLoaded', (e) => {
   if (e.detail.isPro) {
@@ -841,6 +1112,7 @@ setInterval(() => {
   loadSentiment();
   loadPrices();
   loadNews();
+  loadMarketPulse();
   updateSessions();
 }, 300000);
 
