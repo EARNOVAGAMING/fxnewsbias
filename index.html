@@ -99,6 +99,23 @@ nav a:hover{color:var(--accent);}
 .sent-bar{height:5px;background:var(--bg-soft);border-radius:3px;overflow:hidden;margin-bottom:10px;}
 .sent-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
 .sent-driver{font-size:12px;color:var(--text-soft);line-height:1.4;}
+.sent-streak{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-bottom:8px;letter-spacing:.3px;text-transform:uppercase;opacity:0;transition:opacity .3s;}
+.sent-streak.show{opacity:1;}
+.sent-streak.bull{background:rgba(16,185,129,.12);color:#047857;}
+.sent-streak.bear{background:rgba(239,68,68,.12);color:#b91c1c;}
+.sent-streak.neut{background:rgba(245,158,11,.12);color:#92400e;}
+.movers-wrap{max-width:1280px;margin:14px auto 0;padding:0 20px;}
+.movers-strip{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(0,0,0,0.03);}
+.movers-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);white-space:nowrap;}
+.movers-list{display:flex;gap:14px;flex-wrap:wrap;flex:1;}
+.mover-item{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;}
+.mover-arrow{font-size:14px;font-weight:800;}
+.mover-up{color:#10b981;}
+.mover-down{color:#ef4444;}
+.mover-curr{font-weight:800;}
+.mover-delta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-soft);}
+.movers-empty{font-size:12px;color:var(--text-muted);font-style:italic;}
+@media(max-width:600px){.movers-strip{padding:10px 12px;gap:10px;}.mover-item{font-size:12px;}}
 
 .news-list{display:flex;flex-direction:column;gap:12px;}
 .news-item{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;}
@@ -306,6 +323,17 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div>
     </div>
   </div>
+
+  <!-- 24h Top Movers Strip -->
+  <div class="movers-wrap">
+    <div class="movers-strip">
+      <span class="movers-label">Top Movers · 24h</span>
+      <div class="movers-list" id="movers-list">
+        <span class="movers-empty">Loading sentiment shifts...</span>
+      </div>
+    </div>
+  </div>
+
 </section>
 
 <!-- Main Layout -->
@@ -327,6 +355,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </div>
         <div class="sent-score" style="color:var(--text-muted);">--</div>
         <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-streak"></div>
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
@@ -339,6 +368,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </div>
         <div class="sent-score" style="color:var(--text-muted);">--</div>
         <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-streak"></div>
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
@@ -351,6 +381,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </div>
         <div class="sent-score" style="color:var(--text-muted);">--</div>
         <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-streak"></div>
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
@@ -363,6 +394,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </div>
         <div class="sent-score" style="color:var(--text-muted);">--</div>
         <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-streak"></div>
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
@@ -375,6 +407,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </div>
         <div class="sent-score" style="color:var(--text-muted);">--</div>
         <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-streak"></div>
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
@@ -387,6 +420,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </div>
         <div class="sent-score" style="color:var(--text-muted);">--</div>
         <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-streak"></div>
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
@@ -399,6 +433,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </div>
         <div class="sent-score" style="color:var(--text-muted);">--</div>
         <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-streak"></div>
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
@@ -411,6 +446,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </div>
         <div class="sent-score" style="color:var(--text-muted);">--</div>
         <div class="sent-bar"><div class="sent-fill" style="width:50%;background:var(--text-muted);"></div></div>
+        <div class="sent-streak"></div>
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
@@ -955,6 +991,67 @@ async function loadMarketPulse() {
       });
     }
     divergences.sort((a, b) => b.score - a.score);
+
+    // ---- Sentiment Streaks (per currency) ----
+    // Group rows by currency in chronological order, then count how many of the
+    // most-recent consecutive readings share the same bias.
+    const byCurr = {};
+    for (const r of sent) {
+      (byCurr[r.currency] = byCurr[r.currency] || []).push(r);
+    }
+    Object.keys(byCurr).forEach(c => {
+      // Already desc-sorted by created_at because the fetch is order=desc
+      const rows = byCurr[c];
+      if (!rows.length) return;
+      const currentBias = rows[0].bias;
+      // Bucket by UTC day so multiple intra-day updates count once toward the streak
+      const dayKey = (ts) => new Date(ts).toISOString().slice(0,10);
+      let streakDays = 0;
+      let lastDay = null;
+      for (const r of rows) {
+        if (r.bias !== currentBias) break;
+        const dk = dayKey(r.created_at);
+        if (dk !== lastDay) { streakDays++; lastDay = dk; }
+      }
+      const card = document.querySelector(`.sent-card[data-currency="${c}"]`);
+      if (!card) return;
+      const pill = card.querySelector('.sent-streak');
+      if (!pill) return;
+      if (streakDays < 2) {
+        pill.textContent = '';
+        pill.className = 'sent-streak';
+        return;
+      }
+      const cls = currentBias === 'Bullish' ? 'bull' : currentBias === 'Bearish' ? 'bear' : 'neut';
+      const icon = currentBias === 'Bullish' ? '▲' : currentBias === 'Bearish' ? '▼' : '●';
+      pill.textContent = `${icon} ${currentBias} ${streakDays}d streak`;
+      pill.className = `sent-streak show ${cls}`;
+    });
+
+    // ---- 24h Top Movers ----
+    // Largest absolute score change between latest reading and one ~24h ago.
+    const movers = [];
+    Object.keys(latest).forEach(c => {
+      if (!yesterday[c]) return;
+      const delta = latest[c].score - yesterday[c].score;
+      if (Math.abs(delta) < 3) return; // ignore noise
+      movers.push({ currency: c, delta, score: latest[c].score });
+    });
+    movers.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+    const moversEl = document.getElementById('movers-list');
+    if (moversEl) {
+      if (movers.length === 0) {
+        moversEl.innerHTML = '<span class="movers-empty">Sentiment steady across all currencies in the last 24h.</span>';
+      } else {
+        moversEl.innerHTML = movers.slice(0, 5).map(m => {
+          const up = m.delta > 0;
+          const arrow = up ? '▲' : '▼';
+          const cls = up ? 'mover-up' : 'mover-down';
+          const sign = up ? '+' : '';
+          return `<span class="mover-item"><span class="mover-curr">${m.currency}</span><span class="mover-arrow ${cls}">${arrow}</span><span class="mover-delta ${cls}">${sign}${m.delta.toFixed(0)} pts</span></span>`;
+        }).join('');
+      }
+    }
 
     const list = document.getElementById('divg-list');
     if (divergences.length === 0) {
