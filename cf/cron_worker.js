@@ -1096,16 +1096,22 @@ For each currency provide:
 2. Bias: "Bullish", "Bearish", or "Neutral"
 3. Top 3 key drivers from the news
 
-Respond ONLY in this exact JSON format:
+Scoring guide:
+- 0-20: extremely bearish | 21-40: bearish | 41-59: neutral | 60-79: bullish | 80-100: extremely bullish
+- Score each currency independently based ONLY on what the headlines say. Do not anchor to the example values below — they are for FORMAT ONLY.
+- If a currency is barely mentioned in the news, score it 50 (neutral) with drivers like "No fresh catalysts in current headlines".
+- Drivers must be SPECIFIC to the headlines provided, not generic statements.
+
+Respond ONLY in this exact JSON format (values shown are placeholders, replace with your actual analysis):
 {
-"USD": {"score": 42, "bias": "Bearish", "drivers": ["Weak NFP data", "Fed dovish tone", "Trade deficit widening"]},
-"EUR": {"score": 71, "bias": "Bullish", "drivers": ["ECB hawkish stance", "Germany CPI beat", "Strong eurozone data"]},
-"GBP": {"score": 38, "bias": "Bearish", "drivers": ["UK unemployment rising", "BOE dovish pivot", "Weak retail sales"]},
-"JPY": {"score": 78, "bias": "Bullish", "drivers": ["Safe-haven demand", "BOJ hawkish shift", "Risk-off sentiment"]},
-"AUD": {"score": 35, "bias": "Bearish", "drivers": ["China PMI miss", "Iron ore prices drop", "Risk-off mode"]},
-"CAD": {"score": 65, "bias": "Bullish", "drivers": ["Oil price surge", "Strong jobs data", "Trade balance positive"]},
-"CHF": {"score": 72, "bias": "Bullish", "drivers": ["Safe-haven flows", "Swiss inflation stable", "Geopolitical tensions"]},
-"NZD": {"score": 40, "bias": "Bearish", "drivers": ["RBNZ dovish signal", "China slowdown impact", "Dairy prices weak"]}
+"USD": {"score": 50, "bias": "Neutral", "drivers": ["<driver from headlines>", "<driver from headlines>", "<driver from headlines>"]},
+"EUR": {"score": 50, "bias": "Neutral", "drivers": ["<driver from headlines>", "<driver from headlines>", "<driver from headlines>"]},
+"GBP": {"score": 50, "bias": "Neutral", "drivers": ["<driver from headlines>", "<driver from headlines>", "<driver from headlines>"]},
+"JPY": {"score": 50, "bias": "Neutral", "drivers": ["<driver from headlines>", "<driver from headlines>", "<driver from headlines>"]},
+"AUD": {"score": 50, "bias": "Neutral", "drivers": ["<driver from headlines>", "<driver from headlines>", "<driver from headlines>"]},
+"CAD": {"score": 50, "bias": "Neutral", "drivers": ["<driver from headlines>", "<driver from headlines>", "<driver from headlines>"]},
+"CHF": {"score": 50, "bias": "Neutral", "drivers": ["<driver from headlines>", "<driver from headlines>", "<driver from headlines>"]},
+"NZD": {"score": 50, "bias": "Neutral", "drivers": ["<driver from headlines>", "<driver from headlines>", "<driver from headlines>"]}
 }`;
 
 const response = await fetch('https://api.anthropic.com/v1/messages', {
