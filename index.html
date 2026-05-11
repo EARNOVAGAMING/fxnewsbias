@@ -42,17 +42,17 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#ffffff;color:#1a1a
 .topbar a{color:#94a3b8;text-decoration:none;}
 .topbar a:hover{color:#fff;}
 
-header{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.18);}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
-.logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#0f172a;text-decoration:none;}
+.logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#f8fafc;text-decoration:none;}
 .logo span{color:var(--accent);}
 nav ul{list-style:none;display:flex;gap:28px;}
-nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;transition:color .2s;}
-nav a:hover{color:var(--accent);}
+nav a{text-decoration:none;color:#cbd5e1;font-weight:500;font-size:14px;transition:color .2s;}
+nav a:hover{color:#60a5fa;}
 .nav-actions{display:flex;gap:10px;align-items:center;}
 .btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;display:inline-block;transition:all .2s;}
-.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border-strong);}
-.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-outline{background:transparent;color:#f1f5f9;border:1px solid rgba(255,255,255,.25);}
+.btn-outline:hover{border-color:#60a5fa;color:#60a5fa;}
 .btn-primary{background:var(--accent);color:#fff;}
 .btn-primary:hover{background:#1d4ed8;}
 .burger{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
@@ -104,18 +104,6 @@ nav a:hover{color:var(--accent);}
 .sent-streak.bull{background:rgba(16,185,129,.12);color:#047857;}
 .sent-streak.bear{background:rgba(239,68,68,.12);color:#b91c1c;}
 .sent-streak.neut{background:rgba(245,158,11,.12);color:#92400e;}
-.movers-wrap{max-width:1280px;margin:14px auto 0;padding:0 20px;}
-.movers-strip{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(0,0,0,0.03);}
-.movers-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);white-space:nowrap;}
-.movers-list{display:flex;gap:14px;flex-wrap:wrap;flex:1;}
-.mover-item{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;}
-.mover-arrow{font-size:14px;font-weight:800;}
-.mover-up{color:#10b981;}
-.mover-down{color:#ef4444;}
-.mover-curr{font-weight:800;}
-.mover-delta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-soft);}
-.movers-empty{font-size:12px;color:var(--text-muted);font-style:italic;}
-@media(max-width:600px){.movers-strip{padding:10px 12px;gap:10px;}.mover-item{font-size:12px;}}
 
 .news-list{display:flex;flex-direction:column;gap:12px;}
 .news-item{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;}
@@ -140,29 +128,49 @@ nav a:hover{color:var(--accent);}
 
 /* MARKET PULSE */
 .pulse-wrap{max-width:1280px;margin:24px auto 0;padding:0 20px;}
-.pulse-grid{display:grid;grid-template-columns:340px 1fr;gap:18px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.03);}
-.pulse-gauge-card{display:flex;flex-direction:column;align-items:center;padding-right:18px;border-right:1px solid var(--border);}
-.pulse-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;}
-.pulse-title{font-size:16px;font-weight:800;margin-bottom:14px;}
-.pulse-score{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:800;line-height:1;margin-top:8px;margin-bottom:4px;}
-.pulse-mode{font-size:13px;font-weight:700;letter-spacing:0.5px;margin-bottom:8px;text-transform:uppercase;}
-.pulse-explainer{font-size:11px;color:var(--text-muted);text-align:center;line-height:1.5;max-width:280px;}
-.pulse-divg{display:flex;flex-direction:column;}
-.divg-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.pulse-grid{display:grid;grid-template-columns:240px 1fr 230px;gap:0;background:#fff;border:1px solid var(--border);border-radius:14px;padding:0;box-shadow:0 1px 3px rgba(0,0,0,0.03);overflow:hidden;}
+.pulse-col{padding:18px 20px;}
+.pulse-col + .pulse-col{border-left:1px solid var(--border);}
+.pulse-gauge-card{display:flex;flex-direction:column;align-items:center;}
+.pulse-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:2px;}
+.pulse-title{font-size:14px;font-weight:800;margin-bottom:8px;text-align:center;}
+.pulse-gauge-svg{margin:2px 0 0;}
+.pulse-score{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:800;line-height:1;margin-top:2px;}
+.pulse-mode{font-size:11px;font-weight:700;letter-spacing:0.5px;margin-top:4px;margin-bottom:6px;text-transform:uppercase;}
+.pulse-explainer{font-size:10.5px;color:var(--text-muted);text-align:center;line-height:1.5;max-width:200px;}
+.pulse-divg{display:flex;flex-direction:column;min-width:0;}
+.divg-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:12px;}
 .divg-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:6px;}
-.divg-help{font-size:11px;color:var(--text-muted);}
-.divg-list{display:flex;flex-direction:column;gap:8px;}
-.divg-item{background:var(--bg-soft);border-left:3px solid #f59e0b;border-radius:6px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.divg-sub{font-size:11px;color:var(--text-muted);line-height:1.5;margin-bottom:10px;}
+.divg-sub b{color:var(--text-soft);font-weight:700;}
+.divg-help{font-size:11px;color:var(--accent);cursor:help;white-space:nowrap;}
+.divg-list{display:flex;flex-direction:column;gap:6px;}
+.divg-item{background:var(--bg-soft);border-left:3px solid #f59e0b;border-radius:6px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
 .divg-item.bull{border-left-color:#10b981;}
 .divg-item.bear{border-left-color:#ef4444;}
-.divg-pair{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:14px;min-width:80px;}
-.divg-text{font-size:12px;color:var(--text-soft);flex:1;line-height:1.4;}
-.divg-arrows{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;display:flex;gap:8px;flex-shrink:0;}
+.divg-pair{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:13px;min-width:70px;}
+.divg-text{font-size:11.5px;color:var(--text-soft);flex:1;line-height:1.4;}
+.divg-arrows{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;display:flex;gap:6px;flex-shrink:0;}
 .divg-up{color:var(--bull);}.divg-down{color:var(--bear);}.divg-flat{color:var(--text-muted);}
-.divg-empty{color:var(--text-muted);font-size:13px;text-align:center;padding:18px;font-style:italic;}
-@media(max-width:760px){
-  .pulse-grid{grid-template-columns:1fr;padding:16px;}
-  .pulse-gauge-card{padding-right:0;padding-bottom:18px;border-right:none;border-bottom:1px solid var(--border);}
+.divg-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:14px 6px;font-style:italic;line-height:1.5;}
+.pulse-movers{display:flex;flex-direction:column;}
+.pulse-movers .pulse-label{margin-bottom:8px;}
+.pulse-movers .pulse-title{font-size:13px;text-align:left;margin-bottom:10px;}
+.pulse-movers-list{display:flex;flex-direction:column;gap:6px;}
+.pulse-mover-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;background:var(--bg-soft);font-size:12px;}
+.pulse-mover-row .mover-curr{font-weight:800;font-size:13px;}
+.pulse-mover-row .mover-delta{font-family:'JetBrains Mono',monospace;font-weight:700;}
+.pulse-mover-row.up .mover-delta{color:#10b981;}
+.pulse-mover-row.down .mover-delta{color:#ef4444;}
+.pulse-movers-empty{font-size:11.5px;color:var(--text-muted);font-style:italic;text-align:center;padding:12px 4px;line-height:1.5;}
+@media(max-width:980px){
+  .pulse-grid{grid-template-columns:1fr 1fr;}
+  .pulse-movers{grid-column:1/-1;border-top:1px solid var(--border);border-left:none !important;}
+}
+@media(max-width:680px){
+  .pulse-grid{grid-template-columns:1fr;}
+  .pulse-col + .pulse-col{border-left:none;border-top:1px solid var(--border);}
+  .pulse-gauge-svg svg{width:200px;height:120px;}
 }
 
 .loading-pulse{animation:pulse 1.5s infinite;}
@@ -289,11 +297,13 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <!-- Market Pulse -->
 <section class="pulse-wrap">
   <div class="pulse-grid">
-    <div class="pulse-gauge-card">
+
+    <!-- Column 1: Risk Gauge -->
+    <div class="pulse-col pulse-gauge-card">
       <div class="pulse-label">Market Pulse</div>
       <div class="pulse-title">Risk Appetite Right Now</div>
-      <div id="pulse-gauge-svg">
-        <svg width="280" height="160" viewBox="0 0 280 160">
+      <div id="pulse-gauge-svg" class="pulse-gauge-svg">
+        <svg width="220" height="130" viewBox="0 0 280 160">
           <defs>
             <linearGradient id="riskGrad" x1="0" x2="1">
               <stop offset="0%" stop-color="#ef4444"/>
@@ -311,29 +321,35 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div>
       <div id="pulse-score" class="pulse-score">--</div>
       <div id="pulse-mode" class="pulse-mode" style="color:#6b7280;">Loading...</div>
-      <div id="pulse-explainer" class="pulse-explainer">Risk currencies (AUD, NZD, CAD) vs safe-havens (USD, JPY, CHF)</div>
+      <div id="pulse-explainer" class="pulse-explainer">Risk currencies (AUD/NZD/CAD) vs safe-havens (USD/JPY/CHF)</div>
     </div>
-    <div class="pulse-divg">
+
+    <!-- Column 2: Sentiment vs Price Divergence -->
+    <div class="pulse-col pulse-divg">
       <div class="divg-head">
         <div class="divg-title">⚠️ Sentiment vs Price Divergence</div>
-        <span class="divg-help" title="When news sentiment moves one way but price moves the other — often signals a reversal or fade">last 24h · what is this?</span>
+        <span class="divg-help" title="A divergence is flagged when 24h news sentiment direction disagrees with the 24h price direction by a meaningful margin (sentiment shift ≥ 6 points and price move ≥ 0.15%). These setups often precede a reversal because price tends to follow news flow within 1-3 sessions.">how is this detected?</span>
+      </div>
+      <div class="divg-sub">
+        We compare each pair's 24h <b>sentiment delta</b> (base − quote score change) with its 24h <b>price change</b>.
+        When they point opposite ways and both moves are material, the pair is flagged. Historically these setups
+        precede a price reversal toward the news side within 1–3 trading sessions.
       </div>
       <div id="divg-list" class="divg-list">
         <div class="divg-empty">⏳ Scanning pairs for divergence...</div>
       </div>
     </div>
-  </div>
 
-  <!-- 24h Top Movers Strip -->
-  <div class="movers-wrap">
-    <div class="movers-strip">
-      <span class="movers-label">Top Movers · 24h</span>
-      <div class="movers-list" id="movers-list">
-        <span class="movers-empty">Loading sentiment shifts...</span>
+    <!-- Column 3: 24h Top Movers -->
+    <div class="pulse-col pulse-movers">
+      <div class="pulse-label">Top Movers</div>
+      <div class="pulse-title">Biggest 24h Shifts</div>
+      <div class="pulse-movers-list" id="movers-list">
+        <div class="pulse-movers-empty">Loading sentiment shifts...</div>
       </div>
     </div>
-  </div>
 
+  </div>
 </section>
 
 <!-- Main Layout -->
@@ -1039,14 +1055,13 @@ async function loadMarketPulse() {
     const moversEl = document.getElementById('movers-list');
     if (moversEl) {
       if (movers.length === 0) {
-        moversEl.innerHTML = '<span class="movers-empty">Sentiment steady across all currencies in the last 24h.</span>';
+        moversEl.innerHTML = '<div class="pulse-movers-empty">Sentiment steady across all currencies in the last 24h.</div>';
       } else {
         moversEl.innerHTML = movers.slice(0, 5).map(m => {
           const up = m.delta > 0;
           const arrow = up ? '▲' : '▼';
-          const cls = up ? 'mover-up' : 'mover-down';
           const sign = up ? '+' : '';
-          return `<span class="mover-item"><span class="mover-curr">${esc(m.currency)}</span><span class="mover-arrow ${cls}">${arrow}</span><span class="mover-delta ${cls}">${sign}${m.delta.toFixed(0)} pts</span></span>`;
+          return `<div class="pulse-mover-row ${up ? 'up' : 'down'}"><span class="mover-curr">${esc(m.currency)}</span><span class="mover-delta">${arrow} ${sign}${m.delta.toFixed(0)} pts</span></div>`;
         }).join('');
       }
     }

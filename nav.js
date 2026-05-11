@@ -7,7 +7,7 @@
         padding:0;position:relative;z-index:1002;-webkit-tap-highlight-color:transparent;
         font-size:0;line-height:0;color:transparent;}
       .burger-box{position:relative;width:24px;height:18px;margin:0 auto;display:block;}
-      .burger-line{position:absolute;left:0;width:100%;height:2px;background:#0f172a;
+      .burger-line{position:absolute;left:0;width:100%;height:2px;background:#f1f5f9;
         border-radius:2px;transition:transform .35s cubic-bezier(.65,.05,.36,1),
         opacity .2s ease,top .35s cubic-bezier(.65,.05,.36,1);}
       .burger-line:nth-child(1){top:0;}
