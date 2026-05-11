@@ -66,7 +66,10 @@ nav a:hover{color:#60a5fa;}
 .up{color:var(--bull);font-weight:600;}
 .down{color:var(--bear);font-weight:600;}
 
-.hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}
+.hero{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:24px 0 32px;}
+.hero-brand{max-width:1280px;margin:0 auto 20px;padding:0 20px;display:flex;justify-content:center;}
+.hero-brand-img{max-height:90px;width:auto;display:block;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4));}
+@media(max-width:640px){.hero-brand-img{max-height:62px;}}
 .hero-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;}
 .hero-mood{display:flex;align-items:center;gap:18px;}
 .mood-icon{font-size:38px;}
@@ -268,6 +271,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
 <!-- Hero Banner -->
 <section class="hero">
+  <div class="hero-brand">
+    <img src="/logo-fxnb.png" alt="FXNB — Market Sentiment Intelligence" class="hero-brand-img">
+  </div>
   <div class="hero-inner">
     <div class="hero-mood">
       <div class="mood-icon" id="mood-icon">⏳</div>
