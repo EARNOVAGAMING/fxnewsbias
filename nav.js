@@ -21,7 +21,15 @@
         pointer-events:none;z-index:1000;transition:background .3s ease;}
       .nav-backdrop.is-open{background:rgba(15,23,42,.55);pointer-events:auto;}
 
+      /* Drawer extras (CTA, Pepperstone, Upgrade, Social, Footer, auth mirror)
+         are mobile-only - hide everywhere by default so they don't appear in
+         the desktop horizontal nav. The mobile media query re-shows them. */
+      nav ul .fxnb-extra{display:none !important;}
+
       @media(max-width:900px){
+        nav ul.fxnb-mobile .fxnb-extra{display:block !important;}
+        nav ul.fxnb-mobile .fxnb-social{display:flex !important;}
+        nav ul.fxnb-mobile .fxnb-auth-user{display:flex !important;}
         .burger{display:flex !important;align-items:center;justify-content:center;}
 
         .nav-actions > a.btn,
