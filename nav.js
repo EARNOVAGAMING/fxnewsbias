@@ -3,9 +3,20 @@
 
   if (!document.getElementById('fxnb-nav-styles')) {
     const css = `
-      .logo{display:inline-flex;align-items:center;line-height:0;}
-      .logo img{height:38px;width:auto;display:block;}
-      @media(max-width:640px){.logo img{height:32px;}}
+      .logo{display:inline-flex;align-items:center;gap:10px;line-height:1;text-decoration:none;}
+      .logo img{height:38px;width:auto;display:block;flex:0 0 auto;}
+      .logo .logo-word{font-size:20px;font-weight:800;letter-spacing:-0.5px;color:#f8fafc;
+        font-style:normal;white-space:nowrap;}
+      .logo .logo-word em{color:#3b82f6;font-style:normal;}
+      @media(max-width:640px){
+        .logo{gap:8px;}
+        .logo img{height:30px;}
+        .logo .logo-word{font-size:16px;}
+      }
+      @media(max-width:380px){
+        .logo .logo-word{display:none;}
+      }
+      nav ul.fxnb-mobile li.fxnb-drawer-logo .logo-word{display:none;}
       .burger{background:none;border:none;cursor:pointer;width:40px;height:40px;
         padding:0;position:relative;z-index:1002;-webkit-tap-highlight-color:transparent;
         font-size:0;line-height:0;color:transparent;}
