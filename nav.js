@@ -1,8 +1,6 @@
-// FXNewsBias - Navigation hamburger menu (animated, mobile-safe)
+// FXNewsBias - Animated mobile drawer (FXStreet-style)
 (function () {
 
-  // Inject styles once - every page that uses nav.js inherits the polish
-  // without needing to edit each HTML file's <style> block.
   if (!document.getElementById('fxnb-nav-styles')) {
     const css = `
       .burger{background:none;border:none;cursor:pointer;width:40px;height:40px;
@@ -26,13 +24,11 @@
       @media(max-width:900px){
         .burger{display:flex !important;align-items:center;justify-content:center;}
 
-        /* Hide login/register/user-menu buttons in the header on mobile -
-           they're mirrored into the drawer instead so they don't overlap the burger. */
         .nav-actions > a.btn,
         .nav-actions > #user-menu{display:none !important;}
 
-        nav ul.fxnb-mobile{position:fixed;top:0;right:0;height:100vh;width:min(82vw,340px);
-          background:#fff;flex-direction:column;align-items:stretch;gap:0;padding:80px 0 24px;
+        nav ul.fxnb-mobile{position:fixed;top:0;right:0;height:100vh;width:min(86vw,360px);
+          background:#fff;flex-direction:column;align-items:stretch;gap:0;padding:72px 0 0;
           margin:0;list-style:none;box-shadow:-12px 0 40px rgba(0,0,0,.12);
           transform:translateX(100%);transition:transform .42s cubic-bezier(.65,.05,.36,1);
           z-index:1001;overflow-y:auto;display:flex;
@@ -42,18 +38,19 @@
           transition:opacity .3s ease,transform .3s ease;border-bottom:1px solid #f1f5f9;
           list-style:none;}
         nav ul.fxnb-mobile.is-open li{opacity:1;transform:translateX(0);}
-        nav ul.fxnb-mobile.is-open li:nth-child(1){transition-delay:.10s;}
-        nav ul.fxnb-mobile.is-open li:nth-child(2){transition-delay:.14s;}
-        nav ul.fxnb-mobile.is-open li:nth-child(3){transition-delay:.18s;}
-        nav ul.fxnb-mobile.is-open li:nth-child(4){transition-delay:.22s;}
-        nav ul.fxnb-mobile.is-open li:nth-child(5){transition-delay:.26s;}
-        nav ul.fxnb-mobile.is-open li:nth-child(6){transition-delay:.30s;}
-        nav ul.fxnb-mobile.is-open li:nth-child(7){transition-delay:.34s;}
-        nav ul.fxnb-mobile.is-open li:nth-child(8){transition-delay:.38s;}
-        nav ul.fxnb-mobile.is-open li:nth-child(9){transition-delay:.42s;}
-        nav ul.fxnb-mobile.is-open li:nth-child(n+10){transition-delay:.46s;}
+        nav ul.fxnb-mobile.is-open li:nth-child(1){transition-delay:.06s;}
+        nav ul.fxnb-mobile.is-open li:nth-child(2){transition-delay:.10s;}
+        nav ul.fxnb-mobile.is-open li:nth-child(3){transition-delay:.14s;}
+        nav ul.fxnb-mobile.is-open li:nth-child(4){transition-delay:.18s;}
+        nav ul.fxnb-mobile.is-open li:nth-child(5){transition-delay:.22s;}
+        nav ul.fxnb-mobile.is-open li:nth-child(6){transition-delay:.26s;}
+        nav ul.fxnb-mobile.is-open li:nth-child(7){transition-delay:.30s;}
+        nav ul.fxnb-mobile.is-open li:nth-child(8){transition-delay:.34s;}
+        nav ul.fxnb-mobile.is-open li:nth-child(9){transition-delay:.38s;}
+        nav ul.fxnb-mobile.is-open li:nth-child(n+10){transition-delay:.42s;}
+
         nav ul.fxnb-mobile a,
-        nav ul.fxnb-mobile button{display:block;width:100%;padding:16px 24px;font-size:15px;
+        nav ul.fxnb-mobile button{display:block;width:100%;padding:15px 24px;font-size:15px;
           font-weight:600;color:#1a1a1a;text-decoration:none;text-align:left;background:none;
           border:none;cursor:pointer;transition:background .15s ease,color .15s ease,
           padding-left .2s ease;font-family:inherit;}
@@ -61,12 +58,26 @@
         nav ul.fxnb-mobile button:hover,nav ul.fxnb-mobile button:active{
           background:#f8fafc;color:#2563eb;padding-left:30px;}
 
-        /* Auth section at the bottom of the drawer - visually separated */
+        /* TOP CTA - Join Telegram */
+        nav ul.fxnb-mobile li.fxnb-top-cta{padding:14px 16px;border-bottom:1px solid #f1f5f9;
+          background:#fff;}
+        nav ul.fxnb-mobile li.fxnb-top-cta a{display:flex;align-items:center;gap:10px;
+          padding:12px 14px;background:linear-gradient(135deg,#eff6ff,#dbeafe);
+          border:1px solid #bfdbfe;border-radius:10px;color:#1e3a8a;font-size:13px;
+          font-weight:700;line-height:1.3;}
+        nav ul.fxnb-mobile li.fxnb-top-cta a:hover,
+        nav ul.fxnb-mobile li.fxnb-top-cta a:active{padding-left:14px;background:#dbeafe;
+          color:#1e3a8a;}
+        nav ul.fxnb-mobile li.fxnb-top-cta .cta-icon{font-size:22px;flex:0 0 auto;}
+        nav ul.fxnb-mobile li.fxnb-top-cta .cta-arrow{margin-left:auto;font-size:18px;
+          color:#2563eb;}
+
+        /* AUTH section divider */
         nav ul.fxnb-mobile li.fxnb-auth-divider{border-top:8px solid #f8fafc;
           border-bottom:none;padding:0;height:0;margin-top:8px;}
         nav ul.fxnb-mobile li.fxnb-auth-user{padding:16px 24px;background:#f8fafc;
           font-size:14px;font-weight:600;color:#0f172a;display:flex;align-items:center;
-          gap:8px;flex-wrap:wrap;}
+          gap:8px;flex-wrap:wrap;border-bottom:1px solid #f1f5f9;}
         nav ul.fxnb-mobile li.fxnb-auth-user .pro-badge{background:#f59e0b;color:#fff;
           font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
         nav ul.fxnb-mobile li.fxnb-auth-login a{color:#2563eb;}
@@ -75,9 +86,51 @@
         nav ul.fxnb-mobile li.fxnb-auth-register a:active{background:#1d4ed8;color:#fff;}
         nav ul.fxnb-mobile li.fxnb-auth-logout button{color:#ef4444;}
 
+        /* BOTTOM section: Pepperstone, Upgrade, Social, Footer */
+        nav ul.fxnb-mobile li.fxnb-bottom-divider{border-top:8px solid #f8fafc;
+          border-bottom:none;padding:0;height:0;}
+        nav ul.fxnb-mobile li.fxnb-pepperstone{padding:16px 24px;border-bottom:1px solid #f1f5f9;}
+        nav ul.fxnb-mobile li.fxnb-pepperstone a{display:inline-flex;align-items:center;gap:6px;
+          padding:0;color:#1e40af;font-size:14px;font-weight:600;text-decoration:underline;
+          text-underline-offset:2px;}
+        nav ul.fxnb-mobile li.fxnb-pepperstone a:hover,
+        nav ul.fxnb-mobile li.fxnb-pepperstone a:active{padding-left:0;background:none;
+          color:#1e3a8a;}
+        nav ul.fxnb-mobile li.fxnb-pepperstone .ext{font-size:11px;opacity:.7;}
+        nav ul.fxnb-mobile li.fxnb-pepperstone .sub{display:block;color:#64748b;
+          font-size:12px;font-weight:400;margin-top:4px;text-decoration:none;}
+
+        nav ul.fxnb-mobile li.fxnb-upgrade{padding:16px;border-bottom:1px solid #f1f5f9;}
+        nav ul.fxnb-mobile li.fxnb-upgrade a{display:flex;align-items:center;justify-content:center;
+          gap:8px;padding:14px 16px;background:linear-gradient(135deg,#1e40af,#2563eb);
+          color:#fff;font-size:15px;font-weight:700;border-radius:10px;text-align:center;
+          box-shadow:0 4px 12px rgba(37,99,235,.25);}
+        nav ul.fxnb-mobile li.fxnb-upgrade a:hover,
+        nav ul.fxnb-mobile li.fxnb-upgrade a:active{padding-left:16px;color:#fff;
+          background:linear-gradient(135deg,#1e3a8a,#1d4ed8);}
+
+        nav ul.fxnb-mobile li.fxnb-social{padding:14px 24px;display:flex;gap:10px;
+          border-bottom:1px solid #f1f5f9;}
+        nav ul.fxnb-mobile li.fxnb-social a{flex:1;display:flex;align-items:center;
+          justify-content:center;gap:6px;padding:10px 8px;background:#f8fafc;
+          border:1px solid #e2e8f0;border-radius:8px;color:#475569;font-size:12px;
+          font-weight:600;}
+        nav ul.fxnb-mobile li.fxnb-social a:hover,
+        nav ul.fxnb-mobile li.fxnb-social a:active{padding-left:8px;background:#eff6ff;
+          color:#2563eb;border-color:#bfdbfe;}
+
+        nav ul.fxnb-mobile li.fxnb-footer{padding:16px 24px 14px;border-bottom:none;
+          background:#f8fafc;}
+        nav ul.fxnb-mobile li.fxnb-footer .links{display:flex;flex-wrap:wrap;gap:6px 12px;
+          margin-bottom:10px;}
+        nav ul.fxnb-mobile li.fxnb-footer .links a{padding:0;color:#64748b;font-size:12px;
+          font-weight:500;width:auto;display:inline;}
+        nav ul.fxnb-mobile li.fxnb-footer .links a:hover,
+        nav ul.fxnb-mobile li.fxnb-footer .links a:active{padding-left:0;background:none;
+          color:#2563eb;}
+        nav ul.fxnb-mobile li.fxnb-footer .copy{color:#94a3b8;font-size:11px;}
+
         body.fxnb-nav-locked{overflow:hidden;}
-        /* Lift the header (which contains the drawer) above the backdrop so
-           taps reach the drawer items instead of the invisible overlay. */
         body.fxnb-nav-locked header{z-index:1003 !important;}
       }
     `;
@@ -87,25 +140,27 @@
     document.head.appendChild(style);
   }
 
+  // Affiliate / external URLs (kept here so they're easy to update)
+  const TELEGRAM_URL  = 'https://t.me/fxnewsbias_alerts';
+  const PEPPERSTONE_URL = 'https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5514';
+  const STRIPE_UPGRADE_URL = 'https://buy.stripe.com/00wfZjcoa2LzdDNaIS0RG00';
+  const CONTACT_EMAIL = 'contact@fxnewsbias.com';
+
   function init() {
-    let burger = document.querySelector('.burger');
+    const burger = document.querySelector('.burger');
     const navMenu = document.querySelector('nav ul');
     if (!burger || !navMenu) return;
 
-    // Replace simple text burger with three animated lines that morph to X.
     if (!burger.querySelector('.burger-box')) {
       burger.innerHTML = '<span class="burger-box">' +
-        '<span class="burger-line"></span>' +
-        '<span class="burger-line"></span>' +
-        '<span class="burger-line"></span>' +
-        '</span>';
+        '<span class="burger-line"></span><span class="burger-line"></span>' +
+        '<span class="burger-line"></span></span>';
       burger.setAttribute('aria-label', 'Toggle navigation menu');
       burger.setAttribute('aria-expanded', 'false');
     }
 
     navMenu.classList.add('fxnb-mobile');
 
-    // Backdrop element (created once, reused).
     let backdrop = document.querySelector('.nav-backdrop');
     if (!backdrop) {
       backdrop = document.createElement('div');
@@ -113,21 +168,11 @@
       document.body.appendChild(backdrop);
     }
 
-    // Mirror auth buttons (Login/Register or user-menu Logout) into the drawer
-    // so they're never adjacent to the burger and can't be tapped by accident.
-    function syncAuthIntoDrawer() {
-      // Remove any previous mirrored items first
-      navMenu.querySelectorAll('.fxnb-auth-item').forEach(el => el.remove());
-
-      const navActions = document.querySelector('.nav-actions');
-      if (!navActions) return;
-
-      const divider = document.createElement('li');
-      divider.className = 'fxnb-auth-item fxnb-auth-divider';
-
+    function buildAuthItems() {
       const items = [];
+      const navActions = document.querySelector('.nav-actions');
+      if (!navActions) return items;
 
-      // Logged-in case: user-menu exists with name + optional PRO badge + Logout
       const userMenu = document.getElementById('user-menu');
       if (userMenu) {
         const nameSpan = userMenu.querySelector('span');
@@ -136,20 +181,19 @@
 
         if (nameSpan) {
           const li = document.createElement('li');
-          li.className = 'fxnb-auth-item fxnb-auth-user';
+          li.className = 'fxnb-extra fxnb-auth-user';
           li.innerHTML = nameSpan.innerHTML +
             (proBadge ? '<span class="pro-badge">' + (proBadge.textContent.trim() || 'PRO') + '</span>' : '');
           items.push(li);
         }
-        // Profile shortcut for logged-in users
         const profileLi = document.createElement('li');
-        profileLi.className = 'fxnb-auth-item fxnb-auth-profile';
+        profileLi.className = 'fxnb-extra fxnb-auth-profile';
         profileLi.innerHTML = '<a href="/profile">👤 My Profile</a>';
         items.push(profileLi);
 
         if (logoutBtn) {
           const li = document.createElement('li');
-          li.className = 'fxnb-auth-item fxnb-auth-logout';
+          li.className = 'fxnb-extra fxnb-auth-logout';
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.textContent = 'Logout';
@@ -161,38 +205,102 @@
           items.push(li);
         }
       } else {
-        // Logged-out case: mirror Login + Register links
-        const loginLink = navActions.querySelector('a[href="/login"]');
-        const registerLink = navActions.querySelector('a[href="/register"]');
-        if (loginLink) {
+        if (navActions.querySelector('a[href="/login"]')) {
           const li = document.createElement('li');
-          li.className = 'fxnb-auth-item fxnb-auth-login';
+          li.className = 'fxnb-extra fxnb-auth-login';
           li.innerHTML = '<a href="/login">→ Login</a>';
           items.push(li);
         }
-        if (registerLink) {
+        if (navActions.querySelector('a[href="/register"]')) {
           const li = document.createElement('li');
-          li.className = 'fxnb-auth-item fxnb-auth-register';
+          li.className = 'fxnb-extra fxnb-auth-register';
           li.innerHTML = '<a href="/register">Create Account</a>';
           items.push(li);
         }
       }
+      return items;
+    }
 
-      if (items.length) {
-        navMenu.appendChild(divider);
-        items.forEach(li => navMenu.appendChild(li));
+    function rebuildDrawerExtras() {
+      // Wipe everything we previously injected
+      navMenu.querySelectorAll('.fxnb-extra').forEach(el => el.remove());
+
+      // -------- TOP CTA: Telegram --------
+      const topCta = document.createElement('li');
+      topCta.className = 'fxnb-extra fxnb-top-cta';
+      topCta.innerHTML =
+        `<a href="${TELEGRAM_URL}" target="_blank" rel="noopener noreferrer">
+           <span class="cta-icon">📱</span>
+           <span>Free FX alerts<br><span style="font-size:11px;font-weight:500;color:#475569;">on Telegram every 3 hours</span></span>
+           <span class="cta-arrow">›</span>
+         </a>`;
+      navMenu.insertBefore(topCta, navMenu.firstChild);
+
+      // -------- AUTH section --------
+      const authDivider = document.createElement('li');
+      authDivider.className = 'fxnb-extra fxnb-auth-divider';
+      navMenu.appendChild(authDivider);
+      buildAuthItems().forEach(li => navMenu.appendChild(li));
+
+      // -------- BOTTOM section --------
+      const bottomDivider = document.createElement('li');
+      bottomDivider.className = 'fxnb-extra fxnb-bottom-divider';
+      navMenu.appendChild(bottomDivider);
+
+      // Pepperstone affiliate
+      const pepp = document.createElement('li');
+      pepp.className = 'fxnb-extra fxnb-pepperstone';
+      pepp.innerHTML =
+        `<a href="${PEPPERSTONE_URL}" target="_blank" rel="noopener noreferrer sponsored">
+           Open an account with Pepperstone <span class="ext">↗</span>
+         </a>
+         <span class="sub">Trusted broker · Tight spreads · ASIC regulated</span>`;
+      navMenu.appendChild(pepp);
+
+      // Upgrade to PRO (hide if user already PRO)
+      if (!window.userIsPro) {
+        const upg = document.createElement('li');
+        upg.className = 'fxnb-extra fxnb-upgrade';
+        upg.innerHTML =
+          `<a href="${STRIPE_UPGRADE_URL}" target="_blank" rel="noopener noreferrer">
+             ⭐ Upgrade to PRO — $9.99/mo
+           </a>`;
+        navMenu.appendChild(upg);
       }
+
+      // Social row
+      const social = document.createElement('li');
+      social.className = 'fxnb-extra fxnb-social';
+      social.innerHTML =
+        `<a href="${TELEGRAM_URL}" target="_blank" rel="noopener noreferrer">📱 Telegram</a>
+         <a href="mailto:${CONTACT_EMAIL}">✉ Email</a>`;
+      navMenu.appendChild(social);
+
+      // Mini footer
+      const footer = document.createElement('li');
+      footer.className = 'fxnb-extra fxnb-footer';
+      const yr = new Date().getFullYear();
+      footer.innerHTML =
+        `<div class="links">
+           <a href="/about">About</a>
+           <a href="/how">How it works</a>
+           <a href="/contact">Contact</a>
+           <a href="/privacy">Privacy</a>
+           <a href="/terms">Terms</a>
+           <a href="/disclaimer">Disclaimer</a>
+         </div>
+         <div class="copy">© ${yr} FXNewsBias · All rights reserved</div>`;
+      navMenu.appendChild(footer);
     }
 
     function openMenu() {
-      syncAuthIntoDrawer();   // refresh in case auth state changed since last open
+      rebuildDrawerExtras();
       burger.classList.add('is-open');
       navMenu.classList.add('is-open');
       backdrop.classList.add('is-open');
       document.body.classList.add('fxnb-nav-locked');
       burger.setAttribute('aria-expanded', 'true');
     }
-
     function closeMenu() {
       burger.classList.remove('is-open');
       navMenu.classList.remove('is-open');
@@ -205,27 +313,20 @@
       e.stopPropagation();
       if (navMenu.classList.contains('is-open')) closeMenu(); else openMenu();
     });
-
     backdrop.addEventListener('click', closeMenu);
-
-    // Close on link clicks (delegated so newly-added auth items work too).
     navMenu.addEventListener('click', function (e) {
       const link = e.target.closest('a');
       if (link) closeMenu();
     });
-
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && navMenu.classList.contains('is-open')) closeMenu();
     });
-
     window.addEventListener('resize', function () {
       if (window.innerWidth > 900 && navMenu.classList.contains('is-open')) closeMenu();
     });
 
-    // Re-sync when firebase signals a user has loaded/changed.
-    window.addEventListener('userLoaded', syncAuthIntoDrawer);
-    // Initial sync (in case user was already loaded before nav init).
-    syncAuthIntoDrawer();
+    window.addEventListener('userLoaded', rebuildDrawerExtras);
+    rebuildDrawerExtras();
   }
 
   if (document.readyState === 'loading') {
