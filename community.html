@@ -67,8 +67,9 @@ nav a.active{font-weight:600;}
 .page-title{font-size:28px;font-weight:800;margin-bottom:6px;}
 .page-sub{color:#94a3b8;font-size:13px;}
 .community-stats{display:flex;gap:24px;}
-.cstat{text-align:center;}
-.cstat-value{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:800;color:#fff;}
+.cstat{text-align:center;min-width:90px;}
+.cstat-icon{font-size:22px;line-height:1;}
+.cstat-value{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:#fff;margin-top:4px;}
 .cstat-label{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
 
 .cat-tabs{max-width:1280px;margin:24px auto 0;padding:0 20px;display:flex;gap:6px;border-bottom:2px solid var(--border);overflow-x:auto;}
@@ -263,16 +264,19 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     </div>
     <div class="community-stats">
       <div class="cstat">
-        <div class="cstat-value" id="stat-posts">0</div>
-        <div class="cstat-label">Posts</div>
+        <div class="cstat-icon">📝</div>
+        <div class="cstat-value" id="stat-posts">Be the first</div>
+        <div class="cstat-label" id="stat-posts-label">to post</div>
       </div>
       <div class="cstat">
-        <div class="cstat-value" id="stat-traders">0</div>
-        <div class="cstat-label">Traders</div>
+        <div class="cstat-icon">🎯</div>
+        <div class="cstat-value">Bullish / Bearish</div>
+        <div class="cstat-label">Tag your bias</div>
       </div>
       <div class="cstat">
-        <div class="cstat-value" id="stat-likes">0</div>
-        <div class="cstat-label">Total Likes</div>
+        <div class="cstat-icon">📷</div>
+        <div class="cstat-value">Share Charts</div>
+        <div class="cstat-label">Up to 10 MB</div>
       </div>
     </div>
   </div>
@@ -939,11 +943,25 @@ onSnapshot(postsQuery, (snapshot) => {
   });
   
   // Update stats
-  document.getElementById('stat-posts').textContent = allPosts.length;
-  const uniqueAuthors = new Set(allPosts.map(p => p.authorEmail)).size;
-  document.getElementById('stat-traders').textContent = uniqueAuthors;
-  const totalLikes = allPosts.reduce((sum, p) => sum + (p.likes || 0), 0);
-  document.getElementById('stat-likes').textContent = totalLikes;
+  // Dynamic post counter: hide when low, show when community is healthy
+  const postCount = allPosts.length;
+  const postsEl = document.getElementById('stat-posts');
+  const postsLabel = document.getElementById('stat-posts-label');
+  if (postCount >= 50) {
+    const weekAgo = Date.now() - 7*24*60*60*1000;
+    const weekPosts = allPosts.filter(p => {
+      const t = p.createdAt && p.createdAt.toMillis ? p.createdAt.toMillis() : 0;
+      return t > weekAgo;
+    }).length;
+    postsEl.textContent = weekPosts || postCount;
+    postsLabel.textContent = weekPosts ? 'Posts this week' : 'Total posts';
+  } else if (postCount > 0) {
+    postsEl.textContent = postCount;
+    postsLabel.textContent = postCount === 1 ? 'Post — join in!' : 'Posts — join in!';
+  } else {
+    postsEl.textContent = 'Be the first';
+    postsLabel.textContent = 'to post';
+  }
   
   renderPosts();
   renderTopContributors();
