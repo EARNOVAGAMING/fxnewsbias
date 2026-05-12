@@ -23,7 +23,7 @@
 <meta name="twitter:image" content="https://fxnewsbias.com/og-image.png">
 <meta name="twitter:title" content="Terms of Service | FXNewsBias Forex News Sentiment">
 <meta name="twitter:description" content="Terms for using the FXNewsBias forex news sentiment analysis platform."> 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
@@ -130,7 +130,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
 
 <header>
   <div class="header-inner">
-    <a href="/" class="logo"><img src="/logo-fxnb.png" alt="FXNB"><span class="logo-word">FX<em>News</em>Bias</span></a>
+    <a href="/" class="logo"><img src="/logo-fxnb.png" alt="FXNB" width="1600" height="645"><span class="logo-word">FX<em>News</em>Bias</span></a>
     <nav>
       <ul>
         <li><a href="/">Markets</a></li>
@@ -397,9 +397,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 </footer>
 
-<script src="/nav.js"></script>
-<script src="/cookie.js"></script>
-<script src="/analytics.js"></script>
+<script src="/nav.js" defer></script>
+<script src="/cookie.js" defer></script>
+<script src="/analytics.js" defer></script>
 <script src="/ticker.js" defer></script>
 <script type="module" src="/firebase.js"></script>
 </body>
