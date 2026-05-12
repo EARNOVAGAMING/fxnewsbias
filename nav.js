@@ -35,7 +35,7 @@
         pointer-events:none;z-index:1000;transition:background .3s ease;}
       .nav-backdrop.is-open{background:rgba(15,23,42,.55);pointer-events:auto;}
 
-      /* Drawer extras (CTA, Pepperstone, Upgrade, Social, Footer, auth mirror)
+      /* Drawer extras (CTA, Upgrade, Social, Footer, auth mirror)
          are mobile-only - hide everywhere by default so they don't appear in
          the desktop horizontal nav. The mobile media query re-shows them. */
       nav ul .fxnb-extra{display:none !important;}
@@ -120,20 +120,9 @@
         nav ul.fxnb-mobile li.fxnb-auth-logout button:active{color:#f87171;
           background:rgba(239,68,68,.1);}
 
-        /* BOTTOM section: Pepperstone, Upgrade, Social, Footer */
+        /* BOTTOM section: Upgrade, Social, Footer */
         nav ul.fxnb-mobile li.fxnb-bottom-divider{border-top:8px solid #020617;
           border-bottom:none;padding:0;height:0;}
-        nav ul.fxnb-mobile li.fxnb-pepperstone{padding:16px 24px;
-          border-bottom:1px solid rgba(255,255,255,.06);}
-        nav ul.fxnb-mobile li.fxnb-pepperstone a{display:inline-flex;align-items:center;gap:6px;
-          padding:0;color:#60a5fa;font-size:14px;font-weight:600;text-decoration:underline;
-          text-underline-offset:2px;width:auto;}
-        nav ul.fxnb-mobile li.fxnb-pepperstone a:hover,
-        nav ul.fxnb-mobile li.fxnb-pepperstone a:active{padding-left:0;background:none;
-          color:#93c5fd;}
-        nav ul.fxnb-mobile li.fxnb-pepperstone .ext{font-size:11px;opacity:.8;}
-        nav ul.fxnb-mobile li.fxnb-pepperstone .sub{display:block;color:#94a3b8;
-          font-size:12px;font-weight:400;margin-top:4px;text-decoration:none;}
 
         nav ul.fxnb-mobile li.fxnb-upgrade{padding:16px;
           border-bottom:1px solid rgba(255,255,255,.06);}
@@ -178,7 +167,6 @@
 
   // Affiliate / external URLs (kept here so they're easy to update)
   const TELEGRAM_URL  = 'https://t.me/fxnewsbias_alerts';
-  const PEPPERSTONE_URL = 'https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5514';
   const STRIPE_UPGRADE_URL = 'https://buy.stripe.com/00wfZjcoa2LzdDNaIS0RG00';
   const CONTACT_EMAIL = 'contact@fxnewsbias.com';
 
@@ -288,16 +276,6 @@
       const bottomDivider = document.createElement('li');
       bottomDivider.className = 'fxnb-extra fxnb-bottom-divider';
       navMenu.appendChild(bottomDivider);
-
-      // Pepperstone affiliate
-      const pepp = document.createElement('li');
-      pepp.className = 'fxnb-extra fxnb-pepperstone';
-      pepp.innerHTML =
-        `<a href="${PEPPERSTONE_URL}" target="_blank" rel="noopener noreferrer sponsored">
-           Open an account with Pepperstone <span class="ext">↗</span>
-         </a>
-         <span class="sub">Trusted broker · Tight spreads · ASIC regulated</span>`;
-      navMenu.appendChild(pepp);
 
       // Upgrade to PRO (hide if user already PRO)
       if (!window.userIsPro) {
