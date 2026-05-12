@@ -40,7 +40,7 @@
          the desktop horizontal nav. The mobile media query re-shows them. */
       nav ul .fxnb-extra{display:none !important;}
 
-      @media(max-width:1024px){
+      /* Hamburger drawer enabled at all viewports */
         nav ul.fxnb-mobile .fxnb-extra{display:block !important;}
         nav ul.fxnb-mobile .fxnb-social{display:flex !important;}
         nav ul.fxnb-mobile .fxnb-auth-user{display:flex !important;}
@@ -157,7 +157,6 @@
 
         body.fxnb-nav-locked{overflow:hidden;}
         body.fxnb-nav-locked header{z-index:1003 !important;}
-      }
     `;
     const style = document.createElement('style');
     style.id = 'fxnb-nav-styles';
