@@ -117,6 +117,13 @@ const SESSION_BY_CRON = { '0 0 * * *': 'asean', '0 6 * * *': 'london', '0 12 * *
 if (SESSION_BY_CRON[event.cron]) {
 const session = SESSION_BY_CRON[event.cron];
 tasks.push(generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)));
+// Tell Bing/Yandex to recrawl the insight index + homepage so the
+// freshly published session insight appears in search within minutes.
+tasks.push(pingIndexNow([
+  'https://fxnewsbias.com/',
+  'https://fxnewsbias.com/insight/',
+  'https://fxnewsbias.com/news',
+]).catch(e => console.log('IndexNow (insight) error:', e.message)));
 } else if (event.cron === '0 */3 * * *') {
 tasks.push(runSentimentAnalysis(env));
 tasks.push(updatePrices(env));
@@ -131,6 +138,10 @@ tasks.push(cleanupSentiment(env).catch(e => console.log('cleanupSentiment error:
 // (3 tables x 8 sweeps/day) — sweep it on the same tick so it stays
 // bounded. See cleanupCleanupRuns for retention details.
 tasks.push(cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns error:', e.message)));
+// After a fresh sentiment scan, ping IndexNow so Bing/Yandex/DDG
+// know to recrawl the data-driven pages (homepage + 8 currencies +
+// 15 pairs + hub pages). This keeps cached search snippets fresh.
+tasks.push(pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (3h) error:', e.message)));
 } else {
 tasks.push(updatePrices(env));
 }
@@ -139,6 +150,69 @@ tasks.push(checkSentimentFreshness(env).catch(e => console.log('Staleness check 
 ctx.waitUntil(Promise.all(tasks));
 }
 };
+
+// ============================================
+// INDEXNOW (Bing / Yandex / DuckDuckGo)
+// ============================================
+// IndexNow lets us tell search engines a URL has changed, so they recrawl
+// within minutes instead of waiting for their normal sitemap sweep. The
+// key file is hosted at https://fxnewsbias.com/<KEY>.txt and Bing reads
+// it once to verify ownership, then trusts subsequent pings.
+const INDEXNOW_KEY = '5a8bc41d17c44aaba5f2fd026d207c8b';
+const INDEXNOW_KEY_LOCATION = 'https://fxnewsbias.com/5a8bc41d17c44aaba5f2fd026d207c8b.txt';
+
+const ALL_DATA_URLS = [
+  'https://fxnewsbias.com/',
+  'https://fxnewsbias.com/currencies',
+  'https://fxnewsbias.com/pairs',
+  'https://fxnewsbias.com/news',
+  'https://fxnewsbias.com/calendar',
+  'https://fxnewsbias.com/community',
+  'https://fxnewsbias.com/insight/',
+  'https://fxnewsbias.com/currencies/usd/',
+  'https://fxnewsbias.com/currencies/eur/',
+  'https://fxnewsbias.com/currencies/gbp/',
+  'https://fxnewsbias.com/currencies/jpy/',
+  'https://fxnewsbias.com/currencies/aud/',
+  'https://fxnewsbias.com/currencies/cad/',
+  'https://fxnewsbias.com/currencies/chf/',
+  'https://fxnewsbias.com/currencies/nzd/',
+  'https://fxnewsbias.com/pairs/eur-usd/',
+  'https://fxnewsbias.com/pairs/gbp-usd/',
+  'https://fxnewsbias.com/pairs/usd-jpy/',
+  'https://fxnewsbias.com/pairs/usd-chf/',
+  'https://fxnewsbias.com/pairs/aud-usd/',
+  'https://fxnewsbias.com/pairs/usd-cad/',
+  'https://fxnewsbias.com/pairs/nzd-usd/',
+  'https://fxnewsbias.com/pairs/eur-gbp/',
+  'https://fxnewsbias.com/pairs/eur-jpy/',
+  'https://fxnewsbias.com/pairs/eur-chf/',
+  'https://fxnewsbias.com/pairs/gbp-jpy/',
+  'https://fxnewsbias.com/pairs/aud-jpy/',
+  'https://fxnewsbias.com/pairs/chf-jpy/',
+  'https://fxnewsbias.com/pairs/cad-jpy/',
+  'https://fxnewsbias.com/pairs/aud-nzd/',
+];
+
+async function pingIndexNow(urlList) {
+  if (!urlList || urlList.length === 0) return;
+  try {
+    const res = await fetch('https://api.indexnow.org/IndexNow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({
+        host: 'fxnewsbias.com',
+        key: INDEXNOW_KEY,
+        keyLocation: INDEXNOW_KEY_LOCATION,
+        urlList,
+      }),
+    });
+    // 200 = ok, 202 = accepted (queued), both are success.
+    console.log(`IndexNow: ${urlList.length} URLs -> HTTP ${res.status}`);
+  } catch (e) {
+    console.log('IndexNow ping error:', e.message);
+  }
+}
 
 // ============================================
 // STRIPE WEBHOOK HANDLER
