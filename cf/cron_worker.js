@@ -2104,15 +2104,15 @@ function _insDetectAngle(sentiment) {
     category='Market Wrap';
     summary = `Forex markets traded in tight ranges with most major currencies showing neutral bias as traders await fresh data and central bank guidance.`;
   } else if (top.score >= 65) {
-    headline = `${_INS_CCY_NAMES[top.currency]} Strengthens as Bullish Sentiment Builds Across Forex — ${dateLabel}`;
+    headline = `${_INS_CCY_NAMES[top.currency]} Strengthens as Bullish News Flow Builds — ${dateLabel}`;
     slug = `${top.currency.toLowerCase()}-strengthens-bullish-sentiment`;
     category=`${top.currency} Analysis`;
-    summary = `${_INS_CCY_NAMES[top.currency]} (${top.currency}) leads forex sentiment today with a strong bullish reading, while other majors show mixed positioning.`;
+    summary = `${_INS_CCY_NAMES[top.currency]} (${top.currency}) leads forex sentiment today with a strong bullish reading. Here is what drove the move and what to watch next.`;
   } else if (top.score <= 35) {
-    headline = `${_INS_CCY_NAMES[top.currency]} Weakens as Bearish News Sentiment Dominates — ${dateLabel}`;
+    headline = `${_INS_CCY_NAMES[top.currency]} Slides as Bearish News Pressure Builds — ${dateLabel}`;
     slug = `${top.currency.toLowerCase()}-weakens-bearish-pressure`;
     category=`${top.currency} Analysis`;
-    summary = `${_INS_CCY_NAMES[top.currency]} (${top.currency}) faces the strongest bearish pressure across the major currencies today, with negative news flow weighing on sentiment.`;
+    summary = `${_INS_CCY_NAMES[top.currency]} (${top.currency}) faces the strongest bearish news pressure across the majors today. Here is what triggered the move and where it goes from here.`;
   } else if (isRiskOn) {
     headline = `Risk-On Mood Lifts Commodity Currencies as Safe Havens Slip — ${dateLabel}`;
     slug = `risk-on-commodity-currencies-rise`;
@@ -2132,41 +2132,95 @@ function _insDetectAngle(sentiment) {
   return { headline, slug, summary, biggestMover: top, category };
 }
 
-function _insRenderArticle({ headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category }){
+const _INS_PAIR_MAP = {'USD-EUR':'EUR/USD','USD-GBP':'GBP/USD','USD-AUD':'AUD/USD','USD-NZD':'NZD/USD','USD-JPY':'USD/JPY','USD-CAD':'USD/CAD','USD-CHF':'USD/CHF','EUR-GBP':'EUR/GBP','EUR-JPY':'EUR/JPY','EUR-CHF':'EUR/CHF','EUR-AUD':'EUR/AUD','EUR-CAD':'EUR/CAD','EUR-NZD':'EUR/NZD','GBP-JPY':'GBP/JPY','GBP-CHF':'GBP/CHF','GBP-AUD':'GBP/AUD','GBP-CAD':'GBP/CAD','GBP-NZD':'GBP/NZD','AUD-JPY':'AUD/JPY','AUD-CHF':'AUD/CHF','AUD-CAD':'AUD/CAD','AUD-NZD':'AUD/NZD','CAD-JPY':'CAD/JPY','CAD-CHF':'CAD/CHF','NZD-JPY':'NZD/JPY','NZD-CHF':'NZD/CHF','NZD-CAD':'NZD/CAD','CHF-JPY':'CHF/JPY'};
+
+function _insPairFor(a,b){if(a===b)return null;return _INS_PAIR_MAP[`${a}-${b}`]||_INS_PAIR_MAP[`${b}-${a}`]||`${a}/${b}`;}
+function _insPairDir(strong,weak,pair){const base=pair.slice(0,3);if(base===strong)return 'higher';if(base===weak)return 'lower';return 'higher';}
+function _insFmtTime(iso){try{const d=new Date(iso);return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} UTC`;}catch{return '';}}
+
+function _insBuildNarrative({sentiment, news, biggestMover}){
+  const arr = Object.values(sentiment).sort((a,b)=>Math.abs(b.score-50)-Math.abs(a.score-50));
+  const bulls = arr.filter(s=>s.bias==='Bullish').sort((a,b)=>b.score-a.score);
+  const bears = arr.filter(s=>s.bias==='Bearish').sort((a,b)=>a.score-b.score);
+  const strongest = bulls[0]; const weakest = bears[0];
+  const high = news.filter(n=>n.impact==='High');
+  const moverNews = news.filter(n=>(n.currencies_affected||[]).includes(biggestMover.currency));
+  const top = high[0] || moverNews[0] || news[0];
+  const moverHighlights = moverNews.slice(0,3);
+  const otherHigh = high.filter(n=>n!==top).slice(0,2);
+  const tl = [...news].filter(n=>n.title).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)).slice(-4);
+  const moverName = _INS_CCY_NAMES[biggestMover.currency];
+  const biasWord = biggestMover.bias.toLowerCase();
+  const biasColorVal = _insBiasColor(biggestMover.bias);
+  const drivers = (biggestMover.drivers||[]).slice(0,3);
+  const driverProse = drivers.length===0 ? 'a mix of macro and central-bank related headlines' : drivers.length===1 ? drivers[0] : drivers.length===2 ? `${drivers[0]}, alongside ${drivers[1].toLowerCase()}` : `${drivers[0]}, ${drivers[1].toLowerCase()}, and ${drivers[2].toLowerCase()}`;
+
+  const lead = top
+    ? `<strong>${_insEsc(moverName)} (${biggestMover.currency})</strong> printed the day's standout move in our news sentiment engine, swinging to a <strong style="color:${biasColorVal};">${biasWord}</strong> reading of <strong>${biggestMover.score}/100</strong> after the latest wires from ${_insEsc(top.source)} reshaped positioning across the major currencies.`
+    : `<strong>${_insEsc(moverName)} (${biggestMover.currency})</strong> printed the day's standout move in our news sentiment engine, swinging to a <strong style="color:${biasColorVal};">${biasWord}</strong> reading of <strong>${biggestMover.score}/100</strong> against a quiet headline backdrop.`;
+  const standfirst = `Below: a quick read of what happened, why the ${moverName} moved, and what traders should watch over the next 24 hours.`;
+
+  let whatHappened = '';
+  if(top){
+    whatHappened = `<p>The pivotal headline crossed the wires from <strong>${_insEsc(top.source)}</strong>: &ldquo;<a href="${_insEsc(_insSafeUrl(top.url))}" target="_blank" rel="noopener nofollow">${_insEsc(top.title)}</a>&rdquo;${top.impact==='High'?' Marked as a <strong>high-impact</strong> event':''}, the news immediately reshaped positioning across the ${(top.currencies_affected||[biggestMover.currency]).slice(0,3).join(', ')} complex.</p>`;
+    if(otherHigh.length){
+      whatHappened += `<p>Two further developments backed up the move. ${otherHigh.map(n=>`${_insEsc(n.source)} reported &ldquo;<a href="${_insEsc(_insSafeUrl(n.url))}" target="_blank" rel="noopener nofollow">${_insEsc(n.title)}</a>&rdquo;`).join(', and ')}.</p>`;
+    }
+  } else {
+    whatHappened = `<p>News flow was thin over the past 24 hours, with no high-impact catalyst dominating the tape. The ${moverName} still drifted to a ${biasWord} bias on the back of secondary headlines.</p>`;
+  }
+  if(tl.length>=2){
+    whatHappened += `<h3 style="font-size:15px;font-weight:700;margin:18px 0 6px;color:#1a1a1a;letter-spacing:0.2px;">Today's news timeline</h3><ul class="timeline">`;
+    for(const n of tl){
+      const ccysText = (n.currencies_affected||[]).slice(0,4).join(', ') || 'cross-market';
+      whatHappened += `<li><span class="timeline-time">${_insFmtTime(n.created_at)}</span><div class="timeline-text"><span class="imp-pill imp-${_insEsc(n.impact||'Medium')}">${_insEsc(n.impact||'Med')}</span><a href="${_insEsc(_insSafeUrl(n.url))}" target="_blank" rel="noopener nofollow">${_insEsc(n.title)}</a><span class="timeline-meta">${_insEsc(n.source)} · affects ${_insEsc(ccysText)}</span></div></li>`;
+    }
+    whatHappened += `</ul>`;
+  }
+
+  let reaction = `<p>Our sentiment engine registered the strongest reaction in the <strong>${_insEsc(moverName)} (${biggestMover.currency})</strong>, which moved to a <strong style="color:${biasColorVal};">${biasWord}</strong> reading of <strong>${biggestMover.score}/100</strong>. ${biggestMover.bias==='Bullish'?'Strength':biggestMover.bias==='Bearish'?'Weakness':'The shift'} was driven by ${_insEsc(driverProse)}.</p>`;
+  if(strongest && weakest && strongest.currency !== weakest.currency){
+    const pair = _insPairFor(strongest.currency, weakest.currency);
+    const dir = _insPairDir(strongest.currency, weakest.currency, pair);
+    reaction += `<p>Across the broader board, the widest sentiment gap sits between the <strong style="color:#10b981;">${_insEsc(_INS_CCY_NAMES[strongest.currency])}</strong> at ${strongest.score}/100 and the <strong style="color:#ef4444;">${_insEsc(_INS_CCY_NAMES[weakest.currency])}</strong> at ${weakest.score}/100. That setup typically favors <strong>${pair} ${dir}</strong> for traders following news flow, though execution still depends on the technical structure of the pair.</p>`;
+  } else if(arr.filter(s=>s.bias==='Neutral').length>=6){
+    reaction += `<p>The rest of the majors held neutral readings between 45 and 55, suggesting traders are waiting for the next clean catalyst before re-engaging.</p>`;
+  }
+
+  let driversSection;
+  if(drivers.length>0){
+    driversSection = `<p>Three threads run through the ${biasWord} ${moverName} story:</p><ol style="margin:0 0 14px 22px;font-size:16px;line-height:1.75;color:#1a1a1a;">`;
+    for(const d of drivers){ driversSection += `<li style="margin-bottom:8px;">${_insEsc(d)}</li>`; }
+    driversSection += `</ol>`;
+    if(moverHighlights.length>1){
+      const supp = moverHighlights[1];
+      driversSection += `<blockquote>&ldquo;${_insEsc(supp.title)}&rdquo;<cite>— ${_insEsc(supp.source)} · ${_insFmtTime(supp.created_at)}</cite></blockquote>`;
+    }
+  } else {
+    driversSection = `<p>Underlying drivers remain mixed. Today's ${biasWord} ${moverName} reading appears to be a positioning move rather than a single-headline reaction, which usually means a less durable signal.</p>`;
+  }
+
+  const watchPair = strongest && weakest && strongest.currency !== weakest.currency ? _insPairFor(strongest.currency, weakest.currency) : null;
+  const reverseTrigger = drivers[0] || (top ? `a reversal of the ${_insEsc(top.source)} story` : 'fresh central bank guidance');
+  const scenarios = `<div class="scenario-box"><div class="scenario-title">📈 Bull case for the move</div><div class="scenario-text">If incoming data confirms ${_insEsc(driverProse)}, expect the ${moverName} bias to push toward ${biggestMover.bias==='Bullish'?'80/100':biggestMover.bias==='Bearish'?'20/100':'a clearer trending reading'} over the next 24 hours${watchPair?`, with <strong>${watchPair}</strong> the cleanest expression of the trade`:''}.</div></div><div class="scenario-box" style="border-left-color:#dc2626;"><div class="scenario-title" style="color:#dc2626;">📉 Risk to the view</div><div class="scenario-text">A reversal in <strong>${_insEsc(reverseTrigger).toLowerCase()}</strong> would quickly neutralize the ${biasWord} read on the ${moverName}. Watch ${biggestMover.currency} pairs for a snap back toward 50/100 if the next central-bank wire pushes the other way.</div></div>`;
+  const closing = `<p>Tomorrow's update lands at <strong>06:00 UTC</strong> ahead of the London open and will reset the picture against the latest overnight headlines. For live tracking through the day, the <a href="/">sentiment dashboard</a>, <a href="/currencies">currency strength meter</a>, and <a href="/calendar">economic calendar</a> all update in real time.</p>`;
+
+  const glance = _INS_CCY_ORDER.map(c=>{const x=sentiment[c];if(!x)return '';return `<div class="glance-cell" style="border-top-color:${_insBiasColor(x.bias)};"><div class="glance-ccy">${c}</div><div class="glance-score">${x.score}</div><div class="glance-arr" style="color:${_insBiasColor(x.bias)};">${_insBiasArrow(x.bias)} ${x.bias.slice(0,4)}</div></div>`;}).join('');
+
+  return { lead, standfirst, whatHappened, reaction, driversSection, scenarios, closing, glance };
+}
+
+function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category}){
   const url = `${_INS_SITE}/insight/${slug}`;
   const h = _insEsc(headline), s = _insEsc(summary);
-  const biasGrid = _INS_CCY_ORDER.map(c=>{
-    const x = sentiment[c]; if(!x) return '';
-    return `<div class="bias-card" style="border-left-color:${_insBiasColor(x.bias)};"><div class="bias-ccy">${c}</div><div class="bias-score">${x.score}</div><div class="bias-label" style="color:${_insBiasColor(x.bias)};">${_insBiasArrow(x.bias)} ${x.bias}</div></div>`;
-  }).join('');
-  const starters = ['Today the','Sentiment for the','The','Markets sent the','News flow drove the',"Today's data left the"];
-  const breakdown = _INS_CCY_ORDER.map((c,i)=>{
-    const x = sentiment[c]; if(!x) return '';
-    const drivers = (x.drivers||[]).slice(0,3);
-    const dlist = drivers.length ? drivers.map(d=>`<li>${_insEsc(d)}</li>`).join('') : '<li>No specific drivers recorded.</li>';
-    return `<div class="ccy-block" style="border-left-color:${_insBiasColor(x.bias)};"><div class="ccy-head"><span class="ccy-arrow" style="color:${_insBiasColor(x.bias)};">${_insBiasArrow(x.bias)}</span><span class="ccy-name">${_INS_CCY_NAMES[c]} (${c})</span><span style="color:${_insBiasColor(x.bias)};font-weight:700;font-size:13px;">${x.bias}</span><span class="ccy-score">${x.score}/100</span></div><p class="ccy-intro">${starters[i%starters.length]} <strong>${_INS_CCY_NAMES[c]}</strong> shows a <strong style="color:${_insBiasColor(x.bias)};">${x.bias.toLowerCase()}</strong> news sentiment reading at <strong>${x.score}/100</strong>, driven by:</p><ul class="ccy-list">${dlist}</ul></div>`;
-  }).join('');
-  const high = news.filter(n=>n.impact==='High').slice(0,3);
-  const fill = news.filter(n=>n.impact!=='High').slice(0,Math.max(0,3-high.length));
-  const top = [...high,...fill].slice(0,3);
-  const newsHtml = top.length===0 ? '<p style="color:#6b7280;">No notable headlines recorded in the past 24 hours.</p>' :
-    `<ol class="news-list">${top.map(n=>{
-      const ccys = (n.currencies_affected||[]).join(', ') || 'cross-market';
-      return `<li><a class="news-link" href="${_insEsc(_insSafeUrl(n.url))}" target="_blank" rel="noopener nofollow">${_insEsc(n.title)}</a><div class="news-meta"><span class="imp-badge imp-${_insEsc(n.impact||'Medium')}">${_insEsc(n.impact||'')}</span>${_insEsc(n.source)} · affects ${_insEsc(ccys)}</div></li>`;
-    }).join('')}</ol>`;
-  const intro = `Forex markets digested a fresh wave of news flow over the past 24 hours, with our sentiment engine scoring the eight major currencies using live headlines from Reuters, Bloomberg, ForexLive and central bank wires. Today's standout mover is the <strong>${_INS_CCY_NAMES[biggestMover.currency]}</strong>, which printed a <strong style="color:${_insBiasColor(biggestMover.bias)};">${biggestMover.bias.toLowerCase()}</strong> reading at ${biggestMover.score}/100. Below is the full bias snapshot, followed by a currency-by-currency breakdown and the top news driving today's sentiment.`;
-  const closing = `Use this insight as a fundamental backdrop alongside your own technical analysis. Pair the strongest bullish currency against the weakest bearish currency for a classic news-driven setup. Tomorrow's update lands at 06:00 UTC ahead of the London open. Track these biases live on the <a href="/">FXNewsBias dashboard</a>, the <a href="/currencies">currency strength meter</a>, the <a href="/pairs">28-pair bias matrix</a>, or the <a href="/calendar">economic calendar</a>.`;
-  const sidebarCcys = _INS_CCY_ORDER.slice(0,5).map(c=>{
-    const x = sentiment[c]; if(!x) return '';
-    return `<a class="side-link" href="/currencies"><span style="color:${_insBiasColor(x.bias)};font-weight:700;">${_insBiasArrow(x.bias)} ${c}</span> · <span style="color:#6b7280;font-weight:500;">${x.bias} ${x.score}/100</span></a>`;
-  }).join('');
+  const N = _insBuildNarrative({sentiment, news, biggestMover});
+  const sidebarCcys = _INS_CCY_ORDER.slice(0,5).map(c=>{const x=sentiment[c];if(!x)return '';return `<a class="side-link" href="/currencies"><span style="color:${_insBiasColor(x.bias)};font-weight:700;">${_insBiasArrow(x.bias)} ${c}</span> · <span style="color:#6b7280;font-weight:500;">${x.bias} ${x.score}/100</span></a>`;}).join('');
   const ld = JSON.stringify({"@context":"https://schema.org","@type":"NewsArticle","headline":headline,"description":summary,"datePublished":dateISO,"dateModified":dateISO,"author":{"@type":"Organization","name":"FXNewsBias Team","url":_INS_SITE},"publisher":{"@type":"Organization","name":"FXNewsBias","logo":{"@type":"ImageObject","url":`${_INS_SITE}/logo-fxnb.png`}},"mainEntityOfPage":{"@type":"WebPage","@id":url},"image":`${_INS_SITE}/og-image.png`,"articleSection":"Forex Analysis"});
   const cat = _insEsc(category||'Market Wrap');
   const dateStr = new Date().toUTCString().split(' ').slice(0,4).join(' ');
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="icon" href="/favicon.ico">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="icon" href="/favicon.ico"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
 <title>${h} | FXNewsBias</title><meta name="description" content="${s}"><meta name="robots" content="index, follow"><meta name="author" content="FXNewsBias Team"><link rel="canonical" href="${url}">
 <meta property="og:type" content="article"><meta property="og:title" content="${h}"><meta property="og:description" content="${s}"><meta property="og:url" content="${url}"><meta property="og:image" content="${_INS_SITE}/og-image.png"><meta property="og:site_name" content="FXNewsBias">
@@ -2176,23 +2230,21 @@ function _insRenderArticle({ headline, slug, summary, sentiment, news, biggestMo
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}.topbar-left,.topbar-right{display:flex;gap:14px;color:#94a3b8;}.topbar a{color:#94a3b8;text-decoration:none;}.topbar a:hover{color:#fff;}
 .page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}.crumb{font-size:13px;color:#94a3b8;margin-bottom:10px;}.crumb a{color:#94a3b8;text-decoration:none;}
 .cat-tag{display:inline-block;background:#2563eb;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;border-radius:4px;text-transform:uppercase;margin-bottom:12px;}
-.page-title{font-size:clamp(22px,3.4vw,30px);font-weight:800;line-height:1.25;letter-spacing:-0.5px;margin-bottom:10px;color:#fff;}.page-sub{color:#94a3b8;font-size:14px;line-height:1.5;max-width:760px;}
+.page-title{font-size:clamp(22px,3.4vw,30px);font-weight:800;line-height:1.25;letter-spacing:-0.5px;margin-bottom:10px;color:#fff;}.page-sub{color:#94a3b8;font-size:14px;line-height:1.55;max-width:760px;}
 .byline{margin-top:14px;color:#94a3b8;font-size:13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}.byline-author{color:#fff;font-weight:600;}.byline-dot{color:#475569;}
 .main{max-width:1280px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:24px;}@media(max-width:980px){.main{grid-template-columns:1fr;}}
-.article-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:28px;}@media(max-width:600px){.article-card{padding:20px;}}
-.lead{font-size:17px;line-height:1.7;color:#374151;margin-bottom:24px;}.lead strong{color:#1a1a1a;}
-.h2{font-size:21px;font-weight:800;color:#1a1a1a;margin:32px 0 14px;letter-spacing:-0.3px;border-top:1px solid var(--border);padding-top:24px;}.h2:first-of-type{border-top:none;padding-top:0;margin-top:0;}
-.bias-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 12px;}@media(max-width:600px){.bias-grid{grid-template-columns:repeat(2,1fr);}}
-.bias-card{background:#f8f9fa;border:1px solid var(--border);border-left:4px solid;border-radius:8px;padding:12px;text-align:center;}.bias-ccy{font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:1px;}.bias-score{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;color:#1a1a1a;margin:4px 0;line-height:1;}.bias-label{font-size:12px;font-weight:700;}
-.bias-note{font-size:13px;color:var(--text-soft);margin-bottom:8px;}
-.ccy-block{background:#f8f9fa;border:1px solid var(--border);border-left:4px solid;border-radius:8px;padding:18px;margin-bottom:12px;}.ccy-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}.ccy-arrow{font-size:14px;}.ccy-name{font-size:16px;font-weight:800;color:#1a1a1a;}.ccy-score{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-soft);font-weight:600;margin-left:auto;}
-.ccy-intro{color:#374151;font-size:14px;line-height:1.6;margin-bottom:8px;}.ccy-intro strong{color:#1a1a1a;}
-.ccy-list{list-style:none;padding:0;margin:0;}.ccy-list li{position:relative;padding:6px 0 6px 18px;font-size:13.5px;color:#374151;line-height:1.55;border-top:1px dashed var(--border);}.ccy-list li:first-child{border-top:none;}.ccy-list li:before{content:'•';position:absolute;left:4px;color:var(--accent);font-weight:700;}
-.news-list{list-style:none;padding:0;margin:0;counter-reset:n;}.news-list li{counter-increment:n;position:relative;padding:14px 14px 14px 46px;background:#f8f9fa;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;}.news-list li:before{content:counter(n);position:absolute;left:14px;top:14px;background:var(--accent);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
-.news-link{color:#1a1a1a;font-weight:600;font-size:14.5px;line-height:1.45;display:block;margin-bottom:6px;}.news-link:hover{color:var(--accent);text-decoration:none;}.news-meta{font-size:12px;color:var(--text-soft);}
-.imp-badge{display:inline-block;color:#fff;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:0.5px;margin-right:6px;text-transform:uppercase;}.imp-High{background:#dc2626;}.imp-Medium{background:#f59e0b;}.imp-Low{background:#2563eb;}
-.what-next{color:#374151;font-size:15px;line-height:1.7;}
-.cta{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:18px;margin-top:24px;color:#1e40af;font-size:14.5px;line-height:1.6;}.cta strong{color:#0f172a;}
+.article-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:32px;}@media(max-width:600px){.article-card{padding:22px;}}
+.lead{font-size:18px;line-height:1.7;color:#1a1a1a;margin-bottom:8px;font-weight:500;}.lead strong{font-weight:700;}
+.standfirst{font-size:14px;color:var(--text-soft);margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:18px;}
+.h2{font-size:22px;font-weight:800;color:#1a1a1a;margin:32px 0 12px;letter-spacing:-0.3px;}
+.prose p{font-size:16px;line-height:1.75;color:#1a1a1a;margin-bottom:14px;}.prose p strong{font-weight:700;}
+.prose blockquote{border-left:4px solid var(--accent);background:#f8fafc;padding:14px 18px;margin:18px 0;font-size:15px;color:#374151;line-height:1.65;border-radius:0 8px 8px 0;font-style:italic;}.prose blockquote cite{display:block;font-size:12px;color:var(--text-soft);margin-top:6px;font-style:normal;}
+.timeline{list-style:none;padding:0;margin:14px 0 8px;border-left:2px solid var(--border);}.timeline li{position:relative;padding:0 0 16px 22px;}.timeline li:before{content:'';position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 0 0 1px var(--accent);}
+.timeline-time{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);font-weight:700;display:block;margin-bottom:3px;letter-spacing:0.5px;}.timeline-text{font-size:15px;line-height:1.6;color:#1a1a1a;}.timeline-text a{color:#1a1a1a;font-weight:600;border-bottom:1px dotted var(--text-muted);}.timeline-text a:hover{color:var(--accent);text-decoration:none;border-bottom-color:var(--accent);}.timeline-meta{display:block;font-size:12px;color:var(--text-soft);margin-top:3px;}
+.imp-pill{display:inline-block;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:0.5px;margin-right:6px;text-transform:uppercase;vertical-align:middle;}.imp-High{background:#dc2626;}.imp-Medium{background:#f59e0b;}.imp-Low{background:#2563eb;}
+.scenario-box{background:#f8fafc;border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:16px 18px;margin:14px 0;}.scenario-title{font-size:13px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}.scenario-text{font-size:14.5px;line-height:1.65;color:#1a1a1a;}.scenario-text strong{font-weight:700;}
+.glance{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:18px;margin-top:24px;}.glance-h{font-size:13px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px;}.glance-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;}@media(max-width:680px){.glance-grid{grid-template-columns:repeat(4,1fr);}}.glance-cell{background:#fff;border:1px solid var(--border);border-top:3px solid;border-radius:6px;padding:8px 4px;text-align:center;}.glance-ccy{font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.8px;}.glance-score{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;color:#1a1a1a;line-height:1;margin:3px 0;}.glance-arr{font-size:11px;font-weight:700;}
+.cta{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:18px;margin-top:28px;color:#1e3a8a;font-size:14.5px;line-height:1.6;}.cta strong{color:#0f172a;}
 .sidebar-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px;}.sidebar-h{font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;}
 .side-link{display:block;padding:10px 0;border-bottom:1px solid var(--border);color:#1a1a1a;font-size:14px;font-weight:600;line-height:1.4;}.side-link:last-child{border-bottom:none;}.side-link:hover{color:var(--accent);text-decoration:none;}
 .share-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}.share-btn{flex:1;text-align:center;padding:8px;background:#f8f9fa;border:1px solid var(--border);border-radius:6px;color:#1a1a1a;font-size:12px;font-weight:600;}.share-btn:hover{background:var(--accent);color:#fff;text-decoration:none;border-color:var(--accent);}
@@ -2209,14 +2261,15 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <div class="byline"><span class="byline-author">By FXNewsBias Team</span><span class="byline-dot">·</span><span>Published ${dateLabel}</span><span class="byline-dot">·</span><span>4 min read</span></div>
 </div></header>
 <div class="main">
-<article class="article-card">
-<p class="lead">${intro}</p>
-<h2 class="h2">Currency Bias Snapshot</h2><div class="bias-grid">${biasGrid}</div>
-<p class="bias-note">Scores 0-100 from our news sentiment engine. 50 is neutral, &gt;65 strongly bullish, &lt;35 strongly bearish. Updated every 3 hours from live forex news.</p>
-<h2 class="h2">Currency-by-Currency Breakdown</h2>${breakdown}
-<h2 class="h2">Top News Driving Today's Sentiment</h2>${newsHtml}
-<h2 class="h2">What to Watch Next</h2><p class="what-next">${closing}</p>
-<div class="cta"><strong>Want this every morning before London opens?</strong> Bookmark <a href="/insight/">/insight/</a> or subscribe to our <a href="/insight/rss.xml">RSS feed</a> — fresh forex sentiment analysis delivered daily, free, no signup.</div>
+<article class="article-card prose">
+<p class="lead">${N.lead}</p>
+<p class="standfirst">${N.standfirst}</p>
+<h2 class="h2">What Happened</h2>${N.whatHappened}
+<h2 class="h2">Market Reaction</h2>${N.reaction}
+<h2 class="h2">What's Driving the Move</h2>${N.driversSection}
+<h2 class="h2">What to Watch Next</h2>${N.scenarios}${N.closing}
+<div class="glance"><div class="glance-h">📊 Bias snapshot at the time of writing</div><div class="glance-grid">${N.glance}</div></div>
+<div class="cta"><strong>Get tomorrow's wrap before London opens.</strong> Bookmark <a href="/insight/">/insight/</a> or subscribe to our <a href="/insight/rss.xml">RSS feed</a> for fresh forex sentiment analysis every morning at 06:00 UTC.</div>
 </article>
 <aside>
 <div class="sidebar-card"><div class="sidebar-h">📊 Live Currency Bias</div>${sidebarCcys}<a class="side-link" style="text-align:center;color:#2563eb;border-top:1px solid #e5e7eb;margin-top:6px;padding-top:12px;" href="/currencies">View all 8 currencies →</a></div>
@@ -2236,15 +2289,14 @@ function _insRenderIndex(articles){
 <link rel="icon" href="/favicon.ico"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <title>Daily Forex Insights | News Sentiment Analysis - FXNewsBias</title>
-<meta name="description" content="Daily forex market insights with news sentiment analysis for the 8 major currencies. Updated every morning before the London open.">
+<meta name="description" content="Daily forex market wraps with focus on the highest-impact news, market reaction, and what to watch next. Published every morning at 06:00 UTC.">
 <meta name="robots" content="index, follow"><link rel="canonical" href="${_INS_SITE}/insight/">
-<meta property="og:type" content="website"><meta property="og:title" content="Daily Forex Insights | FXNewsBias"><meta property="og:description" content="Daily forex market insights with news sentiment analysis for the 8 major currencies."><meta property="og:url" content="${_INS_SITE}/insight/"><meta property="og:image" content="${_INS_SITE}/og-image.png">
+<meta property="og:type" content="website"><meta property="og:title" content="Daily Forex Insights | FXNewsBias"><meta property="og:description" content="Daily forex market wraps with focus on the highest-impact news, market reaction, and what to watch next."><meta property="og:url" content="${_INS_SITE}/insight/"><meta property="og:image" content="${_INS_SITE}/og-image.png">
 <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}:root{--border:#e5e7eb;--accent:#2563eb;}a{color:#2563eb;text-decoration:none;}a:hover{text-decoration:underline;}
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}.topbar a{color:#94a3b8;text-decoration:none;}
 .page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}.crumb{font-size:13px;color:#94a3b8;margin-bottom:10px;}.crumb a{color:#94a3b8;}.page-title{font-size:clamp(24px,4vw,32px);font-weight:800;color:#fff;margin-bottom:8px;letter-spacing:-0.5px;}.page-sub{color:#94a3b8;font-size:14px;line-height:1.5;max-width:760px;}
 .main{max-width:1280px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:24px;}@media(max-width:980px){.main{grid-template-columns:1fr;}}
-.ix-grid{display:grid;gap:14px;}
-.ix-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;border-left:4px solid var(--accent);transition:box-shadow .15s, transform .15s;}.ix-card:hover{box-shadow:0 4px 14px rgba(37,99,235,.08);transform:translateY(-1px);}
+.ix-grid{display:grid;gap:14px;}.ix-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;border-left:4px solid var(--accent);transition:box-shadow .15s, transform .15s;}.ix-card:hover{box-shadow:0 4px 14px rgba(37,99,235,.08);transform:translateY(-1px);}
 .ix-meta{display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}.ix-cat{background:#2563eb;color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:3px;text-transform:uppercase;}.ix-date{font-size:12px;color:#6b7280;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
 .ix-title{margin:6px 0 8px;}.ix-title a{color:#1a1a1a;font-size:18px;font-weight:800;line-height:1.35;letter-spacing:-0.2px;}.ix-title a:hover{color:#2563eb;text-decoration:none;}.ix-desc{color:#374151;font-size:14px;line-height:1.6;margin-bottom:8px;}.ix-read{color:#2563eb;font-size:13px;font-weight:700;}
 .rss-card{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:20px;margin-top:24px;text-align:center;}.rss-card a{color:#1e40af;font-weight:700;font-size:14px;}
@@ -2258,13 +2310,13 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <header class="page-head"><div class="page-head-inner">
 <div class="crumb"><a href="/">Home</a> · <span>Daily Insights</span></div>
 <h1 class="page-title">Daily Forex Insights</h1>
-<p class="page-sub">Daily market wraps based on our live news sentiment engine. Published every morning at 06:00 UTC, ahead of the London open. Free, no signup, ad-supported.</p>
+<p class="page-sub">Daily market wraps focused on the highest-impact news, the currencies that moved, and what traders should watch over the next 24 hours. Published every morning at 06:00 UTC, ahead of the London open.</p>
 </div></header>
 <div class="main">
 <div><div class="ix-grid">${items}</div><div class="rss-card"><a href="/insight/rss.xml">📡 Subscribe via RSS</a><div style="font-size:13px;color:#1e40af;margin-top:6px;">Get new insights in Feedly, Inoreader, or any RSS reader</div></div></div>
 <aside>
 <div class="sidebar-card"><div class="sidebar-h">📊 Live Tools</div><a class="side-link" href="/">Sentiment Dashboard</a><a class="side-link" href="/currencies">Currency Strength Meter</a><a class="side-link" href="/pairs">28-Pair Bias Matrix</a><a class="side-link" href="/calendar">Economic Calendar</a><a class="side-link" href="/news">Forex News Feed</a></div>
-<div class="sidebar-card"><div class="sidebar-h">ℹ️ About These Insights</div><p style="font-size:13.5px;color:#374151;line-height:1.6;">Each insight is generated from our live sentiment engine — combining bias scores, news flow, and currency-by-currency analysis into a single morning brief. No AI fluff, just the data, every day at 06:00 UTC.</p></div>
+<div class="sidebar-card"><div class="sidebar-h">ℹ️ About These Insights</div><p style="font-size:13.5px;color:#374151;line-height:1.6;">Each insight focuses on the highest-impact news from the past 24 hours, the currency reaction, the drivers behind the move, and forward-looking scenarios for the next session.</p></div>
 </aside>
 </div>
 <footer><div class="footer-inner"><div class="footer-bottom">© ${new Date().getFullYear()} FXNewsBias · <a href="/about">About</a> · <a href="/disclaimer">Disclaimer</a></div></div></footer>
@@ -2278,7 +2330,7 @@ function _insRenderRss(articles){
 <rss version="2.0"><channel>
 <title>FXNewsBias Daily Insights</title>
 <link>${_INS_SITE}/insight/</link>
-<description>Daily forex market insights with news sentiment analysis for the 8 major currencies.</description>
+<description>Daily forex market insights focused on the highest-impact news and what traders should watch next.</description>
 <language>en</language>
 <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${items}
