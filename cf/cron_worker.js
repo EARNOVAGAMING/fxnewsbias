@@ -2360,15 +2360,22 @@ async function generateDailyInsight(env) {
     // Keep most recent 50 for index/RSS (oldest still served, just not listed)
     const articlesMeta = [];
     articlesMeta.push({ slug, headline: angle.headline, summary: angle.summary, dateISO, dateLabel });
+    const _CCY_CODES = new Set(['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD']);
     for (const fname of existing.slice(0, 49)) {
       if (fname === `${slug}.html`) continue;
       const m = fname.match(/^(\d{4}-\d{2}-\d{2})-(.+)\.html$/);
       if (!m) continue;
       const oldDate = new Date(m[1] + 'T06:00:00Z');
       const oldSlug = fname.replace(/\.html$/, '');
+      // Title-case the slug, but uppercase 3-letter currency codes (USD, GBP, etc).
+      const titled = oldSlug.replace(/^\d{4}-\d{2}-\d{2}-/, '').split('-').map(w => {
+        const u = w.toUpperCase();
+        if (_CCY_CODES.has(u)) return u;
+        return w.charAt(0).toUpperCase() + w.slice(1);
+      }).join(' ');
       articlesMeta.push({
         slug: oldSlug,
-        headline: oldSlug.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace(/-/g,' ').replace(/\b\w/g, c => c.toUpperCase()),
+        headline: titled,
         summary: 'Previous daily forex insight from the FXNewsBias sentiment engine.',
         dateISO: oldDate.toISOString(),
         dateLabel: oldDate.toUTCString().split(' ').slice(0,4).join(' ')
