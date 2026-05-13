@@ -2,5 +2,5 @@
 # /index.html and / as two pages. 301 = permanent (passes SEO weight).
 /index.html  /  301
 
-# www -> apex (only fires if a www DNS record ever points here)
-https://www.fxnewsbias.com/*  https://fxnewsbias.com/:splat  301
+# www -> apex redirect handled at Cloudflare DNS / page rule level
+# (Worker static assets only allows relative URLs, not cross-host redirects)
