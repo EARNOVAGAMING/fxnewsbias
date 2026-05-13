@@ -5,7 +5,7 @@
     const css = `
       .logo{display:inline-flex;align-items:center;gap:10px;line-height:1;text-decoration:none;}
       .logo img{height:38px;width:auto;display:block;flex:0 0 auto;}
-      .logo .logo-word{font-size:20px;font-weight:800;letter-spacing:-0.5px;color:#f8fafc;
+      .logo .logo-word{display:none!important;font-size:20px;font-weight:800;letter-spacing:-0.5px;color:#f8fafc;
         font-style:normal;white-space:nowrap;}
       .logo .logo-word em{color:#3b82f6;font-style:normal;}
       @media(max-width:640px){
