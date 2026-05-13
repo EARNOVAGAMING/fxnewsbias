@@ -9,44 +9,50 @@
 <title><xsl:value-of select="rss/channel/title"/> — RSS Feed</title>
 <link rel="icon" href="/favicon.ico"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" as="style"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#0f172a;color:#cbd5e1;font-family:'Inter',-apple-system,Segoe UI,sans-serif;line-height:1.6;padding:32px 20px 60px;}
-.wrap{max-width:760px;margin:0 auto;}
-.banner{background:linear-gradient(135deg,#1e3a8a 0%,#1e293b 100%);border-radius:12px;padding:22px;margin-bottom:24px;border-left:4px solid #60a5fa;}
-.banner-label{color:#60a5fa;font-size:11px;font-weight:700;letter-spacing:1.5px;margin-bottom:6px;}
-.banner-title{color:#fff;font-size:20px;font-weight:700;margin-bottom:8px;}
-.banner-text{color:#cbd5e1;font-size:14px;line-height:1.6;}
-.banner-text code{background:#0f172a;padding:3px 8px;border-radius:4px;color:#fbbf24;font-family:'JetBrains Mono',monospace;font-size:13px;word-break:break-all;}
-.banner-text a{color:#60a5fa;}
-h1{color:#fff;font-size:28px;font-weight:800;margin-bottom:6px;letter-spacing:-0.5px;}
-.feed-desc{color:#94a3b8;font-size:14px;margin-bottom:28px;}
-.item{background:#1e293b;border-radius:10px;padding:20px;margin-bottom:14px;border-left:3px solid #60a5fa;}
-.item-date{color:#94a3b8;font-size:12px;letter-spacing:1px;font-weight:600;text-transform:uppercase;margin-bottom:6px;}
+body{background:#ffffff;color:#1a1a1a;font-family:'Inter',-apple-system,Segoe UI,sans-serif;line-height:1.5;}
+.head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 20px;}
+.head-inner{max-width:760px;margin:0 auto;}
+.crumb{font-size:13px;color:#94a3b8;margin-bottom:8px;}
+.crumb a{color:#94a3b8;text-decoration:none;}
+.head h1{font-size:28px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px;color:#fff;}
+.head p{color:#94a3b8;font-size:14px;}
+.wrap{max-width:760px;margin:24px auto;padding:0 20px 60px;}
+.banner{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:18px;margin-bottom:24px;color:#1e40af;}
+.banner-label{color:#2563eb;font-size:11px;font-weight:800;letter-spacing:1.5px;margin-bottom:6px;text-transform:uppercase;}
+.banner-title{color:#0f172a;font-size:18px;font-weight:800;margin-bottom:8px;}
+.banner-text{font-size:14px;line-height:1.6;color:#1e3a8a;}
+.banner-text code{background:#dbeafe;padding:2px 6px;border-radius:3px;color:#1e40af;font-family:monospace;font-size:13px;}
+.item{background:#fff;border:1px solid #e5e7eb;border-radius:10px;border-left:4px solid #2563eb;padding:18px;margin-bottom:12px;transition:box-shadow .15s;}
+.item:hover{box-shadow:0 4px 14px rgba(37,99,235,.08);}
+.item-date{color:#6b7280;font-size:11px;letter-spacing:1px;font-weight:700;text-transform:uppercase;margin-bottom:6px;}
 .item-title{margin-bottom:8px;}
-.item-title a{color:#fff;text-decoration:none;font-size:17px;font-weight:700;line-height:1.4;}
-.item-title a:hover{color:#60a5fa;}
-.item-desc{color:#cbd5e1;font-size:14px;line-height:1.6;margin-bottom:8px;}
-.item-link{color:#60a5fa;font-size:13px;font-weight:600;text-decoration:none;}
-.back{display:inline-block;margin-top:24px;color:#94a3b8;font-size:13px;text-decoration:none;}
-.back:hover{color:#fff;}
+.item-title a{color:#1a1a1a;text-decoration:none;font-size:17px;font-weight:800;line-height:1.4;letter-spacing:-0.2px;}
+.item-title a:hover{color:#2563eb;}
+.item-desc{color:#374151;font-size:14px;line-height:1.6;margin-bottom:8px;}
+.item-link{color:#2563eb;font-size:13px;font-weight:700;text-decoration:none;}
+.back{display:inline-block;margin-top:16px;color:#2563eb;font-size:13px;text-decoration:none;font-weight:600;}
 </style>
 </head>
 <body>
+<div class="head">
+  <div class="head-inner">
+    <div class="crumb"><a href="/">Home</a> · <a href="/insight/">Insights</a> · <span>RSS Feed</span></div>
+    <h1><xsl:value-of select="rss/channel/title"/></h1>
+    <p><xsl:value-of select="rss/channel/description"/></p>
+  </div>
+</div>
 <div class="wrap">
   <div class="banner">
-    <div class="banner-label">📡 RSS FEED</div>
+    <div class="banner-label">📡 What is this page?</div>
     <div class="banner-title">This is an RSS feed</div>
     <div class="banner-text">
-      Copy this page's URL into an RSS reader app (Feedly, Inoreader, Reeder, etc.) to get new insights delivered automatically every morning. No signup needed.
-      <br/><br/>
-      Or browse the articles below — same content, just easier to read.
+      Copy this page's URL and paste it into an RSS reader app (Feedly, Inoreader, Reeder, etc.) to get new insights delivered automatically every morning. No signup needed.<br/><br/>
+      Or just browse the articles below — same content, easier to read.
     </div>
   </div>
-  <h1><xsl:value-of select="rss/channel/title"/></h1>
-  <p class="feed-desc"><xsl:value-of select="rss/channel/description"/></p>
   <xsl:for-each select="rss/channel/item">
     <div class="item">
       <div class="item-date"><xsl:value-of select="pubDate"/></div>

@@ -1,16 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="/insight/rss-style.xsl"?>
 <rss version="2.0"><channel>
-  <title>FXNewsBias Daily Insights</title>
-  <link>https://fxnewsbias.com/insight/</link>
-  <description>Daily forex market insights with news sentiment analysis for the 8 major currencies.</description>
-  <language>en</language>
-  <lastBuildDate>Wed, 13 May 2026 05:51:30 GMT</lastBuildDate>
-  <item>
-    <title>British Pound Weakens as Bearish News Sentiment Dominates — Wed, 13 May 2026</title>
-    <link>https://fxnewsbias.com/insight/2026-05-13-gbp-weakens-bearish-pressure</link>
-    <guid>https://fxnewsbias.com/insight/2026-05-13-gbp-weakens-bearish-pressure</guid>
-    <pubDate>Wed, 13 May 2026 05:51:30 GMT</pubDate>
-    <description>British Pound (GBP) faces the strongest bearish pressure across the major currencies today, with negative news flow weighing on sentiment.</description>
-  </item>
+<title>FXNewsBias Daily Insights</title>
+<link>https://fxnewsbias.com/insight/</link>
+<description>Daily forex market insights with news sentiment analysis for the 8 major currencies.</description>
+<language>en</language>
+<lastBuildDate>Wed, 13 May 2026 06:12:19 GMT</lastBuildDate>
+<item><title>US Dollar Strengthens as Bullish Sentiment Builds Across Forex — Wed, 13 May 2026</title><link>https://fxnewsbias.com/insight/2026-05-13-usd-strengthens-bullish-sentiment</link><guid>https://fxnewsbias.com/insight/2026-05-13-usd-strengthens-bullish-sentiment</guid><pubDate>Wed, 13 May 2026 06:12:19 GMT</pubDate><description>US Dollar (USD) leads forex sentiment today with a strong bullish reading, while other majors show mixed positioning.</description></item>
 </channel></rss>

@@ -3,45 +3,132 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0f172a">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
 <title>Daily Forex Insights | News Sentiment Analysis - FXNewsBias</title>
 <meta name="description" content="Daily forex market insights with news sentiment analysis for the 8 major currencies. Updated every morning before the London open.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://fxnewsbias.com/insight/">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Daily Forex Insights | FXNewsBias">
-<meta property="og:description" content="Daily forex market insights with news sentiment analysis for the 8 major currencies.">
-<meta property="og:url" content="https://fxnewsbias.com/insight/">
-<meta property="og:image" content="https://fxnewsbias.com/og-image.png">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="manifest" href="/site.webmanifest">
-<meta name="theme-color" content="#0f172a">
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="/styles.css">
-<script src="/nav.js" defer></script>
-<script src="/cookie.js" defer></script>
-<script src="/analytics.js" defer></script>
+<meta property="og:type" content="website"><meta property="og:title" content="Daily Forex Insights | FXNewsBias"><meta property="og:description" content="Daily forex market insights with news sentiment analysis for the 8 major currencies."><meta property="og:url" content="https://fxnewsbias.com/insight/"><meta property="og:image" content="https://fxnewsbias.com/og-image.png">
+<style>*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#ffffff;color:#1a1a1a;line-height:1.5;}
+:root{--bg:#ffffff;--bg-soft:#f8f9fa;--bg-card:#ffffff;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--primary:#0f172a;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left,.topbar-right{display:flex;gap:14px;color:#94a3b8;}
+.topbar a{color:#94a3b8;text-decoration:none;}.topbar a:hover{color:#fff;}
+.page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}
+.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.crumb{font-size:13px;color:#94a3b8;margin-bottom:10px;}
+.crumb a{color:#94a3b8;text-decoration:none;}.crumb a:hover{color:#fff;}
+.cat-tag{display:inline-block;background:#2563eb;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 10px;border-radius:4px;text-transform:uppercase;margin-bottom:12px;}
+.page-title{font-size:clamp(22px,3.4vw,30px);font-weight:800;line-height:1.25;letter-spacing:-0.5px;margin-bottom:10px;color:#fff;}
+.page-sub{color:#94a3b8;font-size:14px;line-height:1.5;max-width:760px;}
+.byline{margin-top:14px;color:#94a3b8;font-size:13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.byline-author{color:#fff;font-weight:600;}
+.byline-dot{color:#475569;}
+.main{max-width:1280px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:24px;}
+@media(max-width:980px){.main{grid-template-columns:1fr;}}
+.article-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:28px;}
+@media(max-width:600px){.article-card{padding:20px;}}
+.lead{font-size:17px;line-height:1.7;color:#374151;margin-bottom:24px;font-weight:400;}
+.lead strong{color:#1a1a1a;}
+.h2{font-size:21px;font-weight:800;color:#1a1a1a;margin:32px 0 14px;letter-spacing:-0.3px;border-top:1px solid var(--border);padding-top:24px;}
+.h2:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+.bias-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 12px;}
+@media(max-width:600px){.bias-grid{grid-template-columns:repeat(2,1fr);}}
+.bias-card{background:#f8f9fa;border:1px solid var(--border);border-left:4px solid;border-radius:8px;padding:12px;text-align:center;}
+.bias-ccy{font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:1px;}
+.bias-score{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;color:#1a1a1a;margin:4px 0;line-height:1;}
+.bias-label{font-size:12px;font-weight:700;}
+.bias-note{font-size:13px;color:var(--text-soft);margin-bottom:8px;}
+.ccy-block{background:#f8f9fa;border:1px solid var(--border);border-left:4px solid;border-radius:8px;padding:18px;margin-bottom:12px;}
+.ccy-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.ccy-arrow{font-size:14px;}
+.ccy-name{font-size:16px;font-weight:800;color:#1a1a1a;}
+.ccy-score{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-soft);font-weight:600;margin-left:auto;}
+.ccy-intro{color:#374151;font-size:14px;line-height:1.6;margin-bottom:8px;}
+.ccy-intro strong{color:#1a1a1a;}
+.ccy-list{list-style:none;padding:0;margin:0;}
+.ccy-list li{position:relative;padding:6px 0 6px 18px;font-size:13.5px;color:#374151;line-height:1.55;border-top:1px dashed var(--border);}
+.ccy-list li:first-child{border-top:none;}
+.ccy-list li:before{content:'•';position:absolute;left:4px;color:var(--accent);font-weight:700;}
+.news-list{list-style:none;padding:0;margin:0;counter-reset:n;}
+.news-list li{counter-increment:n;position:relative;padding:14px 14px 14px 46px;background:#f8f9fa;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;}
+.news-list li:before{content:counter(n);position:absolute;left:14px;top:14px;background:var(--accent);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+.news-link{color:#1a1a1a;font-weight:600;font-size:14.5px;line-height:1.45;display:block;margin-bottom:6px;}
+.news-link:hover{color:var(--accent);text-decoration:none;}
+.news-meta{font-size:12px;color:var(--text-soft);}
+.imp-badge{display:inline-block;color:#fff;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:0.5px;margin-right:6px;text-transform:uppercase;}
+.imp-High{background:#dc2626;}.imp-Medium{background:#f59e0b;}.imp-Low{background:#2563eb;}
+.what-next{color:#374151;font-size:15px;line-height:1.7;}
+.cta{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:18px;margin-top:24px;color:#1e40af;font-size:14.5px;line-height:1.6;}
+.cta strong{color:#0f172a;}
+.sidebar-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px;}
+.sidebar-h{font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;}
+.side-link{display:block;padding:10px 0;border-bottom:1px solid var(--border);color:#1a1a1a;font-size:14px;font-weight:600;line-height:1.4;}
+.side-link:last-child{border-bottom:none;}
+.side-link:hover{color:var(--accent);text-decoration:none;}
+.side-date{font-size:11px;color:var(--text-muted);font-weight:500;margin-top:4px;letter-spacing:0.5px;text-transform:uppercase;}
+.share-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.share-btn{flex:1;text-align:center;padding:8px;background:#f8f9fa;border:1px solid var(--border);border-radius:6px;color:#1a1a1a;font-size:12px;font-weight:600;}
+.share-btn:hover{background:var(--accent);color:#fff;text-decoration:none;border-color:var(--accent);}
+footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
+.footer-inner{max-width:1280px;margin:0 auto;}
+.footer-bottom{text-align:center;font-size:12px;padding-top:16px;border-top:1px solid #1e293b;color:#64748b;}
+.footer-bottom a{color:#94a3b8;}
+.ix-grid{display:grid;gap:14px;}
+.ix-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;border-left:4px solid var(--accent);transition:box-shadow .15s, transform .15s;}
+.ix-card:hover{box-shadow:0 4px 14px rgba(37,99,235,.08);transform:translateY(-1px);}
+.ix-meta{display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+.ix-cat{background:#2563eb;color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:3px;text-transform:uppercase;}
+.ix-date{font-size:12px;color:#6b7280;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
+.ix-title{margin:6px 0 8px;}.ix-title a{color:#1a1a1a;font-size:18px;font-weight:800;line-height:1.35;letter-spacing:-0.2px;}
+.ix-title a:hover{color:#2563eb;text-decoration:none;}
+.ix-desc{color:#374151;font-size:14px;line-height:1.6;margin-bottom:8px;}
+.ix-read{color:#2563eb;font-size:13px;font-weight:700;}
+.rss-card{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:20px;margin-top:24px;text-align:center;}
+.rss-card a{color:#1e40af;font-weight:700;font-size:14px;}</style>
+<script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
 </head>
-<body style="background:#0f172a;color:#cbd5e1;font-family:'Inter',sans-serif;margin:0;">
+<body>
+<div class="topbar"><div class="topbar-inner"><div class="topbar-left"><span>📅 Wed, 13 May 2026</span></div><div class="topbar-right"><a href="/insight/">Daily Insights</a><a href="/news">News</a></div></div></div>
 <style>@media(max-width:768px){.nav-menu,.nav-actions{display:none!important;}.nav-toggle{display:flex!important;}}@media(min-width:769px){.nav-toggle{display:flex!important;}.nav-menu,.nav-actions{display:none!important;}}</style>
 <nav class="nav"></nav>
-<main style="max-width:880px;margin:0 auto;padding:32px 20px 60px;">
-  <div style="font-size:13px;color:#94a3b8;margin-bottom:14px;"><a href="/" style="color:#94a3b8;text-decoration:none;">Home</a> · Daily Insights</div>
-  <h1 style="color:#fff;font-size:clamp(24px,4vw,32px);font-weight:800;margin:0 0 8px;">Daily Forex Insights</h1>
-  <p style="color:#94a3b8;font-size:15px;margin:0 0 28px;line-height:1.6;">Daily market wraps based on our live news sentiment engine. Published every morning at 06:00 UTC, ahead of the London open.</p>
-  
-    <article style="background:#1e293b;border-radius:10px;padding:20px;margin-bottom:14px;border-left:4px solid #60a5fa;">
-      <div style="color:#94a3b8;font-size:12px;letter-spacing:1px;font-weight:600;">Wed, 13 May 2026</div>
-      <h2 style="margin:6px 0 8px;"><a href="/insight/2026-05-13-gbp-weakens-bearish-pressure" style="color:#fff;text-decoration:none;font-size:18px;font-weight:700;">British Pound Weakens as Bearish News Sentiment Dominates — Wed, 13 May 2026</a></h2>
-      <p style="color:#cbd5e1;font-size:14px;line-height:1.6;margin:0 0 8px;">British Pound (GBP) faces the strongest bearish pressure across the major currencies today, with negative news flow weighing on sentiment.</p>
-      <a href="/insight/2026-05-13-gbp-weakens-bearish-pressure" style="color:#60a5fa;font-size:13px;font-weight:600;text-decoration:none;">Read full insight →</a>
-    </article>
-  <div style="margin-top:32px;padding:20px;background:#1e293b;border-radius:10px;text-align:center;">
-    <a href="/insight/rss.xml" style="color:#60a5fa;text-decoration:none;font-size:14px;font-weight:600;">📡 Subscribe via RSS</a>
+<header class="page-head">
+  <div class="page-head-inner">
+    <div class="crumb"><a href="/">Home</a> · <span>Daily Insights</span></div>
+    <h1 class="page-title">Daily Forex Insights</h1>
+    <p class="page-sub">Daily market wraps based on our live news sentiment engine. Published every morning at 06:00 UTC, ahead of the London open. Free, no signup, ad-supported.</p>
   </div>
-</main>
-<footer style="background:#0f172a;border-top:1px solid #1e293b;padding:24px 20px;text-align:center;color:#94a3b8;font-size:13px;">
-  © 2026 FXNewsBias · <a href="/about" style="color:#94a3b8;">About</a> · <a href="/disclaimer" style="color:#94a3b8;">Disclaimer</a>
-</footer>
-</body>
-</html>
+</header>
+<div class="main">
+  <div>
+    <div class="ix-grid"><article class="ix-card"><div class="ix-meta"><span class="ix-cat">USD Analysis</span><span class="ix-date">Wed, 13 May 2026</span></div><h2 class="ix-title"><a href="/insight/2026-05-13-usd-strengthens-bullish-sentiment">US Dollar Strengthens as Bullish Sentiment Builds Across Forex — Wed, 13 May 2026</a></h2><p class="ix-desc">US Dollar (USD) leads forex sentiment today with a strong bullish reading, while other majors show mixed positioning.</p><a class="ix-read" href="/insight/2026-05-13-usd-strengthens-bullish-sentiment">Read full insight →</a></article></div>
+    <div class="rss-card"><a href="/insight/rss.xml">📡 Subscribe via RSS</a><div style="font-size:13px;color:#1e40af;margin-top:6px;">Get new insights in Feedly, Inoreader, or any RSS reader</div></div>
+  </div>
+  <aside>
+    <div class="sidebar-card">
+      <div class="sidebar-h">📊 Live Tools</div>
+      <a class="side-link" href="/">Sentiment Dashboard</a>
+      <a class="side-link" href="/currencies">Currency Strength Meter</a>
+      <a class="side-link" href="/pairs">28-Pair Bias Matrix</a>
+      <a class="side-link" href="/calendar">Economic Calendar</a>
+      <a class="side-link" href="/news">Forex News Feed</a>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-h">ℹ️ About These Insights</div>
+      <p style="font-size:13.5px;color:#374151;line-height:1.6;">Each insight is generated from our live sentiment engine — combining bias scores, news flow, and currency-by-currency analysis into a single morning brief. No AI fluff, just the data, every day at 06:00 UTC.</p>
+    </div>
+  </aside>
+</div>
+<footer><div class="footer-inner"><div class="footer-bottom">© 2026 FXNewsBias · <a href="/about">About</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/insight/">All Daily Insights</a> · <a href="/insight/rss.xml">RSS</a></div></div></footer>
+</body></html>
