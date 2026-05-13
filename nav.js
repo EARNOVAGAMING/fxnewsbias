@@ -56,19 +56,36 @@
           filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
         nav ul.fxnb-mobile li.fxnb-drawer-logo:hover{background:linear-gradient(180deg,#0b1222,#0f172a);}
 
-        /* Quick-access submenus for Currencies and Pairs */
-        nav ul.fxnb-mobile li.fxnb-submenu{padding:0;background:#0b1222;
+        /* Hybrid collapsible submenus for Currencies and Pairs */
+        nav ul.fxnb-mobile li.fxnb-submenu{padding:0;background:#0f172a;
           border-bottom:1px solid rgba(255,255,255,.06);}
-        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-head{display:flex;align-items:center;
-          padding:14px 24px;font-size:11px;font-weight:700;text-transform:uppercase;
-          letter-spacing:1px;color:#64748b;background:#0b1222;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-toggle{display:flex;
+          align-items:center;justify-content:space-between;width:100%;
+          padding:15px 24px;font-size:15px;font-weight:600;color:#e2e8f0;
+          background:none;border:none;cursor:pointer;text-align:left;
+          font-family:inherit;transition:background .15s ease,color .15s ease;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-toggle:hover,
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-toggle:active{
+          background:rgba(37,99,235,.12);color:#60a5fa;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-chev{font-size:12px;color:#64748b;
+          transition:transform .25s ease;}
+        nav ul.fxnb-mobile li.fxnb-submenu.is-open .fxnb-chev{transform:rotate(180deg);color:#60a5fa;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-body{max-height:0;overflow:hidden;
+          transition:max-height .3s ease;background:#0b1222;}
+        nav ul.fxnb-mobile li.fxnb-submenu.is-open .fxnb-sub-body{max-height:600px;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-overview{display:block;
+          padding:11px 24px 11px 36px;font-size:13px;font-weight:500;color:#94a3b8;
+          text-decoration:none;border-bottom:1px solid rgba(255,255,255,.04);}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-overview:hover,
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-overview:active{
+          background:rgba(37,99,235,.1);color:#60a5fa;padding-left:40px;}
         nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid{display:grid;
-          grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.06);
+          grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.04);
           padding:1px;}
         nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid a{display:flex;flex-direction:column;
           align-items:center;justify-content:center;padding:10px 4px;background:#0f172a;
           color:#e2e8f0;font-size:11px;font-weight:600;text-align:center;width:auto;
-          min-height:50px;line-height:1.2;}
+          min-height:52px;line-height:1.2;text-decoration:none;}
         nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid a:hover,
         nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid a:active{padding-left:4px;
           background:rgba(37,99,235,.18);color:#60a5fa;}
@@ -78,6 +95,16 @@
           grid-template-columns:repeat(3,1fr);}
         nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid.pairs-grid a{font-size:10px;
           font-family:'JetBrains Mono',monospace;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-show-all{display:block;width:100%;
+          padding:11px 24px;font-size:12px;font-weight:600;color:#60a5fa;
+          background:none;border:none;cursor:pointer;text-align:center;
+          font-family:inherit;border-top:1px solid rgba(255,255,255,.04);}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-show-all:hover,
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-show-all:active{
+          background:rgba(37,99,235,.12);color:#93c5fd;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-extra-grid{display:none;}
+        nav ul.fxnb-mobile li.fxnb-submenu.show-extra .fxnb-extra-grid{display:grid;}
+        nav ul.fxnb-mobile li.fxnb-submenu.show-extra .fxnb-show-all{display:none;}
 
         nav ul.fxnb-mobile{position:fixed;top:0;right:0;height:100vh;width:min(86vw,360px);
           background:#0f172a;flex-direction:column;align-items:stretch;gap:0;padding:56px 0 0;
@@ -288,43 +315,76 @@
       drawerLogo.innerHTML = '<a href="/" aria-label="FXNB Home" style="padding:0;background:none;"><img src="/logo-fxnb.png" alt="FXNB"></a>';
       navMenu.insertBefore(drawerLogo, navMenu.firstChild);
 
-      // -------- CURRENCIES quick-access submenu --------
+      // -------- CURRENCIES collapsible submenu (hybrid layout) --------
       const ccyMenu = document.createElement('li');
       ccyMenu.className = 'fxnb-extra fxnb-submenu';
       ccyMenu.innerHTML =
-        `<div class="fxnb-sub-head">⚡ Quick: Currency Pages</div>
-         <div class="fxnb-sub-grid">
-           <a href="/currencies/usd"><span class="sub-flag">🇺🇸</span>USD</a>
-           <a href="/currencies/eur"><span class="sub-flag">🇪🇺</span>EUR</a>
-           <a href="/currencies/gbp"><span class="sub-flag">🇬🇧</span>GBP</a>
-           <a href="/currencies/jpy"><span class="sub-flag">🇯🇵</span>JPY</a>
-           <a href="/currencies/aud"><span class="sub-flag">🇦🇺</span>AUD</a>
-           <a href="/currencies/cad"><span class="sub-flag">🇨🇦</span>CAD</a>
-           <a href="/currencies/chf"><span class="sub-flag">🇨🇭</span>CHF</a>
-           <a href="/currencies/nzd"><span class="sub-flag">🇳🇿</span>NZD</a>
+        `<button type="button" class="fxnb-sub-toggle" data-toggle="ccy">
+           💱 Currencies <span class="fxnb-chev">▾</span>
+         </button>
+         <div class="fxnb-sub-body">
+           <a class="fxnb-sub-overview" href="/currencies">→ All 8 Currencies (overview)</a>
+           <div class="fxnb-sub-grid">
+             <a href="/currencies/usd"><span class="sub-flag">🇺🇸</span>USD</a>
+             <a href="/currencies/eur"><span class="sub-flag">🇪🇺</span>EUR</a>
+             <a href="/currencies/gbp"><span class="sub-flag">🇬🇧</span>GBP</a>
+             <a href="/currencies/jpy"><span class="sub-flag">🇯🇵</span>JPY</a>
+           </div>
+           <button type="button" class="fxnb-show-all" data-expand="ccy">Show all 8 ↓</button>
+           <div class="fxnb-sub-grid fxnb-extra-grid">
+             <a href="/currencies/aud"><span class="sub-flag">🇦🇺</span>AUD</a>
+             <a href="/currencies/cad"><span class="sub-flag">🇨🇦</span>CAD</a>
+             <a href="/currencies/chf"><span class="sub-flag">🇨🇭</span>CHF</a>
+             <a href="/currencies/nzd"><span class="sub-flag">🇳🇿</span>NZD</a>
+           </div>
          </div>`;
       navMenu.appendChild(ccyMenu);
 
-      // -------- PAIRS quick-access submenu --------
+      // -------- PAIRS collapsible submenu (hybrid layout) --------
       const pairMenu = document.createElement('li');
       pairMenu.className = 'fxnb-extra fxnb-submenu';
       pairMenu.innerHTML =
-        `<div class="fxnb-sub-head">⚡ Quick: Top Forex Pairs</div>
-         <div class="fxnb-sub-grid pairs-grid">
-           <a href="/pairs/eur-usd">EUR/USD</a>
-           <a href="/pairs/gbp-usd">GBP/USD</a>
-           <a href="/pairs/usd-jpy">USD/JPY</a>
-           <a href="/pairs/usd-chf">USD/CHF</a>
-           <a href="/pairs/aud-usd">AUD/USD</a>
-           <a href="/pairs/usd-cad">USD/CAD</a>
-           <a href="/pairs/nzd-usd">NZD/USD</a>
-           <a href="/pairs/eur-gbp">EUR/GBP</a>
-           <a href="/pairs/eur-jpy">EUR/JPY</a>
-           <a href="/pairs/gbp-jpy">GBP/JPY</a>
-           <a href="/pairs/aud-jpy">AUD/JPY</a>
-           <a href="/pairs/cad-jpy">CAD/JPY</a>
+        `<button type="button" class="fxnb-sub-toggle" data-toggle="pair">
+           📊 Forex Pairs <span class="fxnb-chev">▾</span>
+         </button>
+         <div class="fxnb-sub-body">
+           <a class="fxnb-sub-overview" href="/pairs">→ All Pairs (28-pair matrix)</a>
+           <div class="fxnb-sub-grid pairs-grid">
+             <a href="/pairs/eur-usd">EUR/USD</a>
+             <a href="/pairs/gbp-usd">GBP/USD</a>
+             <a href="/pairs/usd-jpy">USD/JPY</a>
+             <a href="/pairs/aud-usd">AUD/USD</a>
+           </div>
+           <button type="button" class="fxnb-show-all" data-expand="pair">Show all 15 ↓</button>
+           <div class="fxnb-sub-grid pairs-grid fxnb-extra-grid">
+             <a href="/pairs/usd-chf">USD/CHF</a>
+             <a href="/pairs/usd-cad">USD/CAD</a>
+             <a href="/pairs/nzd-usd">NZD/USD</a>
+             <a href="/pairs/eur-gbp">EUR/GBP</a>
+             <a href="/pairs/eur-jpy">EUR/JPY</a>
+             <a href="/pairs/eur-chf">EUR/CHF</a>
+             <a href="/pairs/gbp-jpy">GBP/JPY</a>
+             <a href="/pairs/aud-jpy">AUD/JPY</a>
+             <a href="/pairs/chf-jpy">CHF/JPY</a>
+             <a href="/pairs/cad-jpy">CAD/JPY</a>
+             <a href="/pairs/aud-nzd">AUD/NZD</a>
+           </div>
          </div>`;
       navMenu.appendChild(pairMenu);
+
+      // Wire up the collapsible toggles
+      navMenu.querySelectorAll('.fxnb-sub-toggle').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          this.closest('.fxnb-submenu').classList.toggle('is-open');
+        });
+      });
+      navMenu.querySelectorAll('.fxnb-show-all').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          this.closest('.fxnb-submenu').classList.add('show-extra');
+        });
+      });
 
       // -------- AUTH section --------
       const authDivider = document.createElement('li');
