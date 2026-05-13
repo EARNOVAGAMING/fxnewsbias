@@ -610,7 +610,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     <h2 style="color:#fff;font-size:24px;margin-bottom:18px;font-weight:700;">What is FXNewsBias?</h2>
     <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">FXNewsBias is a free, AI-powered forex news sentiment dashboard built for retail traders who want to understand the fundamental story behind currency price movements without spending hours reading financial news. Every three hours, our system pulls the latest forex headlines from trusted sources like Reuters, Bloomberg, ForexLive, and central bank wires, then runs each story through a sentiment classifier to score it as bullish, bearish, or neutral for each of the eight major currencies: USD, EUR, GBP, JPY, AUD, CAD, CHF, and NZD.</p>
 
-    <h2 style="color:#fff;font-size:22px;margin:24px 0 14px;font-weight:700;">How the AI Sentiment Analysis Works</h2>
+    <h2 style="color:#fff;font-size:22px;margin:24px 0 14px;font-weight:700;">How Our Real-Time Forex Market Sentiment Analysis Works</h2>
     <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">Our sentiment engine uses Anthropic's Claude language model, instructed with the rules a professional fundamental analyst would apply: hawkish central bank language is bullish for that currency, dovish language is bearish, risk-off events strengthen the safe-haven currencies (USD, JPY, CHF) and weaken the commodity-linked currencies (AUD, CAD, NZD). Inflation surprises, employment beats, GDP misses, geopolitical shocks, and trade balance shifts are all weighted by their historical impact on FX markets. Each currency receives a bias score from strongly bearish to strongly bullish, which feeds into the live dashboard, the per-pair bias view, and the historical sentiment archive.</p>
 
     <h2 style="color:#fff;font-size:22px;margin:24px 0 14px;font-weight:700;">Who Should Use This Dashboard?</h2>
@@ -618,8 +618,39 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
     <h2 style="color:#fff;font-size:22px;margin:24px 0 14px;font-weight:700;">What's Inside</h2>
     <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">The dashboard includes a live currency strength gauge, an 8-currency sentiment grid updated every three hours, a 28-pair bias matrix covering all major and cross pairs, a high-impact economic calendar focused on rate decisions and inflation prints, a curated news feed with sentiment scoring, a community space where traders share analysis, and a historical archive so you can study how sentiment shifted around past Fed meetings, NFP releases and ECB decisions. Pro members unlock detailed per-news bias breakdowns, custom alerts, and an ad-free experience.</p>
+
+    <h2 style="color:#fff;font-size:24px;margin:36px 0 18px;font-weight:700;border-top:1px solid #1e293b;padding-top:32px;">Frequently Asked Questions</h2>
+
+    <h3 style="color:#fff;font-size:17px;margin:18px 0 8px;font-weight:600;">Is FXNewsBias really free to use?</h3>
+    <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">Yes. The full sentiment dashboard, currency strength meter, 28-pair bias matrix, news feed, and economic calendar are free to use without signup. We offer an optional Pro upgrade for traders who want per-news bias breakdowns, custom alerts, and an ad-free interface, but the core market sentiment data is always free.</p>
+
+    <h3 style="color:#fff;font-size:17px;margin:18px 0 8px;font-weight:600;">How is forex market sentiment calculated?</h3>
+    <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">We pull live forex news every three hours from Reuters, Bloomberg, ForexLive, and central bank wires. Each headline is analysed by an AI model trained to weight hawkish versus dovish central bank language, inflation and employment surprises, risk-on versus risk-off events, and geopolitical shocks. Each of the eight major currencies receives a bias score from strongly bearish to strongly bullish, which becomes the news sentiment signal you see on the dashboard.</p>
+
+    <h3 style="color:#fff;font-size:17px;margin:18px 0 8px;font-weight:600;">Which currency pairs and currencies does FXNewsBias cover?</h3>
+    <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">We track the eight major currencies (USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD) and the 28 currency pairs that can be formed between them, which covers every major and cross pair retail forex traders use, from EUR/USD and GBP/JPY to AUD/NZD and CAD/CHF.</p>
+
+    <h3 style="color:#fff;font-size:17px;margin:18px 0 8px;font-weight:600;">How often is the forex news sentiment data updated?</h3>
+    <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">The sentiment grid, currency strength gauge, and pair bias matrix refresh every three hours, twenty-four hours a day, five days a week, in line with the global forex session. The news feed itself updates as headlines are published.</p>
+
+    <h3 style="color:#fff;font-size:17px;margin:18px 0 8px;font-weight:600;">Does FXNewsBias give buy or sell signals?</h3>
+    <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">No. FXNewsBias is a sentiment analysis tool, not a signal service. We tell you what the news flow currently says about each currency, not when to enter or exit a trade. Combine our sentiment data with your own technical analysis and risk management.</p>
   </div>
 </section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Is FXNewsBias really free to use?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The full sentiment dashboard, currency strength meter, 28-pair bias matrix, news feed, and economic calendar are free to use without signup. We offer an optional Pro upgrade for traders who want per-news bias breakdowns, custom alerts, and an ad-free interface, but the core market sentiment data is always free."}},
+    {"@type": "Question", "name": "How is forex market sentiment calculated?", "acceptedAnswer": {"@type": "Answer", "text": "We pull live forex news every three hours from Reuters, Bloomberg, ForexLive, and central bank wires. Each headline is analysed by an AI model trained to weight hawkish versus dovish central bank language, inflation and employment surprises, risk-on versus risk-off events, and geopolitical shocks. Each of the eight major currencies receives a bias score from strongly bearish to strongly bullish."}},
+    {"@type": "Question", "name": "Which currency pairs and currencies does FXNewsBias cover?", "acceptedAnswer": {"@type": "Answer", "text": "We track the eight major currencies (USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD) and the 28 currency pairs that can be formed between them, which covers every major and cross pair retail forex traders use."}},
+    {"@type": "Question", "name": "How often is the forex news sentiment data updated?", "acceptedAnswer": {"@type": "Answer", "text": "The sentiment grid, currency strength gauge, and pair bias matrix refresh every three hours, twenty-four hours a day, five days a week, in line with the global forex session."}},
+    {"@type": "Question", "name": "Does FXNewsBias give buy or sell signals?", "acceptedAnswer": {"@type": "Answer", "text": "No. FXNewsBias is a sentiment analysis tool, not a signal service. We tell you what the news flow currently says about each currency, not when to enter or exit a trade."}}
+  ]
+}
+</script>
 
 <footer>
   <div class="footer-inner">
