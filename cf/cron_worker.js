@@ -106,13 +106,17 @@ return new Response('FXNewsBias Cron Worker Running', { status: 200 });
 },
 
 async scheduled(event, env, ctx) {
-// Two cron triggers:
+// Cron triggers:
 //   '0 */3 * * *'  -> sentiment analysis (every 3 hours)
 //   '*/15 * * * *' -> price updates + staleness check (every 15 minutes)
+//   '0 0 * * *'    -> ASEAN session insight (Asia open)
+//   '0 6 * * *'    -> London session insight (London open)
+//   '0 12 * * *'   -> New York session insight (NY open)
 const tasks = [];
-if (event.cron === '0 6 * * *') {
-// Daily insight generator — runs at 06:00 UTC, before London open.
-tasks.push(generateDailyInsight(env).catch(e => console.log('Daily insight error:', e.message)));
+const SESSION_BY_CRON = { '0 0 * * *': 'asean', '0 6 * * *': 'london', '0 12 * * *': 'newyork' };
+if (SESSION_BY_CRON[event.cron]) {
+const session = SESSION_BY_CRON[event.cron];
+tasks.push(generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)));
 } else if (event.cron === '0 */3 * * *') {
 tasks.push(runSentimentAnalysis(env));
 tasks.push(updatePrices(env));
@@ -2088,6 +2092,22 @@ async function _insGh(env, method, path, body) {
 function _insBiasColor(b) { return b === 'Bullish' ? '#10b981' : b === 'Bearish' ? '#ef4444' : '#94a3b8'; }
 function _insBiasArrow(b) { return b === 'Bullish' ? '▲' : b === 'Bearish' ? '▼' : '—'; }
 
+// Session metadata used to label each daily insight (3x/day publishing cadence).
+// Keys match SESSION_BY_CRON values in the scheduled() handler.
+const _INS_SESSIONS = {
+  asean:   { label: 'Asia Session',     short: 'asia',    intro: 'Asia session is opening — here is the overnight forex sentiment picture as Tokyo, Singapore and Sydney desks come online.' },
+  london:  { label: 'London Session',   short: 'london',  intro: 'London is opening — here is the forex sentiment setup heading into the European session.' },
+  newyork: { label: 'New York Session', short: 'ny',      intro: 'New York is opening — here is the forex sentiment setup heading into the US session.' }
+};
+
+// Detect session from current UTC hour for on-demand runs (manual /api/run-insight calls).
+function _insDetectSessionFromHour() {
+  const h = new Date().getUTCHours();
+  if (h < 6) return 'asean';
+  if (h < 12) return 'london';
+  return 'newyork';
+}
+
 function _insDetectAngle(sentiment) {
   const arr = Object.values(sentiment);
   arr.sort((a,b) => Math.abs(b.score - 50) - Math.abs(a.score - 50));
@@ -2416,8 +2436,10 @@ async function _insSendFailureEmail(env, error, ctx) {
   }
 }
 
-async function generateDailyInsight(env) {
-  console.log('Daily insight: starting...');
+async function generateDailyInsight(env, session) {
+  const sess = _INS_SESSIONS[session] ? session : _insDetectSessionFromHour();
+  const sessMeta = _INS_SESSIONS[sess];
+  console.log(`Daily insight: starting... (session=${sess})`);
   try {
     if (!env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN env var not set');
     if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) throw new Error('Supabase env vars missing');
@@ -2433,14 +2455,17 @@ async function generateDailyInsight(env) {
     if (Object.keys(sentiment).length < 6) throw new Error(`Insufficient sentiment data: only ${Object.keys(sentiment).length} currencies`);
     if (news.length < 3) throw new Error(`Insufficient news data: only ${news.length} items`);
 
-    // 3. Generate article
+    // 3. Generate article — session-tagged (3x per day: asia/london/newyork)
     const angle = _insDetectAngle(sentiment);
     const dateISO = new Date().toISOString();
     const today = dateISO.slice(0, 10);
-    const slug = `${today}-${angle.slug}`;
+    const slug = `${today}-${sessMeta.short}-${angle.slug}`;
     const dateLabel = new Date().toUTCString().split(' ').slice(0,4).join(' ');
+    const sessionHeadline = `${sessMeta.label}: ${angle.headline}`;
+    const sessionSummary = `${sessMeta.intro} ${angle.summary}`;
+    const sessionCategory = `${sessMeta.label} • ${angle.category}`;
 
-    const articleHtml = _insRenderArticle({ headline: angle.headline, slug, summary: angle.summary, sentiment, news, biggestMover: angle.biggestMover, dateISO, dateLabel, category: angle.category });
+    const articleHtml = _insRenderArticle({ headline: sessionHeadline, slug, summary: sessionSummary, sentiment, news, biggestMover: angle.biggestMover, dateISO, dateLabel, category: sessionCategory });
 
     // 4. Word count check
     const text = articleHtml.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>/g, ' ').replace(/\s+/g,' ').trim();
@@ -2453,7 +2478,7 @@ async function generateDailyInsight(env) {
     const allSlugs = [`${slug}.html`, ...existing.filter(n => n !== `${slug}.html`)];
     // Keep most recent 50 for index/RSS (oldest still served, just not listed)
     const articlesMeta = [];
-    articlesMeta.push({ slug, headline: angle.headline, summary: angle.summary, dateISO, dateLabel, category: angle.category });
+    articlesMeta.push({ slug, headline: sessionHeadline, summary: sessionSummary, dateISO, dateLabel, category: sessionCategory });
     const _CCY_CODES = new Set(['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD']);
     for (const fname of existing.slice(0, 49)) {
       if (fname === `${slug}.html`) continue;
@@ -2491,7 +2516,7 @@ async function generateDailyInsight(env) {
       { path: 'insight/index.html', content: _insRenderIndex(articlesMeta) },
       { path: 'insight/rss.xml', content: _insRenderRss(articlesMeta) },
       { path: 'sitemap.xml', content: newSitemap }
-    ], `Daily insight: ${angle.headline}`);
+    ], `Daily insight (${sessMeta.label}): ${angle.headline}`);
 
     console.log(`Insight: committed ${sha.slice(0,7)} - ${slug}`);
     return { ok: true, slug, sha, wordCount };
