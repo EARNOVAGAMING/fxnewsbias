@@ -17,7 +17,6 @@
   <url><loc>https://fxnewsbias.com/disclaimer</loc><lastmod>2026-05-10</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://fxnewsbias.com/privacy</loc><lastmod>2026-05-10</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://fxnewsbias.com/terms</loc><lastmod>2026-05-10</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://fxnewsbias.com/insight/2026-05-13-gbp-weakens-bearish-pressure</loc><lastmod>2026-05-13</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/currencies/usd/</loc><lastmod>2026-05-13</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc>https://fxnewsbias.com/currencies/eur/</loc><lastmod>2026-05-13</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc>https://fxnewsbias.com/currencies/gbp/</loc><lastmod>2026-05-13</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>
@@ -41,4 +40,5 @@
   <url><loc>https://fxnewsbias.com/pairs/chf-jpy/</loc><lastmod>2026-05-13</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/pairs/cad-jpy/</loc><lastmod>2026-05-13</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/pairs/aud-nzd/</loc><lastmod>2026-05-13</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/insight/2026-05-13-usd-strengthens-bullish-sentiment</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
 </urlset>

@@ -1,0 +1,50 @@
+# FXNewsBias
+
+> Free real-time forex news sentiment dashboard. AI-powered bias analysis for the 8 major currencies and 15 most-traded pairs, refreshed every 3 hours.
+
+FXNewsBias scans hundreds of forex news sources every 3 hours and uses Claude AI to score each currency and pair as Bullish, Bearish or Neutral. The site is free, requires no account to view sentiment, and is built for retail forex traders who want a fast read on market bias before placing trades.
+
+## Core pages
+
+- [Home / Live Dashboard](https://fxnewsbias.com/): live sentiment scores for all 8 majors
+- [All Currencies](https://fxnewsbias.com/currencies): currency strength meter and bias for USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD
+- [All Pairs](https://fxnewsbias.com/pairs): bias matrix for the 15 most-traded forex pairs
+- [News Feed](https://fxnewsbias.com/news): latest forex news with sentiment tags
+- [Daily Insights](https://fxnewsbias.com/insight/): session wraps for Asia, London, New York
+- [Economic Calendar](https://fxnewsbias.com/calendar): upcoming high-impact data
+- [Community](https://fxnewsbias.com/community): trader discussion
+
+## Currency pages
+
+- [USD - US Dollar](https://fxnewsbias.com/currencies/usd/)
+- [EUR - Euro](https://fxnewsbias.com/currencies/eur/)
+- [GBP - British Pound](https://fxnewsbias.com/currencies/gbp/)
+- [JPY - Japanese Yen](https://fxnewsbias.com/currencies/jpy/)
+- [AUD - Australian Dollar](https://fxnewsbias.com/currencies/aud/)
+- [CAD - Canadian Dollar](https://fxnewsbias.com/currencies/cad/)
+- [CHF - Swiss Franc](https://fxnewsbias.com/currencies/chf/)
+- [NZD - New Zealand Dollar](https://fxnewsbias.com/currencies/nzd/)
+
+## Pair pages
+
+- [EUR/USD](https://fxnewsbias.com/pairs/eur-usd/)
+- [GBP/USD](https://fxnewsbias.com/pairs/gbp-usd/)
+- [USD/JPY](https://fxnewsbias.com/pairs/usd-jpy/)
+- [USD/CHF](https://fxnewsbias.com/pairs/usd-chf/)
+- [AUD/USD](https://fxnewsbias.com/pairs/aud-usd/)
+- [USD/CAD](https://fxnewsbias.com/pairs/usd-cad/)
+- [NZD/USD](https://fxnewsbias.com/pairs/nzd-usd/)
+- [EUR/GBP](https://fxnewsbias.com/pairs/eur-gbp/)
+- [EUR/JPY](https://fxnewsbias.com/pairs/eur-jpy/)
+- [EUR/CHF](https://fxnewsbias.com/pairs/eur-chf/)
+- [GBP/JPY](https://fxnewsbias.com/pairs/gbp-jpy/)
+- [AUD/JPY](https://fxnewsbias.com/pairs/aud-jpy/)
+- [CHF/JPY](https://fxnewsbias.com/pairs/chf-jpy/)
+- [CAD/JPY](https://fxnewsbias.com/pairs/cad-jpy/)
+- [AUD/NZD](https://fxnewsbias.com/pairs/aud-nzd/)
+
+## About
+
+- [How it works](https://fxnewsbias.com/how)
+- [About](https://fxnewsbias.com/about)
+- [Disclaimer](https://fxnewsbias.com/disclaimer)
