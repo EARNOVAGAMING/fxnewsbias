@@ -55,13 +55,31 @@ return new Response(JSON.stringify(result, null, 2), {
 status: 200, headers: { 'Content-Type': 'application/json' }
 });
 }
+if (url.pathname === '/run-insight') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await generateDailyInsight(env);
+return new Response(JSON.stringify(result, null, 2), {
+status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' }
+});
+}
 if (url.pathname === '/incidents') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 return handleIncidentsView(url, env);
 }
+if (url.pathname === '/cleanup-runs') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+return handleCleanupRunsView(url, env);
+}
 if (url.pathname === '/cleanup-system-state') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const result = await cleanupSystemState(env);
+return new Response(JSON.stringify(result, null, 2), {
+status: 200, headers: { 'Content-Type': 'application/json' }
+});
+}
+if (url.pathname === '/cleanup-cleanup-runs') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await cleanupCleanupRuns(env);
 return new Response(JSON.stringify(result, null, 2), {
 status: 200, headers: { 'Content-Type': 'application/json' }
 });
@@ -92,7 +110,10 @@ async scheduled(event, env, ctx) {
 //   '0 */3 * * *'  -> sentiment analysis (every 3 hours)
 //   '*/15 * * * *' -> price updates + staleness check (every 15 minutes)
 const tasks = [];
-if (event.cron === '0 */3 * * *') {
+if (event.cron === '0 6 * * *') {
+// Daily insight generator — runs at 06:00 UTC, before London open.
+tasks.push(generateDailyInsight(env).catch(e => console.log('Daily insight error:', e.message)));
+} else if (event.cron === '0 */3 * * *') {
 tasks.push(runSentimentAnalysis(env));
 tasks.push(updatePrices(env));
 // Once every 3 hours is plenty for a retention sweep — system_state is
@@ -102,6 +123,10 @@ tasks.push(cleanupSystemState(env).catch(e => console.log('Cleanup error:', e.me
 // on the same 3-hourly cadence so the Supabase tables stay manageable.
 tasks.push(cleanupNews(env).catch(e => console.log('cleanupNews error:', e.message)));
 tasks.push(cleanupSentiment(env).catch(e => console.log('cleanupSentiment error:', e.message)));
+// The cleanup_runs history table itself accumulates ~24 rows/day forever
+// (3 tables x 8 sweeps/day) — sweep it on the same tick so it stays
+// bounded. See cleanupCleanupRuns for retention details.
+tasks.push(cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns error:', e.message)));
 } else {
 tasks.push(updatePrices(env));
 }
@@ -794,6 +819,151 @@ ${body}
 }
 
 // ============================================
+// CLEANUP RUN HISTORY
+// ============================================
+// Append-only log of retention sweeps in the `cleanup_runs` table. Each
+// cleanup function writes one row per invocation (success or failure)
+// so the team can confirm via /cleanup-runs that the 3-hourly sweeps
+// are happening and roughly how many rows they're reclaiming. Helpers
+// here are best-effort: a failure to write history must NEVER prevent
+// the sweep itself from making progress. See cf/cleanup_runs.sql for
+// the table DDL.
+
+async function recordCleanupRun(env, run) {
+try {
+const body = {
+table_name: run.table_name,
+ran_at: new Date().toISOString(),
+deleted_count: run.deleted_count != null ? run.deleted_count : null,
+cutoff: run.cutoff || null,
+retention_days: run.retention_days != null ? run.retention_days : null,
+ok: run.ok !== false,
+error: run.error || null,
+extra: run.extra || {}
+};
+const r = await fetch(`${env.SUPABASE_URL}/rest/v1/cleanup_runs`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+apikey: env.SUPABASE_SERVICE_KEY,
+Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+Prefer: 'return=minimal'
+},
+body: JSON.stringify(body)
+});
+if (!r.ok) console.log('recordCleanupRun non-ok:', r.status, (await r.text()).slice(0, 200));
+} catch (e) {
+console.log('recordCleanupRun error:', e.message);
+}
+}
+
+async function listRecentCleanupRuns(env, tableName, limit) {
+const params = new URLSearchParams();
+params.set('select', 'id,table_name,ran_at,deleted_count,cutoff,retention_days,ok,error,extra');
+params.set('order', 'ran_at.desc');
+params.set('limit', String(limit));
+if (tableName) params.set('table_name', `eq.${tableName}`);
+try {
+const r = await fetch(
+`${env.SUPABASE_URL}/rest/v1/cleanup_runs?${params.toString()}`,
+{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
+);
+if (!r.ok) {
+console.log('listRecentCleanupRuns non-ok:', r.status);
+return [];
+}
+const rows = await r.json();
+return Array.isArray(rows) ? rows : [];
+} catch (e) {
+console.log('listRecentCleanupRuns error:', e.message);
+return [];
+}
+}
+
+async function handleCleanupRunsView(url, env) {
+const tableName = url.searchParams.get('table') || '';
+const limitRaw = parseInt(url.searchParams.get('limit'), 10);
+const limit = Math.min(Math.max(isFinite(limitRaw) ? limitRaw : 20, 1), 200);
+const format = (url.searchParams.get('format') || 'html').toLowerCase();
+
+let rows;
+if (tableName) {
+rows = await listRecentCleanupRuns(env, tableName, limit);
+} else {
+// "Last N per table": pull a generous window then group/cap per table
+// in JS so we don't need a window function or a SQL view.
+const all = await listRecentCleanupRuns(env, null, Math.max(limit * 4, 200));
+const perTable = new Map();
+for (const r of all) {
+const arr = perTable.get(r.table_name) || [];
+if (arr.length < limit) arr.push(r);
+perTable.set(r.table_name, arr);
+}
+rows = [];
+for (const arr of perTable.values()) rows.push(...arr);
+rows.sort((a, b) => Date.parse(b.ran_at) - Date.parse(a.ran_at));
+}
+
+if (format === 'json') {
+return new Response(JSON.stringify({ table: tableName || null, limit, count: rows.length, runs: rows }, null, 2), {
+status: 200, headers: { 'Content-Type': 'application/json' }
+});
+}
+
+return new Response(renderCleanupRunsHtml(rows, tableName, limit), {
+status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' }
+});
+}
+
+function renderCleanupRunsHtml(rows, tableName, limit) {
+const heading = tableName
+? `Last ${limit} cleanup runs for <code>${escapeHtml(tableName)}</code>`
+: `Last ${limit} cleanup runs per table`;
+const body = rows.length === 0
+? `<p class="empty">No cleanup runs recorded yet.</p>`
+: `<table>
+<thead><tr>
+<th>Table</th><th>Ran at</th><th>Deleted</th><th>Retention</th><th>Cutoff</th><th>Status</th><th>Extra</th>
+</tr></thead>
+<tbody>
+${rows.map(r => `<tr class="${r.ok ? '' : 'failed'}">
+<td><code>${escapeHtml(r.table_name || '')}</code></td>
+<td>${escapeHtml(r.ran_at || '')}</td>
+<td>${r.deleted_count == null ? '—' : escapeHtml(String(r.deleted_count))}</td>
+<td>${r.retention_days == null ? '—' : escapeHtml(String(r.retention_days)) + 'd'}</td>
+<td>${escapeHtml(r.cutoff || '')}</td>
+<td>${r.ok ? '<span class="ok">ok</span>' : `<span class="bad">failed</span><br><small>${escapeHtml((r.error || '').slice(0, 200))}</small>`}</td>
+<td><pre>${escapeHtml(JSON.stringify(r.extra || {}, null, 2))}</pre></td>
+</tr>`).join('')}
+</tbody>
+</table>`;
+return `<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Cleanup Runs</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:24px;color:#0f172a;background:#f8fafc;}
+h1{font-size:18px;margin:0 0 16px;}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13px;}
+th,td{border:1px solid #e5e7eb;padding:8px 10px;vertical-align:top;text-align:left;}
+th{background:#f1f5f9;}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+pre{margin:0;font-size:12px;white-space:pre-wrap;word-break:break-word;max-width:360px;}
+.ok{color:#15803d;font-weight:600;}
+.bad{color:#b91c1c;font-weight:600;}
+.failed{background:#fef2f2;}
+.empty{color:#64748b;}
+.meta{color:#64748b;font-size:12px;margin-bottom:12px;}
+</style></head>
+<body>
+<h1>${heading}</h1>
+<p class="meta">${rows.length} row(s). Append <code>&amp;format=json</code> for JSON, <code>&amp;table=news</code> to filter (also <code>sentiment</code>, <code>system_state</code>, <code>cleanup_runs</code>).</p>
+${body}
+</body></html>`;
+}
+
+// ============================================
 // SYSTEM_STATE RETENTION / CLEANUP
 // ============================================
 // `system_state` is upserted on every cron tick (one row per monitored
@@ -841,13 +1011,22 @@ Prefer: 'return=minimal,count=exact'
 if (!r.ok) {
 const errText = await r.text();
 console.log('cleanupSystemState non-ok:', r.status, errText);
+await recordCleanupRun(env, {
+table_name: 'system_state', ok: false, error: `HTTP ${r.status}: ${errText.slice(0, 500)}`, cutoff, retention_days: days
+});
 return { ok: false, status: r.status, error: errText, cutoff, retention_days: days };
 }
 const count = parseDeletedCount(r);
 console.log(`cleanupSystemState: deleted ${count} row(s) older than ${cutoff} (retention=${days}d)`);
+await recordCleanupRun(env, {
+table_name: 'system_state', ok: true, deleted_count: count, cutoff, retention_days: days
+});
 return { ok: true, deleted: count, cutoff, retention_days: days };
 } catch (e) {
 console.log('cleanupSystemState error:', e.message);
+await recordCleanupRun(env, {
+table_name: 'system_state', ok: false, error: e.message, cutoff, retention_days: days
+});
 return { ok: false, error: e.message, cutoff, retention_days: days };
 }
 }
@@ -928,13 +1107,75 @@ Prefer: 'return=minimal,count=exact'
 if (!r.ok) {
 const errText = await r.text();
 console.log('cleanupNews non-ok:', r.status, errText);
+await recordCleanupRun(env, {
+table_name: 'news', ok: false, error: `HTTP ${r.status}: ${errText.slice(0, 500)}`, cutoff, retention_days: days
+});
 return { ok: false, status: r.status, error: errText, cutoff, retention_days: days };
 }
 const count = parseDeletedCount(r);
 console.log(`cleanupNews: deleted ${count} row(s) older than ${cutoff} (retention=${days}d)`);
+await recordCleanupRun(env, {
+table_name: 'news', ok: true, deleted_count: count, cutoff, retention_days: days
+});
 return { ok: true, deleted: count, cutoff, retention_days: days };
 } catch (e) {
 console.log('cleanupNews error:', e.message);
+await recordCleanupRun(env, {
+table_name: 'news', ok: false, error: e.message, cutoff, retention_days: days
+});
+return { ok: false, error: e.message, cutoff, retention_days: days };
+}
+}
+
+// ============================================
+// CLEANUP_RUNS SELF-RETENTION
+// ============================================
+// `cleanup_runs` is the append-only history written by recordCleanupRun
+// — every sweep above writes one row, so it grows ~24 rows/day forever
+// (3 tables x 8 sweeps/day = ~9k rows/year). Small, but unbounded, and
+// the same anti-pattern that originally motivated the other sweeps.
+// This function prunes the history itself on the same 3-hourly tick
+// and records its own run row (no special-casing — it shows up in
+// /cleanup-runs alongside the others).
+//
+// Retention window: CLEANUP_RUNS_RETENTION_DAYS env var, default 90 days.
+// 90d is plenty to debug whether sweeps are actually running and to
+// eyeball trends; nothing else references these rows.
+const DEFAULT_CLEANUP_RUNS_RETENTION_DAYS = 90;
+
+async function cleanupCleanupRuns(env) {
+const days = parseInt(env.CLEANUP_RUNS_RETENTION_DAYS, 10) || DEFAULT_CLEANUP_RUNS_RETENTION_DAYS;
+const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+try {
+const url = `${env.SUPABASE_URL}/rest/v1/cleanup_runs`
++ `?ran_at=lt.${encodeURIComponent(cutoff)}`;
+const r = await fetch(url, {
+method: 'DELETE',
+headers: {
+apikey: env.SUPABASE_SERVICE_KEY,
+Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+Prefer: 'return=minimal,count=exact'
+}
+});
+if (!r.ok) {
+const errText = await r.text();
+console.log('cleanupCleanupRuns non-ok:', r.status, errText);
+await recordCleanupRun(env, {
+table_name: 'cleanup_runs', ok: false, error: `HTTP ${r.status}: ${errText.slice(0, 500)}`, cutoff, retention_days: days
+});
+return { ok: false, status: r.status, error: errText, cutoff, retention_days: days };
+}
+const count = parseDeletedCount(r);
+console.log(`cleanupCleanupRuns: deleted ${count} row(s) older than ${cutoff} (retention=${days}d)`);
+await recordCleanupRun(env, {
+table_name: 'cleanup_runs', ok: true, deleted_count: count, cutoff, retention_days: days
+});
+return { ok: true, deleted: count, cutoff, retention_days: days };
+} catch (e) {
+console.log('cleanupCleanupRuns error:', e.message);
+await recordCleanupRun(env, {
+table_name: 'cleanup_runs', ok: false, error: e.message, cutoff, retention_days: days
+});
 return { ok: false, error: e.message, cutoff, retention_days: days };
 }
 }
@@ -963,13 +1204,24 @@ Prefer: 'return=minimal,count=exact'
 if (!r.ok) {
 const errText = await r.text();
 console.log('cleanupSentiment non-ok:', r.status, errText);
+await recordCleanupRun(env, {
+table_name: 'sentiment', ok: false, error: `HTTP ${r.status}: ${errText.slice(0, 500)}`,
+cutoff, retention_days: days, extra: { protected_count: protectedIds.length }
+});
 return { ok: false, status: r.status, error: errText, cutoff, retention_days: days, protected_ids: protectedIds };
 }
 const count = parseDeletedCount(r);
 console.log(`cleanupSentiment: deleted ${count} row(s) older than ${cutoff} (retention=${days}d, protected=${protectedIds.length})`);
+await recordCleanupRun(env, {
+table_name: 'sentiment', ok: true, deleted_count: count, cutoff, retention_days: days,
+extra: { protected_count: protectedIds.length }
+});
 return { ok: true, deleted: count, cutoff, retention_days: days, protected_ids: protectedIds };
 } catch (e) {
 console.log('cleanupSentiment error:', e.message);
+await recordCleanupRun(env, {
+table_name: 'sentiment', ok: false, error: e.message, cutoff, retention_days: days
+});
 return { ok: false, error: e.message, cutoff, retention_days: days };
 }
 }
@@ -1766,4 +2018,385 @@ return contactJson({ success: true });
 console.log('Contact form error:', e.message);
 return contactJson({ error: 'Failed to send message. Please try again later.' }, 500);
 }
+}
+
+// ============================================================
+// DAILY INSIGHT GENERATOR
+// ============================================================
+// Runs daily at 06:00 UTC (cron '0 6 * * *') — before London open.
+// Pulls sentiment + news from Supabase, generates an SEO-friendly
+// ~600-word HTML article, commits it to GitHub via Tree API. Cloudflare
+// Pages auto-deploys within ~60s.
+//
+// Required env vars:
+//   SUPABASE_URL, SUPABASE_SERVICE_KEY  (already set)
+//   GITHUB_TOKEN                         (PAT with repo:contents write)
+//   GITHUB_OWNER  (default 'EARNOVAGAMING')
+//   GITHUB_REPO   (default 'fxnewsbias')
+//   GITHUB_BRANCH (default 'main')
+//   INSIGHT_ALERT_EMAIL_TO  (failure alerts, falls back to ALERT_EMAIL_TO)
+//   RESEND_API_KEY  (already set)
+// ============================================================
+
+const _INS_SITE = 'https://fxnewsbias.com';
+const _INS_CCY_NAMES = {
+  USD: 'US Dollar', EUR: 'Euro', GBP: 'British Pound', JPY: 'Japanese Yen',
+  AUD: 'Australian Dollar', CAD: 'Canadian Dollar', CHF: 'Swiss Franc', NZD: 'New Zealand Dollar'
+};
+const _INS_CCY_ORDER = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD'];
+
+function _insEsc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function _insSbFetch(env, path) {
+  const r = await fetch(`${env.SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+  });
+  if (!r.ok) throw new Error(`Supabase ${path}: ${r.status}`);
+  return r.json();
+}
+
+async function _insGh(env, method, path, body) {
+  const owner = env.GITHUB_OWNER || 'EARNOVAGAMING';
+  const repo = env.GITHUB_REPO || 'fxnewsbias';
+  const url = `https://api.github.com${path.replace('{owner}', owner).replace('{repo}', repo)}`;
+  const opts = {
+    method,
+    headers: {
+      Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      'User-Agent': 'fxnb-insight-cron',
+      Accept: 'application/vnd.github+json'
+    }
+  };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const r = await fetch(url, opts);
+  if (!r.ok) {
+    const txt = await r.text();
+    throw new Error(`GitHub ${method} ${path}: ${r.status} ${txt.slice(0, 300)}`);
+  }
+  return r.json();
+}
+
+function _insBiasColor(b) { return b === 'Bullish' ? '#10b981' : b === 'Bearish' ? '#ef4444' : '#94a3b8'; }
+function _insBiasArrow(b) { return b === 'Bullish' ? '▲' : b === 'Bearish' ? '▼' : '—'; }
+
+function _insDetectAngle(sentiment) {
+  const arr = Object.values(sentiment);
+  arr.sort((a,b) => Math.abs(b.score - 50) - Math.abs(a.score - 50));
+  const top = arr[0];
+  const neutralCount = arr.filter(s => s.bias === 'Neutral').length;
+  const isRiskOn = ['AUD','NZD'].some(c => sentiment[c]?.bias === 'Bullish') && ['JPY','CHF'].some(c => sentiment[c]?.bias === 'Bearish');
+  const isRiskOff = ['JPY','CHF'].some(c => sentiment[c]?.bias === 'Bullish') && ['AUD','NZD'].some(c => sentiment[c]?.bias === 'Bearish');
+  const dateLabel = new Date().toUTCString().split(' ').slice(0,4).join(' ');
+  let headline, slug, summary;
+  if (neutralCount >= 6) {
+    headline = `Quiet Forex Session as Markets Await Fresh Catalysts — ${dateLabel}`;
+    slug = `quiet-forex-session-markets-await-catalysts`;
+    summary = `Forex markets traded in tight ranges with most major currencies showing neutral bias as traders await fresh data and central bank guidance.`;
+  } else if (top.score >= 65) {
+    headline = `${_INS_CCY_NAMES[top.currency]} Strengthens as Bullish Sentiment Builds Across Forex — ${dateLabel}`;
+    slug = `${top.currency.toLowerCase()}-strengthens-bullish-sentiment`;
+    summary = `${_INS_CCY_NAMES[top.currency]} (${top.currency}) leads forex sentiment today with a strong bullish reading, while other majors show mixed positioning.`;
+  } else if (top.score <= 35) {
+    headline = `${_INS_CCY_NAMES[top.currency]} Weakens as Bearish News Sentiment Dominates — ${dateLabel}`;
+    slug = `${top.currency.toLowerCase()}-weakens-bearish-pressure`;
+    summary = `${_INS_CCY_NAMES[top.currency]} (${top.currency}) faces the strongest bearish pressure across the major currencies today, with negative news flow weighing on sentiment.`;
+  } else if (isRiskOn) {
+    headline = `Risk-On Mood Lifts Commodity Currencies as Safe Havens Slip — ${dateLabel}`;
+    slug = `risk-on-commodity-currencies-rise`;
+    summary = `Risk-on sentiment lifted commodity-linked currencies (AUD, NZD, CAD) while traditional safe havens (JPY, CHF) lost ground in today's forex session.`;
+  } else if (isRiskOff) {
+    headline = `Risk-Off Sweeps Forex as Safe Havens Strengthen — ${dateLabel}`;
+    slug = `risk-off-safe-havens-strengthen`;
+    summary = `Risk-off flows dominated forex today as the Japanese Yen and Swiss Franc strengthened while higher-beta currencies came under pressure.`;
+  } else {
+    const movers = arr.slice(0,3).map(s => s.currency).join(', ');
+    headline = `Mixed Forex Bias as ${movers} Lead Today's Sentiment Shifts — ${dateLabel}`;
+    slug = `mixed-forex-bias-${movers.replace(/, /g,'-').toLowerCase()}-lead`;
+    summary = `Mixed sentiment across the majors today with ${movers} showing the most pronounced bias shifts driven by overnight news flow.`;
+  }
+  return { headline, slug, summary, biggestMover: top };
+}
+
+function _insRenderArticle({ headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel }) {
+  const url = `${_INS_SITE}/insight/${slug}`;
+  const headlineEsc = _insEsc(headline);
+  const summaryEsc = _insEsc(summary);
+
+  const biasGrid = _INS_CCY_ORDER.map(c => {
+    const s = sentiment[c]; if (!s) return '';
+    return `<div style="background:#1e293b;border-radius:10px;padding:14px;text-align:center;border-left:4px solid ${_insBiasColor(s.bias)};"><div style="color:#94a3b8;font-size:11px;font-weight:600;letter-spacing:1px;">${c}</div><div style="color:#fff;font-size:22px;font-weight:800;margin:6px 0;">${s.score}</div><div style="color:${_insBiasColor(s.bias)};font-size:13px;font-weight:600;">${_insBiasArrow(s.bias)} ${s.bias}</div></div>`;
+  }).join('');
+
+  const starters = ['Today the','Sentiment for the','The','Markets sent the','News flow drove the',"Today's data left the"];
+  const breakdown = _INS_CCY_ORDER.map((c, i) => {
+    const s = sentiment[c]; if (!s) return '';
+    const drivers = (s.drivers || []).slice(0, 3);
+    const dlist = drivers.length ? drivers.map(d => `<li style="margin-bottom:6px;">${_insEsc(d)}</li>`).join('') : '<li>No specific drivers recorded for this session.</li>';
+    return `<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:18px;margin-bottom:14px;"><h3 style="color:#fff;font-size:18px;margin:0 0 10px;font-weight:700;"><span style="color:${_insBiasColor(s.bias)};">${_insBiasArrow(s.bias)}</span> ${_INS_CCY_NAMES[c]} (${c}) — ${s.bias} <span style="color:#94a3b8;font-weight:500;font-size:14px;">· score ${s.score}/100</span></h3><p style="color:#cbd5e1;line-height:1.65;font-size:14px;margin:0 0 10px;">${starters[i % starters.length]} <strong>${_INS_CCY_NAMES[c]}</strong> shows a <strong style="color:${_insBiasColor(s.bias)};">${s.bias.toLowerCase()}</strong> news sentiment reading at <strong>${s.score}/100</strong>, driven by:</p><ul style="color:#cbd5e1;line-height:1.6;font-size:14px;margin:0;padding-left:20px;">${dlist}</ul></div>`;
+  }).join('');
+
+  const high = news.filter(n => n.impact === 'High').slice(0, 3);
+  const fill = news.filter(n => n.impact !== 'High').slice(0, Math.max(0, 3 - high.length));
+  const topNews = [...high, ...fill].slice(0, 3);
+  const newsHtml = topNews.length === 0
+    ? '<p style="color:#94a3b8;">No notable headlines recorded in the past 24 hours.</p>'
+    : '<ol style="color:#cbd5e1;line-height:1.7;padding-left:22px;margin:0;">' + topNews.map(n => {
+        const ccys = (n.currencies_affected || []).join(', ') || 'cross-market';
+        const impColor = n.impact === 'High' ? '#7f1d1d' : n.impact === 'Medium' ? '#78350f' : '#1e3a8a';
+        return `<li style="margin-bottom:14px;"><a href="${_insEsc(n.url)}" target="_blank" rel="noopener nofollow" style="color:#60a5fa;text-decoration:none;font-weight:600;">${_insEsc(n.title)}</a><div style="color:#94a3b8;font-size:13px;margin-top:4px;"><span style="background:${impColor};color:#fff;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;margin-right:8px;">${_insEsc((n.impact||'').toUpperCase())}</span>${_insEsc(n.source)} · affects ${_insEsc(ccys)}</div></li>`;
+      }).join('') + '</ol>';
+
+  const intro = `Forex markets digested a fresh wave of news flow over the past 24 hours, with our sentiment engine scoring the eight major currencies using live headlines from Reuters, Bloomberg, ForexLive and central bank wires. Today's standout mover is the <strong>${_INS_CCY_NAMES[biggestMover.currency]}</strong>, which printed a <strong style="color:${_insBiasColor(biggestMover.bias)};">${biggestMover.bias.toLowerCase()}</strong> reading at ${biggestMover.score}/100. Below is the full bias snapshot, followed by a currency-by-currency breakdown and the top news driving today's sentiment.`;
+  const closing = `Use this insight as a fundamental backdrop alongside your own technical analysis. Pair the strongest bullish currency against the weakest bearish currency for a classic news-driven setup. Tomorrow's update lands at 06:00 UTC ahead of the London open. Track these biases live on the <a href="/" style="color:#60a5fa;">FXNewsBias dashboard</a> or dive deeper on <a href="/currencies" style="color:#60a5fa;">currencies</a>, <a href="/pairs" style="color:#60a5fa;">pairs</a>, and the <a href="/calendar" style="color:#60a5fa;">economic calendar</a>.`;
+
+  const ld = JSON.stringify({
+    "@context":"https://schema.org","@type":"NewsArticle",
+    "headline":headline,"description":summary,"datePublished":dateISO,"dateModified":dateISO,
+    "author":{"@type":"Organization","name":"FXNewsBias Team","url":_INS_SITE},
+    "publisher":{"@type":"Organization","name":"FXNewsBias","logo":{"@type":"ImageObject","url":`${_INS_SITE}/logo-fxnb.png`}},
+    "mainEntityOfPage":{"@type":"WebPage","@id":url},
+    "image":`${_INS_SITE}/og-image.png`,"articleSection":"Forex Analysis"
+  });
+
+  return `<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico">
+<title>${headlineEsc} | FXNewsBias Insight</title>
+<meta name="description" content="${summaryEsc}">
+<meta name="robots" content="index, follow">
+<meta name="author" content="FXNewsBias Team">
+<link rel="canonical" href="${url}">
+<meta property="og:type" content="article"><meta property="og:title" content="${headlineEsc}"><meta property="og:description" content="${summaryEsc}"><meta property="og:url" content="${url}"><meta property="og:image" content="${_INS_SITE}/og-image.png"><meta property="og:site_name" content="FXNewsBias">
+<meta property="article:published_time" content="${dateISO}"><meta property="article:author" content="FXNewsBias Team"><meta property="article:section" content="Forex Analysis">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${headlineEsc}"><meta name="twitter:description" content="${summaryEsc}"><meta name="twitter:image" content="${_INS_SITE}/og-image.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="/styles.css">
+<style>
+.ins-wrap{max-width:880px;margin:0 auto;padding:32px 20px 60px;color:#cbd5e1;font-family:'Inter',sans-serif;}
+.ins-bias-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px;}
+@media(max-width:600px){.ins-bias-grid{grid-template-columns:repeat(2,1fr);}}
+</style>
+<script type="application/ld+json">${ld}</script>
+<script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
+</head><body style="background:#0f172a;color:#cbd5e1;font-family:'Inter',sans-serif;margin:0;">
+<style>@media(max-width:768px){.nav-menu,.nav-actions{display:none!important;}.nav-toggle{display:flex!important;}}@media(min-width:769px){.nav-toggle{display:flex!important;}.nav-menu,.nav-actions{display:none!important;}}</style>
+<nav class="nav"></nav>
+<article class="ins-wrap">
+  <div style="font-size:13px;color:#94a3b8;margin-bottom:14px;"><a href="/" style="color:#94a3b8;text-decoration:none;">Home</a> · <a href="/insight/" style="color:#94a3b8;text-decoration:none;">Insights</a> · ${dateLabel}</div>
+  <h1 style="color:#fff;font-size:clamp(22px,3.4vw,32px);font-weight:800;line-height:1.2;margin:0 0 12px;letter-spacing:-0.5px;">${headlineEsc}</h1>
+  <div style="color:#94a3b8;font-size:13px;margin-bottom:24px;border-bottom:1px solid #1e293b;padding-bottom:16px;">By <strong>FXNewsBias Team</strong> · Published ${dateLabel} · 4 min read</div>
+  <p style="color:#e2e8f0;font-size:16px;line-height:1.7;margin-bottom:28px;">${intro}</p>
+  <h2 style="color:#fff;font-size:22px;font-weight:700;margin:36px 0 16px;border-top:1px solid #1e293b;padding-top:28px;">Currency Bias Snapshot</h2>
+  <div class="ins-bias-grid">${biasGrid}</div>
+  <p style="font-size:13px;color:#94a3b8;margin-top:8px;">Scores 0-100 from our news sentiment engine. 50 is neutral, &gt;65 strongly bullish, &lt;35 strongly bearish.</p>
+  <h2 style="color:#fff;font-size:22px;font-weight:700;margin:36px 0 16px;border-top:1px solid #1e293b;padding-top:28px;">Currency-by-Currency Breakdown</h2>
+  ${breakdown}
+  <h2 style="color:#fff;font-size:22px;font-weight:700;margin:36px 0 16px;border-top:1px solid #1e293b;padding-top:28px;">Top News Driving Today's Sentiment</h2>
+  ${newsHtml}
+  <h2 style="color:#fff;font-size:22px;font-weight:700;margin:36px 0 16px;border-top:1px solid #1e293b;padding-top:28px;">What to Watch Next</h2>
+  <p style="line-height:1.7;font-size:15px;">${closing}</p>
+  <div style="background:#1e293b;border-radius:10px;padding:20px;margin-top:32px;color:#cbd5e1;line-height:1.7;font-size:15px;">
+    <strong style="color:#fff;">Want this insight delivered every morning?</strong> The full live dashboard updates every 3 hours and is free without signup. <a href="/" style="color:#60a5fa;">Open the dashboard →</a>
+  </div>
+</article>
+<footer style="background:#0f172a;border-top:1px solid #1e293b;padding:24px 20px;text-align:center;color:#94a3b8;font-size:13px;">
+  © ${new Date().getFullYear()} FXNewsBias · <a href="/about" style="color:#94a3b8;">About</a> · <a href="/disclaimer" style="color:#94a3b8;">Disclaimer</a> · <a href="/insight/" style="color:#94a3b8;">All Insights</a>
+</footer>
+</body></html>`;
+}
+
+function _insRenderIndex(articles) {
+  const items = articles.map(a => `<article style="background:#1e293b;border-radius:10px;padding:20px;margin-bottom:14px;border-left:4px solid #60a5fa;"><div style="color:#94a3b8;font-size:12px;letter-spacing:1px;font-weight:600;">${a.dateLabel}</div><h2 style="margin:6px 0 8px;"><a href="/insight/${a.slug}" style="color:#fff;text-decoration:none;font-size:18px;font-weight:700;">${_insEsc(a.headline)}</a></h2><p style="color:#cbd5e1;font-size:14px;line-height:1.6;margin:0 0 8px;">${_insEsc(a.summary)}</p><a href="/insight/${a.slug}" style="color:#60a5fa;font-size:13px;font-weight:600;text-decoration:none;">Read full insight →</a></article>`).join('');
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link rel="icon" href="/favicon.ico">
+<title>Daily Forex Insights | News Sentiment Analysis - FXNewsBias</title>
+<meta name="description" content="Daily forex market insights with news sentiment analysis for the 8 major currencies. Updated every morning before the London open.">
+<meta name="robots" content="index, follow"><link rel="canonical" href="${_INS_SITE}/insight/">
+<meta property="og:type" content="website"><meta property="og:title" content="Daily Forex Insights | FXNewsBias"><meta property="og:description" content="Daily forex market insights with news sentiment analysis for the 8 major currencies."><meta property="og:url" content="${_INS_SITE}/insight/"><meta property="og:image" content="${_INS_SITE}/og-image.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="/styles.css"><script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
+</head><body style="background:#0f172a;color:#cbd5e1;font-family:'Inter',sans-serif;margin:0;">
+<style>@media(max-width:768px){.nav-menu,.nav-actions{display:none!important;}.nav-toggle{display:flex!important;}}@media(min-width:769px){.nav-toggle{display:flex!important;}.nav-menu,.nav-actions{display:none!important;}}</style>
+<nav class="nav"></nav>
+<main style="max-width:880px;margin:0 auto;padding:32px 20px 60px;">
+<div style="font-size:13px;color:#94a3b8;margin-bottom:14px;"><a href="/" style="color:#94a3b8;text-decoration:none;">Home</a> · Daily Insights</div>
+<h1 style="color:#fff;font-size:clamp(24px,4vw,32px);font-weight:800;margin:0 0 8px;">Daily Forex Insights</h1>
+<p style="color:#94a3b8;font-size:15px;margin:0 0 28px;line-height:1.6;">Daily market wraps based on our live news sentiment engine. Published every morning at 06:00 UTC, ahead of the London open.</p>
+${items}
+<div style="margin-top:32px;padding:20px;background:#1e293b;border-radius:10px;text-align:center;"><a href="/insight/rss.xml" style="color:#60a5fa;text-decoration:none;font-size:14px;font-weight:600;">📡 Subscribe via RSS</a></div>
+</main>
+<footer style="background:#0f172a;border-top:1px solid #1e293b;padding:24px 20px;text-align:center;color:#94a3b8;font-size:13px;">© ${new Date().getFullYear()} FXNewsBias · <a href="/about" style="color:#94a3b8;">About</a> · <a href="/disclaimer" style="color:#94a3b8;">Disclaimer</a></footer>
+</body></html>`;
+}
+
+function _insRenderRss(articles) {
+  const items = articles.map(a => `<item><title>${_insEsc(a.headline)}</title><link>${_INS_SITE}/insight/${a.slug}</link><guid>${_INS_SITE}/insight/${a.slug}</guid><pubDate>${new Date(a.dateISO).toUTCString()}</pubDate><description>${_insEsc(a.summary)}</description></item>`).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel>\n<title>FXNewsBias Daily Insights</title>\n<link>${_INS_SITE}/insight/</link>\n<description>Daily forex market insights with news sentiment analysis for the 8 major currencies.</description>\n<language>en</language>\n<lastBuildDate>${new Date().toUTCString()}</lastBuildDate>\n${items}\n</channel></rss>`;
+}
+
+async function _insListExistingArticles(env) {
+  // List files in /insight/ via GitHub Contents API
+  try {
+    const data = await _insGh(env, 'GET', `/repos/{owner}/{repo}/contents/insight?ref=${env.GITHUB_BRANCH || 'main'}`);
+    return (data || []).filter(f => f.type === 'file' && /^\d{4}-\d{2}-\d{2}-.+\.html$/.test(f.name)).map(f => f.name);
+  } catch (e) {
+    console.log('Insight: failed to list existing articles:', e.message);
+    return [];
+  }
+}
+
+async function _insGetFile(env, path) {
+  try {
+    const data = await _insGh(env, 'GET', `/repos/{owner}/{repo}/contents/${path}?ref=${env.GITHUB_BRANCH || 'main'}`);
+    if (data && data.content) return atob(data.content.replace(/\n/g,''));
+  } catch (_) {}
+  return null;
+}
+
+async function _insCommitFiles(env, files, commitMessage) {
+  // files: [{path, content}]
+  const owner = env.GITHUB_OWNER || 'EARNOVAGAMING';
+  const repo = env.GITHUB_REPO || 'fxnewsbias';
+  const branch = env.GITHUB_BRANCH || 'main';
+
+  // Get current head commit
+  const ref = await _insGh(env, 'GET', `/repos/{owner}/{repo}/git/ref/heads/${branch}`);
+  const baseSha = ref.object.sha;
+  const baseCommit = await _insGh(env, 'GET', `/repos/{owner}/{repo}/git/commits/${baseSha}`);
+  const baseTreeSha = baseCommit.tree.sha;
+
+  // Create blobs for each file
+  const treeItems = [];
+  for (const f of files) {
+    const blob = await _insGh(env, 'POST', `/repos/{owner}/{repo}/git/blobs`, {
+      content: btoa(unescape(encodeURIComponent(f.content))),
+      encoding: 'base64'
+    });
+    treeItems.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
+  }
+
+  // Create tree
+  const tree = await _insGh(env, 'POST', `/repos/{owner}/{repo}/git/trees`, {
+    base_tree: baseTreeSha, tree: treeItems
+  });
+
+  // Create commit
+  const commit = await _insGh(env, 'POST', `/repos/{owner}/{repo}/git/commits`, {
+    message: commitMessage, tree: tree.sha, parents: [baseSha]
+  });
+
+  // Update ref
+  await _insGh(env, 'PATCH', `/repos/{owner}/{repo}/git/refs/heads/${branch}`, { sha: commit.sha });
+  return commit.sha;
+}
+
+async function _insSendFailureEmail(env, error, ctx) {
+  const to = env.INSIGHT_ALERT_EMAIL_TO || env.ALERT_EMAIL_TO;
+  if (!to || !env.RESEND_API_KEY) {
+    console.log('Insight failure: no email channel configured');
+    return;
+  }
+  const recipients = String(to).split(',').map(s => s.trim()).filter(Boolean);
+  const fromEmail = env.ALERT_EMAIL_FROM || env.CONTACT_FROM_EMAIL || 'noreply@fxnewsbias.com';
+  const subject = 'FXNewsBias: daily insight generation FAILED';
+  const text = `Daily insight generation failed at ${new Date().toISOString()}\n\nError: ${error.message || error}\n\nContext: ${ctx || 'cron run'}\n\nCheck Cloudflare worker logs for full stack trace.`;
+  const html = `<pre style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;white-space:pre-wrap;">${_insEsc(text)}</pre>`;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: recipients, subject, text, html })
+    });
+    console.log('Insight failure email sent to', recipients.join(','));
+  } catch (e) {
+    console.log('Insight failure email error:', e.message);
+  }
+}
+
+async function generateDailyInsight(env) {
+  console.log('Daily insight: starting...');
+  try {
+    if (!env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN env var not set');
+    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) throw new Error('Supabase env vars missing');
+
+    // 1. Fetch sentiment + news
+    const sentRows = await _insSbFetch(env, 'sentiment?select=currency,bias,score,drivers,created_at&order=created_at.desc&limit=80');
+    const sentiment = {};
+    for (const r of sentRows) { if (!sentiment[r.currency]) sentiment[r.currency] = r; if (Object.keys(sentiment).length === 8) break; }
+    const since = new Date(Date.now() - 24*60*60*1000).toISOString();
+    const news = await _insSbFetch(env, `news?select=title,source,url,impact,currencies_affected,created_at&created_at=gte.${since}&order=created_at.desc&limit=50`);
+
+    // 2. Validate
+    if (Object.keys(sentiment).length < 6) throw new Error(`Insufficient sentiment data: only ${Object.keys(sentiment).length} currencies`);
+    if (news.length < 3) throw new Error(`Insufficient news data: only ${news.length} items`);
+
+    // 3. Generate article
+    const angle = _insDetectAngle(sentiment);
+    const dateISO = new Date().toISOString();
+    const today = dateISO.slice(0, 10);
+    const slug = `${today}-${angle.slug}`;
+    const dateLabel = new Date().toUTCString().split(' ').slice(0,4).join(' ');
+
+    const articleHtml = _insRenderArticle({ headline: angle.headline, slug, summary: angle.summary, sentiment, news, biggestMover: angle.biggestMover, dateISO, dateLabel });
+
+    // 4. Word count check
+    const text = articleHtml.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>/g, ' ').replace(/\s+/g,' ').trim();
+    const wordCount = text.split(' ').length;
+    if (wordCount < 500) throw new Error(`Article too short: ${wordCount} words (need 500+)`);
+    console.log(`Insight: generated ${wordCount} words, slug=${slug}`);
+
+    // 5. List existing articles to rebuild index/RSS
+    const existing = await _insListExistingArticles(env);
+    const allSlugs = [`${slug}.html`, ...existing.filter(n => n !== `${slug}.html`)];
+    // Keep most recent 50 for index/RSS (oldest still served, just not listed)
+    const articlesMeta = [];
+    articlesMeta.push({ slug, headline: angle.headline, summary: angle.summary, dateISO, dateLabel });
+    for (const fname of existing.slice(0, 49)) {
+      if (fname === `${slug}.html`) continue;
+      const m = fname.match(/^(\d{4}-\d{2}-\d{2})-(.+)\.html$/);
+      if (!m) continue;
+      const oldDate = new Date(m[1] + 'T06:00:00Z');
+      const oldSlug = fname.replace(/\.html$/, '');
+      articlesMeta.push({
+        slug: oldSlug,
+        headline: oldSlug.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace(/-/g,' ').replace(/\b\w/g, c => c.toUpperCase()),
+        summary: 'Previous daily forex insight from the FXNewsBias sentiment engine.',
+        dateISO: oldDate.toISOString(),
+        dateLabel: oldDate.toUTCString().split(' ').slice(0,4).join(' ')
+      });
+    }
+    articlesMeta.sort((a,b) => b.dateISO.localeCompare(a.dateISO));
+
+    // 6. Build sitemap update
+    const oldSitemap = (await _insGetFile(env, 'sitemap.xml')) || '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>';
+    let newSitemap = oldSitemap;
+    if (!newSitemap.includes(`/insight/${slug}`)) {
+      const entry = `  <url><loc>${_INS_SITE}/insight/${slug}</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+      newSitemap = newSitemap.replace('</urlset>', entry + '\n</urlset>');
+    }
+
+    // 7. Commit all files
+    const sha = await _insCommitFiles(env, [
+      { path: `insight/${slug}.html`, content: articleHtml },
+      { path: 'insight/index.html', content: _insRenderIndex(articlesMeta) },
+      { path: 'insight/rss.xml', content: _insRenderRss(articlesMeta) },
+      { path: 'sitemap.xml', content: newSitemap }
+    ], `Daily insight: ${angle.headline}`);
+
+    console.log(`Insight: committed ${sha.slice(0,7)} - ${slug}`);
+    return { ok: true, slug, sha, wordCount };
+  } catch (e) {
+    console.error('Insight: FAILED -', e.message);
+    await _insSendFailureEmail(env, e, 'generateDailyInsight');
+    return { ok: false, error: e.message };
+  }
 }
