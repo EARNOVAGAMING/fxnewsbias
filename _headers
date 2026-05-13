@@ -26,6 +26,15 @@
 /*.html
   Cache-Control: public, max-age=300, must-revalidate
 
+# Directory-style paths (no file extension) — force no edge cache so
+# updates show immediately. CF Pages default would over-cache these.
+/
+  Cache-Control: public, max-age=0, must-revalidate, s-maxage=0
+  CDN-Cache-Control: no-store
+/insight/
+  Cache-Control: public, max-age=0, must-revalidate, s-maxage=0
+  CDN-Cache-Control: no-store
+
 # Security headers (also helps Best Practices score)
 # HSTS: tells browsers + Google "this domain is HTTPS only, forever".
 # Strongest possible signal that http:// version should never be indexed.
