@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" href="/favicon.ico">
+<title>USD Sentiment Today | US Dollar News Bias & Forecast - FXNewsBias</title>
+<meta name="description" content="Live USD (US Dollar) sentiment score, Federal Reserve stance, top news drivers and USD forecast. Updated every 3 hours from real forex news. The most-traded currency in the world.">
+<meta name="robots" content="index, follow">
+<meta name="author" content="FXNewsBias">
+<link rel="canonical" href="https://fxnewsbias.com/currencies/usd">
+<meta property="og:title" content="USD Sentiment Today | US Dollar News Bias & Forecast - FXNewsBias">
+<meta property="og:description" content="Live USD (US Dollar) sentiment score, Federal Reserve stance, top news drivers and USD forecast. Updated every 3 hours from real forex news. The most-traded currency in the world.">
+<meta property="og:url" content="https://fxnewsbias.com/currencies/usd">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://fxnewsbias.com/og-image.png">
+<meta property="og:site_name" content="FX News Bias">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://fxnewsbias.com/og-image.png">
+<meta name="twitter:title" content="USD Sentiment Today | US Dollar News Bias & Forecast - FXNewsBias">
+<meta name="twitter:description" content="Live USD (US Dollar) sentiment score, Federal Reserve stance, top news drivers and USD forecast. Updated every 3 hours from real forex news. The most-traded currency in the world.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#0f172a">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is the US Dollar bullish or bearish today?","acceptedAnswer":{"@type":"Answer","text":"The score in the card at the top of this page gives the live answer — it updates every 3 hours from the latest news scan. Above 60 = Bullish, below 40 = Bearish, in between = Neutral."}},{"@type":"Question","name":"What time of day does the USD react most?","acceptedAnswer":{"@type":"Answer","text":"The two biggest windows are 1:30pm GMT (when most US economic data is released — NFP, CPI, retail sales) and 7:00pm GMT on FOMC days (the Fed decision and Powell press conference). Asia and London sessions trade the dollar on positioning, not new information."}},{"@type":"Question","name":"Why does the USD strengthen during stock market crashes?","acceptedAnswer":{"@type":"Answer","text":"Because the dollar is the world's safe haven. When investors are scared they sell risk assets and buy US treasuries, which requires buying dollars first. This is why USD often rallies the same day equities sell off."}},{"@type":"Question","name":"How often does this USD score update?","acceptedAnswer":{"@type":"Answer","text":"The sentiment scan runs every 3 hours, so the score on this page is never more than 3 hours stale. The \"Updated\" timestamp on the card shows exactly when the last scan ran."}},{"@type":"Question","name":"What is the difference between USD strength and USD bias?","acceptedAnswer":{"@type":"Answer","text":"Strength is short-term price action — a candlestick read. Bias is fundamental — the direction the news flow is pushing the dollar over the next session or two. This page shows bias, not strength. They usually agree, but when they disagree it often signals a turning point."}}]}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}
+.topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-left,.topbar-right{display:flex;gap:14px;color:#94a3b8;}
+.topbar a{color:#94a3b8;text-decoration:none;}
+header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.18);}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:24px;font-weight:800;color:#fff;text-decoration:none;display:flex;align-items:center;gap:10px;}
+.logo img{height:36px;width:auto;}
+nav ul{list-style:none;display:flex;gap:24px;}
+nav a{text-decoration:none;color:#f1f5f9;font-weight:500;font-size:14px;}
+nav a:hover,nav a.active{color:#60a5fa;}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px;border:none;text-decoration:none;display:inline-block;cursor:pointer;}
+.btn-outline{background:transparent;color:#f1f5f9;border:1px solid rgba(255,255,255,.25);}
+.btn-primary{background:var(--accent);color:#fff;}
+.burger{display:none;background:none;border:none;font-size:24px;color:#fff;}
+.ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
+.ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.ticker-item{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.pair{font-weight:600;}
+.up{color:var(--bull);font-weight:600;}
+.down{color:var(--bear);font-weight:600;}
+
+.page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:36px 0;}
+.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.breadcrumb{font-size:12px;color:#94a3b8;margin-bottom:10px;}
+.breadcrumb a{color:#94a3b8;text-decoration:none;}
+.breadcrumb a:hover{color:#fff;}
+.page-title{font-size:32px;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.page-title .flag{font-size:38px;}
+.page-sub{color:#94a3b8;font-size:14px;max-width:760px;}
+
+.main-wrap{max-width:1280px;margin:0 auto;padding:24px 20px;display:grid;grid-template-columns:1fr 320px;gap:32px;}
+.main-col{min-width:0;}
+.side-col{display:flex;flex-direction:column;gap:16px;}
+
+.live-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:24px;}
+.live-card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.live-card-id{display:flex;align-items:center;gap:12px;}
+.live-flag{font-size:34px;}
+.live-info h3{font-size:22px;font-weight:800;}
+.live-info p{font-size:12px;color:var(--text-soft);}
+.live-bias{text-align:right;}
+.live-badge{padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;display:inline-block;margin-bottom:6px;}
+.bull-bg{background:#d1fae5;color:#065f46;}
+.bear-bg{background:#fee2e2;color:#991b1b;}
+.neut-bg{background:#fef3c7;color:#92400e;}
+.live-score{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:800;}
+.live-bar{height:6px;background:var(--bg-soft);border-radius:4px;overflow:hidden;margin-bottom:16px;}
+.live-fill{height:100%;border-radius:4px;transition:width .3s;}
+.live-section{margin-bottom:14px;}
+.live-sec-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:6px;}
+.live-bank{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-soft);border-radius:6px;font-size:13px;}
+.bank-stance{font-weight:700;font-size:11px;padding:2px 8px;border-radius:10px;}
+.stance-hawk{background:#fee2e2;color:#991b1b;}
+.stance-dove{background:#d1fae5;color:#065f46;}
+.stance-neut{background:#fef3c7;color:#92400e;}
+.driver-list{display:flex;flex-direction:column;gap:6px;}
+.driver{display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.5;}
+.driver-pos{color:var(--bull);}
+.driver-neg{color:var(--bear);}
+.live-foot{font-size:11px;color:var(--text-muted);margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+
+article h2{font-size:22px;font-weight:700;margin:28px 0 12px;color:var(--text);}
+article h3{font-size:16px;font-weight:700;margin:20px 0 8px;color:var(--text);}
+article p{font-size:14px;line-height:1.7;margin-bottom:12px;color:#374151;}
+article ul{margin:8px 0 16px 22px;}
+article li{font-size:14px;line-height:1.7;margin-bottom:6px;color:#374151;}
+article a{color:var(--accent);text-decoration:none;}
+article a:hover{text-decoration:underline;}
+.callout{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:8px;padding:16px 20px;margin:16px 0;font-size:13px;color:#1e3a8a;line-height:1.6;}
+
+.faq-item{border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:10px;}
+.faq-q{font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px;}
+.faq-a{font-size:13px;line-height:1.6;color:#4b5563;}
+
+.related-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0 24px;}
+.related-tile{display:block;padding:12px;border:1px solid var(--border);border-radius:8px;text-decoration:none;background:#fff;}
+.related-tile:hover{border-color:var(--accent);}
+.related-tile .rt-flag{font-size:24px;margin-bottom:4px;display:block;}
+.related-tile .rt-code{font-weight:700;font-size:14px;color:var(--text);}
+.related-tile .rt-name{font-size:11px;color:var(--text-muted);}
+
+.side-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;}
+.side-card h4{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px;}
+.side-link{display:block;padding:8px 10px;border-radius:6px;text-decoration:none;color:var(--text);font-size:13px;font-weight:500;}
+.side-link:hover{background:var(--bg-soft);color:var(--accent);}
+.news-li{padding:10px 0;border-bottom:1px solid var(--border);}
+.news-li:last-child{border-bottom:none;}
+.news-li a{display:block;color:var(--text);text-decoration:none;font-size:13px;line-height:1.5;font-weight:500;}
+.news-li a:hover{color:var(--accent);}
+.news-meta{font-size:11px;color:var(--text-muted);margin-top:4px;}
+
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col ul{list-style:none;}
+.footer-col li{margin-bottom:8px;}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+
+@media(max-width:900px){nav ul{display:none;}.burger{display:block;}.main-wrap{grid-template-columns:1fr;}}
+</style>
+<style>nav>ul{display:none}.burger{display:flex!important;align-items:center;justify-content:center}</style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6X181TFHYY');</script>
+<script>(function(){var p=localStorage.getItem("fxnb_is_pro")==="true";if(!p){var s=document.createElement("script");s.async=true;s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4857533156344939";s.crossOrigin="anonymous";document.head.appendChild(s);}})();</script>
+</head><body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left"><span id="topbar-date">📅 Loading...</span></div>
+    <div class="topbar-right"><a href="/about">About</a><a href="/contact">Contact</a></div>
+  </div>
+</div>
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo"><img src="/logo-fxnb.png?v=2" alt="FX News Bias"></a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies" class="active">Currencies</a></li>
+        <li><a href="/pairs">Pairs</a></li>
+        <li><a href="/calendar">Calendar</a></li>
+        <li><a href="/news">News</a></li>
+        <li><a href="/insight/">Insights</a></li>
+        <li><a href="/community">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login" class="btn btn-outline">Login</a>
+      <a href="/register" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+<div class="ticker">
+  <div class="ticker-inner" id="ticker-inner">
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
+    <div class="ticker-item"><span class="pair">USD/CAD</span><span>1.3724</span><span class="down">-0.18%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
+  </div>
+</div>
+<section class="page-head">
+  <div class="page-head-inner">
+    <div class="breadcrumb"><a href="/">Home</a> · <a href="/currencies">Currencies</a> · USD</div>
+    <h1 class="page-title"><span class="flag">🇺🇸</span> USD Sentiment & US Dollar Bias</h1>
+    <p class="page-sub">Live news sentiment for the US Dollar (USD). What the Fed is doing, what's driving the USD this session, and what to watch next. Refreshed every 3 hours.</p>
+  </div>
+</section>
+
+<div class="main-wrap">
+  <div class="main-col">
+
+    <div class="live-card" id="live-card" data-currency="USD">
+      <div class="live-card-head">
+        <div class="live-card-id">
+          <span class="live-flag">🇺🇸</span>
+          <div class="live-info"><h3>USD</h3><p>US Dollar</p></div>
+        </div>
+        <div class="live-bias">
+          <div class="live-badge neut-bg" id="live-badge">Loading…</div>
+          <div class="live-score" id="live-score" style="color:var(--neutral);">—</div>
+        </div>
+      </div>
+      <div class="live-bar"><div class="live-fill" id="live-fill" style="width:0%;background:var(--neutral);"></div></div>
+      <div class="live-section">
+        <div class="live-sec-label">🏦 Federal Reserve Stance</div>
+        <div class="live-bank"><span style="flex:1;" id="live-bank-text">Loading latest stance…</span><span class="bank-stance stance-neut" id="live-stance">—</span></div>
+      </div>
+      <div class="live-section">
+        <div class="live-sec-label">📊 Top Drivers Right Now</div>
+        <div class="driver-list" id="live-drivers"><div class="driver">Loading drivers from latest sentiment scan…</div></div>
+      </div>
+      <div class="live-foot" id="live-updated">Connecting to live data…</div>
+    </div>
+
+    <article>
+      <h2>What Is Driving the USD Today</h2>
+      <p>The US Dollar is the world's reserve currency and trades on both sides of every major pair. That makes USD sentiment the single most important read in the entire forex market — when the dollar moves, every other major moves with it. The score on this page reflects the net news bias for the USD over the most recent scan window: above 60 means bullish news flow is dominating, below 40 means bearish, and 40–60 means the market is in wait-and-see mode.</p>
+      <p>On any given day USD direction is driven by three things stacked together: what the Federal Reserve has signaled, what the latest US economic data is saying about whether the Fed will be forced to act, and the global risk mood (because the dollar acts as a safe haven when fear rises). The card above shows the live read; the rest of this page explains the moving parts so the score actually means something to you.</p>
+
+      <div class="callout"><strong>Quick read:</strong> When USD sentiment flips, watch EUR/USD and USD/JPY first — they move the cleanest and the fastest because they have the deepest liquidity.</div>
+
+      <h2>Federal Reserve — The Central Bank Behind the USD</h2>
+      <p>The Federal Reserve sets US interest rates and the cost of dollars worldwide. There are eight scheduled FOMC meetings each year, and a press conference at every one. Markets care less about the rate decision itself (which is usually leaked into prices ahead of time) and more about the dot plot, the statement language, and what Powell says in the press conference. A small phrase swap from "data dependent" to "patient" can move the dollar 1% in minutes.</p>
+      <h3>What the Fed watches most</h3>
+      <ul><li>CPI inflation (released around the 12th of each month) — the core number is what the Fed actually targets</li><li>Non-Farm Payrolls or NFP (first Friday of the month) — the headline jobs number plus average hourly earnings</li><li>JOLTS job openings, initial jobless claims, and unemployment rate trend</li><li>Retail sales and ISM manufacturing/services PMIs — the early read on consumer and business activity</li><li>PCE inflation — the Fed's preferred inflation gauge, released last week of each month</li></ul>
+
+      <h2>What Moves the USD Most</h2>
+      <p>These are the events that move the USD by the largest amounts on average, ranked roughly by impact:</p>
+      <ul><li><strong>FOMC rate decisions and Powell pressers</strong> — biggest single mover; expect a 0.5–1.5% USD swing in either direction within an hour</li><li><strong>NFP (jobs report)</strong> — monthly catalyst; misses or beats vs forecast trigger 50–100 pip moves on most USD pairs</li><li><strong>CPI inflation prints</strong> — currently the second-most watched data point because it directly shapes Fed cut timing</li><li><strong>Risk-off events (geopolitics, equity selloff)</strong> — USD strengthens when fear rises — investors park capital in US treasuries</li><li><strong>Treasury yield moves (especially the 2-year)</strong> — USD tracks the front-end of the curve closely; rising yields = stronger dollar</li></ul>
+
+      <h2>Best Pairs to Trade USD Sentiment</h2>
+      <p>If you want to trade USD strength or weakness, these are the pairs with the cleanest USD signal — meaning the other side of the pair is comparatively quiet, so most of the move comes from the dollar:</p>
+      <div class="related-grid">
+        <a class="related-tile" href="/pairs/eur-usd"><span class="rt-flag">🇪🇺🇺🇸</span><span class="rt-code">EUR/USD</span><span class="rt-name">Most liquid</span></a><a class="related-tile" href="/pairs/gbp-usd"><span class="rt-flag">🇬🇧🇺🇸</span><span class="rt-code">GBP/USD</span><span class="rt-name">Higher vol</span></a><a class="related-tile" href="/pairs/usd-jpy"><span class="rt-flag">🇺🇸🇯🇵</span><span class="rt-code">USD/JPY</span><span class="rt-name">Yield-driven</span></a><a class="related-tile" href="/pairs/usd-chf"><span class="rt-flag">🇺🇸🇨🇭</span><span class="rt-code">USD/CHF</span><span class="rt-name">Safe-haven mirror</span></a><a class="related-tile" href="/pairs/aud-usd"><span class="rt-flag">🇦🇺🇺🇸</span><span class="rt-code">AUD/USD</span><span class="rt-name">Risk barometer</span></a><a class="related-tile" href="/pairs/usd-cad"><span class="rt-flag">🇺🇸🇨🇦</span><span class="rt-code">USD/CAD</span><span class="rt-name">Oil-correlated</span></a>
+      </div>
+
+      <h2>Common Questions About the USD</h2>
+      <div class="faq-item"><div class="faq-q">Is the US Dollar bullish or bearish today?</div><div class="faq-a">The score in the card at the top of this page gives the live answer — it updates every 3 hours from the latest news scan. Above 60 = Bullish, below 40 = Bearish, in between = Neutral.</div></div><div class="faq-item"><div class="faq-q">What time of day does the USD react most?</div><div class="faq-a">The two biggest windows are 1:30pm GMT (when most US economic data is released — NFP, CPI, retail sales) and 7:00pm GMT on FOMC days (the Fed decision and Powell press conference). Asia and London sessions trade the dollar on positioning, not new information.</div></div><div class="faq-item"><div class="faq-q">Why does the USD strengthen during stock market crashes?</div><div class="faq-a">Because the dollar is the world's safe haven. When investors are scared they sell risk assets and buy US treasuries, which requires buying dollars first. This is why USD often rallies the same day equities sell off.</div></div><div class="faq-item"><div class="faq-q">How often does this USD score update?</div><div class="faq-a">The sentiment scan runs every 3 hours, so the score on this page is never more than 3 hours stale. The "Updated" timestamp on the card shows exactly when the last scan ran.</div></div><div class="faq-item"><div class="faq-q">What is the difference between USD strength and USD bias?</div><div class="faq-a">Strength is short-term price action — a candlestick read. Bias is fundamental — the direction the news flow is pushing the dollar over the next session or two. This page shows bias, not strength. They usually agree, but when they disagree it often signals a turning point.</div></div>
+
+      <h2>Other Major Currencies</h2>
+      <div class="related-grid">
+        <a class="related-tile" href="/currencies/eur"><span class="rt-flag">🇪🇺</span><span class="rt-code">EUR</span><span class="rt-name">Euro</span></a><a class="related-tile" href="/currencies/gbp"><span class="rt-flag">🇬🇧</span><span class="rt-code">GBP</span><span class="rt-name">British Pound</span></a><a class="related-tile" href="/currencies/jpy"><span class="rt-flag">🇯🇵</span><span class="rt-code">JPY</span><span class="rt-name">Japanese Yen</span></a><a class="related-tile" href="/currencies/aud"><span class="rt-flag">🇦🇺</span><span class="rt-code">AUD</span><span class="rt-name">Australian Dollar</span></a><a class="related-tile" href="/currencies/cad"><span class="rt-flag">🇨🇦</span><span class="rt-code">CAD</span><span class="rt-name">Canadian Dollar</span></a><a class="related-tile" href="/currencies/chf"><span class="rt-flag">🇨🇭</span><span class="rt-code">CHF</span><span class="rt-name">Swiss Franc</span></a><a class="related-tile" href="/currencies/nzd"><span class="rt-flag">🇳🇿</span><span class="rt-code">NZD</span><span class="rt-name">NZ Dollar</span></a>
+      </div>
+    </article>
+  </div>
+
+  <aside class="side-col">
+    <div class="side-card">
+      <h4>📰 Latest USD News</h4>
+      <div id="side-news"><div style="font-size:13px;color:var(--text-muted);">Loading latest news…</div></div>
+    </div>
+    <div class="side-card">
+      <h4>🔗 Explore More</h4>
+      <a class="side-link" href="/currencies">All 8 Currencies</a>
+      <a class="side-link" href="/pairs">28-Pair Bias Matrix</a>
+      <a class="side-link" href="/calendar">Economic Calendar</a>
+      <a class="side-link" href="/news">All Forex News</a>
+      <a class="side-link" href="/insight/">Daily Insights</a>
+    </div>
+  </aside>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col"><h4>FXNewsBias</h4><ul><li><a href="/about">About Us</a></li><li><a href="/how">How It Works</a></li><li><a href="/contact">Contact</a></li></ul></div>
+      <div class="footer-col"><h4>Markets</h4><ul><li><a href="/currencies">Currencies</a></li><li><a href="/pairs">Pairs</a></li><li><a href="/calendar">Calendar</a></li><li><a href="/news">News</a></li><li><a href="/insight/">Insights</a></li></ul></div>
+      <div class="footer-col"><h4>Community</h4><ul><li><a href="/community">Latest Posts</a></li><li><a href="/community">Top Traders</a></li><li><a href="/community">Guidelines</a></li></ul></div>
+      <div class="footer-col"><h4>Legal</h4><ul><li><a href="/disclaimer">Disclaimer</a></li><li><a href="/privacy">Privacy Policy</a></li><li><a href="/terms">Terms of Service</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">© 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.</div>
+  </div>
+</footer>
+<script src="/nav.js" defer></script>
+<script src="/cookie.js" defer></script>
+<script src="/analytics.js" defer></script>
+<script src="/ticker.js" defer></script>
+<script type="module" src="/firebase.js"></script>
+<script>
+const SUPABASE_URL='https://vtbmtxtgtdprpbilragm.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+const CCY='USD';
+function timeAgo(d){const m=Math.floor((Date.now()-new Date(d))/60000);if(m<60)return m+'m ago';if(m<1440)return Math.floor(m/60)+'h ago';return Math.floor(m/1440)+'d ago';}
+async function loadLive(){
+  try{
+    const r=await fetch(SUPABASE_URL+'/rest/v1/sentiment?currency=eq.'+CCY+'&order=id.desc&limit=1',{headers:{apikey:SUPABASE_ANON,Authorization:'Bearer '+SUPABASE_ANON}});
+    const d=await r.json();if(!d||!d.length)return;const s=d[0];
+    const biasClass=s.bias==='Bullish'?'bull-bg':s.bias==='Bearish'?'bear-bg':'neut-bg';
+    const col=s.bias==='Bullish'?'var(--bull)':s.bias==='Bearish'?'var(--bear)':'var(--neutral)';
+    const stanceClass=s.score>=60?'stance-hawk':s.score<=40?'stance-dove':'stance-neut';
+    const stanceText=s.score>=60?'Hawkish':s.score<=40?'Dovish':'Neutral';
+    document.getElementById('live-badge').textContent=s.bias;
+    document.getElementById('live-badge').className='live-badge '+biasClass;
+    document.getElementById('live-score').textContent=s.score;
+    document.getElementById('live-score').style.color=col;
+    document.getElementById('live-fill').style.width=s.score+'%';
+    document.getElementById('live-fill').style.background=col;
+    document.getElementById('live-bank-text').textContent='Latest stance based on news flow';
+    document.getElementById('live-stance').textContent=stanceText;
+    document.getElementById('live-stance').className='bank-stance '+stanceClass;
+    const drv=Array.isArray(s.drivers)?s.drivers:(s.drivers?[s.drivers]:[]);
+    document.getElementById('live-drivers').innerHTML=drv.map(x=>{const pos=s.bias==='Bullish';return '<div class="driver"><span class="'+(pos?'driver-pos':'driver-neg')+'">'+(pos?'▲':'▼')+'</span> '+x+'</div>';}).join('')||'<div class="driver">No driver detail available.</div>';
+    document.getElementById('live-updated').textContent='⏱ Updated '+timeAgo(s.created_at);
+  }catch(e){console.log('live load err',e);}
+}
+async function loadNews(){
+  try{
+    const r=await fetch(SUPABASE_URL+'/rest/v1/news?currencies_affected=cs.{'+CCY+'}&order=created_at.desc&limit=6',{headers:{apikey:SUPABASE_ANON,Authorization:'Bearer '+SUPABASE_ANON}});
+    const d=await r.json();const box=document.getElementById('side-news');
+    if(!d||!d.length){box.innerHTML='<div style="font-size:13px;color:var(--text-muted);">No '+CCY+' news in the last batch. Check back after the next refresh.</div>';return;}
+    box.innerHTML=d.map(n=>'<div class="news-li"><a href="'+(n.url||'#')+'" target="_blank" rel="noopener">'+(n.title||'Untitled')+'</a><div class="news-meta">'+(n.source||'')+' · '+timeAgo(n.created_at)+'</div></div>').join('');
+  }catch(e){console.log('news load err',e);}
+}
+const dEl=document.getElementById('topbar-date');if(dEl)dEl.textContent='📅 '+new Date().toUTCString().split(' ').slice(0,4).join(' ');
+loadLive();loadNews();
+</script>
+</body></html>
