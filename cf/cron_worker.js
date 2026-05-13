@@ -2223,7 +2223,7 @@ function _insBuildNarrative({sentiment, news, biggestMover}){
   const watchPair = strongest && weakest && strongest.currency !== weakest.currency ? _insPairFor(strongest.currency, weakest.currency) : null;
   const reverseTrigger = drivers[0] || (top ? `a reversal of the ${_insEsc(top.source)} story` : 'fresh central bank guidance');
   const scenarios = `<div class="scenario-box"><div class="scenario-title">📈 Bull case for the move</div><div class="scenario-text">If incoming data confirms ${_insEsc(driverProse)}, expect the ${moverName} bias to push toward ${biggestMover.bias==='Bullish'?'80/100':biggestMover.bias==='Bearish'?'20/100':'a clearer trending reading'} over the next 24 hours${watchPair?`, with <strong>${watchPair}</strong> the cleanest expression of the trade`:''}.</div></div><div class="scenario-box" style="border-left-color:#dc2626;"><div class="scenario-title" style="color:#dc2626;">📉 Risk to the view</div><div class="scenario-text">A reversal in <strong>${_insEsc(reverseTrigger).toLowerCase()}</strong> would quickly neutralize the ${biasWord} read on the ${moverName}. Watch ${biggestMover.currency} pairs for a snap back toward 50/100 if the next central-bank wire pushes the other way.</div></div>`;
-  const closing = `<p>Tomorrow's update lands at <strong>06:00 UTC</strong> ahead of the London open and will reset the picture against the latest overnight headlines. For live tracking through the day, the <a href="/">sentiment dashboard</a>, <a href="/currencies">currency strength meter</a>, and <a href="/calendar">economic calendar</a> all update in real time.</p>`;
+  const closing = `<p>The next session wrap lands within the day — Asia at <strong>00:00 UTC</strong>, London at <strong>06:00 UTC</strong>, New York at <strong>12:00 UTC</strong> — and will reset the picture against the latest overnight headlines. For live tracking through the day, the <a href="/">sentiment dashboard</a>, <a href="/currencies">currency strength meter</a>, and <a href="/calendar">economic calendar</a> all update in real time.</p>`;
 
   const glance = _INS_CCY_ORDER.map(c=>{const x=sentiment[c];if(!x)return '';return `<div class="glance-cell" style="border-top-color:${_insBiasColor(x.bias)};"><div class="glance-ccy">${c}</div><div class="glance-score">${x.score}</div><div class="glance-arr" style="color:${_insBiasColor(x.bias)};">${_insBiasArrow(x.bias)} ${x.bias.slice(0,4)}</div></div>`;}).join('');
 
@@ -2289,7 +2289,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <h2 class="h2">What's Driving the Move</h2>${N.driversSection}
 <h2 class="h2">What to Watch Next</h2>${N.scenarios}${N.closing}
 <div class="glance"><div class="glance-h">📊 Bias snapshot at the time of writing</div><div class="glance-grid">${N.glance}</div></div>
-<div class="cta"><strong>Get tomorrow's wrap before London opens.</strong> Bookmark <a href="/insight/">/insight/</a> or subscribe to our <a href="/insight/rss.xml">RSS feed</a> for fresh forex sentiment analysis every morning at 06:00 UTC.</div>
+<div class="cta"><strong>Catch every session wrap as it drops.</strong> Bookmark <a href="/insight/">/insight/</a> or subscribe to our <a href="/insight/rss.xml">RSS feed</a> for fresh forex sentiment analysis 3 times a day — Asia, London and New York sessions.</div>
 </article>
 <aside>
 <div class="sidebar-card"><div class="sidebar-h">📊 Live Currency Bias</div>${sidebarCcys}<a class="side-link" style="text-align:center;color:#2563eb;border-top:1px solid #e5e7eb;margin-top:6px;padding-top:12px;" href="/currencies">View all 8 currencies →</a></div>
@@ -2309,7 +2309,7 @@ function _insRenderIndex(articles){
 <link rel="icon" href="/favicon.ico"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <title>Daily Forex Insights | News Sentiment Analysis - FXNewsBias</title>
-<meta name="description" content="Daily forex market wraps with focus on the highest-impact news, market reaction, and what to watch next. Published every morning at 06:00 UTC.">
+<meta name="description" content="Forex market wraps with focus on the highest-impact news, market reaction, and what to watch next. Published 3 times a day for the Asia, London and New York sessions.">
 <meta name="robots" content="index, follow"><link rel="canonical" href="${_INS_SITE}/insight/">
 <meta property="og:type" content="website"><meta property="og:title" content="Daily Forex Insights | FXNewsBias"><meta property="og:description" content="Daily forex market wraps with focus on the highest-impact news, market reaction, and what to watch next."><meta property="og:url" content="${_INS_SITE}/insight/"><meta property="og:image" content="${_INS_SITE}/og-image.png">
 <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}:root{--border:#e5e7eb;--accent:#2563eb;}a{color:#2563eb;text-decoration:none;}a:hover{text-decoration:underline;}
@@ -2330,7 +2330,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <header class="page-head"><div class="page-head-inner">
 <div class="crumb"><a href="/">Home</a> · <span>Daily Insights</span></div>
 <h1 class="page-title">Daily Forex Insights</h1>
-<p class="page-sub">Daily market wraps focused on the highest-impact news, the currencies that moved, and what traders should watch over the next 24 hours. Published every morning at 06:00 UTC, ahead of the London open.</p>
+<p class="page-sub">Forex market wraps focused on the highest-impact news, the currencies that moved, and what traders should watch over the next 24 hours. Published 3 times a day — Asia session at 00:00 UTC, London session at 06:00 UTC, and New York session at 12:00 UTC.</p>
 </div></header>
 <div class="main">
 <div><div class="ix-grid">${items}</div><div class="rss-card"><a href="/insight/rss.xml">📡 Subscribe via RSS</a><div style="font-size:13px;color:#1e40af;margin-top:6px;">Get new insights in Feedly, Inoreader, or any RSS reader</div></div></div>
