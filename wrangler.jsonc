@@ -10,14 +10,5 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
-  ],
-  "triggers": {
-    "crons": [
-      "0 */3 * * *",
-      "*/15 * * * *",
-      "0 0 * * *",
-      "0 6 * * *",
-      "0 12 * * *"
-    ]
-  }
+  ]
 }
