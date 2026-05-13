@@ -2045,6 +2045,10 @@ const _INS_CCY_NAMES = {
 };
 const _INS_CCY_ORDER = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD'];
 
+function _insSafeUrl(u) {
+  const s = String(u||'').trim();
+  return /^https?:\/\//i.test(s) ? s : '#';
+}
 function _insEsc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
@@ -2148,7 +2152,7 @@ function _insRenderArticle({ headline, slug, summary, sentiment, news, biggestMo
   const newsHtml = top.length===0 ? '<p style="color:#6b7280;">No notable headlines recorded in the past 24 hours.</p>' :
     `<ol class="news-list">${top.map(n=>{
       const ccys = (n.currencies_affected||[]).join(', ') || 'cross-market';
-      return `<li><a class="news-link" href="${_insEsc(n.url)}" target="_blank" rel="noopener nofollow">${_insEsc(n.title)}</a><div class="news-meta"><span class="imp-badge imp-${_insEsc(n.impact||'Medium')}">${_insEsc(n.impact||'')}</span>${_insEsc(n.source)} · affects ${_insEsc(ccys)}</div></li>`;
+      return `<li><a class="news-link" href="${_insEsc(_insSafeUrl(n.url))}" target="_blank" rel="noopener nofollow">${_insEsc(n.title)}</a><div class="news-meta"><span class="imp-badge imp-${_insEsc(n.impact||'Medium')}">${_insEsc(n.impact||'')}</span>${_insEsc(n.source)} · affects ${_insEsc(ccys)}</div></li>`;
     }).join('')}</ol>`;
   const intro = `Forex markets digested a fresh wave of news flow over the past 24 hours, with our sentiment engine scoring the eight major currencies using live headlines from Reuters, Bloomberg, ForexLive and central bank wires. Today's standout mover is the <strong>${_INS_CCY_NAMES[biggestMover.currency]}</strong>, which printed a <strong style="color:${_insBiasColor(biggestMover.bias)};">${biggestMover.bias.toLowerCase()}</strong> reading at ${biggestMover.score}/100. Below is the full bias snapshot, followed by a currency-by-currency breakdown and the top news driving today's sentiment.`;
   const closing = `Use this insight as a fundamental backdrop alongside your own technical analysis. Pair the strongest bullish currency against the weakest bearish currency for a classic news-driven setup. Tomorrow's update lands at 06:00 UTC ahead of the London open. Track these biases live on the <a href="/">FXNewsBias dashboard</a>, the <a href="/currencies">currency strength meter</a>, the <a href="/pairs">28-pair bias matrix</a>, or the <a href="/calendar">economic calendar</a>.`;
