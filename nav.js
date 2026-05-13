@@ -56,6 +56,29 @@
           filter:drop-shadow(0 2px 6px rgba(0,0,0,.4));}
         nav ul.fxnb-mobile li.fxnb-drawer-logo:hover{background:linear-gradient(180deg,#0b1222,#0f172a);}
 
+        /* Quick-access submenus for Currencies and Pairs */
+        nav ul.fxnb-mobile li.fxnb-submenu{padding:0;background:#0b1222;
+          border-bottom:1px solid rgba(255,255,255,.06);}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-head{display:flex;align-items:center;
+          padding:14px 24px;font-size:11px;font-weight:700;text-transform:uppercase;
+          letter-spacing:1px;color:#64748b;background:#0b1222;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid{display:grid;
+          grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.06);
+          padding:1px;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid a{display:flex;flex-direction:column;
+          align-items:center;justify-content:center;padding:10px 4px;background:#0f172a;
+          color:#e2e8f0;font-size:11px;font-weight:600;text-align:center;width:auto;
+          min-height:50px;line-height:1.2;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid a:hover,
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid a:active{padding-left:4px;
+          background:rgba(37,99,235,.18);color:#60a5fa;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid a .sub-flag{font-size:18px;
+          line-height:1;margin-bottom:3px;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid.pairs-grid{
+          grid-template-columns:repeat(3,1fr);}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-grid.pairs-grid a{font-size:10px;
+          font-family:'JetBrains Mono',monospace;}
+
         nav ul.fxnb-mobile{position:fixed;top:0;right:0;height:100vh;width:min(86vw,360px);
           background:#0f172a;flex-direction:column;align-items:stretch;gap:0;padding:56px 0 0;
           margin:0;list-style:none;box-shadow:-12px 0 40px rgba(0,0,0,.4);
@@ -264,6 +287,44 @@
       drawerLogo.className = 'fxnb-extra fxnb-drawer-logo';
       drawerLogo.innerHTML = '<a href="/" aria-label="FXNB Home" style="padding:0;background:none;"><img src="/logo-fxnb.png" alt="FXNB"></a>';
       navMenu.insertBefore(drawerLogo, navMenu.firstChild);
+
+      // -------- CURRENCIES quick-access submenu --------
+      const ccyMenu = document.createElement('li');
+      ccyMenu.className = 'fxnb-extra fxnb-submenu';
+      ccyMenu.innerHTML =
+        `<div class="fxnb-sub-head">⚡ Quick: Currency Pages</div>
+         <div class="fxnb-sub-grid">
+           <a href="/currencies/usd"><span class="sub-flag">🇺🇸</span>USD</a>
+           <a href="/currencies/eur"><span class="sub-flag">🇪🇺</span>EUR</a>
+           <a href="/currencies/gbp"><span class="sub-flag">🇬🇧</span>GBP</a>
+           <a href="/currencies/jpy"><span class="sub-flag">🇯🇵</span>JPY</a>
+           <a href="/currencies/aud"><span class="sub-flag">🇦🇺</span>AUD</a>
+           <a href="/currencies/cad"><span class="sub-flag">🇨🇦</span>CAD</a>
+           <a href="/currencies/chf"><span class="sub-flag">🇨🇭</span>CHF</a>
+           <a href="/currencies/nzd"><span class="sub-flag">🇳🇿</span>NZD</a>
+         </div>`;
+      navMenu.appendChild(ccyMenu);
+
+      // -------- PAIRS quick-access submenu --------
+      const pairMenu = document.createElement('li');
+      pairMenu.className = 'fxnb-extra fxnb-submenu';
+      pairMenu.innerHTML =
+        `<div class="fxnb-sub-head">⚡ Quick: Top Forex Pairs</div>
+         <div class="fxnb-sub-grid pairs-grid">
+           <a href="/pairs/eur-usd">EUR/USD</a>
+           <a href="/pairs/gbp-usd">GBP/USD</a>
+           <a href="/pairs/usd-jpy">USD/JPY</a>
+           <a href="/pairs/usd-chf">USD/CHF</a>
+           <a href="/pairs/aud-usd">AUD/USD</a>
+           <a href="/pairs/usd-cad">USD/CAD</a>
+           <a href="/pairs/nzd-usd">NZD/USD</a>
+           <a href="/pairs/eur-gbp">EUR/GBP</a>
+           <a href="/pairs/eur-jpy">EUR/JPY</a>
+           <a href="/pairs/gbp-jpy">GBP/JPY</a>
+           <a href="/pairs/aud-jpy">AUD/JPY</a>
+           <a href="/pairs/cad-jpy">CAD/JPY</a>
+         </div>`;
+      navMenu.appendChild(pairMenu);
 
       // -------- AUTH section --------
       const authDivider = document.createElement('li');
