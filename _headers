@@ -27,7 +27,11 @@
   Cache-Control: public, max-age=300, must-revalidate
 
 # Security headers (also helps Best Practices score)
+# HSTS: tells browsers + Google "this domain is HTTPS only, forever".
+# Strongest possible signal that http:// version should never be indexed.
+# 6-month max-age, includeSubDomains, preload-eligible.
 /*
+  Strict-Transport-Security: max-age=15768000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
