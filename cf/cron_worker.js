@@ -2240,7 +2240,7 @@ ${items}
 
 function _insRenderRss(articles) {
   const items = articles.map(a => `<item><title>${_insEsc(a.headline)}</title><link>${_INS_SITE}/insight/${a.slug}</link><guid>${_INS_SITE}/insight/${a.slug}</guid><pubDate>${new Date(a.dateISO).toUTCString()}</pubDate><description>${_insEsc(a.summary)}</description></item>`).join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel>\n<title>FXNewsBias Daily Insights</title>\n<link>${_INS_SITE}/insight/</link>\n<description>Daily forex market insights with news sentiment analysis for the 8 major currencies.</description>\n<language>en</language>\n<lastBuildDate>${new Date().toUTCString()}</lastBuildDate>\n${items}\n</channel></rss>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<?xml-stylesheet type="text/xsl" href="/insight/rss-style.xsl"?>\n<rss version="2.0"><channel>\n<title>FXNewsBias Daily Insights</title>\n<link>${_INS_SITE}/insight/</link>\n<description>Daily forex market insights with news sentiment analysis for the 8 major currencies.</description>\n<language>en</language>\n<lastBuildDate>${new Date().toUTCString()}</lastBuildDate>\n${items}\n</channel></rss>`;
 }
 
 async function _insListExistingArticles(env) {
