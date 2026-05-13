@@ -433,7 +433,12 @@ catch(e) { console.log('saveSentiment failed:', e.message); }
 try { await saveNews(news, env); console.log('News saved'); }
 catch(e) { console.log('saveNews failed:', e.message); }
 } catch (error) {
+// Re-throw so the worker invocation counts as an error in the
+// Cloudflare dashboard. Previously this catch silently swallowed
+// Anthropic failures and the dashboard reported 0 errors while the
+// sentiment table went stale for hours.
 console.error('Error in sentiment analysis (top-level):', error && error.message);
+throw error;
 }
 }
 
@@ -533,6 +538,34 @@ console.log('Staleness: still stale, alert already sent for sentiment id', lates
 summary.action = 'noop-already-alerted';
 return summary;
 }
+// AUTO-RECOVER: before alerting humans, try to self-heal by re-running
+// the sentiment scan once. The 3-hourly cron may have failed silently
+// (e.g. Anthropic 429/529); the */15 staleness check will then close
+// the gap within 15 minutes instead of waiting for the next 3h tick.
+// We only attempt this on the *first* detection of a new stale row
+// (activeAlertId !== latest.id) so we never burn Anthropic calls in
+// a tight loop if the rescue itself keeps failing.
+console.log('Staleness: attempting self-heal via runSentimentAnalysis...');
+let rescueErr = null;
+try { await runSentimentAnalysis(env); }
+catch (e) { rescueErr = e; console.log('Staleness: self-heal failed:', e.message); }
+if (!rescueErr) {
+// Re-read latest row to confirm recovery before declaring victory.
+const recheck = await fetch(
+`${env.SUPABASE_URL}/rest/v1/sentiment?select=id,created_at&order=created_at.desc&limit=1`,
+{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
+);
+if (recheck.ok) {
+const newRows = await recheck.json();
+if (Array.isArray(newRows) && newRows.length && newRows[0].id !== latest.id) {
+console.log('Staleness: self-healed, fresh row at', newRows[0].created_at);
+summary.action = 'self-healed';
+summary.recovered_at = newRows[0].created_at;
+return summary;
+}
+}
+}
+// Self-heal didn't produce a fresh row — proceed to alert humans.
 const lateBy = ageMs - cadenceMs;
 const text = `🚨 *FXNewsBias sentiment feed is stalled*\n\n`
 + `Latest sentiment row: \`${latest.created_at}\`\n`
@@ -1689,6 +1722,15 @@ Respond ONLY in this exact JSON format (values shown are placeholders, replace w
 "NZD": {"score": 50, "bias": "Neutral", "drivers": ["<driver from headlines>", "<driver from headlines>", "<driver from headlines>"]}
 }`;
 
+// Retry Anthropic up to 3 times with exponential backoff. Anthropic
+// occasionally returns 429 (rate-limited) or 529 (overloaded), and a
+// single failure used to silently kill the entire 3-hourly scan. Each
+// failure mode is handled explicitly so we never insert garbage data.
+const backoffMs = [0, 2000, 5000];
+let lastErr = null;
+for (let attempt = 0; attempt < backoffMs.length; attempt++) {
+if (backoffMs[attempt] > 0) await new Promise(r => setTimeout(r, backoffMs[attempt]));
+try {
 const response = await fetch('https://api.anthropic.com/v1/messages', {
 method: 'POST',
 headers: {
@@ -1702,12 +1744,24 @@ max_tokens: 1000,
 messages: [{ role: 'user', content: prompt }]
 })
 });
-
+if (!response.ok) {
+const body = await response.text().catch(() => '');
+throw new Error(`Anthropic HTTP ${response.status}: ${body.slice(0, 200)}`);
+}
 const data = await response.json();
+if (!data || !Array.isArray(data.content) || !data.content[0] || typeof data.content[0].text !== 'string') {
+throw new Error(`Anthropic malformed response: ${JSON.stringify(data).slice(0, 200)}`);
+}
 const text = data.content[0].text;
 const jsonMatch = text.match(/\{[\s\S]*\}/);
 if (!jsonMatch) throw new Error('No JSON in Claude response');
 return JSON.parse(jsonMatch[0]);
+} catch (e) {
+lastErr = e;
+console.log(`analyzeSentiment attempt ${attempt + 1}/${backoffMs.length} failed: ${e.message}`);
+}
+}
+throw new Error(`analyzeSentiment failed after ${backoffMs.length} attempts: ${lastErr && lastErr.message}`);
 }
 
 async function saveSentiment(sentiment, env) {
