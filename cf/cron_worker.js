@@ -146,7 +146,11 @@ tasks.push(pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (3h) err
 tasks.push(updatePrices(env));
 }
 // Always run the staleness check so a stalled sentiment cron still gets noticed.
-tasks.push(checkSentimentFreshness(env).catch(e => console.log('Staleness check error:', e.message)));
+// Skip self-heal on the 3h tick — the primary runSentimentAnalysis is already
+// in flight on this same invocation, so a parallel rescue would double-spend
+// Anthropic calls and race the primary write.
+const skipSelfHeal = (event.cron === '0 */3 * * *');
+tasks.push(checkSentimentFreshness(env, { skipSelfHeal }).catch(e => console.log('Staleness check error:', e.message)));
 ctx.waitUntil(Promise.all(tasks));
 }
 };
@@ -467,7 +471,8 @@ throw error;
 //                              CONTACT_FROM_EMAIL or 'noreply@fxnewsbias.com')
 //   SENTIMENT_CADENCE_MS    - override cadence (default: derived, fallback 3h)
 //   STALENESS_MULTIPLIER    - override multiplier (default 1.5)
-async function checkSentimentFreshness(env) {
+async function checkSentimentFreshness(env, opts) {
+const skipSelfHeal = !!(opts && opts.skipSelfHeal);
 const STATE_KEY = 'sentiment_alert';
 const DEFAULT_CADENCE_MS = 3 * 60 * 60 * 1000; // 3 hours
 const multiplier = parseFloat(env.STALENESS_MULTIPLIER) || 1.5;
@@ -545,11 +550,20 @@ return summary;
 // We only attempt this on the *first* detection of a new stale row
 // (activeAlertId !== latest.id) so we never burn Anthropic calls in
 // a tight loop if the rescue itself keeps failing.
-console.log('Staleness: attempting self-heal via runSentimentAnalysis...');
+// skipSelfHeal is set by the caller when the primary 3h scan is already
+// in flight on the same invocation — running both in parallel would
+// double-spend Anthropic and race the primary write.
 let rescueErr = null;
+let rescueAttempted = false;
+if (skipSelfHeal) {
+console.log('Staleness: skipping self-heal (primary scan already running this tick).');
+} else {
+console.log('Staleness: attempting self-heal via runSentimentAnalysis...');
+rescueAttempted = true;
 try { await runSentimentAnalysis(env); }
 catch (e) { rescueErr = e; console.log('Staleness: self-heal failed:', e.message); }
-if (!rescueErr) {
+}
+if (rescueAttempted && !rescueErr) {
 // Re-read latest row to confirm recovery before declaring victory.
 const recheck = await fetch(
 `${env.SUPABASE_URL}/rest/v1/sentiment?select=id,created_at&order=created_at.desc&limit=1`,
