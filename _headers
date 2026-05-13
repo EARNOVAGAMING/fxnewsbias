@@ -16,11 +16,19 @@
 /*.woff2
   Cache-Control: public, max-age=31536000, immutable
 
-# Cache JS/CSS for 1 day (so we can push updates without long TTL pain)
+# Cache JS/CSS very briefly so menu/style updates show up immediately.
+# Browsers will revalidate every 5 minutes — fast enough for users to
+# see updates without forcing a hard refresh, and small enough that
+# Cloudflare still saves bandwidth on repeat visits.
 /*.js
-  Cache-Control: public, max-age=86400, must-revalidate
+  Cache-Control: public, max-age=300, must-revalidate
 /*.css
-  Cache-Control: public, max-age=86400, must-revalidate
+  Cache-Control: public, max-age=300, must-revalidate
+
+# nav.js changes most often — make it always revalidate before use
+/nav.js
+  Cache-Control: public, max-age=0, must-revalidate
+  CDN-Cache-Control: no-store
 
 # HTML pages — short cache so users get updates fast
 /*.html
