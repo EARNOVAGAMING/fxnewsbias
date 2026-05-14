@@ -132,6 +132,11 @@ status: 200, headers: { 'Content-Type': 'application/json' }
 if (url.pathname === '/api/weekly-report') {
 return handleWeeklyReport(request, env, ctx);
 }
+// Admin panel data — gated by Firebase ID token + admin email allowlist.
+// Read-only: lists Firebase Auth users + Firestore subscription tiers.
+if (url.pathname === '/admin-data') {
+return handleAdminData(request, env);
+}
 return new Response('FXNewsBias Cron Worker Running', { status: 200 });
 },
 
@@ -2789,5 +2794,112 @@ async function generateDailyInsight(env, session) {
     console.error('Insight: FAILED -', e.message);
     await _insSendFailureEmail(env, e, 'generateDailyInsight');
     return { ok: false, error: e.message };
+  }
+}
+
+// ============================================================
+// ADMIN PANEL DATA ENDPOINT
+// ============================================================
+// Read-only. Lists Firebase Auth users + Firestore subscription tiers.
+// Gated by Firebase ID token (caller must be signed in) AND email
+// must match ADMIN_EMAIL allowlist. Does NOT modify any data.
+async function handleAdminData(request, env) {
+  const ADMIN_EMAILS = ['dineshsanther123gf@gmail.com'];
+  const FIREBASE_API_KEY = env.FIREBASE_API_KEY || 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
+  const PROJECT_ID = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
+  const cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  if (request.method !== 'POST') return new Response(JSON.stringify({error: 'POST only'}), { status: 405, headers: cors });
+  try {
+    const { idToken } = await request.json();
+    if (!idToken) return new Response(JSON.stringify({error: 'idToken required'}), { status: 400, headers: cors });
+    // 1. Verify ID token via Firebase REST
+    const verifyRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken })
+    });
+    const verifyData = await verifyRes.json();
+    const callerEmail = verifyData?.users?.[0]?.email;
+    if (!callerEmail) return new Response(JSON.stringify({error: 'invalid token'}), { status: 401, headers: cors });
+    if (!ADMIN_EMAILS.includes(callerEmail.toLowerCase())) {
+      return new Response(JSON.stringify({error: 'forbidden'}), { status: 403, headers: cors });
+    }
+    // 2. Get OAuth token for server-side Firebase APIs
+    const oauthToken = await getFirebaseToken(env);
+    if (!oauthToken) return new Response(JSON.stringify({error: 'firebase auth failed'}), { status: 500, headers: cors });
+    // 3. List all Firebase Auth users (paginated, max 500/page)
+    const allUsers = [];
+    let nextPageToken = '';
+    for (let page = 0; page < 20; page++) {
+      const body = { targetProjectId: PROJECT_ID, maxResults: 500 };
+      if (nextPageToken) body.nextPageToken = nextPageToken;
+      const r = await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${PROJECT_ID}/accounts:batchGet?maxResults=500${nextPageToken ? '&nextPageToken=' + encodeURIComponent(nextPageToken) : ''}`, {
+        headers: { 'Authorization': `Bearer ${oauthToken}` }
+      });
+      const d = await r.json();
+      if (d.users) allUsers.push(...d.users);
+      if (!d.nextPageToken) break;
+      nextPageToken = d.nextPageToken;
+    }
+    // 4. List Firestore subscriptions
+    const subsByEmail = {};
+    try {
+      const fsRes = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/subscriptions?pageSize=500`, {
+        headers: { 'Authorization': `Bearer ${oauthToken}` }
+      });
+      const fsData = await fsRes.json();
+      (fsData.documents || []).forEach(doc => {
+        const f = doc.fields || {};
+        const email = f.email?.stringValue;
+        if (!email) return;
+        subsByEmail[email.toLowerCase()] = {
+          isPro: f.isPro?.booleanValue === true,
+          plan: f.plan?.stringValue || 'free',
+          stripeCustomerId: f.stripeCustomerId?.stringValue || '',
+          updatedAt: f.updatedAt?.stringValue || ''
+        };
+      });
+    } catch (e) {
+      console.log('Firestore subs fetch failed:', e.message);
+    }
+    // 5. Merge — return clean rows
+    const rows = allUsers.map(u => {
+      const email = (u.email || '').toLowerCase();
+      const sub = subsByEmail[email] || { isPro: false, plan: 'free', stripeCustomerId: '', updatedAt: '' };
+      const providers = (u.providerUserInfo || []).map(p => p.providerId).join(',') || 'password';
+      return {
+        uid: u.localId,
+        email: u.email || '',
+        displayName: u.displayName || '',
+        emailVerified: u.emailVerified === true,
+        providers,
+        createdAt: u.createdAt ? new Date(parseInt(u.createdAt)).toISOString() : '',
+        lastLoginAt: u.lastLoginAt ? new Date(parseInt(u.lastLoginAt)).toISOString() : '',
+        disabled: u.disabled === true,
+        tier: sub.isPro ? 'pro' : 'free',
+        stripeCustomerId: sub.stripeCustomerId,
+        proUpdatedAt: sub.updatedAt
+      };
+    });
+    rows.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    const stats = {
+      total: rows.length,
+      pro: rows.filter(r => r.tier === 'pro').length,
+      free: rows.filter(r => r.tier === 'free').length,
+      verified: rows.filter(r => r.emailVerified).length,
+      googleSignIn: rows.filter(r => r.providers.includes('google.com')).length,
+      last7d: rows.filter(r => r.createdAt && (Date.now() - new Date(r.createdAt).getTime()) < 7*86400e3).length,
+      last30d: rows.filter(r => r.createdAt && (Date.now() - new Date(r.createdAt).getTime()) < 30*86400e3).length,
+    };
+    return new Response(JSON.stringify({ ok: true, stats, users: rows, generatedAt: new Date().toISOString() }), { status: 200, headers: cors });
+  } catch (e) {
+    console.error('admin-data error:', e.message);
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
   }
 }

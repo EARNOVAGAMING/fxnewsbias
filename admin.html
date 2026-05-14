@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin | FXNewsBias</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#0b1120;color:#e2e8f0;min-height:100vh;}
+.wrap{max-width:1280px;margin:0 auto;padding:20px 16px 60px;}
+.head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #1e293b;}
+.head h1{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
+.head .meta{color:#64748b;font-size:13px;}
+.btn{background:#1e293b;color:#e2e8f0;border:1px solid #334155;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+.btn:hover{background:#334155;}
+.btn.primary{background:#2563eb;border-color:#2563eb;color:#fff;}
+.btn.primary:hover{background:#1d4ed8;}
+.gate{max-width:420px;margin:80px auto;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:32px;text-align:center;}
+.gate h2{color:#fff;font-size:20px;margin-bottom:8px;}
+.gate p{color:#94a3b8;font-size:14px;margin-bottom:20px;line-height:1.5;}
+.gate input{width:100%;padding:10px 12px;background:#0b1120;border:1px solid #334155;border-radius:6px;color:#fff;font-size:14px;font-family:inherit;margin-bottom:10px;}
+.gate input:focus{outline:none;border-color:#2563eb;}
+.gate button{width:100%;}
+.err{color:#ef4444;font-size:13px;margin-top:10px;}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
+.stat{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:16px;}
+.stat .label{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.stat .val{font-size:28px;font-weight:800;color:#fff;line-height:1;}
+.stat .sub{font-size:12px;color:#94a3b8;margin-top:4px;}
+.stat.pro .val{color:#10b981;}
+.stat.new .val{color:#3b82f6;}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.toolbar input{background:#1e293b;border:1px solid #334155;color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;font-family:inherit;flex:1;min-width:200px;}
+.toolbar select{background:#1e293b;border:1px solid #334155;color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;font-family:inherit;}
+.tbl-wrap{background:#1e293b;border:1px solid #334155;border-radius:10px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #334155;white-space:nowrap;}
+th{background:#0f172a;color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;}
+td{color:#e2e8f0;}
+tr:hover td{background:#283548;}
+.tier{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;letter-spacing:0.5px;}
+.tier.pro{background:#10b981;color:#fff;}
+.tier.free{background:#475569;color:#cbd5e1;}
+.badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;background:#334155;color:#cbd5e1;}
+.badge.v{background:#10b98120;color:#10b981;}
+.badge.g{background:#3b82f620;color:#3b82f6;}
+.empty{text-align:center;padding:60px 20px;color:#64748b;}
+.loading{text-align:center;padding:60px 20px;color:#94a3b8;}
+@media(max-width:640px){
+  .head h1{font-size:18px;}
+  th,td{padding:8px 10px;font-size:12px;}
+  .stat .val{font-size:22px;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="root">
+  <div class="loading">Loading…</div>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
+const ADMIN_EMAILS = ['dineshsanther123gf@gmail.com'];
+const ADMIN_API = 'https://fxnewsbias-cron.dineshsanther123gf.workers.dev/admin-data';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
+  authDomain: "fxnewsbias.firebaseapp.com",
+  projectId: "fxnewsbias",
+  storageBucket: "fxnewsbias.firebasestorage.app",
+  messagingSenderId: "414710041736",
+  appId: "1:414710041736:web:00e79ccc58fdb94e98633d"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const root = document.getElementById('root');
+
+let allUsers = [];
+let stats = {};
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(iso){if(!iso)return '—';const d=new Date(iso);return d.toLocaleString('en-MY',{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});}
+function ago(iso){if(!iso)return '';const d=Date.now()-new Date(iso).getTime();const days=Math.floor(d/86400e3);if(days===0)return 'today';if(days===1)return '1d ago';if(days<30)return days+'d ago';if(days<365)return Math.floor(days/30)+'mo ago';return Math.floor(days/365)+'y ago';}
+
+function renderGate(errMsg) {
+  root.innerHTML = `
+    <div class="gate">
+      <h2>Admin Login</h2>
+      <p>Sign in with your admin Google account or email/password.</p>
+      <button id="g-google" class="btn primary" style="margin-bottom:14px;">Sign in with Google</button>
+      <div style="color:#64748b;font-size:12px;margin:10px 0;">— or email/password —</div>
+      <input id="g-email" type="email" placeholder="email" autocomplete="username">
+      <input id="g-pass" type="password" placeholder="password" autocomplete="current-password">
+      <button id="g-login" class="btn primary">Sign in</button>
+      ${errMsg ? `<div class="err">${esc(errMsg)}</div>` : ''}
+    </div>`;
+  document.getElementById('g-google').onclick = async () => {
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch(e){ renderGate(e.message); }
+  };
+  document.getElementById('g-login').onclick = async () => {
+    const email = document.getElementById('g-email').value.trim();
+    const pass = document.getElementById('g-pass').value;
+    try { await signInWithEmailAndPassword(auth, email, pass); } catch(e){ renderGate(e.message); }
+  };
+}
+
+function renderForbidden(email) {
+  root.innerHTML = `
+    <div class="gate">
+      <h2>Access denied</h2>
+      <p>Signed in as <strong style="color:#fff;">${esc(email)}</strong>, but this account is not on the admin allowlist.</p>
+      <button id="g-out" class="btn">Sign out</button>
+    </div>`;
+  document.getElementById('g-out').onclick = () => signOut(auth);
+}
+
+async function loadData(idToken) {
+  root.innerHTML = `<div class="loading">Loading users…</div>`;
+  try {
+    const r = await fetch(ADMIN_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken })
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || ('HTTP ' + r.status));
+    allUsers = d.users || [];
+    stats = d.stats || {};
+    renderDash();
+  } catch (e) {
+    root.innerHTML = `<div class="empty">Error loading data: ${esc(e.message)}<br><br><button class="btn" onclick="location.reload()">Retry</button></div>`;
+  }
+}
+
+function renderDash() {
+  const u = auth.currentUser;
+  root.innerHTML = `
+    <div class="head">
+      <div>
+        <h1>FXNewsBias Admin</h1>
+        <div class="meta">Signed in as ${esc(u?.email || '')} · ${stats.total || 0} users</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button id="dl" class="btn">Export CSV</button>
+        <button id="rf" class="btn">Refresh</button>
+        <button id="so" class="btn">Sign out</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="label">Total users</div><div class="val">${stats.total||0}</div></div>
+      <div class="stat pro"><div class="label">Pro</div><div class="val">${stats.pro||0}</div><div class="sub">${stats.total ? Math.round((stats.pro/stats.total)*100) : 0}% of users</div></div>
+      <div class="stat"><div class="label">Free</div><div class="val">${stats.free||0}</div></div>
+      <div class="stat new"><div class="label">New (7 days)</div><div class="val">${stats.last7d||0}</div></div>
+      <div class="stat"><div class="label">New (30 days)</div><div class="val">${stats.last30d||0}</div></div>
+      <div class="stat"><div class="label">Verified</div><div class="val">${stats.verified||0}</div></div>
+      <div class="stat"><div class="label">Google sign-in</div><div class="val">${stats.googleSignIn||0}</div></div>
+    </div>
+    <div class="toolbar">
+      <input id="q" placeholder="Search email or name…" autocomplete="off">
+      <select id="f-tier"><option value="">All tiers</option><option value="pro">Pro only</option><option value="free">Free only</option></select>
+      <select id="f-sort"><option value="created_desc">Newest first</option><option value="created_asc">Oldest first</option><option value="last_desc">Last login (recent)</option><option value="email">Email A-Z</option></select>
+    </div>
+    <div class="tbl-wrap">
+      <table id="tbl"><thead><tr>
+        <th>Email</th><th>Tier</th><th>Signed up</th><th>Last login</th><th>Method</th><th>Verified</th>
+      </tr></thead><tbody></tbody></table>
+    </div>`;
+  document.getElementById('so').onclick = () => signOut(auth);
+  document.getElementById('rf').onclick = () => u.getIdToken(true).then(loadData);
+  document.getElementById('dl').onclick = downloadCsv;
+  document.getElementById('q').oninput = renderRows;
+  document.getElementById('f-tier').onchange = renderRows;
+  document.getElementById('f-sort').onchange = renderRows;
+  renderRows();
+}
+
+function getFiltered() {
+  const q = (document.getElementById('q')?.value || '').toLowerCase().trim();
+  const tier = document.getElementById('f-tier')?.value || '';
+  const sort = document.getElementById('f-sort')?.value || 'created_desc';
+  let list = allUsers.filter(u => {
+    if (tier && u.tier !== tier) return false;
+    if (q && !(u.email.toLowerCase().includes(q) || u.displayName.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  if (sort === 'created_asc') list.sort((a,b) => (a.createdAt||'').localeCompare(b.createdAt||''));
+  else if (sort === 'last_desc') list.sort((a,b) => (b.lastLoginAt||'').localeCompare(a.lastLoginAt||''));
+  else if (sort === 'email') list.sort((a,b) => a.email.localeCompare(b.email));
+  else list.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+  return list;
+}
+
+function renderRows() {
+  const list = getFiltered();
+  const tb = document.querySelector('#tbl tbody');
+  if (!list.length) { tb.innerHTML = `<tr><td colspan="6" class="empty">No users match.</td></tr>`; return; }
+  tb.innerHTML = list.map(u => {
+    const method = u.providers.includes('google.com') ? '<span class="badge g">Google</span>' : '<span class="badge">Email</span>';
+    const ver = u.emailVerified ? '<span class="badge v">Yes</span>' : '<span class="badge">No</span>';
+    const tier = `<span class="tier ${u.tier}">${u.tier.toUpperCase()}</span>`;
+    return `<tr>
+      <td>${esc(u.email)}${u.displayName ? '<div style="color:#64748b;font-size:11px;">'+esc(u.displayName)+'</div>' : ''}</td>
+      <td>${tier}</td>
+      <td>${fmtDate(u.createdAt)}<div style="color:#64748b;font-size:11px;">${ago(u.createdAt)}</div></td>
+      <td>${fmtDate(u.lastLoginAt)}<div style="color:#64748b;font-size:11px;">${ago(u.lastLoginAt)}</div></td>
+      <td>${method}</td>
+      <td>${ver}</td>
+    </tr>`;
+  }).join('');
+}
+
+function downloadCsv() {
+  const rows = getFiltered();
+  const head = ['email','displayName','tier','emailVerified','providers','createdAt','lastLoginAt','stripeCustomerId','uid'];
+  const csv = [head.join(',')].concat(rows.map(r => head.map(k => {
+    const v = String(r[k] ?? '');
+    return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  }).join(','))).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `fxnb-users-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { renderGate(); return; }
+  if (!ADMIN_EMAILS.includes((user.email||'').toLowerCase())) { renderForbidden(user.email); return; }
+  const token = await user.getIdToken();
+  loadData(token);
+});
+</script>
+</body>
+</html>
