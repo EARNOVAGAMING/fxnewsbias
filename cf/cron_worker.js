@@ -27,6 +27,36 @@ if (!_authed()) return new Response('Unauthorized', { status: 401 });
 await sendTelegramAlert(env, null);
 return new Response('Telegram test sent!', { status: 200 });
 }
+// Dry-run sentiment analysis: fetches news, calls Anthropic, returns parsed
+// JSON. Does NOT save to Supabase. Does NOT fire Telegram. Use this to verify
+// max_tokens / parsing fixes without polluting the live data or alert stream.
+if (url.pathname === '/run-sentiment-dry-run') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const startedAt = Date.now();
+try {
+const news = await fetchAllNews();
+const sentiment = await analyzeSentiment(news, env);
+const REQUIRED = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD'];
+const present = REQUIRED.filter(c => sentiment[c]);
+return new Response(JSON.stringify({
+ok: true,
+duration_ms: Date.now() - startedAt,
+news_count: news.length,
+currencies_returned: present.length,
+currencies_expected: REQUIRED.length,
+all_present: present.length === REQUIRED.length,
+missing: REQUIRED.filter(c => !sentiment[c]),
+sample: { USD: sentiment.USD, NZD: sentiment.NZD, CHF: sentiment.CHF },
+sentiment
+}, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
+} catch (e) {
+return new Response(JSON.stringify({
+ok: false,
+duration_ms: Date.now() - startedAt,
+error: e.message
+}, null, 2), { status: 500, headers: { 'Content-Type': 'application/json' } });
+}
+}
 if (url.pathname === '/test-staleness-alert') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const sentAt = new Date().toISOString();
@@ -1754,7 +1784,11 @@ headers: {
 },
 body: JSON.stringify({
 model: 'claude-haiku-4-5-20251001',
-max_tokens: 1000,
+// 8 currencies x ~120 tokens each (score + bias + 3 drivers) = ~960 tokens.
+// 1000 was right at the edge — drivers running long would truncate the JSON
+// mid-currency, causing partial saves (only 3-6 of 8 currencies persisted).
+// 2500 gives generous headroom for verbose drivers without inflating cost.
+max_tokens: 2500,
 messages: [{ role: 'user', content: prompt }]
 })
 });
@@ -1766,10 +1800,27 @@ const data = await response.json();
 if (!data || !Array.isArray(data.content) || !data.content[0] || typeof data.content[0].text !== 'string') {
 throw new Error(`Anthropic malformed response: ${JSON.stringify(data).slice(0, 200)}`);
 }
+// Anthropic surfaces token-limit truncation explicitly; bail early so the
+// retry loop kicks in instead of us trying to parse a half-written JSON.
+if (data.stop_reason && data.stop_reason !== 'end_turn') {
+throw new Error(`Anthropic stop_reason=${data.stop_reason} (response truncated; likely max_tokens too low)`);
+}
 const text = data.content[0].text;
 const jsonMatch = text.match(/\{[\s\S]*\}/);
 if (!jsonMatch) throw new Error('No JSON in Claude response');
-return JSON.parse(jsonMatch[0]);
+const parsed = JSON.parse(jsonMatch[0]);
+// Validate all 8 currencies present with score/bias/drivers. Without this
+// guard, partial responses (3-6 of 8) silently persisted to Supabase, leaving
+// NZD/CHF stale for hours and tripping the staleness self-heal repeatedly.
+const REQUIRED = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD'];
+const missing = REQUIRED.filter(c => {
+const v = parsed[c];
+return !v || typeof v.score !== 'number' || !v.bias || !Array.isArray(v.drivers) || v.drivers.length < 1;
+});
+if (missing.length) {
+throw new Error(`Sentiment response missing/malformed currencies: ${missing.join(',')} (got keys: ${Object.keys(parsed).join(',')})`);
+}
+return parsed;
 } catch (e) {
 lastErr = e;
 console.log(`analyzeSentiment attempt ${attempt + 1}/${backoffMs.length} failed: ${e.message}`);
