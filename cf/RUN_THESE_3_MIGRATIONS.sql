@@ -74,6 +74,31 @@ create index if not exists cleanup_runs_table_ran_at_idx
 alter table public.cleanup_runs enable row level security;
 
 
+-- ---- 4) UNIQUE constraints on existing tables --------------------------
+-- These let the cron worker swap its current delete-then-insert pattern
+-- for a single-subrequest UPSERT (?on_conflict=pair / =url with
+-- merge-duplicates / ignore-duplicates). Worker code works today
+-- regardless; adding these is a future-proof optimization, not blocking.
+
+-- prices.pair must be unique (only 8 pairs exist, no real risk of dup).
+-- If duplicates already exist they need to be removed first; the DELETE
+-- below keeps only the latest row per pair.
+delete from public.prices a using public.prices b
+where a.pair = b.pair and a.id < b.id;
+
+alter table public.prices
+    drop constraint if exists prices_pair_key,
+    add constraint prices_pair_key unique (pair);
+
+-- news.url unique (so we can use on_conflict=url, ignore-duplicates).
+delete from public.news a using public.news b
+where a.url = b.url and a.id < b.id;
+
+alter table public.news
+    drop constraint if exists news_url_key,
+    add constraint news_url_key unique (url);
+
+
 -- ---- Verification (optional) -------------------------------------------
 -- Run this after the above to confirm all 3 tables exist:
 --   select table_name from information_schema.tables

@@ -1927,19 +1927,31 @@ currencies_affected: ccyRegexes.filter(([,r]) => r.test(item.title)).map(([c]) =
 };
 });
 if (!rows.length) { console.log('saveNews: nothing to insert'); return; }
-// on_conflict=url + Prefer: resolution=ignore-duplicates relies on a
-// UNIQUE index on news.url. If that index doesn't exist yet, the request
-// will return a 409 and we log + continue (no partial-state risk because
-// the whole batch fails atomically).
-const r = await fetch(`${env.SUPABASE_URL}/rest/v1/news?on_conflict=url`, {
+// news.url has no UNIQUE constraint either (verified 2026-05-14), so
+// `?on_conflict=url` returns PostgREST 42P10. Until the constraint is
+// added (cf/RUN_THESE_3_MIGRATIONS.sql), do dedup in JS: 1 GET for the
+// last 500 urls + 1 batched INSERT = 2 subrequests total (vs the
+// original 1 GET + 20 POSTs = 21 subrequests).
+let existingUrls = new Set();
+try {
+const exResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=url&order=id.desc&limit=500`, {
+headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+});
+const exData = await exResp.json();
+existingUrls = new Set((exData || []).map(n => n.url).filter(Boolean));
+} catch(e) { console.log('Dedup fetch failed:', e.message); }
+const fresh = rows.filter(r => !existingUrls.has(r.url));
+console.log(`saveNews: ${fresh.length} new of ${rows.length} candidates`);
+if (!fresh.length) return;
+const r = await fetch(`${env.SUPABASE_URL}/rest/v1/news`, {
 method: 'POST',
 headers: {
 'Content-Type': 'application/json',
 'apikey': env.SUPABASE_SERVICE_KEY,
 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-'Prefer': 'return=minimal,resolution=ignore-duplicates'
+'Prefer': 'return=minimal'
 },
-body: JSON.stringify(rows)
+body: JSON.stringify(fresh)
 });
 if (!r.ok) {
 const body = await r.text().catch(() => '');
@@ -2038,25 +2050,44 @@ console.log(`Failed to update ${pair}:`, error.message);
 if (i < pairs.length - 1) await new Promise(r => setTimeout(r, THROTTLE_MS));
 }
 
-// Single batched UPSERT instead of 8 GET-then-PATCH pairs (saves 8-16
-// subrequests). Requires UNIQUE index on prices.pair (already present
-// since the prior code keyed on it via .eq filter).
+// 2-subrequest write: DELETE the 8 pair rows, then INSERT a batch of 8.
+// Earlier I tried `?on_conflict=pair` with merge-duplicates (1 subreq),
+// but PostgREST returned 42P10 "no unique or exclusion constraint
+// matching the ON CONFLICT specification" — prices.pair has no UNIQUE
+// index, so upsert is impossible until that constraint is added (see
+// cf/RUN_THESE_3_MIGRATIONS.sql). Delete+insert works today regardless
+// of schema state and still cuts 14 subreqs vs the original per-pair
+// GET+PATCH loop.
 if (!collected.length) { console.log('updatePrices: no quotes collected'); return; }
-const r = await fetch(`${env.SUPABASE_URL}/rest/v1/prices?on_conflict=pair`, {
+const inList = collected.map(c => `"${c.pair}"`).join(',');
+const delResp = await fetch(`${env.SUPABASE_URL}/rest/v1/prices?pair=in.(${encodeURIComponent(inList)})`, {
+method: 'DELETE',
+headers: {
+'apikey': env.SUPABASE_SERVICE_KEY,
+'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+'Prefer': 'return=minimal'
+}
+});
+if (!delResp.ok) {
+const body = await delResp.text().catch(() => '');
+console.log(`updatePrices DELETE HTTP ${delResp.status}: ${body.slice(0, 300)}`);
+return;
+}
+const insResp = await fetch(`${env.SUPABASE_URL}/rest/v1/prices`, {
 method: 'POST',
 headers: {
 'Content-Type': 'application/json',
 'apikey': env.SUPABASE_SERVICE_KEY,
 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-'Prefer': 'return=minimal,resolution=merge-duplicates'
+'Prefer': 'return=minimal'
 },
 body: JSON.stringify(collected)
 });
-if (!r.ok) {
-const body = await r.text().catch(() => '');
-console.log(`updatePrices HTTP ${r.status}: ${body.slice(0, 300)}`);
+if (!insResp.ok) {
+const body = await insResp.text().catch(() => '');
+console.log(`updatePrices INSERT HTTP ${insResp.status}: ${body.slice(0, 300)}`);
 } else {
-console.log(`updatePrices: upserted ${collected.length}/${pairs.length} pairs`);
+console.log(`updatePrices: replaced ${collected.length}/${pairs.length} pairs`);
 }
 }
 // ============================================
