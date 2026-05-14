@@ -17,5 +17,7 @@
       "0 6 * * *",
       "0 12 * * *"
     ]
-  }
+  },
+  "keep_vars": true,
+  "keep_bindings": true
 }

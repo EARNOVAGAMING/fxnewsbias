@@ -796,7 +796,7 @@ function updateSessions() {
 async function loadSentiment() {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/sentiment?order=id.desc&limit=8`,
+      `${SUPABASE_URL}/rest/v1/sentiment?order=created_at.desc,id.desc&limit=8`,
       { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
     );
     const data = await res.json();
@@ -912,7 +912,7 @@ function updateHotPairs(data) {
     { pair: 'AUD/USD', c1: 'AUD', c2: 'USD' }
   ];
 
-  // Data is fetched order=id.desc (newest first) — keep the FIRST occurrence
+  // Data is fetched order=created_at.desc,id.desc (newest first) — keep the FIRST occurrence
   // per currency so we always display the most recent sentiment row, not the
   // oldest one in the batch.
   const sentiment = {};
