@@ -275,8 +275,10 @@ case 'checkout.session.completed': {
 const session = event.data.object;
 const customerEmail = session.customer_details?.email;
 const customerId = session.customer;
+// checkout.session does not carry current_period_end; subscription.created
+// will fire right after with the real period end. Pass null for now.
 if (customerEmail) {
-await updateUserProStatus(customerEmail, customerId, true, env);
+await updateUserProStatus(customerEmail, customerId, true, env, null);
 console.log('Pro activated for:', customerEmail);
 }
 break;
@@ -286,10 +288,12 @@ case 'customer.subscription.updated': {
 const subscription = event.data.object;
 const customerId = subscription.customer;
 const isActive = subscription.status === 'active';
+const periodEndIso = subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null;
+const cancelAtPeriodEnd = subscription.cancel_at_period_end === true;
 const customerEmail = await getStripeCustomerEmail(customerId, env);
 if (customerEmail) {
-await updateUserProStatus(customerEmail, customerId, isActive, env);
-console.log('Subscription', subscription.status, 'for:', customerEmail);
+await updateUserProStatus(customerEmail, customerId, isActive, env, periodEndIso, cancelAtPeriodEnd);
+console.log('Subscription', subscription.status, 'for:', customerEmail, 'periodEnd:', periodEndIso, 'cancelAtPeriodEnd:', cancelAtPeriodEnd);
 }
 break;
 }
@@ -298,7 +302,8 @@ const subscription = event.data.object;
 const customerId = subscription.customer;
 const customerEmail = await getStripeCustomerEmail(customerId, env);
 if (customerEmail) {
-await updateUserProStatus(customerEmail, customerId, false, env);
+// Subscription fully ended -- clear period end (no renewal coming).
+await updateUserProStatus(customerEmail, customerId, false, env, null, false);
 console.log('Pro cancelled for:', customerEmail);
 }
 break;
@@ -351,7 +356,7 @@ return null;
 // UPDATE USER PRO STATUS IN FIRESTORE
 // Uses email as document ID — no Firebase Auth lookup needed!
 // ============================================
-async function updateUserProStatus(email, stripeCustomerId, isPro, env) {
+async function updateUserProStatus(email, stripeCustomerId, isPro, env, currentPeriodEndIso, cancelAtPeriodEnd) {
 try {
 const token = await getFirebaseToken(env);
 if (!token) {
@@ -375,7 +380,9 @@ isPro: { booleanValue: isPro },
 email: { stringValue: email },
 stripeCustomerId: { stringValue: stripeCustomerId || '' },
 updatedAt: { stringValue: new Date().toISOString() },
-plan: { stringValue: isPro ? 'pro' : 'free' }
+plan: { stringValue: isPro ? 'pro' : 'free' },
+currentPeriodEnd: { stringValue: currentPeriodEndIso || '' },
+cancelAtPeriodEnd: { booleanValue: cancelAtPeriodEnd === true }
 }
 })
 });
@@ -2862,7 +2869,9 @@ async function handleAdminData(request, env) {
           isPro: f.isPro?.booleanValue === true,
           plan: f.plan?.stringValue || 'free',
           stripeCustomerId: f.stripeCustomerId?.stringValue || '',
-          updatedAt: f.updatedAt?.stringValue || ''
+          updatedAt: f.updatedAt?.stringValue || '',
+          currentPeriodEnd: f.currentPeriodEnd?.stringValue || '',
+          cancelAtPeriodEnd: f.cancelAtPeriodEnd?.booleanValue === true
         };
       });
     } catch (e) {
@@ -2871,7 +2880,7 @@ async function handleAdminData(request, env) {
     // 5. Merge — return clean rows
     const rows = allUsers.map(u => {
       const email = (u.email || '').toLowerCase();
-      const sub = subsByEmail[email] || { isPro: false, plan: 'free', stripeCustomerId: '', updatedAt: '' };
+      const sub = subsByEmail[email] || { isPro: false, plan: 'free', stripeCustomerId: '', updatedAt: '', currentPeriodEnd: '', cancelAtPeriodEnd: false };
       const providers = (u.providerUserInfo || []).map(p => p.providerId).join(',') || 'password';
       return {
         uid: u.localId,
@@ -2884,7 +2893,9 @@ async function handleAdminData(request, env) {
         disabled: u.disabled === true,
         tier: sub.isPro ? 'pro' : 'free',
         stripeCustomerId: sub.stripeCustomerId,
-        proUpdatedAt: sub.updatedAt
+        proUpdatedAt: sub.updatedAt,
+        currentPeriodEnd: sub.currentPeriodEnd,
+        cancelAtPeriodEnd: sub.cancelAtPeriodEnd
       };
     });
     rows.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));

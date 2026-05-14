@@ -171,7 +171,7 @@ function renderDash() {
     </div>
     <div class="tbl-wrap">
       <table id="tbl"><thead><tr>
-        <th>Email</th><th>Tier</th><th>Signed up</th><th>Last login</th><th>Method</th><th>Verified</th>
+        <th>Email</th><th>Tier</th><th>Renews / Expires</th><th>Signed up</th><th>Last login</th><th>Method</th><th>Verified</th>
       </tr></thead><tbody></tbody></table>
     </div>`;
   document.getElementById('so').onclick = () => signOut(auth);
@@ -202,14 +202,25 @@ function getFiltered() {
 function renderRows() {
   const list = getFiltered();
   const tb = document.querySelector('#tbl tbody');
-  if (!list.length) { tb.innerHTML = `<tr><td colspan="6" class="empty">No users match.</td></tr>`; return; }
+  if (!list.length) { tb.innerHTML = `<tr><td colspan="7" class="empty">No users match.</td></tr>`; return; }
   tb.innerHTML = list.map(u => {
     const method = u.providers.includes('google.com') ? '<span class="badge g">Google</span>' : '<span class="badge">Email</span>';
     const ver = u.emailVerified ? '<span class="badge v">Yes</span>' : '<span class="badge">No</span>';
     const tier = `<span class="tier ${u.tier}">${u.tier.toUpperCase()}</span>`;
+    let renews = '<span style="color:#64748b;">—</span>';
+    if (u.tier === 'pro' && u.currentPeriodEnd) {
+      const end = new Date(u.currentPeriodEnd);
+      const days = Math.ceil((end.getTime() - Date.now()) / 86400e3);
+      const label = u.cancelAtPeriodEnd ? 'Expires' : 'Renews';
+      const color = u.cancelAtPeriodEnd ? '#f59e0b' : (days <= 3 ? '#ef4444' : '#10b981');
+      renews = `<div style="color:${color};font-weight:600;">${label} ${fmtDate(u.currentPeriodEnd)}</div><div style="color:#64748b;font-size:11px;">in ${days}d</div>`;
+    } else if (u.tier === 'pro') {
+      renews = '<span style="color:#64748b;font-size:11px;">(legacy — no period data)</span>';
+    }
     return `<tr>
       <td>${esc(u.email)}${u.displayName ? '<div style="color:#64748b;font-size:11px;">'+esc(u.displayName)+'</div>' : ''}</td>
       <td>${tier}</td>
+      <td>${renews}</td>
       <td>${fmtDate(u.createdAt)}<div style="color:#64748b;font-size:11px;">${ago(u.createdAt)}</div></td>
       <td>${fmtDate(u.lastLoginAt)}<div style="color:#64748b;font-size:11px;">${ago(u.lastLoginAt)}</div></td>
       <td>${method}</td>
@@ -220,7 +231,7 @@ function renderRows() {
 
 function downloadCsv() {
   const rows = getFiltered();
-  const head = ['email','displayName','tier','emailVerified','providers','createdAt','lastLoginAt','stripeCustomerId','uid'];
+  const head = ['email','displayName','tier','currentPeriodEnd','cancelAtPeriodEnd','emailVerified','providers','createdAt','lastLoginAt','stripeCustomerId','uid'];
   const csv = [head.join(',')].concat(rows.map(r => head.map(k => {
     const v = String(r[k] ?? '');
     return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
