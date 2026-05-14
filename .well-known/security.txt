@@ -1,0 +1,7 @@
+# If you found a security issue on FXNewsBias, please report it here.
+# Thank you for helping keep our users safe.
+
+Contact: https://fxnewsbias.com/contact
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://fxnewsbias.com/.well-known/security.txt

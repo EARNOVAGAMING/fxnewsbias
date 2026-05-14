@@ -4,3 +4,68 @@
 
 # www -> apex redirect handled at Cloudflare DNS / page rule level
 # (Worker static assets only allows relative URLs, not cross-host redirects)
+
+# ===== Old / alternate path names users typed in =====
+/contact-us  /contact  301
+
+# ===== Truncated Twitter / WhatsApp share URLs for the May 13 USD insight =====
+# Real slug: 2026-05-13-usd-strengthens-bullish-sentiment
+/insight/2026-05-13-usd-strengthens-bullish-          /insight/2026-05-13-usd-strengthens-bullish-sentiment  301
+/insight/2026-05-13-usd-strengthens-bullish-s         /insight/2026-05-13-usd-strengthens-bullish-sentiment  301
+/insight/2026-05-13-usd-strengthens-bullish-se        /insight/2026-05-13-usd-strengthens-bullish-sentiment  301
+/insight/2026-05-13-usd-strengthens-bullish-sen       /insight/2026-05-13-usd-strengthens-bullish-sentiment  301
+/insight/2026-05-13-usd-strengthens-bullish-sent      /insight/2026-05-13-usd-strengthens-bullish-sentiment  301
+/insight/2026-05-13-usd-strengthens-bullish-senti     /insight/2026-05-13-usd-strengthens-bullish-sentiment  301
+/insight/2026-05-13-usd-strengthens-bullish-sentim    /insight/2026-05-13-usd-strengthens-bullish-sentiment  301
+/insight/2026-05-13-usd-strengthens-bullish-sentime   /insight/2026-05-13-usd-strengthens-bullish-sentiment  301
+/insight/2026-05-13-usd-strengthens-bullish-sentimen  /insight/2026-05-13-usd-strengthens-bullish-sentiment  301
+/insight/2026-05-13-usd-strengthens-bullish           /insight/2026-05-13-usd-strengthens-bullish-sentiment  301
+
+# ===== Currencies — no trailing slash variant =====
+/currencies/usd  /currencies/usd/  301
+/currencies/eur  /currencies/eur/  301
+/currencies/gbp  /currencies/gbp/  301
+/currencies/jpy  /currencies/jpy/  301
+/currencies/aud  /currencies/aud/  301
+/currencies/cad  /currencies/cad/  301
+/currencies/chf  /currencies/chf/  301
+/currencies/nzd  /currencies/nzd/  301
+
+# ===== Pairs — no trailing slash variant for the 15 supported pairs =====
+/pairs/eur-usd  /pairs/eur-usd/  301
+/pairs/gbp-usd  /pairs/gbp-usd/  301
+/pairs/usd-jpy  /pairs/usd-jpy/  301
+/pairs/usd-chf  /pairs/usd-chf/  301
+/pairs/aud-usd  /pairs/aud-usd/  301
+/pairs/usd-cad  /pairs/usd-cad/  301
+/pairs/nzd-usd  /pairs/nzd-usd/  301
+/pairs/eur-gbp  /pairs/eur-gbp/  301
+/pairs/eur-jpy  /pairs/eur-jpy/  301
+/pairs/eur-chf  /pairs/eur-chf/  301
+/pairs/gbp-jpy  /pairs/gbp-jpy/  301
+/pairs/aud-jpy  /pairs/aud-jpy/  301
+/pairs/chf-jpy  /pairs/chf-jpy/  301
+/pairs/cad-jpy  /pairs/cad-jpy/  301
+/pairs/aud-nzd  /pairs/aud-nzd/  301
+
+# ===== Unknown cross-pairs visitors keep asking for =====
+# Send them to the pairs index where they can pick a supported pair.
+# (We may add full pages for these later — see backlog.)
+/pairs/gbp-nzd/  /pairs  301
+/pairs/gbp-nzd   /pairs  301
+/pairs/gbp-cad/  /pairs  301
+/pairs/gbp-cad   /pairs  301
+/pairs/nzd-jpy/  /pairs  301
+/pairs/nzd-jpy   /pairs  301
+/pairs/eur-aud/  /pairs  301
+/pairs/eur-aud   /pairs  301
+/pairs/nzd-cad/  /pairs  301
+/pairs/nzd-cad   /pairs  301
+/pairs/eur-nzd/  /pairs  301
+/pairs/eur-nzd   /pairs  301
+/pairs/eur-cad/  /pairs  301
+/pairs/eur-cad   /pairs  301
+/pairs/aud-cad/  /pairs  301
+/pairs/aud-cad   /pairs  301
+/pairs/cad-chf/  /pairs  301
+/pairs/cad-chf   /pairs  301
