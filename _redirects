@@ -2,6 +2,22 @@
 # /index.html and / as two pages. 301 = permanent (passes SEO weight).
 /index.html  /  301
 
+# ===== Force 301 (permanent) for .html -> clean URL =====
+# Cloudflare Pages auto-redirects these as 307 (temporary), which Google flags
+# as "Redirect error" or refuses to index. Explicit 301 entries override that.
+# Fixes the 11 "Redirect error" + "Discovered not indexed" pages in GSC (May 2026).
+/calendar.html    /calendar    301
+/currencies.html  /currencies  301
+/pairs.html       /pairs       301
+/news.html        /news        301
+/about.html       /about       301
+/community.html   /community   301
+/contact.html     /contact     301
+/disclaimer.html  /disclaimer  301
+/how.html         /how         301
+/privacy.html     /privacy     301
+/terms.html       /terms       301
+
 # www -> apex redirect handled at Cloudflare DNS / page rule level
 # (Worker static assets only allows relative URLs, not cross-host redirects)
 
