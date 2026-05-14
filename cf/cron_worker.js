@@ -1850,7 +1850,8 @@ headers: {
 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
 'Prefer': 'return=minimal'
 },
-body: JSON.stringify(rows)
+body: JSON.stringify(rows),
+signal: AbortSignal.timeout(15000)
 });
 if (!r.ok) {
 const body = await r.text().catch(() => '');
@@ -1935,7 +1936,8 @@ if (!rows.length) { console.log('saveNews: nothing to insert'); return; }
 let existingUrls = new Set();
 try {
 const exResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=url&order=id.desc&limit=500`, {
-headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
+headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+signal: AbortSignal.timeout(10000)
 });
 const exData = await exResp.json();
 existingUrls = new Set((exData || []).map(n => n.url).filter(Boolean));
@@ -1951,7 +1953,8 @@ headers: {
 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
 'Prefer': 'return=minimal'
 },
-body: JSON.stringify(fresh)
+body: JSON.stringify(fresh),
+signal: AbortSignal.timeout(15000)
 });
 if (!r.ok) {
 const body = await r.text().catch(() => '');
@@ -2050,29 +2053,35 @@ console.log(`Failed to update ${pair}:`, error.message);
 if (i < pairs.length - 1) await new Promise(r => setTimeout(r, THROTTLE_MS));
 }
 
-// 2-subrequest write: DELETE the 8 pair rows, then INSERT a batch of 8.
-// Earlier I tried `?on_conflict=pair` with merge-duplicates (1 subreq),
-// but PostgREST returned 42P10 "no unique or exclusion constraint
-// matching the ON CONFLICT specification" — prices.pair has no UNIQUE
-// index, so upsert is impossible until that constraint is added (see
-// cf/RUN_THESE_3_MIGRATIONS.sql). Delete+insert works today regardless
-// of schema state and still cuts 14 subreqs vs the original per-pair
-// GET+PATCH loop.
+// 3-subrequest race-free write: GET old ids -> INSERT new batch -> DELETE
+// old ids. Earlier I tried `?on_conflict=pair` (1 subreq) and then plain
+// DELETE-then-INSERT (2 subreqs); the upsert hit PostgREST 42P10 because
+// prices.pair has no UNIQUE index (see cf/RUN_THESE_3_MIGRATIONS.sql),
+// and the delete-first ordering left a window where readers saw an empty
+// table — and worse, would leave it permanently empty if the INSERT
+// failed for any reason. Insert-then-delete keeps the old rows visible
+// until the new ones land; in the worst case a reader briefly sees
+// duplicate rows (frontend orders by updated_at desc + limit, so newest
+// always wins).
 if (!collected.length) { console.log('updatePrices: no quotes collected'); return; }
 const inList = collected.map(c => `"${c.pair}"`).join(',');
-const delResp = await fetch(`${env.SUPABASE_URL}/rest/v1/prices?pair=in.(${encodeURIComponent(inList)})`, {
-method: 'DELETE',
-headers: {
-'apikey': env.SUPABASE_SERVICE_KEY,
-'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-'Prefer': 'return=minimal'
+
+// 1) Snapshot the ids of rows we are about to replace.
+const idsResp = await fetch(
+`${env.SUPABASE_URL}/rest/v1/prices?pair=in.(${encodeURIComponent(inList)})&select=id`,
+{
+headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+signal: AbortSignal.timeout(10000)
 }
-});
-if (!delResp.ok) {
-const body = await delResp.text().catch(() => '');
-console.log(`updatePrices DELETE HTTP ${delResp.status}: ${body.slice(0, 300)}`);
+);
+if (!idsResp.ok) {
+const body = await idsResp.text().catch(() => '');
+console.log(`updatePrices SELECT-ids HTTP ${idsResp.status}: ${body.slice(0, 300)}`);
 return;
 }
+const oldIds = (await idsResp.json().catch(() => [])).map(r => r.id).filter(n => n != null);
+
+// 2) Insert the new batch. If this fails, old rows stay intact -> no gap.
 const insResp = await fetch(`${env.SUPABASE_URL}/rest/v1/prices`, {
 method: 'POST',
 headers: {
@@ -2081,14 +2090,35 @@ headers: {
 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
 'Prefer': 'return=minimal'
 },
-body: JSON.stringify(collected)
+body: JSON.stringify(collected),
+signal: AbortSignal.timeout(10000)
 });
 if (!insResp.ok) {
 const body = await insResp.text().catch(() => '');
 console.log(`updatePrices INSERT HTTP ${insResp.status}: ${body.slice(0, 300)}`);
-} else {
-console.log(`updatePrices: replaced ${collected.length}/${pairs.length} pairs`);
+return;
 }
+
+// 3) Delete the snapshot ids only (never delete the rows we just wrote).
+if (oldIds.length) {
+const delResp = await fetch(
+`${env.SUPABASE_URL}/rest/v1/prices?id=in.(${oldIds.join(',')})`,
+{
+method: 'DELETE',
+headers: {
+apikey: env.SUPABASE_SERVICE_KEY,
+Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+Prefer: 'return=minimal'
+},
+signal: AbortSignal.timeout(10000)
+}
+);
+if (!delResp.ok) {
+const body = await delResp.text().catch(() => '');
+console.log(`updatePrices DELETE-old HTTP ${delResp.status}: ${body.slice(0, 300)} (table now has duplicate rows for ${pairs.length} pairs; next tick will clean up)`);
+}
+}
+console.log(`updatePrices: replaced ${collected.length}/${pairs.length} pairs (deleted ${oldIds.length} old rows)`);
 }
 // ============================================
 // CONTACT FORM HANDLER
