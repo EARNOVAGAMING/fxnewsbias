@@ -2006,10 +2006,13 @@ const pairs = [
 'NZD/USD', 'XAU/USD'
 ];
 
-// TwelveData free tier = 8 credits/min. Spacing 8 calls across ~60s
-// (~7.5s gap) keeps us under the burst limit and stops the 429 cascade
-// that was eating subrequests on retry.
-const THROTTLE_MS = 7500;
+// TwelveData free tier = 8 credits/min. 7500ms gap (52.5s total) was
+// safe vs the per-minute cap but exceeded Cloudflare's scheduled-event
+// wall-clock budget — the worker was killed before reaching the batched
+// UPSERT below, so prices stopped updating after 2026-05-14T06:15 UTC.
+// 1500ms × 7 = ~10.5s total: still well under 8 calls / 60s, and
+// comfortably inside the scheduled-event wall-clock window.
+const THROTTLE_MS = 1500;
 const collected = [];
 for (let i = 0; i < pairs.length; i++) {
 const pair = pairs[i];
