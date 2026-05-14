@@ -25,7 +25,16 @@
       "name": "FXNewsBias",
       "alternateName": ["FXNewsBias", "Forex News Bias", "FXNB"],
       "description": "Real-time AI-powered forex news sentiment dashboard for the 8 major currencies.",
-      "inLanguage": "en"
+      "inLanguage": "en",
+      "publisher": { "@id": "https://fxnewsbias.com/#organization" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://fxnewsbias.com/news?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
     },
     {
       "@type": "Organization",
@@ -34,11 +43,30 @@
       "alternateName": ["FXNewsBias", "Forex News Bias", "FXNB"],
       "legalName": "FXNewsBias",
       "url": "https://fxnewsbias.com/",
+      "description": "Real-time AI-powered forex news sentiment dashboard for 8 major currencies and 15 currency pairs. Updated every 3 hours from live news.",
+      "foundingDate": "2026-05",
       "logo": {
         "@type": "ImageObject",
         "url": "https://fxnewsbias.com/logo-fxnb.png",
         "width": 1167,
         "height": 369
+      },
+      "sameAs": [
+        "https://x.com/danforex123"
+      ],
+      "knowsAbout": [
+        "Forex trading",
+        "Currency markets",
+        "Sentiment analysis",
+        "Foreign exchange",
+        "Technical analysis",
+        "Fundamental analysis"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "url": "https://fxnewsbias.com/contact",
+        "availableLanguage": "English"
       }
     },
     {
