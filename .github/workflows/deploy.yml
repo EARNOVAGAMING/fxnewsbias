@@ -1,11 +1,14 @@
 name: Deploy Worker
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
 concurrency:
   group: deploy
   cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,12 +22,35 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          # Capture both stdout and exit code; assets upload first, then
+          # schedules are pushed. Schedules can fail at the 5-cron limit
+          # without blocking the asset deploy. Treat asset-upload success
+          # as deploy success.
           set +e
           OUT=$(npx wrangler@4 deploy 2>&1)
           EC=$?
           echo "$OUT"
           if echo "$OUT" | grep -q "Uploaded fxnewsbias"; then
             echo "::notice::Worker assets deployed successfully"
+          else
+            exit $EC
+          fi
+      - name: Deploy Cron Worker (fxnewsbias-cron)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Cron worker is a separate Worker (fxnewsbias-cron). Secrets
+          # already exist on the worker and are preserved across deploys
+          # by Wrangler — only declare them in the dashboard, never in
+          # this config. If this step ever fails at the cron-trigger
+          # limit, fix the trigger list in wrangler_cron.jsonc.
+          set +e
+          OUT=$(npx wrangler@4 deploy --config wrangler_cron.jsonc 2>&1)
+          EC=$?
+          echo "$OUT"
+          if echo "$OUT" | grep -q "Uploaded fxnewsbias-cron"; then
+            echo "::notice::Cron worker deployed successfully"
             exit 0
           fi
           exit $EC
