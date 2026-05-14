@@ -46,7 +46,7 @@
     const pct = ((now - prev) / prev) * 100;
     const cls = pct >= 0 ? 'up' : 'down';
     const sign = pct >= 0 ? '+' : '';
-    return `<span class="pair">${pair}</span><span>${price}</span><span class="${cls}">${sign}${pct.toFixed(2)}%</span>`;
+    return `<span class="pair">${pair}</span><span class="price">${price}</span><span class="${cls}">${sign}${pct.toFixed(2)}%</span>`;
   }
 
   async function loadTicker() {

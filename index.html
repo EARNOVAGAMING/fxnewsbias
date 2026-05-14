@@ -912,8 +912,11 @@ function updateHotPairs(data) {
     { pair: 'AUD/USD', c1: 'AUD', c2: 'USD' }
   ];
 
+  // Data is fetched order=id.desc (newest first) — keep the FIRST occurrence
+  // per currency so we always display the most recent sentiment row, not the
+  // oldest one in the batch.
   const sentiment = {};
-  data.forEach(d => sentiment[d.currency] = d);
+  data.forEach(d => { if (!sentiment[d.currency]) sentiment[d.currency] = d; });
 
   const hotPairs = document.querySelectorAll('#hot-pairs .session-row');
   pairs.forEach((p, i) => {
@@ -993,14 +996,21 @@ async function loadNews() {
     const newsList = document.getElementById('news-list');
     if (!newsList) return;
 
+    // News titles come from third-party RSS feeds. Escape every interpolated
+    // field so a stray "<" can't break layout and a hostile feed can't inject
+    // markup. Same defensive pattern used in loadMarketPulse below.
+    const esc = (s) => String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
     newsList.innerHTML = data.map(item => `
       <a href="/news" style="text-decoration:none;color:inherit;">
       <div class="news-item">
         <div class="news-meta">
-          <span class="news-impact imp-${(item.impact || 'med').toLowerCase()}">${item.impact || 'Medium'} Impact</span>
-          <span>${item.source || 'Reuters'} · Just now</span>
+          <span class="news-impact imp-${esc((item.impact || 'med').toLowerCase())}">${esc(item.impact || 'Medium')} Impact</span>
+          <span>${esc(item.source || 'Reuters')} · Just now</span>
         </div>
-        <div class="news-title">${item.title}</div>
+        <div class="news-title">${esc(item.title)}</div>
         <div class="news-effect">Latest market-moving news</div>
       </div></a>
     `).join('');

@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fxnewsbias-cron",
+  "main": "cf/cron_worker.js",
+  "compatibility_date": "2026-04-29",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "triggers": {
+    "crons": [
+      "0 */3 * * *",
+      "*/15 * * * *",
+      "0 0 * * *",
+      "0 6 * * *",
+      "0 12 * * *"
+    ]
+  }
+}

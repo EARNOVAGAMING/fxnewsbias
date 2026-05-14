@@ -1,8 +1,9 @@
 // FXNewsBias - Cookie Consent Banner
 document.addEventListener('DOMContentLoaded', function () {
 
-  // Only show if not already accepted
-  if (localStorage.getItem('fxnewsbias_cookie_consent') === 'accepted') return;
+  // Only show if user hasn't responded yet — respect both Accept and Decline.
+  const consent = localStorage.getItem('fxnewsbias_cookie_consent');
+  if (consent === 'accepted' || consent === 'declined') return;
 
   // Create banner
   const banner = document.createElement('div');
@@ -29,9 +30,9 @@ document.addEventListener('DOMContentLoaded', function () {
       <div style="flex:1;min-width:200px;color:#94a3b8;line-height:1.5;">
         🍪 We use cookies to enhance your experience, analyze traffic, and serve ads.
         By continuing to use FXNewsBias, you agree to our
-        <a href="/privacy.html" style="color:#60a5fa;text-decoration:none;">Privacy Policy</a>
+        <a href="/privacy" style="color:#60a5fa;text-decoration:none;">Privacy Policy</a>
         and
-        <a href="/terms.html" style="color:#60a5fa;text-decoration:none;">Terms of Service</a>.
+        <a href="/terms" style="color:#60a5fa;text-decoration:none;">Terms of Service</a>.
       </div>
       <div style="display:flex;gap:10px;flex-shrink:0;">
         <button id="cookie-decline" style="
