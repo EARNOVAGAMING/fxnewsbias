@@ -1830,9 +1830,19 @@ throw new Error(`analyzeSentiment failed after ${backoffMs.length} attempts: ${l
 }
 
 async function saveSentiment(sentiment, env) {
-const currencies = Object.entries(sentiment);
-for (const [currency, data] of currencies) {
-await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment`, {
+// Batched insert: one POST with an array body instead of N POSTs in a loop.
+// Cloudflare Workers cap at ~50 subrequests per scheduled invocation; the
+// 3-hourly tick was burning that budget on RSS+prices+8 sentiment writes,
+// then hitting "Too many subrequests" on currencies #5-8 and silently
+// dropping CHF/NZD/AUD/CAD. One POST = one subrequest, no risk of partial
+// writes, and PostgREST inserts the whole array atomically.
+const rows = Object.entries(sentiment).map(([currency, data]) => ({
+currency,
+score: data.score,
+bias: data.bias,
+drivers: data.drivers
+}));
+const r = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment`, {
 method: 'POST',
 headers: {
 'Content-Type': 'application/json',
@@ -1840,13 +1850,11 @@ headers: {
 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
 'Prefer': 'return=minimal'
 },
-body: JSON.stringify({
-currency: currency,
-score: data.score,
-bias: data.bias,
-drivers: data.drivers
-})
+body: JSON.stringify(rows)
 });
+if (!r.ok) {
+const body = await r.text().catch(() => '');
+throw new Error(`saveSentiment HTTP ${r.status}: ${body.slice(0, 300)}`);
 }
 }
 
@@ -1884,20 +1892,13 @@ const currencyMap = [
 const ccyRegexes = currencyMap.map(([code, kws]) => [code, new RegExp('\\b(' + kws.join('|') + ')\\b','i')]);
 const filteredNews = news.filter(item => forexRegex.test(item.title || ''));
 console.log(`Forex-relevant: ${filteredNews.length}/${news.length}`);
-let existingUrls = new Set();
-try {
-const exResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=url&order=id.desc&limit=500`, {
-headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }
-});
-const exData = await exResp.json();
-existingUrls = new Set((exData || []).map(n => n.url).filter(Boolean));
-} catch(e) { console.log('Dedup fetch failed:', e.message); }
-const dedupedNews = filteredNews.filter(item => item.url && !existingUrls.has(item.url));
-console.log(`After dedup: ${dedupedNews.length}`);
-for (const item of dedupedNews.slice(0, 20)) {
-const title = item.title.toLowerCase();
-let impact = 'Low';
 
+// Subrequest budget fix: drop the dedup fetch and the per-item POST loop.
+// Previously this was 1 GET + up to 20 POSTs = up to 21 subrequests, which
+// (combined with prices, RSS, and sentiment writes) blew Cloudflare's
+// ~50/invocation cap and caused saveSentiment/saveNews to error out
+// mid-loop. We now do dedup at the database via on_conflict + ignore
+// duplicates, and insert all rows in a single batched POST.
 const highKeywords = [
 'fed', 'federal reserve', 'rate hike', 'rate cut', 'interest rate',
 'ecb', 'boe', 'boj', 'central bank', 'nfp', 'non-farm payroll',
@@ -1905,7 +1906,6 @@ const highKeywords = [
 'sanctions', 'opec', 'oil surge', 'oil crash', 'crisis',
 'emergency', 'collapse', 'default', 'tariff', 'trade war'
 ];
-
 const medKeywords = [
 'pmi', 'unemployment', 'jobs', 'retail sales', 'trade balance',
 'oil', 'gold', 'dollar', 'euro', 'sterling', 'yen',
@@ -1913,29 +1913,37 @@ const medKeywords = [
 'economic', 'growth', 'manufacturing', 'housing', 'consumer',
 'bank', 'policy', 'minister', 'government', 'budget', 'debt'
 ];
-
-if (highKeywords.some(kw => title.includes(kw))) {
-impact = 'High';
-} else if (medKeywords.some(kw => title.includes(kw))) {
-impact = 'Medium';
-}
-
-await fetch(`${env.SUPABASE_URL}/rest/v1/news`, {
+const rows = filteredNews.slice(0, 30).filter(item => item.url).map(item => {
+const title = (item.title || '').toLowerCase();
+let impact = 'Low';
+if (highKeywords.some(kw => title.includes(kw))) impact = 'High';
+else if (medKeywords.some(kw => title.includes(kw))) impact = 'Medium';
+return {
+title: item.title,
+source: item.source,
+url: item.url,
+impact,
+currencies_affected: ccyRegexes.filter(([,r]) => r.test(item.title)).map(([c]) => c)
+};
+});
+if (!rows.length) { console.log('saveNews: nothing to insert'); return; }
+// on_conflict=url + Prefer: resolution=ignore-duplicates relies on a
+// UNIQUE index on news.url. If that index doesn't exist yet, the request
+// will return a 409 and we log + continue (no partial-state risk because
+// the whole batch fails atomically).
+const r = await fetch(`${env.SUPABASE_URL}/rest/v1/news?on_conflict=url`, {
 method: 'POST',
 headers: {
 'Content-Type': 'application/json',
 'apikey': env.SUPABASE_SERVICE_KEY,
 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-'Prefer': 'return=minimal'
+'Prefer': 'return=minimal,resolution=ignore-duplicates'
 },
-body: JSON.stringify({
-title: item.title,
-source: item.source,
-url: item.url,
-impact: impact,
-currencies_affected: ccyRegexes.filter(([,r]) => r.test(item.title)).map(([c]) => c)
-})
+body: JSON.stringify(rows)
 });
+if (!r.ok) {
+const body = await r.text().catch(() => '');
+console.log(`saveNews HTTP ${r.status}: ${body.slice(0, 300)}`);
 }
 }
 
@@ -1998,9 +2006,14 @@ const pairs = [
 'NZD/USD', 'XAU/USD'
 ];
 
-for (const pair of pairs) {
+// TwelveData free tier = 8 credits/min. Spacing 8 calls across ~60s
+// (~7.5s gap) keeps us under the burst limit and stops the 429 cascade
+// that was eating subrequests on retry.
+const THROTTLE_MS = 7500;
+const collected = [];
+for (let i = 0; i < pairs.length; i++) {
+const pair = pairs[i];
 try {
-// /quote returns close + percent_change in one call
 const response = await fetch(
 `https://api.twelvedata.com/quote?symbol=${pair}&apikey=${env.TWELVE_DATA_KEY}`,
 { signal: AbortSignal.timeout(5000) }
@@ -2008,48 +2021,39 @@ const response = await fetch(
 const data = await response.json();
 if (!data || !data.close) {
 console.log(`No quote for ${pair}:`, JSON.stringify(data).slice(0,200));
-continue;
-}
-
-const price = parseFloat(data.close);
-const changePct = data.percent_change != null ? parseFloat(data.percent_change) : 0;
-
-const existing = await fetch(
-`${env.SUPABASE_URL}/rest/v1/prices?pair=eq.${encodeURIComponent(pair)}&select=id`,
-{ headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
-);
-const existingData = await existing.json();
-
-if (existingData.length > 0) {
-await fetch(
-`${env.SUPABASE_URL}/rest/v1/prices?pair=eq.${encodeURIComponent(pair)}`,
-{
-method: 'PATCH',
-headers: {
-'Content-Type': 'application/json',
-'apikey': env.SUPABASE_SERVICE_KEY,
-'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-'Prefer': 'return=minimal'
-},
-body: JSON.stringify({ price: price, change_pct: changePct, updated_at: new Date().toISOString() })
-}
-);
 } else {
-await fetch(`${env.SUPABASE_URL}/rest/v1/prices`, {
+collected.push({
+pair,
+price: parseFloat(data.close),
+change_pct: data.percent_change != null ? parseFloat(data.percent_change) : 0,
+updated_at: new Date().toISOString()
+});
+}
+} catch (error) {
+console.log(`Failed to update ${pair}:`, error.message);
+}
+if (i < pairs.length - 1) await new Promise(r => setTimeout(r, THROTTLE_MS));
+}
+
+// Single batched UPSERT instead of 8 GET-then-PATCH pairs (saves 8-16
+// subrequests). Requires UNIQUE index on prices.pair (already present
+// since the prior code keyed on it via .eq filter).
+if (!collected.length) { console.log('updatePrices: no quotes collected'); return; }
+const r = await fetch(`${env.SUPABASE_URL}/rest/v1/prices?on_conflict=pair`, {
 method: 'POST',
 headers: {
 'Content-Type': 'application/json',
 'apikey': env.SUPABASE_SERVICE_KEY,
 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-'Prefer': 'return=minimal'
+'Prefer': 'return=minimal,resolution=merge-duplicates'
 },
-body: JSON.stringify({ pair: pair, price: price, change_pct: changePct })
+body: JSON.stringify(collected)
 });
-}
-await new Promise(r => setTimeout(r, 500));
-} catch (error) {
-console.log(`Failed to update ${pair}:`, error.message);
-}
+if (!r.ok) {
+const body = await r.text().catch(() => '');
+console.log(`updatePrices HTTP ${r.status}: ${body.slice(0, 300)}`);
+} else {
+console.log(`updatePrices: upserted ${collected.length}/${pairs.length} pairs`);
 }
 }
 // ============================================
