@@ -2503,15 +2503,101 @@ function _insBuildNarrative({sentiment, news, biggestMover}){
   return { lead, standfirst, whatHappened, reaction, driversSection, scenarios, closing, glance };
 }
 
+// Wrap a headline string into N lines of ~maxChars each, ellipsizing the
+// last line if the headline is longer than fits.
+function _insWrapText(text, maxChars, maxLines) {
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  let i = 0;
+  for (; i < words.length; i++) {
+    const w = words[i];
+    const candidate = line ? line + ' ' + w : w;
+    if (candidate.length > maxChars) {
+      if (line) { lines.push(line); line = w; }
+      else { lines.push(w); line = ''; }
+      if (lines.length >= maxLines) { line = ''; break; }
+    } else {
+      line = candidate;
+    }
+  }
+  if (line && lines.length < maxLines) { lines.push(line); i = words.length; }
+  if (i < words.length && lines.length === maxLines) {
+    const last = lines[maxLines - 1];
+    const room = Math.max(4, maxChars - 3);
+    lines[maxLines - 1] = (last.length > room ? last.slice(0, room).trimEnd() : last) + '...';
+  }
+  return lines;
+}
+
+// Build a 1200x630 SVG og:image card for a daily insight. Three editorial
+// templates (asia=sunrise, london=clock+fog, ny=skyline) with bias-tinted
+// biggest mover row. SVG is committed alongside the article HTML.
+function _insBuildOgSvg({ headline, sessionShort, dateLabel, biggestMover }) {
+  const cleanHeadline = String(headline || '')
+    .replace(/^[A-Z][a-z]+ Session:\s*/, '')
+    .replace(/\s*[—–-]\s*[A-Z][a-z]+\s+[A-Z][a-z]+\s+\d+\s+\d{4}\s*$/, '')
+    .trim();
+  const lines = _insWrapText(cleanHeadline, 22, 3);
+
+  const sess = (sessionShort === 'asia' || sessionShort === 'london' || sessionShort === 'ny') ? sessionShort : 'london';
+  const sessTheme = {
+    asia:   { label: 'ASIA SESSION',     accent: '#fb923c', accentSoft: '#fb923c', tagW: 200 },
+    london: { label: 'LONDON SESSION',   accent: '#3b82f6', accentSoft: '#60a5fa', tagW: 230 },
+    ny:     { label: 'NEW YORK SESSION', accent: '#dc2626', accentSoft: '#f87171', tagW: 250 }
+  }[sess];
+
+  const score = (biggestMover && Number.isFinite(biggestMover.score)) ? biggestMover.score : 50;
+  const bias = (biggestMover && biggestMover.bias) || 'Neutral';
+  const ccy = (biggestMover && biggestMover.currency) || 'USD';
+  const biasColor = bias === 'Bullish' ? '#22c55e' : bias === 'Bearish' ? '#ef4444' : '#fb923c';
+  const biasArrow = bias === 'Bullish' ? '\u25B2' : bias === 'Bearish' ? '\u25BC' : '\u25CF';
+  const biasUpper = String(bias).toUpperCase();
+  const dateUpper = String(dateLabel || '').toUpperCase();
+
+  const escSvg = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const headlineTspans = lines.map((ln, idx) => `<tspan x="60" dy="${idx === 0 ? 0 : 56}">${escSvg(ln)}</tspan>`).join('');
+
+  let art = '';
+  let glowDef = '';
+  if (sess === 'asia') {
+    glowDef = '<radialGradient id="sessGlow" cx="50%" cy="100%" r="80%"><stop offset="0" stop-color="#fb923c" stop-opacity="0.85"/><stop offset="0.4" stop-color="#f97316" stop-opacity="0.5"/><stop offset="1" stop-color="#0a1226" stop-opacity="0"/></radialGradient>';
+    art = '<g transform="translate(960,500)"><line x1="-260" y1="0" x2="260" y2="0" stroke="#475569" stroke-width="1.5" opacity="0.6"/><circle cx="0" cy="0" r="260" fill="url(#sessGlow)"/><path d="M -110 0 A 110 110 0 0 1 110 0 Z" fill="#fb923c" opacity="0.95"/><path d="M -150 0 A 150 150 0 0 1 150 0" fill="none" stroke="#fed7aa" stroke-width="1.2" opacity="0.4"/><path d="M -190 0 A 190 190 0 0 1 190 0" fill="none" stroke="#fed7aa" stroke-width="1" opacity="0.28"/><path d="M -230 0 A 230 230 0 0 1 230 0" fill="none" stroke="#fed7aa" stroke-width="0.8" opacity="0.18"/><circle cx="0" cy="-3" r="4" fill="#ffffff" opacity="0.95"/></g>';
+  } else if (sess === 'london') {
+    glowDef = '<radialGradient id="sessGlow" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#60a5fa" stop-opacity="0.25"/><stop offset="1" stop-color="#0a1226" stop-opacity="0"/></radialGradient>';
+    art = '<g transform="translate(960,315)"><circle cx="0" cy="0" r="220" fill="url(#sessGlow)"/><line x1="-260" y1="-90" x2="260" y2="-90" stroke="#94a3b8" stroke-width="1" opacity="0.15"/><line x1="-260" y1="-40" x2="260" y2="-40" stroke="#94a3b8" stroke-width="1" opacity="0.22"/><line x1="-260" y1="40" x2="260" y2="40" stroke="#94a3b8" stroke-width="1" opacity="0.22"/><line x1="-260" y1="90" x2="260" y2="90" stroke="#94a3b8" stroke-width="1" opacity="0.15"/><circle cx="0" cy="0" r="170" fill="none" stroke="#475569" stroke-width="1.5"/><circle cx="0" cy="0" r="155" fill="none" stroke="#334155" stroke-width="0.8"/><g stroke="#cbd5e1" stroke-width="2.5"><line x1="0" y1="-170" x2="0" y2="-148"/><line x1="0" y1="170" x2="0" y2="148"/><line x1="-170" y1="0" x2="-148" y2="0"/><line x1="170" y1="0" x2="148" y2="0"/></g><g stroke="#64748b" stroke-width="1.5"><line x1="85" y1="-147" x2="74" y2="-128"/><line x1="147" y1="-85" x2="128" y2="-74"/><line x1="147" y1="85" x2="128" y2="74"/><line x1="85" y1="147" x2="74" y2="128"/><line x1="-85" y1="147" x2="-74" y2="128"/><line x1="-147" y1="85" x2="-128" y2="74"/><line x1="-147" y1="-85" x2="-128" y2="-74"/><line x1="-85" y1="-147" x2="-74" y2="-128"/></g><line x1="0" y1="0" x2="-65" y2="-65" stroke="#fb923c" stroke-width="4" stroke-linecap="round"/><line x1="0" y1="0" x2="0" y2="-110" stroke="#e2e8f0" stroke-width="3" stroke-linecap="round"/><circle cx="0" cy="0" r="6" fill="#fb923c"/><text x="0" y="200" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="700" fill="#94a3b8" letter-spacing="6">LONDON</text></g>';
+  } else {
+    glowDef = '<linearGradient id="sessGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dc2626" stop-opacity="0.5"/><stop offset="0.6" stop-color="#dc2626" stop-opacity="0.1"/><stop offset="1" stop-color="#0a1226" stop-opacity="0"/></linearGradient>';
+    art = '<g transform="translate(960,500)"><rect x="-260" y="-380" width="520" height="380" fill="url(#sessGlow)"/><circle cx="-150" cy="-340" r="3" fill="#f8fafc" opacity="0.9"/><circle cx="-90" cy="-360" r="2" fill="#f8fafc" opacity="0.7"/><circle cx="180" cy="-330" r="2.5" fill="#f8fafc" opacity="0.8"/><circle cx="80" cy="-380" r="2" fill="#f8fafc" opacity="0.6"/><line x1="-260" y1="0" x2="260" y2="0" stroke="#475569" stroke-width="1" opacity="0.6"/><g fill="#1e293b" stroke="#334155" stroke-width="1"><rect x="-240" y="-90" width="34" height="90"/><rect x="-200" y="-150" width="38" height="150"/><rect x="-156" y="-120" width="32" height="120"/><rect x="-118" y="-200" width="44" height="200"/><rect x="-68" y="-260" width="48" height="260"/><rect x="-14" y="-310" width="52" height="310"/><rect x="44" y="-220" width="40" height="220"/><rect x="90" y="-180" width="36" height="180"/><rect x="132" y="-240" width="42" height="240"/><rect x="180" y="-140" width="34" height="140"/><rect x="220" y="-100" width="30" height="100"/></g><g fill="#fbbf24" opacity="0.85"><rect x="-228" y="-70" width="3" height="3"/><rect x="-188" y="-130" width="3" height="3"/><rect x="-178" y="-100" width="3" height="3"/><rect x="-144" y="-100" width="3" height="3"/><rect x="-104" y="-180" width="3" height="3"/><rect x="-94" y="-150" width="3" height="3"/><rect x="-54" y="-240" width="3" height="3"/><rect x="-44" y="-210" width="3" height="3"/><rect x="0" y="-290" width="3" height="3"/><rect x="14" y="-260" width="3" height="3"/><rect x="0" y="-220" width="3" height="3"/><rect x="56" y="-200" width="3" height="3"/><rect x="100" y="-160" width="3" height="3"/><rect x="146" y="-220" width="3" height="3"/><rect x="156" y="-180" width="3" height="3"/><rect x="190" y="-110" width="3" height="3"/><rect x="228" y="-80" width="3" height="3"/></g><rect x="-14" y="-310" width="52" height="310" fill="none" stroke="#dc2626" stroke-width="1.5" opacity="0.9"/><text x="0" y="34" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="700" fill="#94a3b8" letter-spacing="6">NEW YORK</text></g>';
+  }
+
+  return '<?xml version="1.0" encoding="UTF-8"?>\n'
+    + '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">'
+    + '<defs>'
+    + '<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f172a"/><stop offset="1" stop-color="#1e293b"/></linearGradient>'
+    + '<linearGradient id="rightPane" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e2a4a"/><stop offset="1" stop-color="#0a1226"/></linearGradient>'
+    + glowDef
+    + '</defs>'
+    + '<rect width="1200" height="630" fill="url(#bg)"/>'
+    + '<rect x="720" y="0" width="480" height="630" fill="url(#rightPane)"/>'
+    + art
+    + '<g transform="translate(60,80)"><text x="0" y="0" font-family="Inter,system-ui,sans-serif" font-size="32" font-weight="900" fill="#ffffff" letter-spacing="-1">FX<tspan fill="#fb923c">NEWS</tspan>BIAS</text><text x="0" y="22" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="500" fill="#64748b" letter-spacing="2">FOREX SENTIMENT INTELLIGENCE</text></g>'
+    + `<g transform="translate(60,180)"><rect x="0" y="0" width="${sessTheme.tagW}" height="32" rx="4" fill="${sessTheme.accent}" opacity="0.18"/><rect x="0" y="0" width="3" height="32" fill="${sessTheme.accent}"/><text x="14" y="22" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="${sessTheme.accentSoft}" letter-spacing="2">— ${sessTheme.label}</text></g>`
+    + `<text font-family="Georgia,'Times New Roman',serif" font-size="46" font-weight="700" fill="#ffffff" letter-spacing="-1" y="290">${headlineTspans}</text>`
+    + `<g transform="translate(60,500)"><text x="0" y="0" font-family="Inter,system-ui,sans-serif" font-size="13" fill="#94a3b8" letter-spacing="1">${escSvg(dateUpper)}</text><line x1="0" y1="20" x2="600" y2="20" stroke="#334155" stroke-width="1"/><text x="0" y="60" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#64748b" letter-spacing="2">BIGGEST MOVER</text><text x="0" y="92" font-family="Inter,system-ui,sans-serif" font-size="28" font-weight="800" fill="#ffffff">${escSvg(ccy)}</text><text x="80" y="92" font-family="Inter,system-ui,sans-serif" font-size="28" font-weight="800" fill="${biasColor}">${biasArrow} ${score}/100</text><text x="280" y="92" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="700" fill="${biasColor}" letter-spacing="3">${escSvg(biasUpper)}</text></g>`
+    + '<text x="1140" y="595" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="600" fill="#64748b" letter-spacing="1">fxnewsbias.com</text>'
+    + '</svg>';
+}
+
 function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category}){
   const url = `${_INS_SITE}/insight/${slug}`;
   const shortHeadline = String(headline).split(" — ")[0]; const h = _insEsc(headline), hShort = _insEsc(shortHeadline), s = _insEsc(summary);
   const N = _insBuildNarrative({sentiment, news, biggestMover});
   const sidebarCcys = _INS_CCY_ORDER.slice(0,5).map(c=>{const x=sentiment[c];if(!x)return '';return `<a class="side-link" href="/currencies"><span style="color:${_insBiasColor(x.bias)};font-weight:700;">${_insBiasArrow(x.bias)} ${c}</span> · <span style="color:#6b7280;font-weight:500;">${x.bias} ${x.score}/100</span></a>`;}).join('');
-  // Per-insight social card: pick currency-themed PNG matching the biggest mover (USD/EUR/GBP/JPY/AUD/CAD/CHF/NZD)
-  const _ccyOgSet = new Set(['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD']);
-  const _ogCcy = (biggestMover && _ccyOgSet.has(biggestMover.currency)) ? biggestMover.currency : 'index';
-  const ogImage = `${_INS_SITE}/og/insight/${_ogCcy}.png?v=2`;
+  // Per-insight social card: dynamic SVG generated by cron at publish time,
+  // committed to og/insight/{slug}.svg alongside the article. Each insight
+  // gets a unique editorial card with real headline + biggest mover baked in.
+  const ogImage = `${_INS_SITE}/og/insight/${slug}.svg`;
   const ld = JSON.stringify({"@context":"https://schema.org","@type":"NewsArticle","headline":headline,"description":summary,"datePublished":dateISO,"dateModified":dateISO,"author":{"@type":"Organization","name":"FXNewsBias Team","url":_INS_SITE},"publisher":{"@type":"Organization","name":"FXNewsBias","logo":{"@type":"ImageObject","url":`${_INS_SITE}/logo-fxnb.png`}},"mainEntityOfPage":{"@type":"WebPage","@id":url},"image":ogImage,"articleSection":"Forex Analysis"});
   const cat = _insEsc(category||'Market Wrap');
   const dateStr = new Date().toUTCString().split(' ').slice(0,4).join(' ');
@@ -2520,7 +2606,7 @@ function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMov
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="icon" href="/favicon.ico"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
 <title>${hShort} | FXNewsBias</title><meta name="description" content="${s}"><meta name="robots" content="index, follow"><meta name="author" content="FXNewsBias Team"><link rel="canonical" href="${url}">
-<meta property="og:type" content="article"><meta property="og:title" content="${hShort}"><meta property="og:description" content="${s}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ogImage}"><meta property="og:image:secure_url" content="${ogImage}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${hShort} — FXNewsBias daily insight"><meta property="og:site_name" content="FXNewsBias">
+<meta property="og:type" content="article"><meta property="og:title" content="${hShort}"><meta property="og:description" content="${s}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ogImage}"><meta property="og:image:secure_url" content="${ogImage}"><meta property="og:image:type" content="image/svg+xml"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${hShort} — FXNewsBias daily insight"><meta property="og:site_name" content="FXNewsBias">
 <meta property="article:published_time" content="${dateISO}"><meta property="article:author" content="FXNewsBias Team"><meta property="article:section" content="Forex Analysis">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${hShort}"><meta name="twitter:description" content="${s}"><meta name="twitter:image" content="${ogImage}"><meta name="twitter:image:alt" content="${hShort} — FXNewsBias daily insight">
 <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}:root{--bg:#fff;--bg-soft:#f8f9fa;--border:#e5e7eb;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
@@ -2788,9 +2874,18 @@ async function generateDailyInsight(env, session) {
       newSitemap = newSitemap.replace('</urlset>', entry + '\n</urlset>');
     }
 
-    // 7. Commit all files
+    // 7. Build dynamic og:image SVG (1200x630, FXStreet-style split layout)
+    const ogSvg = _insBuildOgSvg({
+      headline: angle.headline,
+      sessionShort: sessMeta.short,
+      dateLabel,
+      biggestMover: angle.biggestMover
+    });
+
+    // 8. Commit all files
     const sha = await _insCommitFiles(env, [
       { path: `insight/${slug}.html`, content: articleHtml },
+      { path: `og/insight/${slug}.svg`, content: ogSvg },
       { path: 'insight/index.html', content: _insRenderIndex(articlesMeta) },
       { path: 'insight/rss.xml', content: _insRenderRss(articlesMeta) },
       { path: 'sitemap.xml', content: newSitemap }
