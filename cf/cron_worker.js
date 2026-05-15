@@ -2567,6 +2567,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <h2 class="h2">What to Watch Next</h2>${N.scenarios}${N.closing}
 <div class="glance"><div class="glance-h">📊 Bias snapshot at the time of writing</div><div class="glance-grid">${N.glance}</div></div>
 <div class="cta"><strong>Catch every session wrap as it drops.</strong> Bookmark <a href="/insight/">/insight/</a> or subscribe to our <a href="/insight/rss.xml">RSS feed</a> for fresh forex sentiment analysis 3 times a day — Asia, London and New York sessions.</div>
+<p class="ai-disclosure" style="margin-top:24px;padding:14px 16px;background:#f8fafc;border-left:3px solid #94a3b8;border-radius:4px;font-size:13px;color:#475569;line-height:1.6;"><strong>How this briefing was written:</strong> AI-drafted from real forex news headlines scanned every 3 hours by FXNewsBias, then auto-published on a fixed session schedule. Sentiment scores reflect news flow only — not technical signals or price action. This is information, not financial advice. Always cross-check with your own analysis before trading.</p>
 </article>
 <aside>
 <div class="sidebar-card"><div class="sidebar-h">📊 Live Currency Bias</div>${sidebarCcys}<a class="side-link" style="text-align:center;color:#2563eb;border-top:1px solid #e5e7eb;margin-top:6px;padding-top:12px;" href="/currencies">View all 8 currencies →</a></div>
