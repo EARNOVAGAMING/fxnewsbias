@@ -35,6 +35,8 @@ jobs:
           else
             exit $EC
           fi
+      - name: Install npm dependencies
+        run: npm install
       - name: Deploy Cron Worker (fxnewsbias-cron)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
