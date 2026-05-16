@@ -31,7 +31,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
-:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#767676;--accent:#2563eb;--bull:#047857;--bear:#dc2626;--neutral:#b45309;}
 
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
 .topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
@@ -42,7 +42,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;
 header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.18);}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
 .logo{font-size:24px;font-weight:800;color:#0f172a;text-decoration:none;}
-.logo span{color:var(--accent);}
+.logo span{color:var(--accent);}.logo{display:inline-flex;align-items:center;gap:10px;line-height:1;}.logo img{height:38px;width:auto;display:block;flex:0 0 auto;}.logo .logo-word{display:none;}
 nav ul{list-style:none;display:flex;gap:28px;}
 nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
 nav a:hover,nav a.active{color:var(--accent);}
@@ -86,7 +86,7 @@ nav a.active{font-weight:600;}
 .main{max-width:1280px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:24px;}
 
 .cta-banner{background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:1px solid #93c5fd;border-radius:12px;padding:18px 22px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;}
-.cta-text h3{font-size:16px;font-weight:700;color:#1e40af;margin-bottom:4px;}
+.cta-text h3,.cta-text .cta-text-title{font-size:16px;font-weight:700;color:#1e40af;margin-bottom:4px;}
 .cta-text p{font-size:13px;color:#1e3a8a;}
 
 .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:14px;}
@@ -181,11 +181,11 @@ nav a.active{font-weight:600;}
 footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
-.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col h3{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
 .footer-col ul{list-style:none;}
 .footer-col li{margin-bottom:8px;}
 .footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
-.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#94a3b8;}
 
 @media(max-width:900px){
   nav ul{display:none;}
@@ -304,7 +304,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
     <div class="cta-banner">
       <div class="cta-text">
-        <h3>📝 Share Your Analysis</h3>
+        <h2 class="cta-text-title">📝 Share Your Analysis</h2>
         <p>Got a great trade idea? Post your analysis and help fellow traders!</p>
       </div>
       <button class="btn btn-primary btn-lg" id="write-post-btn">+ Write Post</button>
@@ -397,7 +397,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   <div class="footer-inner">
     <div class="footer-grid">
       <div class="footer-col">
-        <h4>FXNewsBias</h4>
+        <h3>FXNewsBias</h3>
         <ul>
           <li><a href="/about">About Us</a></li>
           <li><a href="/how">How It Works</a></li>
@@ -405,7 +405,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Markets</h4>
+        <h3>Markets</h3>
         <ul>
           <li><a href="/currencies">Currencies</a></li>
           <li><a href="/pairs">Pairs</a></li>
@@ -416,7 +416,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Community</h4>
+        <h3>Community</h3>
         <ul>
           <li><a href="/community">Latest Posts</a></li>
           <li><a href="/community">Top Contributors</a></li>
@@ -424,7 +424,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Legal</h4>
+        <h3>Legal</h3>
         <ul>
           <li><a href="/disclaimer">Disclaimer</a></li>
           <li><a href="/privacy">Privacy Policy</a></li>

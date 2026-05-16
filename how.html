@@ -31,7 +31,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}
-:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}
+:root{--bg-soft:#f8f9fa;--border:#e5e7eb;--border-strong:#d1d5db;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#767676;--accent:#2563eb;--bull:#047857;--bear:#dc2626;--neutral:#b45309;}
 
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
 .topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
@@ -42,7 +42,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;
 header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.18);}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
 .logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#f8fafc;text-decoration:none;}
-.logo span{color:var(--accent);}
+.logo span{color:var(--accent);}.logo{display:inline-flex;align-items:center;gap:10px;line-height:1;}.logo img{height:38px;width:auto;display:block;flex:0 0 auto;}.logo .logo-word{display:none;}
 nav ul{list-style:none;display:flex;gap:28px;}
 nav a{text-decoration:none;color:var(--text);font-weight:500;font-size:14px;}
 nav a:hover{color:#60a5fa;}
@@ -119,11 +119,11 @@ nav a:hover{color:#60a5fa;}
 footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
 .footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
-.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col h3{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
 .footer-col ul{list-style:none;}
 .footer-col li{margin-bottom:8px;}
 .footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
-.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#94a3b8;}
 
 @media(max-width:900px){nav ul{display:none;}.burger{display:block;}.topbar-left span:nth-child(n+2){display:none;}.hero h1{font-size:28px;}.section h2{font-size:22px;}#user-menu span:first-child{display:none !important;}#user-menu{gap:6px !important;}#user-menu button{padding:6px 10px !important;font-size:12px !important;}}
 </style>
@@ -201,7 +201,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   <p>The complete guide to our forex sentiment system — from news aggregation to your trading decisions.</p>
 </section>
 
-<div class="content">
+<main class="content" id="main-content">
 
   <div class="section">
     <h2>📊 The Big Picture</h2>
@@ -361,11 +361,11 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
       </div>
       <div class="faq-item">
         <div class="faq-q">Do you offer Telegram alerts?</div>
-        <div class="faq-a">Yes — every 3 hours when sentiment updates, we broadcast the new bias scores to our Telegram channel. Subscribe to <a href="https://t.me/fxnewsbias_alerts" style="color:var(--accent);text-decoration:none;">@fxnewsbias_alerts</a> to get sentiment updates pushed straight to your phone, completely free.</div>
+        <div class="faq-a">Yes — every 3 hours when sentiment updates, we broadcast the new bias scores to our Telegram channel. Subscribe to <a href="https://t.me/fxnewsbias_alerts" style="color:var(--accent);text-decoration:underline;">@fxnewsbias_alerts</a> to get sentiment updates pushed straight to your phone, completely free.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q">Can I share my own analysis with other traders?</div>
-        <div class="faq-a">Yes. Our Community feature lets registered users post analysis with charts, comment on others' posts, like, save and view shared content. It's free with any account and a great way to learn from active traders. Visit the <a href="/community" style="color:var(--accent);text-decoration:none;">Community page</a> after creating a free account.</div>
+        <div class="faq-a">Yes. Our Community feature lets registered users post analysis with charts, comment on others' posts, like, save and view shared content. It's free with any account and a great way to learn from active traders. Visit the <a href="/community" style="color:var(--accent);text-decoration:underline;">Community page</a> after creating a free account.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q">Do I need an account?</div>
@@ -392,13 +392,13 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
     <a href="/" class="btn btn-primary" style="font-size:14px;padding:11px 24px;">Open Dashboard</a>
   </div>
 
-</div>
+</main>
 
 <footer>
   <div class="footer-inner">
     <div class="footer-grid">
       <div class="footer-col">
-        <h4>FXNewsBias</h4>
+        <h3>FXNewsBias</h3>
         <ul>
           <li><a href="/about">About Us</a></li>
 <li><a href="/how">How It Works</a></li>
@@ -406,7 +406,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Markets</h4>
+        <h3>Markets</h3>
         <ul>
           <li><a href="/currencies">Currencies</a></li>
 <li><a href="/pairs">Pairs</a></li>
@@ -417,7 +417,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Community</h4>
+        <h3>Community</h3>
         <ul>
           <li><a href="/community">Latest Posts</a></li>
 <li><a href="/community">Top Traders</a></li>
@@ -425,7 +425,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Legal</h4>
+        <h3>Legal</h3>
         <ul>
           <li><a href="/disclaimer">Disclaimer</a></li>
 <li><a href="/privacy">Privacy Policy</a></li>
