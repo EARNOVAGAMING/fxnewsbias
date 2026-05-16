@@ -109,6 +109,9 @@ article a{color:var(--accent);text-decoration:none;}article a:hover{text-decorat
 .news-li a{display:block;color:var(--text);text-decoration:none;font-size:13px;line-height:1.5;font-weight:500;}
 .news-li a:hover{color:var(--accent);}
 .news-meta{font-size:11px;color:var(--text-muted);margin-top:4px;}
+
+html[data-pro="1"] .pepperstone-ad{display:none!important;}
+.pepperstone-ad{text-align:center;}
 footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
@@ -121,7 +124,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <style>nav>ul{display:none}.burger{display:flex!important;align-items:center;justify-content:center}</style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6X181TFHYY');</script>
-<script>(function(){var p=localStorage.getItem("fxnb_is_pro")==="true";if(!p){var s=document.createElement("script");s.async=true;s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4857533156344939";s.crossOrigin="anonymous";document.head.appendChild(s);}})();</script>
+<script>(function(){var p=localStorage.getItem("fxnb_is_pro")==="true";if(p)document.documentElement.dataset.pro="1";if(!p){var s=document.createElement("script");s.async=true;s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4857533156344939";s.crossOrigin="anonymous";document.head.appendChild(s);}})();</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"USD Sentiment Today | US Dollar News Bias & Forecast - FXNewsBias","description":"Live USD (US Dollar) sentiment score, Federal Reserve stance, top news drivers and USD forecast. Updated every 3 hours from real forex news. The most-traded currency in the world.","url":"https://fxnewsbias.com/currencies/usd/","datePublished":"2026-05-13","dateModified":"2026-05-16","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"FXNewsBias","url":"https://fxnewsbias.com"},"publisher":{"@type":"Organization","name":"FXNewsBias","logo":{"@type":"ImageObject","url":"https://fxnewsbias.com/logo-fxnb.png"}},"reviewedBy":{"@type":"Person","name":"Dinesh Santher"}}</script>
 </head><body>
 <div class="topbar">
@@ -225,6 +228,23 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       <a class="side-link" href="/calendar">Economic Calendar</a>
       <a class="side-link" href="/news">All Forex News</a>
       <a class="side-link" href="/insight/">Daily Insights</a>
+    </div>
+  
+    <!-- Pepperstone 300x250 - hidden for Pro users -->
+    <div class="pepperstone-ad">
+      <ins class='dcmads' style='display:inline-block;width:300px;height:250px'
+        data-dcm-placement='N800570.2009906CELLXPERT/B24282330.340388762'
+        data-dcm-rendering-mode='iframe'
+        data-dcm-https-only
+        data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=382&aff_id=44603&file_id=5417"
+        data-dcm-gdpr-applies='gdpr=${GDPR}'
+        data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}'
+        data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}'
+        data-dcm-ltd='false'
+        data-dcm-resettable-device-id=''
+        data-dcm-app-id=''>
+        <script src='https://www.googletagservices.com/dcm/dcmads.js'></script>
+      </ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=382&aff_id=44603&file_id=5417" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
     </div>
   </aside>
 </div>
