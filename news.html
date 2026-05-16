@@ -280,6 +280,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       <h2 class="featured-title" style="opacity:0.35">Fetching latest forex market insight…</h2>
       <p class="featured-summary" style="opacity:0.35">Loading live news sentiment data — USD, EUR, GBP, JPY and more.</p>
     </div>
+    <script>(function(){try{var c=JSON.parse(localStorage.getItem('fxnb_featured'));if(!c||!c.title)return;var f=document.querySelector('.featured');if(!f)return;var tag=document.createElement('span');tag.className='featured-tag';tag.textContent='🔥 Top Story · '+(c.impact||'Medium')+' Impact';var h=document.createElement('h2');h.className='featured-title';h.textContent=c.title;var p=document.createElement('p');p.className='featured-summary';p.textContent='Latest from '+(c.source||'News Source')+' — tap to read the full article on the publisher\'s site.';f.innerHTML='';f.appendChild(tag);f.appendChild(h);f.appendChild(p);f.style.cursor='pointer';if(c.url)f.onclick=function(){window.open(c.url,'_blank','noopener');};}catch(e){}})()</script>
 
     <div class="section-title">
       <span>Latest News</span>
