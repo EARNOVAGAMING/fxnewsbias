@@ -61,15 +61,28 @@
           border-bottom:1px solid rgba(255,255,255,.06);}
         nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-toggle{display:flex;
           align-items:center;justify-content:space-between;width:100%;
-          padding:15px 24px;font-size:15px;font-weight:600;color:#e2e8f0;
+          padding:14px 14px 14px 24px;font-size:15px;font-weight:600;color:#e2e8f0;
           background:none;border:none;cursor:pointer;text-align:left;
           font-family:inherit;transition:background .15s ease,color .15s ease;}
         nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-toggle:hover,
         nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-toggle:active{
           background:rgba(37,99,235,.12);color:#60a5fa;}
-        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-chev{font-size:12px;color:#64748b;
-          transition:transform .25s ease;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-chev-wrap{
+          display:flex;align-items:center;justify-content:center;
+          width:36px;height:36px;flex:0 0 auto;
+          background:rgba(255,255,255,.07);
+          border:1.5px solid rgba(255,255,255,.13);border-radius:9px;
+          transition:background .2s ease,border-color .2s ease,box-shadow .2s ease;}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-toggle:hover .fxnb-chev-wrap,
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-toggle:active .fxnb-chev-wrap{
+          background:rgba(37,99,235,.2);border-color:rgba(96,165,250,.35);}
+        nav ul.fxnb-mobile li.fxnb-submenu .fxnb-chev{
+          width:18px;height:18px;color:#94a3b8;flex-shrink:0;
+          transition:transform .32s cubic-bezier(.65,.05,.36,1),color .2s ease;}
         nav ul.fxnb-mobile li.fxnb-submenu.is-open .fxnb-chev{transform:rotate(180deg);color:#60a5fa;}
+        nav ul.fxnb-mobile li.fxnb-submenu.is-open .fxnb-chev-wrap{
+          background:rgba(37,99,235,.22);border-color:rgba(96,165,250,.45);
+          box-shadow:0 0 0 3px rgba(37,99,235,.12);}
         nav ul.fxnb-mobile li.fxnb-submenu .fxnb-sub-body{max-height:0;overflow:hidden;
           transition:max-height .3s ease;background:#0b1222;}
         nav ul.fxnb-mobile li.fxnb-submenu.is-open .fxnb-sub-body{max-height:600px;}
@@ -320,7 +333,8 @@
       ccyMenu.className = 'fxnb-extra fxnb-submenu';
       ccyMenu.innerHTML =
         `<button type="button" class="fxnb-sub-toggle" data-toggle="ccy">
-           💱 Currencies <span class="fxnb-chev">▾</span>
+           💱 Currencies
+           <span class="fxnb-chev-wrap"><svg class="fxnb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
          </button>
          <div class="fxnb-sub-body">
            <a class="fxnb-sub-overview" href="/currencies">→ All 8 Currencies (overview)</a>
@@ -345,7 +359,8 @@
       pairMenu.className = 'fxnb-extra fxnb-submenu';
       pairMenu.innerHTML =
         `<button type="button" class="fxnb-sub-toggle" data-toggle="pair">
-           📊 Forex Pairs <span class="fxnb-chev">▾</span>
+           📊 Forex Pairs
+           <span class="fxnb-chev-wrap"><svg class="fxnb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
          </button>
          <div class="fxnb-sub-body">
            <a class="fxnb-sub-overview" href="/pairs">→ All Pairs (28-pair matrix)</a>
