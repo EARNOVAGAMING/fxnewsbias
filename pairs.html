@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagservices.com https://www.googletagmanager.com https://js.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://pagead2.googlesyndication.com; connect-src 'self' https://vtbmtxtgtdprpbilragm.supabase.co https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://api.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://js.stripe.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagservices.com https://www.googletagmanager.com https://js.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://pagead2.googlesyndication.com https://apis.google.com https://static.cloudflareinsights.com; connect-src 'self' https://vtbmtxtgtdprpbilragm.supabase.co https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://api.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://ep1.adtrafficquality.google https://*.doubleclick.net; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://js.stripe.com https://*.firebaseapp.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://sslecal2.investing.com; object-src 'none'; base-uri 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -38,7 +38,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;
   --border:#e5e7eb;--border-strong:#d1d5db;
   --text:#1a1a1a;--text-soft:#6b7280;--text-muted:#767676;
   --accent:#2563eb;
-  --bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;
+  --bull:#047857;--bear:#dc2626;--neutral:#b45309;
 }
 
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
@@ -51,7 +51,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;
 header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.18);}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
 .logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#f8fafc;text-decoration:none;}
-.logo span{color:var(--accent);}
+.logo span{color:var(--accent);}.logo img{height:38px;width:auto;display:block;flex:0 0 auto;}
 nav ul{list-style:none;display:flex;gap:28px;}
 nav a{text-decoration:none;color:#cbd5e1;font-weight:500;font-size:14px;transition:color .2s;}
 nav a:hover,nav a.active{color:var(--accent);}
@@ -217,7 +217,7 @@ nav a.active{font-weight:600;}
 footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
-.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
+.footer-col h3{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
 .footer-col ul{list-style:none;}
 .footer-col li{margin-bottom:8px;}
 .footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
@@ -379,7 +379,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   <button class="filter-btn" data-filter="conviction">🔥 High Conviction</button>
   <button class="filter-btn" data-filter="watchlist">⭐ Watchlist</button>
   <span class="filter-spacer"></span>
-  <select class="sort-select" id="sort-select">
+  <select class="sort-select" id="sort-select" aria-label="Sort pairs by">
     <option value="conviction">Sort: Conviction</option>
     <option value="change">Sort: 24h Change</option>
     <option value="alpha">Sort: A → Z</option>
@@ -474,7 +474,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   <div class="footer-inner">
     <div class="footer-grid">
       <div class="footer-col">
-        <h4>FXNewsBias</h4>
+        <h3>FXNewsBias</h3>
         <ul>
           <li><a href="/about">About Us</a></li>
           <li><a href="/how">How It Works</a></li>
@@ -482,7 +482,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Markets</h4>
+        <h3>Markets</h3>
         <ul>
           <li><a href="currencies">Currencies</a></li>
           <li><a href="pairs">Pairs</a></li>
@@ -492,7 +492,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Community</h4>
+        <h3>Community</h3>
         <ul>
           <li><a href="/community">Latest Posts</a></li>
           <li><a href="/community">Top Traders</a></li>
@@ -500,7 +500,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Legal</h4>
+        <h3>Legal</h3>
         <ul>
           <li><a href="/disclaimer">Disclaimer</a></li>
           <li><a href="/privacy">Privacy Policy</a></li>

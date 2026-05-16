@@ -3,7 +3,7 @@
 <head>
 <script>try{if(localStorage.getItem("fxnb_is_pro")==="true")document.documentElement.dataset.pro="1";}catch(e){}</script>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagservices.com https://www.googletagmanager.com https://js.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://pagead2.googlesyndication.com; connect-src 'self' https://vtbmtxtgtdprpbilragm.supabase.co https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://api.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://js.stripe.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagservices.com https://www.googletagmanager.com https://js.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://pagead2.googlesyndication.com https://apis.google.com https://static.cloudflareinsights.com; connect-src 'self' https://vtbmtxtgtdprpbilragm.supabase.co https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://api.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://ep1.adtrafficquality.google https://*.doubleclick.net; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://js.stripe.com https://*.firebaseapp.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://sslecal2.investing.com; object-src 'none'; base-uri 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -117,7 +117,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#ffffff;color:#1a1a
   --border:#e5e7eb;--border-strong:#d1d5db;
   --text:#1a1a1a;--text-soft:#6b7280;--text-muted:#767676;
   --primary:#0f172a;--accent:#2563eb;
-  --bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;
+  --bull:#047857;--bear:#dc2626;--neutral:#b45309;
 }
 
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}
@@ -130,7 +130,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#ffffff;color:#1a1a
 header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.18);}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
 .logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#f8fafc;text-decoration:none;}
-.logo span{color:var(--accent);}
+.logo span{color:var(--accent);}.logo img{height:38px;width:auto;display:block;flex:0 0 auto;}
 nav ul{list-style:none;display:flex;gap:28px;}
 nav a{text-decoration:none;color:#cbd5e1;font-weight:500;font-size:14px;transition:color .2s;}
 nav a:hover{color:#60a5fa;}
@@ -234,8 +234,8 @@ html[data-pro="1"] .ad-slot{display:none!important;}
 .pulse-mover-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;background:var(--bg-soft);font-size:12px;}
 .pulse-mover-row .mover-curr{font-weight:800;font-size:13px;}
 .pulse-mover-row .mover-delta{font-family:'JetBrains Mono',monospace;font-weight:700;}
-.pulse-mover-row.up .mover-delta{color:#10b981;}
-.pulse-mover-row.down .mover-delta{color:#ef4444;}
+.pulse-mover-row.up .mover-delta{color:#047857;}
+.pulse-mover-row.down .mover-delta{color:#dc2626;}
 .pulse-movers-empty{font-size:11.5px;color:var(--text-muted);font-style:italic;text-align:center;padding:12px 4px;line-height:1.5;}
 
 /* DIVERGENCE SECTION */
@@ -263,8 +263,8 @@ html[data-pro="1"] .ad-slot{display:none!important;}
 .divg-meter{background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.07);border-radius:6px;padding:7px 10px;text-align:center;}
 .divg-meter-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:3px;}
 .divg-meter-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:800;}
-.divg-meter-val.up{color:#10b981;}
-.divg-meter-val.down{color:#ef4444;}
+.divg-meter-val.up{color:#047857;}
+.divg-meter-val.down{color:#dc2626;}
 .divg-card-desc{font-size:11px;color:var(--text-soft);line-height:1.45;}
 .divg-clear{display:flex;align-items:center;gap:18px;padding:18px 20px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border-radius:10px;}
 .divg-clear-icon{font-size:34px;line-height:1;flex-shrink:0;}
