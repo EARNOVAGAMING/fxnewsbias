@@ -3,7 +3,7 @@
 <head>
 <script>try{if(localStorage.getItem("fxnb_is_pro")==="true")document.documentElement.dataset.pro="1";}catch(e){}</script>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagservices.com https://www.googletagmanager.com https://js.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://pagead2.googlesyndication.com https://apis.google.com https://static.cloudflareinsights.com; connect-src 'self' https://vtbmtxtgtdprpbilragm.supabase.co https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://api.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://ep1.adtrafficquality.google https://*.doubleclick.net; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://js.stripe.com https://*.firebaseapp.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://sslecal2.investing.com; object-src 'none'; base-uri 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagservices.com https://www.googletagmanager.com https://js.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://pagead2.googlesyndication.com https://apis.google.com https://static.cloudflareinsights.com https://*.adtrafficquality.google; connect-src 'self' https://vtbmtxtgtdprpbilragm.supabase.co https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://api.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://*.adtrafficquality.google https://*.doubleclick.net; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://js.stripe.com https://*.firebaseapp.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://sslecal2.investing.com; object-src 'none'; base-uri 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -130,7 +130,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#ffffff;color:#1a1a
 header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.18);}
 .header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
 .logo{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#f8fafc;text-decoration:none;}
-.logo span{color:var(--accent);}.logo img{height:38px;width:auto;display:block;flex:0 0 auto;}
+.logo span{color:var(--accent);}.logo{display:inline-flex;align-items:center;gap:10px;line-height:1;}.logo img{height:38px;width:auto;display:block;flex:0 0 auto;}.logo .logo-word{display:none;}
 nav ul{list-style:none;display:flex;gap:28px;}
 nav a{text-decoration:none;color:#cbd5e1;font-weight:500;font-size:14px;transition:color .2s;}
 nav a:hover{color:#60a5fa;}
@@ -210,7 +210,7 @@ nav a:hover{color:#60a5fa;}
 .session-row:last-child{border-bottom:none;}
 .session-status{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;}
 .open-status{background:#d1fae5;color:#065f46;}
-.closed-status{background:#f3f4f6;color:#6b7280;}
+.closed-status{background:#f3f4f6;color:#4b5563;}
 
 .ad-slot{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:8px;padding:24px;text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:24px;min-height:280px;display:flex;align-items:center;justify-content:center;contain:layout size;}
 html[data-pro="1"] .ad-slot{display:none!important;}
@@ -260,12 +260,12 @@ html[data-pro="1"] .ad-slot{display:none!important;}
 .bull-divg .divg-card-tag{background:#bbf7d0;color:#065f46;}
 .bear-divg .divg-card-tag{background:#fecaca;color:#991b1b;}
 .divg-meters{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-.divg-meter{background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.07);border-radius:6px;padding:7px 10px;text-align:center;}
+.divg-meter{background:#fff;border:1px solid rgba(0,0,0,0.07);border-radius:6px;padding:7px 10px;text-align:center;}
 .divg-meter-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:3px;}
 .divg-meter-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:800;}
 .divg-meter-val.up{color:#047857;}
 .divg-meter-val.down{color:#dc2626;}
-.divg-card-desc{font-size:11px;color:var(--text-soft);line-height:1.45;}
+.divg-card-desc{font-size:11px;color:#374151;line-height:1.45;}
 .divg-clear{display:flex;align-items:center;gap:18px;padding:18px 20px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border-radius:10px;}
 .divg-clear-icon{font-size:34px;line-height:1;flex-shrink:0;}
 .divg-clear-title{font-size:14px;font-weight:800;color:#065f46;margin-bottom:4px;}
@@ -292,7 +292,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-col li{margin-bottom:8px;}
 .footer-col a{color:#94a3b8;text-decoration:none;font-size:13px;}
 .footer-col a:hover{color:#fff;}
-.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#64748b;}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#94a3b8;}
 
 @media(max-width:900px){
   .main{grid-template-columns:1fr;}
