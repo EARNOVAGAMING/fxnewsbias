@@ -239,8 +239,8 @@ ctx.waitUntil(Promise.all(tasks));
 // within minutes instead of waiting for their normal sitemap sweep. The
 // key file is hosted at https://fxnewsbias.com/<KEY>.txt and Bing reads
 // it once to verify ownership, then trusts subsequent pings.
-const INDEXNOW_KEY = '5a8bc41d17c44aaba5f2fd026d207c8b';
-const INDEXNOW_KEY_LOCATION = 'https://fxnewsbias.com/5a8bc41d17c44aaba5f2fd026d207c8b.txt';
+const INDEXNOW_KEY = 'd5871002582b47b993a5f4841d714dea';
+const INDEXNOW_KEY_LOCATION = 'https://fxnewsbias.com/d5871002582b47b993a5f4841d714dea.txt';
 
 const ALL_DATA_URLS = [
   'https://fxnewsbias.com/',
