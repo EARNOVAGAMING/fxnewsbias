@@ -2065,72 +2065,27 @@ console.log(`Failed to update ${pair}:`, error.message);
 if (i < pairs.length - 1) await new Promise(r => setTimeout(r, THROTTLE_MS));
 }
 
-// 3-subrequest race-free write: GET old ids -> INSERT new batch -> DELETE
-// old ids. Earlier I tried `?on_conflict=pair` (1 subreq) and then plain
-// DELETE-then-INSERT (2 subreqs); the upsert hit PostgREST 42P10 because
-// prices.pair has no UNIQUE index (see cf/RUN_THESE_3_MIGRATIONS.sql),
-// and the delete-first ordering left a window where readers saw an empty
-// table — and worse, would leave it permanently empty if the INSERT
-// failed for any reason. Insert-then-delete keeps the old rows visible
-// until the new ones land; in the worst case a reader briefly sees
-// duplicate rows (frontend orders by updated_at desc + limit, so newest
-// always wins).
+// prices.pair has a UNIQUE constraint (added in RUN_THESE_3_MIGRATIONS.sql),
+// so a single UPSERT (merge-duplicates) is all we need — 1 subrequest,
+// no gap window, no duplicate rows.
 if (!collected.length) { console.log('updatePrices: no quotes collected'); return; }
-const inList = collected.map(c => `"${c.pair}"`).join(',');
-
-// 1) Snapshot the ids of rows we are about to replace.
-const idsResp = await fetch(
-`${env.SUPABASE_URL}/rest/v1/prices?pair=in.(${encodeURIComponent(inList)})&select=id`,
-{
-headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` },
-signal: AbortSignal.timeout(10000)
-}
-);
-if (!idsResp.ok) {
-const body = await idsResp.text().catch(() => '');
-console.log(`updatePrices SELECT-ids HTTP ${idsResp.status}: ${body.slice(0, 300)}`);
-return;
-}
-const oldIds = (await idsResp.json().catch(() => [])).map(r => r.id).filter(n => n != null);
-
-// 2) Insert the new batch. If this fails, old rows stay intact -> no gap.
-const insResp = await fetch(`${env.SUPABASE_URL}/rest/v1/prices`, {
+const upsertResp = await fetch(`${env.SUPABASE_URL}/rest/v1/prices?on_conflict=pair`, {
 method: 'POST',
 headers: {
 'Content-Type': 'application/json',
 'apikey': env.SUPABASE_SERVICE_KEY,
 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-'Prefer': 'return=minimal'
+'Prefer': 'resolution=merge-duplicates,return=minimal'
 },
 body: JSON.stringify(collected),
 signal: AbortSignal.timeout(10000)
 });
-if (!insResp.ok) {
-const body = await insResp.text().catch(() => '');
-console.log(`updatePrices INSERT HTTP ${insResp.status}: ${body.slice(0, 300)}`);
+if (!upsertResp.ok) {
+const body = await upsertResp.text().catch(() => '');
+console.log(`updatePrices UPSERT HTTP ${upsertResp.status}: ${body.slice(0, 300)}`);
 return;
 }
-
-// 3) Delete the snapshot ids only (never delete the rows we just wrote).
-if (oldIds.length) {
-const delResp = await fetch(
-`${env.SUPABASE_URL}/rest/v1/prices?id=in.(${oldIds.join(',')})`,
-{
-method: 'DELETE',
-headers: {
-apikey: env.SUPABASE_SERVICE_KEY,
-Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-Prefer: 'return=minimal'
-},
-signal: AbortSignal.timeout(10000)
-}
-);
-if (!delResp.ok) {
-const body = await delResp.text().catch(() => '');
-console.log(`updatePrices DELETE-old HTTP ${delResp.status}: ${body.slice(0, 300)} (table now has duplicate rows for ${pairs.length} pairs; next tick will clean up)`);
-}
-}
-console.log(`updatePrices: replaced ${collected.length}/${pairs.length} pairs (deleted ${oldIds.length} old rows)`);
+console.log(`updatePrices: upserted ${collected.length}/${pairs.length} pairs`);
 }
 // ============================================
 // CONTACT FORM HANDLER
