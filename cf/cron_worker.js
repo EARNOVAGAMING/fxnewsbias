@@ -2388,6 +2388,139 @@ function _insPairFor(a,b){if(a===b)return null;return _INS_PAIR_MAP[`${a}-${b}`]
 function _insPairDir(strong,weak,pair){const base=pair.slice(0,3);if(base===strong)return 'higher';if(base===weak)return 'lower';return 'higher';}
 function _insFmtTime(iso){try{const d=new Date(iso);return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')} UTC`;}catch{return '';}}
 
+// AI-powered narrative builder. Calls Claude Haiku to write each article section
+// as genuine prose, then wraps the result in the same HTML structures used by
+// the template fallback so _insRenderArticle stays unchanged.
+async function _insBuildNarrativeAI(env, {sentiment, news, biggestMover, sessMeta, angle}) {
+  const arr = Object.values(sentiment).sort((a,b)=>Math.abs(b.score-50)-Math.abs(a.score-50));
+  const bulls = arr.filter(s=>s.bias==='Bullish').sort((a,b)=>b.score-a.score);
+  const bears = arr.filter(s=>s.bias==='Bearish').sort((a,b)=>a.score-b.score);
+  const strongest = bulls[0]; const weakest = bears[0];
+  const watchPair = strongest && weakest && strongest.currency !== weakest.currency ? _insPairFor(strongest.currency, weakest.currency) : null;
+  const moverName = _INS_CCY_NAMES[biggestMover.currency];
+  const biasWord = biggestMover.bias.toLowerCase();
+  const biasColorVal = _insBiasColor(biggestMover.bias);
+  const nicknames = {USD:'the dollar or greenback',EUR:'the euro',GBP:'the pound or sterling',JPY:'the yen',AUD:'the Aussie',CAD:'the loonie',CHF:'the franc',NZD:'the kiwi'};
+  const nick = nicknames[biggestMover.currency] || moverName;
+
+  const sentSummary = arr.map(s=>`  ${s.currency} (${_INS_CCY_NAMES[s.currency]}): ${s.score}/100 — ${s.bias}${s.drivers&&s.drivers.length?' | drivers: '+s.drivers.slice(0,2).join('; '):''}`).join('\n');
+  const topNews = news.slice(0,20).map((n,i)=>`  ${i+1}. [${n.impact||'Med'}] "${n.title}" — ${n.source} (affects: ${(n.currencies_affected||[]).join(',')||'general'})`).join('\n');
+  const dateLabel = new Date().toUTCString().split(' ').slice(0,4).join(' ');
+
+  const prompt = `You are a senior FX market analyst writing a session briefing for FXNewsBias.com, a real-time forex sentiment intelligence platform trusted by retail forex traders.
+
+SESSION: ${sessMeta.label} | DATE: ${dateLabel}
+HEADLINE: ${angle.headline}
+BIGGEST MOVER: ${moverName} (${biggestMover.currency}) — ${biggestMover.score}/100 — ${biggestMover.bias}
+${watchPair?`KEY PAIR TO WATCH: ${watchPair}`:''}
+
+SENTIMENT SCORES (all 8 majors):
+${sentSummary}
+
+TOP NEWS HEADLINES (last 24 hours, use these as your factual basis):
+${topNews}
+
+Write a professional, SEO-optimised forex market briefing. Return ONLY valid JSON — no markdown, no commentary outside the JSON.
+
+{
+  "lead": "One punchy hook sentence in plain text. Must name the currency in full, include its ${biggestMover.currency} code, score/100, and bias. Do not start with 'The'.",
+  "standfirst": "One sentence telling the reader exactly what they will learn. Plain text.",
+  "what_happened_intro": "2–3 paragraphs of flowing prose explaining what drove ${biggestMover.currency} sentiment. Reference specific headlines and sources by name. Naturally alternate between '${moverName}', '${biggestMover.currency}', and '${nick}'. Separate paragraphs with \\n\\n. Plain text only — no HTML tags.",
+  "what_happened_quote": "A short verbatim extract from one headline above (max 12 words). Empty string if nothing fits neatly.",
+  "what_happened_quote_source": "Source name and UTC time, e.g. 'Reuters · 14:30 UTC'. Empty string if no quote.",
+  "reaction_prose": "1–2 paragraphs covering how the broader FX market reacted. Mention the widest sentiment gap and the ${watchPair||'most tradeable cross'} setup. Vary terminology: 'forex market', 'FX session', 'currency pairs', 'exchange rates'. Separate paragraphs with \\n\\n. Plain text only.",
+  "drivers": [
+    "First key driver — one specific sentence tied directly to a real headline above",
+    "Second key driver — a distinct angle, not rephrasing the first",
+    "Third key driver — a third distinct factor; omit if fewer than 3 genuine drivers exist"
+  ],
+  "bull_case": "2–3 sentences. What specific upcoming data release, central bank event, or technical confirmation would extend the ${biasWord} move? Name a real catalyst if one exists in the next 48 hours. Plain text.",
+  "bear_case": "2–3 sentences. What specific COUNTER-catalyst — a different narrative entirely from the bull case — would reverse the view and snap ${biggestMover.currency} pairs back? Plain text.",
+  "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:00 UTC / London 06:00 UTC / New York 12:00 UTC). Plain text."
+}
+
+Hard rules — violating any of these will make the article unusable:
+1. Each section must be self-contained. Zero repeated phrases across sections.
+2. Bull case and bear case must describe genuinely different scenarios.
+3. Drivers must not echo the reaction_prose or each other.
+4. No generic filler like "markets await fresh catalysts" unless truly nothing happened.
+5. Natural SEO — include these terms once each where they fit: 'forex market analysis', 'currency strength', 'central bank', '${watchPair||biggestMover.currency+' pairs'}', 'exchange rate', 'price action'. Never force them.
+6. Tone: authoritative but readable — like FXStreet or Reuters FX desk, not academic.
+7. Total prose word count (all sections combined): 500–700 words.`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','x-api-key':env.CLAUDE_API_KEY,'anthropic-version':'2023-06-01'},
+    body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:2000, messages:[{role:'user',content:prompt}]})
+  });
+  if (!resp.ok) throw new Error(`Anthropic HTTP ${resp.status}`);
+  const data = await resp.json();
+  if (data.stop_reason === 'max_tokens') throw new Error('AI narrative truncated — max_tokens too low');
+  const raw = data.content?.[0]?.text || '';
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('No JSON in AI narrative response');
+  const ai = JSON.parse(jsonMatch[0]);
+
+  // Glance widget is always data-driven
+  const glance = _INS_CCY_ORDER.map(c=>{const x=sentiment[c];if(!x)return '';return `<div class="glance-cell" style="border-top-color:${_insBiasColor(x.bias)};"><div class="glance-ccy">${c}</div><div class="glance-score">${x.score}</div><div class="glance-arr" style="color:${_insBiasColor(x.bias)};">${_insBiasArrow(x.bias)} ${x.bias.slice(0,4)}</div></div>`;}).join('');
+
+  // News timeline is always data-driven
+  const tl = [...news].filter(n=>n.title).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)).slice(-4);
+  let timelineHtml = '';
+  if (tl.length >= 2) {
+    timelineHtml = `<h3 style="font-size:15px;font-weight:700;margin:18px 0 6px;color:#1a1a1a;letter-spacing:0.2px;">Today's news timeline</h3><ul class="timeline">`;
+    for (const n of tl) {
+      const ccysText = (n.currencies_affected||[]).slice(0,4).join(', ') || 'cross-market';
+      timelineHtml += `<li><span class="timeline-time">${_insFmtTime(n.created_at)}</span><div class="timeline-text"><span class="imp-pill imp-${_insEsc(n.impact||'Medium')}">${_insEsc(n.impact||'Med')}</span><a href="${_insEsc(_insSafeUrl(n.url))}" target="_blank" rel="noopener nofollow">${_insEsc(n.title)}</a><span class="timeline-meta">${_insEsc(n.source)} · affects ${_insEsc(ccysText)}</span></div></li>`;
+    }
+    timelineHtml += `</ul>`;
+  }
+
+  // Convert plain text paragraphs to HTML
+  const prose2html = t => String(t||'').split('\n\n').filter(Boolean).map(p=>`<p>${_insEsc(p.trim())}</p>`).join('');
+
+  // Lead: bold the currency name/code at the start
+  const leadText = String(ai.lead||'').trim();
+  const lead = leadText.startsWith(moverName)
+    ? `<strong>${_insEsc(moverName)}</strong>${_insEsc(leadText.slice(moverName.length))}`
+    : leadText.startsWith(biggestMover.currency)
+    ? `<strong>${biggestMover.currency}</strong>${_insEsc(leadText.slice(biggestMover.currency.length))}`
+    : _insEsc(leadText);
+
+  const standfirst = _insEsc(String(ai.standfirst||'').trim());
+
+  let whatHappened = prose2html(ai.what_happened_intro);
+  if (ai.what_happened_quote) {
+    whatHappened += `<blockquote>&ldquo;${_insEsc(ai.what_happened_quote)}&rdquo;${ai.what_happened_quote_source?`<cite>— ${_insEsc(ai.what_happened_quote_source)}</cite>`:''}</blockquote>`;
+  }
+  whatHappened += timelineHtml;
+
+  const reaction = prose2html(ai.reaction_prose);
+
+  const aiDrivers = (Array.isArray(ai.drivers)?ai.drivers:[]).filter(Boolean).slice(0,3);
+  let driversSection = '';
+  if (aiDrivers.length > 0) {
+    const threadWord = aiDrivers.length===1?'One key thread runs':aiDrivers.length===2?'Two key threads run':'Three key threads run';
+    driversSection = `<p>${threadWord} through the ${biasWord} ${_insEsc(moverName)} story:</p><ol style="margin:0 0 14px 22px;font-size:16px;line-height:1.75;color:#1a1a1a;">`;
+    for (const d of aiDrivers) driversSection += `<li style="margin-bottom:8px;">${_insEsc(d)}</li>`;
+    driversSection += `</ol>`;
+    const moverNews = news.filter(n=>(n.currencies_affected||[]).includes(biggestMover.currency));
+    if (moverNews.length > 1) {
+      const supp = moverNews[1];
+      driversSection += `<blockquote>&ldquo;${_insEsc(supp.title)}&rdquo;<cite>— ${_insEsc(supp.source)} · ${_insFmtTime(supp.created_at)}</cite></blockquote>`;
+    }
+  } else {
+    driversSection = `<p>Underlying drivers remain mixed. Today's ${biasWord} ${_insEsc(moverName)} reading appears to be a positioning move rather than a single-catalyst reaction — typically a less durable signal.</p>`;
+  }
+
+  const bullCase = _insEsc(String(ai.bull_case||'').trim());
+  const bearCase = _insEsc(String(ai.bear_case||'').trim());
+  const scenarios = `<div class="scenario-box"><div class="scenario-title">📈 Bull case for the move</div><div class="scenario-text">${bullCase}</div></div><div class="scenario-box" style="border-left-color:#dc2626;"><div class="scenario-title" style="color:#dc2626;">📉 Risk to the view</div><div class="scenario-text">${bearCase}</div></div>`;
+  const closing = `<p>${_insEsc(String(ai.closing_note||'The next session wrap lands within the day — Asia at 00:00 UTC, London at 06:00 UTC, New York at 12:00 UTC.').trim())}</p>`;
+
+  return {lead, standfirst, whatHappened, reaction, driversSection, scenarios, closing, glance};
+}
+
 function _insBuildNarrative({sentiment, news, biggestMover}){
   const arr = Object.values(sentiment).sort((a,b)=>Math.abs(b.score-50)-Math.abs(a.score-50));
   const bulls = arr.filter(s=>s.bias==='Bullish').sort((a,b)=>b.score-a.score);
@@ -2555,10 +2688,10 @@ function _insBuildOgSvg({ headline, sessionShort, dateLabel, biggestMover }) {
     + '</svg>';
 }
 
-function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category}){
+function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category, narrative}){
   const url = `${_INS_SITE}/insight/${slug}`;
   const shortHeadline = String(headline).split(" — ")[0]; const h = _insEsc(headline), hShort = _insEsc(shortHeadline), s = _insEsc(summary);
-  const N = _insBuildNarrative({sentiment, news, biggestMover});
+  const N = narrative || _insBuildNarrative({sentiment, news, biggestMover});
   const sidebarCcys = _INS_CCY_ORDER.slice(0,5).map(c=>{const x=sentiment[c];if(!x)return '';return `<a class="side-link" href="/currencies"><span style="color:${_insBiasColor(x.bias)};font-weight:700;">${_insBiasArrow(x.bias)} ${c}</span> · <span style="color:#6b7280;font-weight:500;">${x.bias} ${x.score}/100</span></a>`;}).join('');
   // Per-insight social card: dynamic SVG generated by cron at publish time,
   // committed to og/insight/{slug}.svg alongside the article. Each insight
@@ -2795,7 +2928,16 @@ async function generateDailyInsight(env, session) {
     const sessionSummary = `${sessMeta.intro} ${angle.summary}`;
     const sessionCategory = `${sessMeta.label} • ${angle.category}`;
 
-    const articleHtml = _insRenderArticle({ headline: sessionHeadline, slug, summary: sessionSummary, sentiment, news, biggestMover: angle.biggestMover, dateISO, dateLabel, category: sessionCategory });
+    // Build AI narrative; fall back to template if Claude is unavailable
+    let narrative = null;
+    try {
+      narrative = await _insBuildNarrativeAI(env, {sentiment, news, biggestMover: angle.biggestMover, sessMeta, angle});
+      console.log('Insight: AI narrative generated successfully');
+    } catch (e) {
+      console.log('Insight: AI narrative failed, using template fallback:', e.message);
+    }
+
+    const articleHtml = _insRenderArticle({ headline: sessionHeadline, slug, summary: sessionSummary, sentiment, news, biggestMover: angle.biggestMover, dateISO, dateLabel, category: sessionCategory, narrative });
 
     // 4. Word count check
     const text = articleHtml.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>/g, ' ').replace(/\s+/g,' ').trim();
