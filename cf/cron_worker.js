@@ -2439,7 +2439,8 @@ function _insBuildNarrative({sentiment, news, biggestMover}){
 
   let driversSection;
   if(drivers.length>0){
-    driversSection = `<p>Three threads run through the ${biasWord} ${moverName} story:</p><ol style="margin:0 0 14px 22px;font-size:16px;line-height:1.75;color:#1a1a1a;">`;
+    const threadWord = drivers.length===1?'One thread runs':drivers.length===2?'Two threads run':'Three threads run';
+    driversSection = `<p>${threadWord} through the ${biasWord} ${moverName} story:</p><ol style="margin:0 0 14px 22px;font-size:16px;line-height:1.75;color:#1a1a1a;">`;
     for(const d of drivers){ driversSection += `<li style="margin-bottom:8px;">${_insEsc(d)}</li>`; }
     driversSection += `</ol>`;
     if(moverHighlights.length>1){
@@ -2451,8 +2452,16 @@ function _insBuildNarrative({sentiment, news, biggestMover}){
   }
 
   const watchPair = strongest && weakest && strongest.currency !== weakest.currency ? _insPairFor(strongest.currency, weakest.currency) : null;
-  const reverseTrigger = drivers[0] || (top ? `a reversal of the ${_insEsc(top.source)} story` : 'fresh central bank guidance');
-  const scenarios = `<div class="scenario-box"><div class="scenario-title">📈 Bull case for the move</div><div class="scenario-text">If incoming data confirms ${_insEsc(driverProse)}, expect the ${moverName} bias to push toward ${biggestMover.bias==='Bullish'?'80/100':biggestMover.bias==='Bearish'?'20/100':'a clearer trending reading'} over the next 24 hours${watchPair?`, with <strong>${watchPair}</strong> the cleanest expression of the trade`:''}.</div></div><div class="scenario-box" style="border-left-color:#dc2626;"><div class="scenario-title" style="color:#dc2626;">📉 Risk to the view</div><div class="scenario-text">A reversal in <strong>${_insEsc(reverseTrigger)}</strong> would quickly neutralize the ${biasWord} read on the ${moverName}. Watch ${biggestMover.currency} pairs for a snap back toward 50/100 if the next central-bank wire pushes the other way.</div></div>`;
+  const bullTarget = biggestMover.bias==='Bullish'?'80/100':biggestMover.bias==='Bearish'?'20/100':'a clearer directional reading';
+  const bullTopRef = top ? `the narrative around &ldquo;${_insEsc(top.title.length>70?top.title.slice(0,67)+'…':top.title)}&rdquo;` : 'the current macro backdrop';
+  const bullCase = `The fundamental backing behind today's ${biasWord} ${_insEsc(moverName)} read looks well-grounded. If ${bullTopRef} holds through the next session, the bias could extend toward <strong>${bullTarget}</strong>${watchPair?`, making <strong>${watchPair}</strong> the cleanest risk/reward expression of the trade`:''}. A sustained reading above 50 on the sentiment score would confirm the move has legs.`;
+  const bearTrigger = biggestMover.bias==='Bullish'
+    ? `a dovish central-bank surprise or a weaker-than-expected macro print`
+    : biggestMover.bias==='Bearish'
+    ? `a hawkish policy shift or a stronger-than-expected data release`
+    : `a sharp change in the headline flow`;
+  const bearCase = `The main risk to this view is ${bearTrigger} — either could quickly unwind the ${biasWord} positioning and snap the ${_insEsc(moverName)} bias back toward 50/100. Watch ${biggestMover.currency} pairs for early signs of reversal if the next central-bank wire pushes against the current narrative.`;
+  const scenarios = `<div class="scenario-box"><div class="scenario-title">📈 Bull case for the move</div><div class="scenario-text">${bullCase}</div></div><div class="scenario-box" style="border-left-color:#dc2626;"><div class="scenario-title" style="color:#dc2626;">📉 Risk to the view</div><div class="scenario-text">${bearCase}</div></div>`;
   const closing = `<p>The next session wrap lands within the day — Asia at <strong>00:00 UTC</strong>, London at <strong>06:00 UTC</strong>, New York at <strong>12:00 UTC</strong> — and will reset the picture against the latest overnight headlines. For live tracking through the day, the <a href="/">sentiment dashboard</a>, <a href="/currencies">currency strength meter</a>, and <a href="/calendar">economic calendar</a> all update in real time.</p>`;
 
   const glance = _INS_CCY_ORDER.map(c=>{const x=sentiment[c];if(!x)return '';return `<div class="glance-cell" style="border-top-color:${_insBiasColor(x.bias)};"><div class="glance-ccy">${c}</div><div class="glance-score">${x.score}</div><div class="glance-arr" style="color:${_insBiasColor(x.bias)};">${_insBiasArrow(x.bias)} ${x.bias.slice(0,4)}</div></div>`;}).join('');
