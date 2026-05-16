@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagservices.com https://www.googletagmanager.com https://js.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev; connect-src 'self' https://vtbmtxtgtdprpbilragm.supabase.co https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://api.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://js.stripe.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagservices.com https://www.googletagmanager.com https://js.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://pagead2.googlesyndication.com; connect-src 'self' https://vtbmtxtgtdprpbilragm.supabase.co https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://api.stripe.com https://cdn.jsdelivr.net https://*.currency-api.pages.dev https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://js.stripe.com https://*.firebaseapp.com; object-src 'none'; base-uri 'self';">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
-<link rel="preload" as="image" href="/logo-fxnb.png?v=2">
+<link rel="preload" as="image" href="/logo-fxnb.webp?v=2" type="image/webp">
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#0f172a">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
@@ -36,7 +36,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;
 :root{
   --bg-soft:#f8f9fa;
   --border:#e5e7eb;--border-strong:#d1d5db;
-  --text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;
+  --text:#1a1a1a;--text-soft:#6b7280;--text-muted:#767676;
   --accent:#2563eb;
   --bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;
 }
@@ -84,7 +84,7 @@ nav a.active{font-weight:600;}
 
 /* Market mood strip in hero */
 .mood-strip{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px;margin-top:8px;}
-.mood-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;}
+.mood-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;min-height:90px;}
 .mood-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;margin-bottom:6px;}
 .mood-value{font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;}
 .mood-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
@@ -276,7 +276,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
 <header>
   <div class="header-inner">
-    <a href="/" class="logo"><img src="/logo-fxnb.png?v=2" alt="FX News Bias" width="1167" height="369"><span class="logo-word">FX<em>News</em>Bias</span></a>
+    <a href="/" class="logo"><picture><source type="image/webp" srcset="/logo-fxnb.webp?v=2"><img src="/logo-fxnb.png?v=2" alt="FX News Bias" width="1167" height="369"></picture><span class="logo-word">FX<em>News</em>Bias</span></a>
     <nav>
       <ul>
         <li><a href="/">Markets</a></li>
@@ -284,8 +284,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <li><a href="/pairs" class="active">Pairs</a></li>
         <li><a href="/calendar">Calendar</a></li>
         <li><a href="/news">News</a></li>
-        <li><a href="/insight/">Insights</a></li>
-          <li><a href="/insight/">Daily Insights</a></li>
+        <li><a href="/insight/">Daily Insights</a></li>
         <li><a href="/community">Community</a></li>
       </ul>
     </nav>
@@ -314,6 +313,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   </div>
 </div>
 
+<main>
 <section class="page-head">
   <div class="page-head-inner">
     <div class="breadcrumb"><a href="/">Home</a> · Pairs</div>
@@ -399,7 +399,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   <div class="info-box" style="margin:0;">
     <div class="info-icon">💡</div>
     <div class="info-content">
-      <h4>How to read these cards</h4>
+      <h2>How to read these cards</h2>
       <p>Each card pits the <strong>base</strong> currency against the <strong>quote</strong> currency. The bigger the strength gap, the higher the conviction. <em>"Conviction"</em> shows how decisive the call is (gap of 30+ = high). Cross-pair prices marked <strong>DERIVED</strong> are calculated from live USD pairs — accurate but not for execution.</p>
     </div>
   </div>
@@ -469,6 +469,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     </ul>
   </div>
 </section>
+</main>
 <footer>
   <div class="footer-inner">
     <div class="footer-grid">
@@ -487,7 +488,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
           <li><a href="pairs">Pairs</a></li>
           <li><a href="/calendar">Calendar</a></li>
           <li><a href="/news">News</a></li>
-          <li><a href="/insight/">Insights</a></li>
           <li><a href="/insight/">Daily Insights</a></li>
         </ul>
       </div>
