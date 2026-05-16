@@ -56,6 +56,8 @@ nav a:hover{color:#60a5fa;}
 .ticker{background:var(--bg-soft);border-bottom:1px solid var(--border);overflow:hidden;padding:10px 0;}
 .ticker-inner{display:flex;gap:30px;animation:scroll 60s linear infinite;white-space:nowrap;}
 @keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.loading-pulse{animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 .ticker-item{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:13px;}
 .pair{font-weight:600;}
 .up{color:var(--bull);font-weight:600;}
@@ -173,14 +175,14 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
 <div class="ticker">
   <div class="ticker-inner" id="ticker-inner">
-    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
-    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
-    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
-    <div class="ticker-item"><span class="pair">USD/CHF</span><span>0.8921</span><span class="up">+0.12%</span></div>
-    <div class="ticker-item"><span class="pair">AUD/USD</span><span>0.6534</span><span class="down">-0.45%</span></div>
-    <div class="ticker-item"><span class="pair">EUR/USD</span><span>1.0842</span><span class="down">-0.21%</span></div>
-    <div class="ticker-item"><span class="pair">GBP/USD</span><span>1.2634</span><span class="down">-0.32%</span></div>
-    <div class="ticker-item"><span class="pair">USD/JPY</span><span>149.82</span><span class="up">+0.23%</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/CHF</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">AUD/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">EUR/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">GBP/USD</span><span class="price loading-pulse">Loading...</span></div>
+    <div class="ticker-item"><span class="pair">USD/JPY</span><span class="price loading-pulse">Loading...</span></div>
   </div>
 </div>
 
