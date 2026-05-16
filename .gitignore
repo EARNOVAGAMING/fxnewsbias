@@ -4,3 +4,7 @@
 !.dev.vars.example
 .env*
 !.env.example
+
+# node
+node_modules/
+package-lock.json

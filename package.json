@@ -1,0 +1,13 @@
+{
+  "name": "fxnewsbias",
+  "version": "1.0.0",
+  "description": "FXNewsBias cron worker dependencies",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@resvg/resvg-wasm": "^2.6.2"
+  }
+}

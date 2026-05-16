@@ -1,6 +1,46 @@
 // FXNewsBias Sentiment Worker
 // Handles: sentiment analysis, prices, Telegram alerts, Stripe webhooks, Firebase Pro updates
 
+import { Resvg, initWasm } from '@resvg/resvg-wasm';
+import resvgWasm from '@resvg/resvg-wasm/index_bg.wasm';
+
+// Init WASM once at module load; all requests await this promise before rendering
+const _resvgReady = initWasm(resvgWasm);
+
+// Noto Sans variable TTF — fetched once per worker instance and cached in memory.
+// ~2 MB from Google Fonts GitHub; CF edge keeps the connection warm so subsequent
+// articles in the same invocation chain reuse the cached bytes.
+let _fontBytes = null;
+async function _getFont() {
+  if (_fontBytes) return _fontBytes;
+  const resp = await fetch(
+    'https://raw.githubusercontent.com/google/fonts/main/ofl/notosans/NotoSans%5Bwdth%2Cwght%5D.ttf',
+    { headers: { 'User-Agent': 'fxnewsbias-cron' } }
+  );
+  if (!resp.ok) throw new Error(`Font fetch failed: ${resp.status}`);
+  _fontBytes = new Uint8Array(await resp.arrayBuffer());
+  return _fontBytes;
+}
+
+// Convert Uint8Array → base64 string for the GitHub blobs API
+function _uint8ToBase64(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+// Render an SVG string to a PNG Uint8Array using resvg-wasm + Noto Sans
+async function _svgToPng(svgString) {
+  await _resvgReady;
+  const font = await _getFont();
+  const resvg = new Resvg(svgString, {
+    fitTo: { mode: 'width', value: 1200 },
+    font: { fontBuffers: [font], loadSystemFonts: false }
+  });
+  const rendered = resvg.render();
+  return rendered.asPng();
+}
+
 export default {
 async fetch(request, env, ctx) {
 const url = new URL(request.url);
@@ -2688,15 +2728,14 @@ function _insBuildOgSvg({ headline, sessionShort, dateLabel, biggestMover }) {
     + '</svg>';
 }
 
-function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category, narrative}){
+function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category, narrative, ogImageOverride}){
   const url = `${_INS_SITE}/insight/${slug}`;
   const shortHeadline = String(headline).split(" — ")[0]; const h = _insEsc(headline), hShort = _insEsc(shortHeadline), s = _insEsc(summary);
   const N = narrative || _insBuildNarrative({sentiment, news, biggestMover});
   const sidebarCcys = _INS_CCY_ORDER.slice(0,5).map(c=>{const x=sentiment[c];if(!x)return '';return `<a class="side-link" href="/currencies"><span style="color:${_insBiasColor(x.bias)};font-weight:700;">${_insBiasArrow(x.bias)} ${c}</span> · <span style="color:#6b7280;font-weight:500;">${x.bias} ${x.score}/100</span></a>`;}).join('');
-  // OG image: use per-currency PNG (Twitter/LinkedIn reject SVG).
-  // The SVG is still generated and committed as a visual asset but cannot
-  // be used as a social card — crawlers require PNG or JPG.
-  const ogImage = `${_INS_SITE}/og/insight/${biggestMover.currency}.png`;
+  // ogImageOverride = slug-specific PNG when SVG→PNG conversion succeeded.
+  // Falls back to per-currency PNG which is always available.
+  const ogImage = ogImageOverride || `${_INS_SITE}/og/insight/${biggestMover.currency}.png`;
   const ld = JSON.stringify({"@context":"https://schema.org","@type":"NewsArticle","headline":headline,"description":summary,"datePublished":dateISO,"dateModified":dateISO,"author":{"@type":"Organization","name":"FXNewsBias Team","url":_INS_SITE},"publisher":{"@type":"Organization","name":"FXNewsBias","logo":{"@type":"ImageObject","url":`${_INS_SITE}/logo-fxnb.png`}},"mainEntityOfPage":{"@type":"WebPage","@id":url},"image":ogImage,"articleSection":"Forex Analysis"});
   const cat = _insEsc(category||'Market Wrap');
   const dateStr = new Date().toUTCString().split(' ').slice(0,4).join(' ');
@@ -2851,11 +2890,12 @@ async function _insCommitFiles(env, files, commitMessage) {
   const baseCommit = await _insGh(env, 'GET', `/repos/{owner}/{repo}/git/commits/${baseSha}`);
   const baseTreeSha = baseCommit.tree.sha;
 
-  // Create blobs for each file
+  // Create blobs for each file.
+  // Pass { binary: true } for files where content is already a base64 string (e.g. PNG).
   const treeItems = [];
   for (const f of files) {
     const blob = await _insGh(env, 'POST', `/repos/{owner}/{repo}/git/blobs`, {
-      content: btoa(unescape(encodeURIComponent(f.content))),
+      content: f.binary ? f.content : btoa(unescape(encodeURIComponent(f.content))),
       encoding: 'base64'
     });
     treeItems.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
@@ -2982,18 +3022,40 @@ async function generateDailyInsight(env, session) {
       newSitemap = newSitemap.replace('</urlset>', entry + '\n</urlset>');
     }
 
-    // 7. Build dynamic og:image SVG (1200x630, FXStreet-style split layout)
+    // 7. Build OG image SVG then convert to PNG for social card.
+    // PNG is required — Twitter/LinkedIn reject SVG as og:image.
+    // Falls back gracefully: if conversion fails the article still
+    // publishes and og:image uses the per-currency PNG instead.
     const ogSvg = _insBuildOgSvg({
       headline: angle.headline,
       sessionShort: sessMeta.short,
       dateLabel,
       biggestMover: angle.biggestMover
     });
+    let ogFileEntry = { path: `og/insight/${slug}.svg`, content: ogSvg };
+    let ogImageOverride = null;
+    try {
+      const ogPngBytes = await _svgToPng(ogSvg);
+      const ogPngBase64 = _uint8ToBase64(ogPngBytes);
+      ogFileEntry = { path: `og/insight/${slug}.png`, content: ogPngBase64, binary: true };
+      ogImageOverride = `${_INS_SITE}/og/insight/${slug}.png`;
+      console.log(`Insight: OG PNG generated (${ogPngBytes.length} bytes)`);
+    } catch (e) {
+      console.log('Insight: SVG→PNG failed, falling back to SVG + currency PNG:', e.message);
+    }
+
+    // Rebuild article HTML now that we know the final og:image URL
+    const finalArticleHtml = _insRenderArticle({
+      headline: sessionHeadline, slug, summary: sessionSummary,
+      sentiment, news, biggestMover: angle.biggestMover,
+      dateISO, dateLabel, category: sessionCategory,
+      narrative, ogImageOverride
+    });
 
     // 8. Commit all files
     const sha = await _insCommitFiles(env, [
-      { path: `insight/${slug}.html`, content: articleHtml },
-      { path: `og/insight/${slug}.svg`, content: ogSvg },
+      { path: `insight/${slug}.html`, content: finalArticleHtml },
+      ogFileEntry,
       { path: 'insight/index.html', content: _insRenderIndex(articlesMeta) },
       { path: 'insight/rss.xml', content: _insRenderRss(articlesMeta) },
       { path: 'sitemap.xml', content: newSitemap }

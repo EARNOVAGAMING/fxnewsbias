@@ -9,6 +9,9 @@
   "observability": {
     "enabled": true
   },
+  "rules": [
+    { "type": "CompiledWasm", "globs": ["**/*.wasm"], "fallthrough": true }
+  ],
   "triggers": {
     "crons": [
       "0 */3 * * *",
