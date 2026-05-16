@@ -144,12 +144,14 @@ async scheduled(event, env, ctx) {
 // Cron triggers:
 //   '0 */3 * * *'  -> sentiment analysis (every 3 hours)
 //   '*/15 * * * *' -> price updates + staleness check (every 15 minutes)
-//   '0 0 * * *'    -> ASEAN session insight (Asia open)
-//   '0 6 * * *'    -> London session insight (London open)
-//   '0 12 * * *'   -> New York session insight (NY open)
+//   '0 0 * * *'    -> ASEAN session insight (Asia open, weekdays only)
+//   '0 6 * * *'    -> London session insight (London open, weekdays only)
+//   '0 12 * * *'   -> New York session insight (NY open, weekdays only)
 const tasks = [];
 const SESSION_BY_CRON = { '0 0 * * *': 'asean', '0 6 * * *': 'london', '0 12 * * *': 'newyork' };
-if (SESSION_BY_CRON[event.cron]) {
+const _dow = new Date().getUTCDay(); // 0=Sun, 6=Sat
+const _isWeekend = _dow === 0 || _dow === 6;
+if (SESSION_BY_CRON[event.cron] && !_isWeekend) {
 const session = SESSION_BY_CRON[event.cron];
 tasks.push(generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)));
 // Tell Bing/Yandex to recrawl the insight index + homepage so the
