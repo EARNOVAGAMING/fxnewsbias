@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 const mobileNavStyle = document.createElement('style');
 mobileNavStyle.textContent = `
@@ -21,8 +20,16 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
+
+let _firestoreCache = null;
+async function getDb() {
+  if (!_firestoreCache) {
+    const { getFirestore, doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js");
+    _firestoreCache = { db: getFirestore(app), doc, getDoc, setDoc };
+  }
+  return _firestoreCache;
+}
 
 const SB_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
@@ -133,13 +140,13 @@ function renderBell(navActions, changes, seenKey) {
 async function checkProStatus(email) {
   try {
     if (!email) return false;
+    const { db, doc, getDoc } = await getDb();
     const docId = email.replace(/[.#$[\]@]/g, '_');
     const docRef = doc(db, 'subscriptions', docId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists() && docSnap.data().isPro === true) return true;
     return false;
   } catch(e) {
-    console.log('Pro check error:', e);
     return false;
   }
 }
@@ -200,9 +207,7 @@ onAuthStateChanged(auth, async (user) => {
           if (typeof window.initProPage === 'function') {
             try {
               window.initProPage();
-            } catch(e) {
-              console.log('initProPage error:', e);
-            }
+            } catch(e) {}
           }
         }, 300);
       } else {
@@ -281,6 +286,7 @@ window.registerUser = async function(email, password, username) {
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName: username });
+    const { db, doc, setDoc } = await getDb();
     const docId = email.replace(/[.#$[\]@]/g, '_');
     await setDoc(doc(db, 'users', docId), {
       username: username,
@@ -308,7 +314,7 @@ window.loginWithGoogle = async function() {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
 
-    // Create or update Firestore profile for Google users
+    const { db, doc, getDoc, setDoc } = await getDb();
     const docId = user.email.replace(/[.#$[\]@]/g, '_');
     const docRef = doc(db, 'users', docId);
     const docSnap = await getDoc(docRef);

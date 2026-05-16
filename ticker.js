@@ -80,9 +80,7 @@
         const data = pairData[pair];
         if (data) item.innerHTML = formatPair(pair, data.now, data.prev);
       });
-    } catch (e) {
-      console.warn('Ticker fetch failed:', e);
-    }
+    } catch (e) {}
   }
 
   if (document.readyState === 'loading') {
