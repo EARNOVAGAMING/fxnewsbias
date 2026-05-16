@@ -161,7 +161,7 @@ tasks.push(pingIndexNow([
 ]).catch(e => console.log('IndexNow (insight) error:', e.message)));
 } else if (event.cron === '0 */3 * * *') {
 tasks.push(runSentimentAnalysis(env));
-tasks.push(updatePrices(env));
+// prices are handled by the */15 tick — no duplicate call here
 // Once every 3 hours is plenty for a retention sweep — system_state is
 // tiny and only needs to be pruned occasionally.
 tasks.push(cleanupSystemState(env).catch(e => console.log('Cleanup error:', e.message)));
