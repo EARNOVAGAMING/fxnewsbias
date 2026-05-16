@@ -808,10 +808,13 @@ function updateSessions() {
   setStatus('tokyo-status', isOpen(sessions.tokyo));
   setStatus('sydney-status', isOpen(sessions.sydney));
 
-  // Update topbar session
+  // Update topbar session — during overlaps, show the session that opened most recently
   const sessionEl = document.getElementById('topbar-session');
-  if (isOpen(sessions.london)) sessionEl.textContent = '🌐 London Open';
-  else if (isOpen(sessions.newyork)) sessionEl.textContent = '🌐 New York Open';
+  const nyOpen = isOpen(sessions.newyork);
+  const ldnOpen = isOpen(sessions.london);
+  if (nyOpen && ldnOpen) sessionEl.textContent = '🌐 London & NY Open';
+  else if (nyOpen) sessionEl.textContent = '🌐 New York Open';
+  else if (ldnOpen) sessionEl.textContent = '🌐 London Open';
   else if (isOpen(sessions.tokyo)) sessionEl.textContent = '🌐 Tokyo Open';
   else if (isOpen(sessions.sydney)) sessionEl.textContent = '🌐 Sydney Open';
   else sessionEl.textContent = '🌐 Markets Closed';

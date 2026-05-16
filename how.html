@@ -247,12 +247,12 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
     <p>Every currency gets a score from 0-100. Here's what the ranges mean:</p>
     <div class="score-explain">
       <div class="score-card bear">
-        <div class="score-range">0-39</div>
+        <div class="score-range">0-40</div>
         <div class="score-label">Bearish</div>
         <div class="score-desc">Negative fundamentals — currency likely to weaken</div>
       </div>
       <div class="score-card neut">
-        <div class="score-range">40-59</div>
+        <div class="score-range">41-59</div>
         <div class="score-label">Neutral</div>
         <div class="score-desc">Mixed signals — wait for clearer setup</div>
       </div>
@@ -456,8 +456,11 @@ function updateSessions() {
     if (s.open < s.close) return utcHour >= s.open && utcHour < s.close;
     return utcHour >= s.open || utcHour < s.close;
   }
-  if (isOpen(sessions.london)) sessionEl.textContent = '🌐 London Open';
-  else if (isOpen(sessions.newyork)) sessionEl.textContent = '🌐 New York Open';
+  const nyOpen = isOpen(sessions.newyork);
+  const ldnOpen = isOpen(sessions.london);
+  if (nyOpen && ldnOpen) sessionEl.textContent = '🌐 London & NY Open';
+  else if (nyOpen) sessionEl.textContent = '🌐 New York Open';
+  else if (ldnOpen) sessionEl.textContent = '🌐 London Open';
   else if (isOpen(sessions.tokyo)) sessionEl.textContent = '🌐 Tokyo Open';
   else if (isOpen(sessions.sydney)) sessionEl.textContent = '🌐 Sydney Open';
   else sessionEl.textContent = '🌐 Markets Closed';
