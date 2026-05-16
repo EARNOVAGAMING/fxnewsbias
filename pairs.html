@@ -116,7 +116,7 @@ nav a.active{font-weight:600;}
 .filter-update{font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;margin-left:8px;}
 
 /* Pair card grid */
-.pair-grid{max-width:1280px;margin:0 auto 32px;padding:0 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;}
+.pair-grid{max-width:1280px;margin:0 auto 32px;padding:0 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;min-height:1600px;}
 .pair-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;transition:all .15s;position:relative;}
 .pair-card:hover{border-color:var(--accent);box-shadow:0 6px 20px rgba(37,99,235,.08);}
 .pair-card.high-conviction{border-left:3px solid var(--accent);}
@@ -192,7 +192,7 @@ nav a.active{font-weight:600;}
 .bias-btn.active-neut{background:#fef3c7;border-color:#f59e0b;color:#92400e;}
 .comment-submit{margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
 .comment-disclaimer{font-size:11px;color:var(--text-muted);}
-.comment-list{display:flex;flex-direction:column;gap:14px;}
+.comment-list{display:flex;flex-direction:column;gap:14px;min-height:200px;}
 .comment{display:flex;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);}
 .comment:last-child{border-bottom:none;padding-bottom:0;}
 .comment-content{flex:1;min-width:0;}
@@ -388,9 +388,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 </div>
 
 <!-- PAIR GRID -->
-<section class="pair-grid" id="pair-grid">
-  <div class="empty-state">Loading pairs…</div>
-</section>
+<section class="pair-grid" id="pair-grid"></section>
 
 <!-- AD -->
 <div class="section">

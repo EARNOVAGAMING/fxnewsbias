@@ -85,11 +85,9 @@ async function loadNews() {
     const updEl = document.querySelector('.section-update');
     if (updEl) updEl.textContent = `⏱ Updated ${timeAgo(data[0].created_at)}`;
 
-    const existingCards = document.querySelectorAll('.news-card');
-    const parent = existingCards[0] ? existingCards[0].parentElement : null;
+    const parent = document.getElementById('news-feed');
     if (!parent) return;
-    const adSlot = parent.querySelector('.ad-slot');
-    existingCards.forEach(card => card.remove());
+    parent.querySelectorAll('.news-card').forEach(card => card.remove());
 
     data.forEach((item, index) => {
       const card = document.createElement('div');
@@ -124,7 +122,6 @@ async function loadNews() {
         if (item.url) window.open(item.url, '_blank', 'noopener');
       };
 
-      if (index === 2 && adSlot) parent.appendChild(adSlot);
       parent.appendChild(card);
     });
 
