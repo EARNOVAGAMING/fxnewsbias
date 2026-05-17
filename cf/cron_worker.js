@@ -2830,6 +2830,7 @@ function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMov
   // Falls back to per-currency PNG which is always available.
   const ogImage = ogImageOverride || `${_INS_SITE}/og/insight/${biggestMover.currency}.png`;
   const ld = JSON.stringify({"@context":"https://schema.org","@type":"NewsArticle","headline":headline,"description":summary,"datePublished":dateISO,"dateModified":dateISO,"author":{"@type":"Organization","name":"FXNewsBias Team","url":_INS_SITE},"publisher":{"@type":"Organization","name":"FXNewsBias","logo":{"@type":"ImageObject","url":`${_INS_SITE}/logo-fxnb.png`}},"mainEntityOfPage":{"@type":"WebPage","@id":url},"image":ogImage,"articleSection":"Forex Analysis"});
+  const breadcrumbLd = JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":`${_INS_SITE}/`},{"@type":"ListItem","position":2,"name":"Daily Insights","item":`${_INS_SITE}/insight/`},{"@type":"ListItem","position":3,"name":shortHeadline,"item":url}]});
   const cat = _insEsc(category||'Market Wrap');
   const dateStr = new Date().toUTCString().split(' ').slice(0,4).join(' ');
   return `<!DOCTYPE html>
@@ -2864,6 +2865,7 @@ function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMov
 .share-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}.share-btn{flex:1;text-align:center;padding:8px;background:#f8f9fa;border:1px solid var(--border);border-radius:6px;color:#1a1a1a;font-size:12px;font-weight:600;}.share-btn:hover{background:var(--accent);color:#fff;text-decoration:none;border-color:var(--accent);}
 footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}.footer-inner{max-width:1280px;margin:0 auto;}.footer-bottom{text-align:center;font-size:12px;padding-top:16px;border-top:1px solid #1e293b;color:#64748b;}.footer-bottom a{color:#94a3b8;}</style>
 <script type="application/ld+json">${ld}</script>
+<script type="application/ld+json">${breadcrumbLd}</script>
 <script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
 </head><body>
 <div class="topbar"><div class="topbar-inner"><div class="topbar-left"><span>📅 ${dateStr}</span></div><div class="topbar-right"><a href="/insight/">Daily Insights</a><a href="/news">News</a></div></div></div>
@@ -2917,6 +2919,7 @@ function _insRenderIndex(articles){
 .rss-card{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:20px;margin-top:24px;text-align:center;}.rss-card a{color:#1e40af;font-weight:700;font-size:14px;}
 .sidebar-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px;}.sidebar-h{font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;}.side-link{display:block;padding:10px 0;border-bottom:1px solid var(--border);color:#1a1a1a;font-size:14px;font-weight:600;line-height:1.4;}.side-link:last-child{border-bottom:none;}.side-link:hover{color:#2563eb;text-decoration:none;}
 footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}.footer-inner{max-width:1280px;margin:0 auto;}.footer-bottom{text-align:center;font-size:12px;padding-top:16px;border-top:1px solid #1e293b;color:#64748b;}.footer-bottom a{color:#94a3b8;}</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},{"@type":"ListItem","position":2,"name":"Daily Insights","item":"https://fxnewsbias.com/insight/"}]}</script>
 <script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
 </head><body>
 <div class="topbar"><div class="topbar-inner"><div><span style="color:#94a3b8;">📅 ${dateStr}</span></div><div><a href="/news" style="color:#94a3b8;margin-left:14px;">News</a></div></div></div>
