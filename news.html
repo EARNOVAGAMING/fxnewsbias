@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link rel="preload" as="image" href="/logo-fxnb.webp?v=2" type="image/webp">
-<link rel="preload" href="/news-page.js?v=20260517b" as="script">
+<link rel="preload" href="/news-page.js?v=20260517c" as="script">
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#0f172a">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
@@ -98,7 +98,11 @@ nav a.active{font-weight:600;}
 @media(min-width:901px){.main{grid-template-columns:1fr 320px;}aside{display:block;}}
 
 /* NEWS FEED CONTAINER — #1e293b well so white cards float */
-#news-feed{min-height:900px;background:#1e293b;border-radius:12px;padding:16px;}
+#news-feed{min-height:900px;max-height:1800px;overflow-y:auto;background:#1e293b;border-radius:12px;padding:16px;scroll-behavior:smooth;}
+#news-feed::-webkit-scrollbar{width:6px;}
+#news-feed::-webkit-scrollbar-track{background:#1e293b;border-radius:3px;}
+#news-feed::-webkit-scrollbar-thumb{background:#334155;border-radius:3px;}
+#news-feed::-webkit-scrollbar-thumb:hover{background:#475569;}
 
 /* FEATURED STORY — deep navy gradient, premium */
 .featured{background:linear-gradient(135deg,#1e3a5f,#1e40af);border:none;border-left:4px solid #ef4444;border-radius:8px;padding:20px;margin-bottom:16px;cursor:pointer;transition:filter .15s,box-shadow .15s;box-shadow:0 4px 24px rgba(30,64,175,.4);}
@@ -398,6 +402,6 @@ footer{background:#080d1a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;bord
 <script src="/analytics.js" defer></script>
 <script src="/ticker.js" defer></script>
 <script type="module" src="/firebase.js"></script>
-<script src="/news-page.js?v=20260517b" defer></script>
+<script src="/news-page.js?v=20260517c" defer></script>
 </body>
 </html>
