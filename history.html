@@ -423,62 +423,92 @@ async function loadHistory(currency, days) {
     if (mainChart) mainChart.destroy();
 
     const ctx = document.getElementById('main-chart').getContext('2d');
+
+    // Dynamic Y-axis with 10% padding
+    const dMin = Math.min(...scores), dMax = Math.max(...scores);
+    const dRange = dMax - dMin || 8;
+    const yMin = Math.max(0,   Math.floor(dMin - dRange * 0.10));
+    const yMax = Math.min(100, Math.ceil (dMax + dRange * 0.10));
+
+    // Canvas gradient fill
+    const grad = ctx.createLinearGradient(0, 0, 0, 300);
+    const isBull = latest.bias === 'Bullish', isBear = latest.bias === 'Bearish';
+    const lineCol = isBull ? '#059669' : isBear ? '#dc2626' : '#d97706';
+    const gradTop = isBull ? 'rgba(5,150,105,0.35)' : isBear ? 'rgba(220,38,38,0.35)' : 'rgba(217,119,6,0.35)';
+    const gradBot = isBull ? 'rgba(5,150,105,0.01)' : isBear ? 'rgba(220,38,38,0.01)' : 'rgba(217,119,6,0.01)';
+    grad.addColorStop(0, gradTop);
+    grad.addColorStop(1, gradBot);
+
+    // Point styles: only last point visible
+    const pointRadii = scores.map((_,i) => i === scores.length-1 ? 5 : 0);
+    const pointHover = scores.map((_,i) => i === scores.length-1 ? 7 : 5);
+
     mainChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: labels,
+        labels,
         datasets: [{
-          label: `${currency} Sentiment Score`,
+          label: `${currency} Sentiment`,
           data: scores,
-          borderColor: '#2563eb',
-          backgroundColor: 'rgba(37,99,235,0.08)',
-          borderWidth: 2,
+          borderColor: lineCol,
+          backgroundColor: grad,
+          borderWidth: 2.5,
           fill: true,
           tension: 0.4,
-          pointRadius: data.length > 50 ? 0 : 3,
-          pointHoverRadius: 5
+          pointRadius: pointRadii,
+          pointHoverRadius: pointHover,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: lineCol,
+          pointBorderWidth: 2
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
           tooltip: {
+            backgroundColor: '#0f172a',
+            titleColor: '#94a3b8',
+            bodyColor: '#f1f5f9',
+            padding: 10,
+            cornerRadius: 8,
             callbacks: {
-              label: (ctx) => {
-                const score = ctx.raw;
-                const bias = score >= 60 ? 'Bullish' : score <= 40 ? 'Bearish' : 'Neutral';
-                return `Score: ${score} (${bias})`;
+              title: (items) => items[0].label,
+              label: (item) => {
+                const s = item.raw;
+                const b = s >= 60 ? '▲ Bullish' : s <= 40 ? '▼ Bearish' : '◆ Neutral';
+                return `  Score: ${s}  ${b}`;
               }
             }
-          },
-          annotation: false
+          }
         },
         scales: {
           y: {
-            min: 0,
-            max: 100,
+            min: yMin,
+            max: yMax,
             grid: {
-              color: (ctx) => ctx.tick.value === 50 ? '#f59e0b' : '#f1f5f9',
-              lineWidth: (ctx) => ctx.tick.value === 50 ? 1.5 : 1,
-              borderDash: (ctx) => ctx.tick.value === 50 ? [5,5] : []
+              color: (c) => {
+                if (c.tick.value === 50 && 50 >= yMin && 50 <= yMax) return 'rgba(245,158,11,0.5)';
+                return '#f1f5f9';
+              },
+              lineWidth: (c) => c.tick.value === 50 ? 1.5 : 1,
+              borderDash: (c) => c.tick.value === 50 ? [6,4] : []
             },
             ticks: {
+              maxTicksLimit: 6,
               callback: (val) => {
-                if (val === 0) return 'Bearish';
-                if (val === 50) return 'Neutral';
-                if (val === 100) return 'Bullish';
+                if (val === 50) return '— 50 Neutral';
                 return val;
-              }
+              },
+              color: (c) => c.tick.value === 50 ? '#d97706' : '#94a3b8',
+              font: (c) => c.tick.value === 50 ? { weight: '700', size: 11 } : { size: 11 }
             }
           },
           x: {
             grid: { display: false },
-            ticks: {
-              maxTicksLimit: 8,
-              maxRotation: 0
-            }
+            ticks: { maxTicksLimit: 8, maxRotation: 0, color: '#94a3b8', font: { size: 11 } }
           }
         }
       }
@@ -529,50 +559,54 @@ async function loadAllCurrencies() {
 
       // Draw mini chart
       setTimeout(() => {
-        const ctx = document.getElementById(`mini-${curr}`).getContext('2d');
-        const minScore = Math.min(...scores);
-const maxScore = Math.max(...scores);
-const padding = Math.max(5, (maxScore - minScore) * 0.2);
-
-new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: scores.map((_, i) => i),
-    datasets: [{
-      data: scores,
-      borderColor: latest.bias === 'Bullish' ? '#10b981' : latest.bias === 'Bearish' ? '#ef4444' : '#f59e0b',
-      backgroundColor: latest.bias === 'Bullish' ? 'rgba(16,185,129,0.1)' : latest.bias === 'Bearish' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
-      borderWidth: 2,
-      pointRadius: 3,
-      pointBackgroundColor: latest.bias === 'Bullish' ? '#10b981' : latest.bias === 'Bearish' ? '#ef4444' : '#f59e0b',
-      pointHoverRadius: 5,
-      tension: 0.2,
-      fill: true
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { 
-      legend: { display: false }, 
-      tooltip: { 
-        enabled: true,
-        callbacks: {
-          title: () => '',
-          label: (ctx) => 'Score: ' + ctx.parsed.y
-        }
-      } 
-    },
-    scales: {
-      x: { display: false },
-      y: { 
-        display: false, 
-        min: Math.max(0, minScore - padding), 
-        max: Math.min(100, maxScore + padding) 
-      }
-    }
-  }
-});
+        const mCtx = document.getElementById(`mini-${curr}`).getContext('2d');
+        const minScore = Math.min(...scores), maxScore = Math.max(...scores);
+        const mRange = maxScore - minScore || 8;
+        const mMin = Math.max(0,   minScore - mRange * 0.10);
+        const mMax = Math.min(100, maxScore + mRange * 0.10);
+        const mCol = latest.bias === 'Bullish' ? '#059669' : latest.bias === 'Bearish' ? '#dc2626' : '#d97706';
+        const mGrad = mCtx.createLinearGradient(0, 0, 0, 80);
+        const mA = latest.bias === 'Bullish' ? '5,150,105' : latest.bias === 'Bearish' ? '220,38,38' : '217,119,6';
+        mGrad.addColorStop(0, `rgba(${mA},0.3)`);
+        mGrad.addColorStop(1, `rgba(${mA},0.01)`);
+        const mRadii = scores.map((_,i) => i === scores.length-1 ? 4 : 0);
+        new Chart(mCtx, {
+          type: 'line',
+          data: {
+            labels: scores.map((_,i) => i),
+            datasets: [{
+              data: scores,
+              borderColor: mCol,
+              backgroundColor: mGrad,
+              borderWidth: 2,
+              pointRadius: mRadii,
+              pointHoverRadius: 5,
+              pointBackgroundColor: '#fff',
+              pointBorderColor: mCol,
+              pointBorderWidth: 2,
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#0f172a',
+                bodyColor: '#f1f5f9',
+                padding: 8,
+                cornerRadius: 6,
+                callbacks: { title: ()=>'', label: (c) => `Score: ${c.parsed.y}` }
+              }
+            },
+            scales: {
+              x: { display: false },
+              y: { display: false, min: mMin, max: mMax }
+            }
+          }
+        });
       }, 100);
     });
 

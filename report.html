@@ -121,7 +121,7 @@ nav.nav{background:#0f172a;border-bottom:1px solid #1e293b;}
 .ccy-score{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:22px;}
 .bias-pill{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;}
 .bull-pill{background:#d1fae5;color:#065f46;} .bear-pill{background:#fee2e2;color:#991b1b;} .neut-pill{background:#fef3c7;color:#92400e;}
-.spark-box{background:#f8fafc;border-radius:6px;padding:6px;margin:8px 0;height:48px;display:flex;align-items:center;justify-content:center;}
+.spark-box{background:#f8fafc;border-radius:6px;padding:4px 6px;margin:8px 0;height:60px;display:flex;align-items:center;justify-content:center;}
 .ccy-meta{font-size:11px;color:var(--soft);}
 .delta-up{color:var(--bull);font-weight:700;} .delta-down{color:var(--bear);font-weight:700;}
 .bias-bar{display:flex;height:5px;border-radius:3px;overflow:hidden;background:#e5e7eb;margin-top:6px;}
@@ -393,23 +393,64 @@ async function loadReport(weekEnd) {
 }
 
 // ── SPARKLINE ──
-function spark(values, w=160, h=44) {
+let _sparkId = 0;
+function spark(values, w=160, h=52) {
   const valid = (values||[]).filter(v=>v!==null);
-  if (valid.length < 2) return '<div style="font-size:11px;color:var(--muted);text-align:center;">Not enough data</div>';
-  const pad=4, min=0, max=100;
-  const stepX = (w-pad*2)/(values.length-1);
-  const pts = values.map((v,i)=>{
-    if(v===null) return null;
-    return {x:pad+i*stepX, y:h-pad-((v-min)/(max-min))*(h-pad*2), v};
-  });
-  let path=''; let started=false;
-  pts.forEach(p=>{if(!p)return; if(!started){path+=`M${p.x.toFixed(1)} ${p.y.toFixed(1)}`;started=true;}else path+=` L${p.x.toFixed(1)} ${p.y.toFixed(1)}`;});
-  const last=pts.filter(p=>p).slice(-1)[0];
-  const col=last&&last.v>=55?'#059669':last&&last.v<=45?'#dc2626':'#d97706';
-  const yMid=h-pad-((50-min)/(max-min))*(h-pad*2);
-  const dots=pts.map(p=>p?`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${col}"/>`:'').join('');
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;"><line x1="${pad}" x2="${w-pad}" y1="${yMid}" y2="${yMid}" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3,3"/><path d="${path}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
-}
+  if (valid.length < 2) return '<div style="font-size:11px;color:var(--muted);text-align:center;">No data</div>';
+  const pad = 6;
+  // Dynamic Y-axis: data range + 10% padding, clamped to 0-100
+  const dMin = Math.min(...valid), dMax = Math.max(...valid);
+  const range = dMax - dMin || 8;
+  const yMin = Math.max(0,  dMin - range * 0.10);
+  const yMax = Math.min(100, dMax + range * 0.10);
+  const span = yMax - yMin || 1;
+  // Color based on latest value
+  const lastV = valid[valid.length - 1];
+  const col = lastV >= 55 ? '#059669' : lastV <= 45 ? '#dc2626' : '#d97706';
+  const colA = lastV >= 55 ? '5,150,105' : lastV <= 45 ? '220,38,38' : '217,119,6';
+  // Map to SVG coords
+  const stepX = (w - pad*2) / (values.length - 1);
+  const toY = v => h - pad - ((v - yMin) / span) * (h - pad*2);
+  const pts = values.map((v,i) => v === null ? null : {x: pad + i*stepX, y: toY(v), v});
+  const vPts = pts.filter(p=>p);
+  // Smooth bezier path (catmull-rom → cubic bezier)
+  function bezierPath(pts) {
+    if (pts.length < 2) return '';
+    let d = `M${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+    for (let i = 1; i < pts.length; i++) {
+      const p0 = pts[Math.max(0, i-2)], p1 = pts[i-1], p2 = pts[i], p3 = pts[Math.min(pts.length-1, i+1)];
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C${cp1x.toFixed(1)} ${cp1y.toFixed(1)},${cp2x.toFixed(1)} ${cp2y.toFixed(1)},${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    return d;
+  }
+  const linePath = bezierPath(vPts);
+  const firstPt = vPts[0], latestPt = vPts[vPts.length-1];
+  const fillPath = `${linePath} L${latestPt.x.toFixed(1)} ${(h-pad).toFixed(1)} L${firstPt.x.toFixed(1)} ${(h-pad).toFixed(1)} Z`;
+  // Neutral line at 50 (only if within visible Y range)
+  const y50 = toY(50);
+  const show50 = y50 >= pad && y50 <= h - pad;
+  const neutralLine = show50
+    ? `<line x1="${pad}" x2="${w-pad}" y1="${y50.toFixed(1)}" y2="${y50.toFixed(1)}" stroke="#d97706" stroke-width="1" stroke-dasharray="4,3" opacity="0.7"/>`
+    : '';
+  const gid = `sk${++_sparkId}`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;">
+    <defs>
+      <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgb(${colA})" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="rgb(${colA})" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    ${neutralLine}
+    <path d="${fillPath}" fill="url(#${gid})"/>
+    <path d="${linePath}" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${latestPt.x.toFixed(1)}" cy="${latestPt.y.toFixed(1)}" r="4.5" fill="#fff" stroke="${col}" stroke-width="2"/>
+    <circle cx="${latestPt.x.toFixed(1)}" cy="${latestPt.y.toFixed(1)}" r="2" fill="${col}"/>
+  </svg>`;}
+
 
 // ── HEATMAP COLOR ──
 function hmColor(s) {
