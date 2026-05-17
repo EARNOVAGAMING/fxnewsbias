@@ -166,8 +166,12 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
     </div>
 
     <div class="login-right">
-      <h1>Welcome back 👋</h1>
-      <p>Login to access your watchlist, alerts, and community.</p>
+      <div id="paid-banner" style="display:none;background:linear-gradient(135deg,#065f46,#047857);color:#fff;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;line-height:1.6;">
+        <div style="font-weight:800;font-size:15px;margin-bottom:4px;">✅ Payment Successful!</div>
+        Log in with the email you used at checkout to activate your <strong>Pro access</strong> instantly.
+      </div>
+      <h1 id="login-heading">Welcome back 👋</h1>
+      <p id="login-sub">Login to access your watchlist, alerts, and community.</p>
 
       <div class="form-group">
         <label class="form-label">Email Address</label>
@@ -213,15 +217,39 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 <script src="/analytics.js" defer></script>
 <script type="module" src="/firebase.js"></script>
 <script>
+// Detect post-payment flow on login page
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('paid') !== '1') return;
+  if (localStorage.getItem('fxnb_logged_in') === 'true') {
+    window.location.replace('/report');
+    return;
+  }
+  document.getElementById('paid-banner').style.display = 'block';
+  document.getElementById('login-heading').textContent = 'Activate Your Pro Access';
+  document.getElementById('login-sub').innerHTML =
+    'Log in with the email you used at checkout. ' +
+    'New here? <a href="/register?paid=1" style="color:#2563eb;font-weight:700;">Create an account instead</a>.';
+})();
+
 window.handleLogin = async function() {
   const email = document.querySelector('input[type="email"]').value.trim();
   const password = document.querySelector('input[type="password"]').value;
+  const isPaidFlow = new URLSearchParams(window.location.search).get('paid') === '1';
   if (!email || !password) { alert('Please enter your email and password!'); return; }
   let attempts = 0;
   const wait = setInterval(async () => {
     attempts++;
     if (window.loginUser) {
       clearInterval(wait);
+      if (isPaidFlow) {
+        const orig = window.loginUser;
+        window.loginUser = async function(e, p) {
+          const result = await orig(e, p);
+          setTimeout(() => window.location.href = '/report', 1500);
+          return result;
+        };
+      }
       await window.loginUser(email, password);
     } else if (attempts > 50) {
       clearInterval(wait);

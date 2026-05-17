@@ -286,11 +286,20 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 // Detect post-payment flow
 (function() {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('paid') === '1') {
-    document.getElementById('paid-banner').style.display = 'block';
-    document.getElementById('register-heading').textContent = 'Activate Your Pro Account';
-    document.getElementById('register-sub').textContent = 'Use the same email you paid with to unlock Pro instantly.';
+  if (params.get('paid') !== '1') return;
+
+  // Already logged in — Pro webhook already fired, just go to report
+  if (localStorage.getItem('fxnb_logged_in') === 'true') {
+    window.location.replace('/report');
+    return;
   }
+
+  // Not logged in — show banner + update heading
+  document.getElementById('paid-banner').style.display = 'block';
+  document.getElementById('register-heading').textContent = 'Activate Your Pro Account';
+  document.getElementById('register-sub').innerHTML =
+    'Use the same email you paid with to unlock Pro instantly. ' +
+    'Already have an account? <a href="/login?paid=1" style="color:#2563eb;font-weight:700;">Log in instead</a>.';
 })();
 
 window.handleRegister = async function() {
