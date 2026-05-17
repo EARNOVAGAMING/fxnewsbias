@@ -518,14 +518,21 @@ return null;
 // ============================================
 async function runSentimentAnalysis(env) {
 console.log('Starting sentiment analysis...');
-try {
 const news = await fetchAllNews();
 console.log(`Fetched ${news.length} news items from 12 sources`);
+
+// Save news first, independently — news must not be gated on sentiment API success.
+// Previously saveNews was inside the try block after analyzeSentiment, so any
+// Claude API failure silently skipped the news insert and left the feed stale.
+try { await saveNews(news, env); console.log('News saved'); }
+catch(e) { console.log('saveNews failed:', e.message); }
+
+try {
 const sentiment = await analyzeSentiment(news, env);
 console.log('Sentiment analysis complete');
 
 // Each downstream step is isolated - one failing must not block the others.
-// Telegram (user-visible) is fired FIRST so a saveNews/saveSentiment hiccup
+// Telegram (user-visible) is fired FIRST so a saveSentiment hiccup
 // can never silently kill the alert (this has bitten us twice already).
 try { await sendTelegramAlert(env, sentiment); console.log('Telegram alert sent'); }
 catch(e) { console.log('Telegram step failed:', e.message); }
@@ -533,8 +540,6 @@ catch(e) { console.log('Telegram step failed:', e.message); }
 try { await saveSentiment(sentiment, env); console.log('Sentiment saved'); }
 catch(e) { console.log('saveSentiment failed:', e.message); }
 
-try { await saveNews(news, env); console.log('News saved'); }
-catch(e) { console.log('saveNews failed:', e.message); }
 } catch (error) {
 // Re-throw so the worker invocation counts as an error in the
 // Cloudflare dashboard. Previously this catch silently swallowed
@@ -2083,32 +2088,19 @@ currencies_affected: ccyRegexes.filter(([,r]) => r.test(item.title)).map(([c]) =
 };
 });
 if (!rows.length) { console.log('saveNews: nothing to insert'); return; }
-// news.url has no UNIQUE constraint either (verified 2026-05-14), so
-// `?on_conflict=url` returns PostgREST 42P10. Until the constraint is
-// added (cf/RUN_THESE_3_MIGRATIONS.sql), do dedup in JS: 1 GET for the
-// last 500 urls + 1 batched INSERT = 2 subrequests total (vs the
-// original 1 GET + 20 POSTs = 21 subrequests).
-let existingUrls = new Set();
-try {
-const exResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=url&order=id.desc&limit=500`, {
-headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` },
-signal: AbortSignal.timeout(10000)
-});
-const exData = await exResp.json();
-existingUrls = new Set((exData || []).map(n => n.url).filter(Boolean));
-} catch(e) { console.log('Dedup fetch failed:', e.message); }
-const fresh = rows.filter(r => !existingUrls.has(r.url));
-console.log(`saveNews: ${fresh.length} new of ${rows.length} candidates`);
-if (!fresh.length) return;
-const r = await fetch(`${env.SUPABASE_URL}/rest/v1/news`, {
+// news_url_key unique constraint was added via RUN_THESE_3_MIGRATIONS.sql.
+// Use on_conflict=url + ignore-duplicates so dedup is handled at DB level —
+// no extra GET subrequest needed, and batch never fails on a duplicate URL.
+console.log(`saveNews: inserting ${rows.length} rows (DB dedup via on_conflict)`);
+const r = await fetch(`${env.SUPABASE_URL}/rest/v1/news?on_conflict=url`, {
 method: 'POST',
 headers: {
 'Content-Type': 'application/json',
 'apikey': env.SUPABASE_SERVICE_KEY,
 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-'Prefer': 'return=minimal'
+'Prefer': 'resolution=ignore-duplicates,return=minimal'
 },
-body: JSON.stringify(fresh),
+body: JSON.stringify(rows),
 signal: AbortSignal.timeout(15000)
 });
 if (!r.ok) {
