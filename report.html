@@ -46,7 +46,6 @@ nav.nav{background:#0f172a;border-bottom:1px solid #1e293b;}
 .rpt-badge{display:inline-flex;align-items:center;gap:6px;background:#f59e0b;color:#fff;font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.5px;margin-bottom:10px;}
 .rpt-title{font-size:clamp(18px,5vw,26px);font-weight:800;letter-spacing:-.3px;word-break:break-word;overflow-wrap:break-word;}
 .rpt-dates{color:#94a3b8;font-size:13px;margin-top:4px;}
-.rpt-sonnet{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:8px;}
 .rpt-actions{display:flex;gap:10px;align-items:center;}
 .btn-dl{background:#fff;color:#0f172a;padding:10px 20px;border-radius:7px;font-weight:700;font-size:13px;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;}
 .btn-dl:hover{background:#f1f5f9;}
@@ -104,7 +103,6 @@ nav.nav{background:#0f172a;border-bottom:1px solid #1e293b;}
 /* ── NARRATIVE ── */
 .narrative p{font-size:15px;line-height:1.8;color:#1f2937;margin-bottom:16px;}
 .narrative p:last-child{margin-bottom:0;}
-.sonnet-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:8px;}
 .regime-box{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;border-radius:8px;padding:14px 16px;margin-top:16px;font-size:13px;color:#78350f;font-weight:600;display:flex;gap:10px;align-items:flex-start;line-height:1.5;}
 
 /* ── CURRENCY SCORECARD ── */
@@ -261,7 +259,6 @@ footer{background:#0f172a;color:#94a3b8;padding:28px 20px 16px;margin-top:32px;}
         <div class="rpt-badge">⭐ PRO EXCLUSIVE</div>
         <h1 class="rpt-title">Weekly Forex Intelligence Brief</h1>
         <div class="rpt-dates" id="rpt-dates">Loading…</div>
-        <div class="rpt-sonnet">✦ Written by Claude Sonnet AI</div>
       </div>
       <div class="rpt-actions">
         <button class="btn-dl" onclick="window.print()">📥 Download PDF</button>
@@ -310,10 +307,23 @@ const LIST  = 'https://fxnewsbias-cron.dineshsanther123gf.workers.dev/api/weekly
 const FLAGS = {USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',AUD:'🇦🇺',CAD:'🇨🇦',CHF:'🇨🇭',NZD:'🇳🇿'};
 const CCYS  = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD'];
 
-window.initProPage = function() {
+// Start fetching immediately if localStorage says user is Pro.
+// Firebase confirmation still controls the pro-gate visibility —
+// this just avoids wasting 2-4s waiting for auth before the first fetch.
+let _preloaded = false;
+if (localStorage.getItem('fxnb_is_pro') === 'true') {
+  _preloaded = true;
   loadArchive();
   loadReport(null);
   startCountdown();
+}
+
+window.initProPage = function() {
+  if (!_preloaded) {
+    loadArchive();
+    loadReport(null);
+    startCountdown();
+  }
 };
 
 // ── DATE HELPERS ──
@@ -657,7 +667,7 @@ function renderReport(r) {
 
     <!-- AI NARRATIVE -->
     <div class="section">
-      <div class="section-label">✦ AI Weekly Analysis <span class="sonnet-badge">Claude Sonnet</span></div>
+      <div class="section-label">✦ AI Weekly Analysis</div>
       <div class="narrative">${narrHTML}</div>
     </div>
 
