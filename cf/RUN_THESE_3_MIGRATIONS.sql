@@ -122,14 +122,42 @@ for each row execute function public.seo_cache_touch_updated_at();
 alter table public.seo_cache enable row level security;
 
 -- Allow the service-role (cron worker) to read/write; anon role gets SELECT.
-create policy if not exists "seo_cache_service_all" on public.seo_cache
-    for all using (true) with check (true);
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'seo_cache' and policyname = 'seo_cache_service_all'
+  ) then
+    execute 'create policy "seo_cache_service_all" on public.seo_cache for all using (true) with check (true)';
+  end if;
+end $$;
+
+
+-- ---- 6) weekly_reports ---------------------------------------------------
+-- One row per published weekly report (keyed by the Sunday date).
+-- Cron writes here every Sunday at 22:00 UTC; report.html reads it.
+create table if not exists public.weekly_reports (
+    week_end     date        primary key,
+    week_start   date        not null,
+    report_json  jsonb       not null default '{}'::jsonb,
+    generated_at timestamptz not null default now()
+);
+
+alter table public.weekly_reports enable row level security;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'weekly_reports' and policyname = 'weekly_reports_service_all'
+  ) then
+    execute 'create policy "weekly_reports_service_all" on public.weekly_reports for all using (true) with check (true)';
+  end if;
+end $$;
 
 
 -- ---- Verification (optional) -------------------------------------------
--- Run this after the above to confirm all 3 tables exist:
+-- Run this after the above to confirm all tables exist:
 --   select table_name from information_schema.tables
 --   where table_schema = 'public'
---     and table_name in ('system_state','staleness_incidents','cleanup_runs','seo_cache')
+--     and table_name in ('system_state','staleness_incidents','cleanup_runs','seo_cache','weekly_reports')
 --   order by table_name;
--- Expected: all 4 rows.
+-- Expected: all 5 rows.

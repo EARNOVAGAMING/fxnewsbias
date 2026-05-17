@@ -168,9 +168,13 @@ return new Response(JSON.stringify(result, null, 2), {
 status: 200, headers: { 'Content-Type': 'application/json' }
 });
 }
-// Weekly Pro report endpoint — public, edge-cached 6h
+// Weekly Pro report endpoint — loads from Supabase, falls back to build
 if (url.pathname === '/api/weekly-report') {
 return handleWeeklyReport(request, env, ctx);
+}
+// Weekly reports archive list
+if (url.pathname === '/api/weekly-reports') {
+return handleWeeklyReportsList(request, env);
 }
 // Admin panel data — gated by Firebase ID token + admin email allowlist.
 // Read-only: lists Firebase Auth users + Firestore subscription tiers.
@@ -220,6 +224,9 @@ tasks.push(cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns er
 // know to recrawl the data-driven pages (homepage + 8 currencies +
 // 15 pairs + hub pages). This keeps cached search snippets fresh.
 tasks.push(pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (3h) error:', e.message)));
+} else if (event.cron === '0 22 * * 0') {
+// Sunday 22:00 UTC — publish weekly pro report covering Mon–Sun
+tasks.push(buildAndSaveWeeklyReport(env).catch(e => console.log('Weekly report (Sunday) error:', e.message)));
 } else {
 tasks.push(updatePrices(env));
 }
@@ -1458,59 +1465,79 @@ console.log('writeSystemState error:', e.message);
 // FETCH ALL NEWS — 12 SOURCES, PARALLEL FETCH
 // ============================================
 // =====================================================================
-// WEEKLY PRO REPORT — aggregates 7-14 days of sentiment + Claude narrative
+// WEEKLY PRO REPORT — published every Sunday 22:00 UTC, stored in Supabase
 // =====================================================================
-async function handleWeeklyReport(request, env, ctx) {
-const cors = {
-'Access-Control-Allow-Origin': '*',
-'Access-Control-Allow-Methods': 'GET, OPTIONS',
-'Access-Control-Allow-Headers': 'Content-Type',
-'Vary': 'Origin'
-};
+async function handleWeeklyReportsList(request, env) {
+const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS' };
 if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
-
-const url = new URL(request.url);
-const bypass = url.searchParams.get('refresh') === '1';
-const cacheUrl = new URL(url.origin + '/api/weekly-report');
-const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
-const cache = caches.default;
-
-if (!bypass) {
-const cached = await cache.match(cacheKey);
-if (cached) {
-const r = new Response(cached.body, cached);
-Object.entries(cors).forEach(([k,v]) => r.headers.set(k,v));
-r.headers.set('X-Cache', 'HIT');
-return r;
-}
-}
-
 try {
-const report = await buildWeeklyReport(env);
-const body = JSON.stringify(report);
-const resp = new Response(body, {
-status: 200,
-headers: {
-'Content-Type': 'application/json',
-'Cache-Control': 'public, max-age=21600',
-...cors,
-'X-Cache': 'MISS'
-}
-});
-if (ctx && ctx.waitUntil) ctx.waitUntil(cache.put(cacheKey, resp.clone()));
-return resp;
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/weekly_reports?select=week_end,week_start,generated_at&order=week_end.desc&limit=26`,
+    { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
+  );
+  const rows = res.ok ? await res.json() : [];
+  return new Response(JSON.stringify(rows), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
 } catch (e) {
-console.log('Weekly report build failed:', e.message, e.stack);
-return new Response(JSON.stringify({ error: e.message, stack: e.stack }), {
-status: 500, headers: { 'Content-Type': 'application/json', ...cors }
-});
+  return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', ...cors } });
 }
+}
+
+async function handleWeeklyReport(request, env, ctx) {
+const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
+if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+const url = new URL(request.url);
+const weekParam = url.searchParams.get('week'); // YYYY-MM-DD (the Sunday date)
+try {
+  // Load from Supabase — persistent, survives worker restarts
+  let query = `${env.SUPABASE_URL}/rest/v1/weekly_reports?select=week_end,week_start,generated_at,report_json&order=week_end.desc&limit=1`;
+  if (weekParam) query = `${env.SUPABASE_URL}/rest/v1/weekly_reports?select=week_end,week_start,generated_at,report_json&week_end=eq.${weekParam}&limit=1`;
+  const res = await fetch(query, { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } });
+  const rows = res.ok ? await res.json() : [];
+  if (rows.length && rows[0].report_json && Object.keys(rows[0].report_json).length > 0) {
+    const row = rows[0];
+    const payload = { ...row.report_json, week_end: row.week_end, week_start: row.week_start, generated_at: row.generated_at };
+    return new Response(JSON.stringify(payload), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600', ...cors } });
+  }
+  // Fallback: build on demand (e.g. first ever load before Sunday cron runs)
+  if (!weekParam) {
+    const report = await buildWeeklyReport(env);
+    if (ctx && ctx.waitUntil) ctx.waitUntil(saveWeeklyReport(report, env));
+    return new Response(JSON.stringify(report), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600', ...cors } });
+  }
+  return new Response(JSON.stringify({ error: 'Report not found for that week.' }), { status: 404, headers: { 'Content-Type': 'application/json', ...cors } });
+} catch (e) {
+  console.log('handleWeeklyReport error:', e.message);
+  return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', ...cors } });
+}
+}
+
+async function buildAndSaveWeeklyReport(env) {
+  const report = await buildWeeklyReport(env);
+  await saveWeeklyReport(report, env);
+  console.log(`Weekly report saved: week_end=${report.week_end}`);
+}
+
+async function saveWeeklyReport(report, env) {
+  const row = { week_end: report.week_end, week_start: report.week_start, report_json: report, generated_at: report.generated_at };
+  const r = await fetch(`${env.SUPABASE_URL}/rest/v1/weekly_reports`, {
+    method: 'POST',
+    headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
+    body: JSON.stringify(row),
+  });
+  if (!r.ok) { const t = await r.text(); console.log('saveWeeklyReport error:', r.status, t.slice(0,200)); }
 }
 
 async function buildWeeklyReport(env) {
+// When called from Sunday cron, "now" is Sunday night — report covers Mon-Sun.
+// When called on-demand (fallback), covers the rolling last 7 days.
 const now = new Date();
-const weekStart = new Date(now); weekStart.setUTCDate(now.getUTCDate() - 7);
-const lastWeekStart = new Date(now); lastWeekStart.setUTCDate(now.getUTCDate() - 14);
+// Find the most recent Sunday as week_end
+const dow = now.getUTCDay(); // 0=Sun
+const daysToSunday = dow === 0 ? 0 : 7 - dow; // 0 if today is Sunday
+const weekEnd = new Date(now); weekEnd.setUTCDate(now.getUTCDate() + daysToSunday); weekEnd.setUTCHours(22,0,0,0);
+if (daysToSunday > 0) { weekEnd.setUTCDate(weekEnd.getUTCDate() - 7); } // use last Sunday if mid-week
+const weekStart = new Date(weekEnd); weekStart.setUTCDate(weekEnd.getUTCDate() - 6); weekStart.setUTCHours(0,0,0,0);
+const lastWeekStart = new Date(weekStart); lastWeekStart.setUTCDate(weekStart.getUTCDate() - 7);
 
 // Pull 14 days of sentiment for delta + this-week trend
 const sentRes = await fetch(
@@ -1520,7 +1547,7 @@ const sentRes = await fetch(
 const sentData = await sentRes.json();
 
 const newsRes = await fetch(
-`${env.SUPABASE_URL}/rest/v1/news?select=title,source,created_at,impact&order=id.desc&limit=80`,
+`${env.SUPABASE_URL}/rest/v1/news?select=title,source,created_at,impact&created_at=gte.${weekStart.toISOString()}&order=id.desc&limit=80`,
 { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
 );
 const newsData = await newsRes.json();
@@ -1535,10 +1562,10 @@ const rows = (sentData || []).filter(r => r.currency === ccy);
 const thisWeek = rows.filter(r => new Date(r.created_at).getTime() >= weekStartTs);
 const lastWeek = rows.filter(r => new Date(r.created_at).getTime() < weekStartTs);
 
-// Daily averages for sparkline (7 days)
+// Daily averages for sparkline (7 days Mon-Sun)
 const days = [];
 for (let d = 6; d >= 0; d--) {
-const dayStart = new Date(now); dayStart.setUTCDate(now.getUTCDate() - d); dayStart.setUTCHours(0,0,0,0);
+const dayStart = new Date(weekEnd); dayStart.setUTCDate(weekEnd.getUTCDate() - d); dayStart.setUTCHours(0,0,0,0);
 const dayEnd = new Date(dayStart); dayEnd.setUTCDate(dayStart.getUTCDate() + 1);
 const dayRows = thisWeek.filter(r => {
 const t = new Date(r.created_at).getTime();
@@ -1625,74 +1652,113 @@ Q_score: perCurrency[Q].current_score
 .sort((a,b) => b.conviction - a.conviction)
 .slice(0, 5);
 
-const sampleNews = (newsData || []).slice(0, 30).map(n => `- [${n.source}] ${n.title}`).join('\n');
+const sampleNews = (newsData || []).slice(0, 40).map(n => `- [${n.impact||''}][${n.source}] ${n.title}`).join('\n');
 
 const ctxBlock = currencies.map(c => {
 const p = perCurrency[c];
-const arrow = p.delta === null ? '~' : p.delta > 2 ? 'UP' : p.delta < -2 ? 'DOWN' : 'flat';
-return `${c}: this-wk avg ${p.this_week_avg} (${arrow} from ${p.last_week_avg ?? 'n/a'}), now ${p.current_score} ${p.current_bias}, ${p.bias_flips} bias flips, time bull/bear/neut: ${p.pct_bullish}%/${p.pct_bearish}%/${p.pct_neutral}%`;
+const arrow = p.delta === null ? '~' : p.delta > 2 ? '▲' : p.delta < -2 ? '▼' : '→';
+const drivers = (p.current_drivers || []).slice(0,2).join('; ') || 'no data';
+return `${c}: score=${p.current_score??'n/a'} bias=${p.current_bias} | wk avg=${p.this_week_avg} ${arrow} from ${p.last_week_avg??'n/a'} (delta ${p.delta??'n/a'}) | bull/neut/bear time: ${p.pct_bullish}%/${p.pct_neutral}%/${p.pct_bearish}% | ${p.bias_flips} flips | drivers: ${drivers}`;
 }).join('\n');
 
-const claudePrompt = `You are a senior FX strategist writing the FXNewsBias Pro Weekly Report for the week ending ${now.toISOString().slice(0,10)}.
+const setupsBlock = setups.map(s => `${s.pair}: ${s.direction} (conviction ${s.conviction}/50) — ${s.B} score ${s.B_score} vs ${s.Q} score ${s.Q_score}`).join('\n');
 
-PER-CURRENCY WEEK DATA (sentiment scores, 0=very bearish, 50=neutral, 100=very bullish):
+const claudePrompt = `You are a senior FX strategist at a prime brokerage writing the FXNewsBias Pro Weekly Intelligence Brief for the week of ${weekStart.toISOString().slice(0,10)} to ${weekEnd.toISOString().slice(0,10)}.
+
+SENTIMENT DATA (scores 0=extreme bearish, 50=neutral, 100=extreme bullish):
 ${ctxBlock}
 
-WEEK HIGHLIGHTS:
-- Strongest currency now: ${strongest.currency} (${strongest.score})
-- Weakest currency now: ${weakest.currency} (${weakest.score})
-- Top gainer this week: ${topGainer.currency} (${topGainer.change > 0 ? '+' : ''}${topGainer.change} pts vs Mon open)
-- Top loser this week: ${topLoser.currency} (${topLoser.change} pts)
-- Most volatile (most bias flips): ${mostVolatile.currency} (${mostVolatile.flips} flips)
+WEEK MOVERS:
+- Strongest: ${strongest.currency} (score ${strongest.score})
+- Weakest: ${weakest.currency} (score ${weakest.score})
+- Top gainer: ${topGainer.currency} (${topGainer.change >= 0 ? '+' : ''}${topGainer.change} pts vs week open)
+- Top loser: ${topLoser.currency} (${topLoser.change} pts)
+- Most volatile: ${mostVolatile.currency} (${mostVolatile.flips} bias flips)
 
-RECENT NEWS HEADLINES (last 30, most recent first):
+HIGH-CONVICTION TRADE SETUPS:
+${setupsBlock || 'No high-conviction setups this week.'}
+
+THIS WEEK'S NEWS HEADLINES (impact tagged, newest first):
 ${sampleNews}
 
-Write a JSON response with three sections:
+Write a professional JSON response. Be specific — reference actual scores, currencies, news items. No generic phrases. No "in conclusion". No "overall".
 
-1. "narrative" — exactly 3 paragraphs in plain trader-friendly English (180-260 words total):
-   • Para 1: What happened this week — tie the biggest sentiment moves to specific news/themes from the headlines above. Name names.
-   • Para 2: Where the market stands now — what the strongest/weakest currencies imply, what regime we are in (risk-on / risk-off / mixed). Reference actual scores.
-   • Para 3: Setup for next week — what to watch, key risks, what could change the picture.
-   Use real specifics from the data, not generic phrases. Do not use the words "in conclusion" or "overall".
-
-2. "key_events" — array of 4 to 7 high-impact economic events likely in the NEXT 7 days. Use the news context plus your knowledge of standard release schedules (NFP first Friday of month, FOMC meeting weeks, ECB calendar, BOE, BOJ etc.). For each: { "event": short name, "currency": 3-letter code, "day": "Mon"|"Tue"|"Wed"|"Thu"|"Fri", "impact": "High"|"Medium", "why": one-sentence trader takeaway }.
-
-3. "regime_warning" — one sentence (max 30 words) flagging the single biggest risk for traders this week given current sentiment + news (e.g. "JPY intervention risk elevated near 155", "Watch Fed-speak whiplash with multiple FOMC members on circuit").
-
-Respond ONLY with strict JSON, no markdown, no preamble:
 {
-  "narrative": "...",
-  "key_events": [{"event":"...","currency":"USD","day":"Fri","impact":"High","why":"..."}],
-  "regime_warning": "..."
-}`;
+  "executive_summary": ["<bullet 1, max 28 words>", "<bullet 2, max 28 words>", "<bullet 3, max 28 words>"],
 
-let claudeOut = { narrative: '', key_events: [], regime_warning: '' };
+  "market_theme": {
+    "title": "<4-7 word headline capturing the dominant theme e.g. 'Dollar Dominates on Fed Hawkishness' or 'Risk-Off Grips G10 as JPY Rallies'>",
+    "description": "<2-3 sentences expanding on the theme. What drove it? What does it mean for traders?>"
+  },
+
+  "narrative": "<4 paragraphs separated by \\n\\n. Para 1: What happened — tie sentiment moves to specific headlines. Para 2: Deep dive — 2-3 most important currency moves and why. Para 3: Market structure now — what regime, what the heatmap implies, divergence vs convergence. Para 4: Setup for next week — what changes the picture, key risks, scenarios. Total 320-420 words. Trader-language, not academic.>",
+
+  "top_stories": [
+    {"headline": "<max 12 words>", "currency": "<3-letter>", "direction": "bullish|bearish|neutral", "analysis": "<max 28 words explaining market impact>"},
+    {"headline": "...", "currency": "...", "direction": "...", "analysis": "..."},
+    {"headline": "...", "currency": "...", "direction": "...", "analysis": "..."},
+    {"headline": "...", "currency": "...", "direction": "...", "analysis": "..."},
+    {"headline": "...", "currency": "...", "direction": "...", "analysis": "..."}
+  ],
+
+  "pair_analysis": [
+    {"pair": "EUR/USD", "slug": "EURUSD", "direction": "Long|Short", "conviction": <1-5>, "reasoning": "<2 sentences specific to score data and news>"},
+    {"pair": "...", "slug": "...", "direction": "...", "conviction": <1-5>, "reasoning": "..."},
+    {"pair": "...", "slug": "...", "direction": "...", "conviction": <1-5>, "reasoning": "..."},
+    {"pair": "...", "slug": "...", "direction": "...", "conviction": <1-5>, "reasoning": "..."},
+    {"pair": "...", "slug": "...", "direction": "...", "conviction": <1-5>, "reasoning": "..."}
+  ],
+
+  "what_to_watch": "<Single paragraph 90-130 words. Forward-looking: specific events, sentiment levels to watch, scenarios that would change the picture. Be a strategist, not a reporter.>",
+
+  "risk_radar": [
+    {"risk": "<4-6 word label>", "severity": "High|Medium", "detail": "<one sentence specific to current market context>"},
+    {"risk": "...", "severity": "...", "detail": "..."},
+    {"risk": "...", "severity": "...", "detail": "..."}
+  ],
+
+  "key_events": [
+    {"event": "<short name>", "currency": "<3-letter>", "day": "Mon|Tue|Wed|Thu|Fri", "impact": "High|Medium", "why": "<one sentence trader takeaway>"},
+    ... (5-7 events total)
+  ],
+
+  "regime_warning": "<One sentence max 40 words — the single most important risk or watch-point for traders going into next week.>"
+}
+
+Return ONLY strict JSON. No markdown fences. No preamble.`;
+
+let claudeOut = { executive_summary: [], market_theme: {}, narrative: '', top_stories: [], pair_analysis: [], what_to_watch: '', risk_radar: [], key_events: [], regime_warning: '' };
 try {
 const cRes = await fetch('https://api.anthropic.com/v1/messages', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
-body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: claudePrompt }] })
+body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4000, messages: [{ role: 'user', content: claudePrompt }] })
 });
 const cData = await cRes.json();
 const text = cData.content?.[0]?.text || '';
 const m = text.match(/\{[\s\S]*\}/);
-if (m) claudeOut = JSON.parse(m[0]);
+if (m) claudeOut = { ...claudeOut, ...JSON.parse(m[0]) };
 } catch (e) {
-console.log('Claude weekly narrative failed:', e.message);
-claudeOut.narrative = 'The weekly narrative is being generated. Please refresh in a few minutes.';
+console.log('Sonnet weekly narrative failed:', e.message);
+claudeOut.narrative = 'The weekly narrative is being generated. Please check back shortly.';
 }
 
 return {
-week_start: weekStart.toISOString(),
-week_end: now.toISOString(),
+week_start: weekStart.toISOString().slice(0,10),
+week_end: weekEnd.toISOString().slice(0,10),
 generated_at: now.toISOString(),
 per_currency: perCurrency,
 movers: { strongest, weakest, top_gainer: topGainer, top_loser: topLoser, most_volatile: mostVolatile },
-bias_flips_timeline: flipsTimeline.slice(-15).reverse(),
+bias_flips_timeline: flipsTimeline.slice(-20).reverse(),
 pair_heatmap: heatmap,
 trade_setups: setups,
+executive_summary: claudeOut.executive_summary || [],
+market_theme: claudeOut.market_theme || {},
 narrative: claudeOut.narrative || '',
+top_stories: claudeOut.top_stories || [],
+pair_analysis: claudeOut.pair_analysis || [],
+what_to_watch: claudeOut.what_to_watch || '',
+risk_radar: claudeOut.risk_radar || [],
 key_events: claudeOut.key_events || [],
 regime_warning: claudeOut.regime_warning || ''
 };
