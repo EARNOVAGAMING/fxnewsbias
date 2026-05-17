@@ -328,11 +328,19 @@ window.initProPage = function() {
 
 // ── DATE HELPERS ──
 function fmt(iso) {
+  if (!iso) return '—';
   const d = new Date(iso);
+  if (isNaN(d)) return '—';
   return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 }
 function fmtShort(iso) {
-  const d = new Date(iso+'T00:00:00Z');
+  if (!iso) return '—';
+  // Accept either YYYY-MM-DD or a full ISO timestamp — the API has been seen
+  // returning both (timestamptz columns come back as full ISO; date columns
+  // come back as YYYY-MM-DD). Strip any time portion before re-attaching UTC midnight.
+  const dateOnly = String(iso).slice(0,10);
+  const d = new Date(dateOnly+'T00:00:00Z');
+  if (isNaN(d)) return '—';
   return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 }
 function nextSunday22() {
@@ -366,18 +374,43 @@ function startCountdown() {
 // ── ARCHIVE LIST ──
 async function loadArchive() {
   const el = document.getElementById('archive-list');
+  let rows = [];
   try {
     const res = await fetch(LIST);
-    const rows = res.ok ? await res.json() : [];
-    if (!rows.length) { el.innerHTML = '<div class="sb-head">Past Reports</div><div style="padding:12px 14px;font-size:12px;color:var(--muted);">No reports yet.</div>'; return; }
-    el.innerHTML = '<div class="sb-head">Past Reports</div>' + rows.map((r,i) =>
-      `<div class="sb-item${i===0?' active':''}" data-week="${r.week_end}" onclick="selectWeek('${r.week_end}',this)">
-         Week ending <span class="sb-date">${fmtShort(r.week_end)}</span>
-       </div>`
-    ).join('');
-  } catch(e) {
-    el.innerHTML = '<div class="sb-head">Past Reports</div><div style="padding:12px 14px;font-size:12px;color:var(--muted);">Could not load archive.</div>';
+    if (res.ok) {
+      // Some deployments of the worker don't expose the archive route yet —
+      // they fall through to the plain-text "FXNewsBias Cron Worker Running"
+      // body. Guard against non-JSON so we don't show a scary error.
+      const ct = (res.headers.get('content-type') || '').toLowerCase();
+      if (ct.includes('application/json')) {
+        const parsed = await res.json();
+        if (Array.isArray(parsed)) rows = parsed;
+      }
+    }
+  } catch(_) { /* fall through to derived archive below */ }
+
+  // Fallback — derive a single-row archive from the currently visible report
+  // so the sidebar at minimum shows the latest week instead of an error.
+  if (!rows.length) {
+    try {
+      const r = await fetch(API);
+      if (r.ok) {
+        const j = await r.json();
+        if (j && j.week_end) rows = [{ week_end: j.week_end, week_start: j.week_start, generated_at: j.generated_at }];
+      }
+    } catch(_) {}
   }
+
+  if (!rows.length) {
+    el.innerHTML = '<div class="sb-head">Past Reports</div><div style="padding:12px 14px;font-size:12px;color:var(--muted);">No reports yet.</div>';
+    return;
+  }
+  el.innerHTML = '<div class="sb-head">Past Reports</div>' + rows.map((row,i) => {
+    const wk = String(row.week_end || '').slice(0,10);
+    return `<div class="sb-item${i===0?' active':''}" data-week="${wk}" onclick="selectWeek('${wk}',this)">
+         Week ending <span class="sb-date">${fmtShort(row.week_end)}</span>
+       </div>`;
+  }).join('');
 }
 
 function selectWeek(weekEnd, el) {
@@ -483,11 +516,75 @@ function renderReport(r) {
   const setups = r.trade_setups || [];
   const events = r.key_events || [];
   const flips  = r.bias_flips_timeline || [];
-  const exec   = r.executive_summary || [];
-  const theme  = r.market_theme || {};
-  const stories= r.top_stories || [];
-  const pairAn = r.pair_analysis || [];
-  const risks  = r.risk_radar || [];
+  let exec   = r.executive_summary || [];
+  let theme  = r.market_theme || {};
+  let stories= r.top_stories || [];
+  let pairAn = r.pair_analysis || [];
+  let risks  = r.risk_radar || [];
+  let watch  = r.what_to_watch || '';
+
+  // ── DERIVED FALLBACKS ──
+  // Older stored reports (or reports where the Sonnet narrative call failed)
+  // are missing the AI-generated sections. Synthesise sensible content from
+  // the structured data we always have so the page never looks broken.
+  const str = movers.strongest||{}, wkst = movers.weakest||{};
+  const gain = movers.top_gainer||{}, vol = movers.most_volatile||{};
+
+  if (!exec.length) {
+    const bits = [];
+    if (str.currency) bits.push(`${str.currency} leads the board at ${str.score}, with ${wkst.currency||'—'} the weakest at ${wkst.score||'—'}.`);
+    if (gain.currency) bits.push(`${gain.currency} is the top mover this week, ${gain.change>=0?'+':''}${gain.change} points versus Monday's open.`);
+    if (vol.currency) bits.push(`${vol.currency} saw the most regime instability with ${vol.flips} bias flips across the week.`);
+    if (r.regime_warning) bits.push(r.regime_warning);
+    exec = bits.slice(0,4);
+  }
+
+  if (!theme.title && str.currency && wkst.currency) {
+    theme = {
+      title: `${str.currency} Strength vs ${wkst.currency} Weakness`,
+      description: `Sentiment cluster favours ${str.currency} (score ${str.score}) against ${wkst.currency} (score ${wkst.score}). ${r.regime_warning||''}`.trim()
+    };
+  }
+
+  if (!stories.length) {
+    // Build a 5-item story list out of each currency's top driver headline.
+    const seen = new Set();
+    stories = CCYS.map(c => {
+      const p = pc[c]||{};
+      const drv = (p.current_drivers||[])[0];
+      if (!drv || seen.has(drv)) return null;
+      seen.add(drv);
+      const dir = (p.current_bias||'').toLowerCase(); // bullish|bearish|neutral
+      return { currency: c, direction: dir, headline: drv, analysis: `Current bias ${p.current_bias||'Neutral'} · score ${p.current_score??'—'} · vs last week ${p.delta>=0?'+':''}${p.delta??0}` };
+    }).filter(Boolean).slice(0,5);
+  }
+
+  if (!pairAn.length && setups.length) {
+    // Map trade_setups (deterministic) into the pair_analysis shape the UI
+    // expects. Conviction in trade_setups is 1-25; rescale to 1-5.
+    pairAn = setups.slice(0,5).map(s => ({
+      pair: s.pair,
+      slug: s.pair,
+      direction: s.direction,
+      conviction: Math.max(1, Math.min(5, Math.round((s.conviction||1)/5))),
+      reasoning: `${s.B} ${s.B_bias||''} (${s.B_score??'—'}) vs ${s.Q} ${s.Q_bias||''} (${s.Q_score??'—'}). Divergence score ${s.score??'—'}.`
+    }));
+  }
+
+  if (!risks.length) {
+    const synth = [];
+    if (r.regime_warning) synth.push({ severity:'High', risk:'Regime watch', detail:r.regime_warning });
+    if (vol.currency)     synth.push({ severity:'Medium', risk:`${vol.currency} instability`, detail:`${vol.flips} bias flips this week signal a currency the market can't price cleanly — expect whipsaws.` });
+    if (gain.currency)    synth.push({ severity:'Medium', risk:`${gain.currency} positioning`, detail:`Sharp ${gain.change>=0?'+':''}${gain.change}-pt swing vs Monday open raises mean-reversion risk if catalysts cool.` });
+    risks = synth;
+  }
+
+  if (!watch) {
+    // Best-effort: use the last paragraph of the narrative if it exists,
+    // otherwise leave the placeholder.
+    const paras = (r.narrative||'').split(/\n\n+/).map(s=>s.trim()).filter(Boolean);
+    if (paras.length >= 2) watch = paras[paras.length-1];
+  }
 
   // Header dates
   document.getElementById('rpt-dates').textContent =
@@ -517,11 +614,7 @@ function renderReport(r) {
     ? `<div class="theme-card"><div class="theme-title">${theme.title}</div><div class="theme-desc">${theme.description||''}</div></div>`
     : '';
 
-  // Stats strip
-  const str = movers.strongest||{};
-  const wkst = movers.weakest||{};
-  const gain = movers.top_gainer||{};
-  const vol  = movers.most_volatile||{};
+  // Stats strip (str/wkst/gain/vol already declared above for fallback synthesis)
   const statsHTML = `
     <div class="stat-card"><div class="stat-label">Strongest</div><div class="stat-value bull">${FLAGS[str.currency]||''} ${str.currency||'—'}</div><div class="stat-sub">Score ${str.score||'—'}</div></div>
     <div class="stat-card"><div class="stat-label">Weakest</div><div class="stat-value bear">${FLAGS[wkst.currency]||''} ${wkst.currency||'—'}</div><div class="stat-sub">Score ${wkst.score||'—'}</div></div>
@@ -694,7 +787,7 @@ function renderReport(r) {
     <!-- WHAT TO WATCH -->
     <div class="section">
       <div class="section-label">👁 What to Watch Next Week</div>
-      <div class="watch-text">${r.what_to_watch||'<span style="color:var(--muted)">No forward-looking analysis available.</span>'}</div>
+      <div class="watch-text">${watch||'<span style="color:var(--muted)">No forward-looking analysis available.</span>'}</div>
     </div>
 
     <!-- RISK RADAR -->
