@@ -1913,6 +1913,32 @@ throw new Error(`saveSentiment HTTP ${r.status}: ${body.slice(0, 300)}`);
 }
 }
 
+async function scoreForexRelevance(items, env) {
+if (!items.length || !env.CLAUDE_API_KEY) return items;
+const titles = items.map((item, i) => `${i}. ${item.title}`).join('\n');
+const prompt = `Classify each headline as forex-relevant or not. Mark relevant=true ONLY if the headline directly affects currency/forex markets: central bank decisions, macro data (CPI/NFP/GDP/PMI/PCE), geopolitical events with safe-haven FX impact, or explicit currency/exchange rate moves. Mark relevant=false for general stocks, company earnings, tech, sports, real estate, or business news without a clear FX angle.\n\nHeadlines:\n${titles}\n\nRespond ONLY with a compact JSON array, no explanation: [{"i":0,"r":true},{"i":1,"r":false},...]`;
+try {
+const res = await fetch('https://api.anthropic.com/v1/messages', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
+body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400, messages: [{ role: 'user', content: prompt }] }),
+signal: AbortSignal.timeout(15000)
+});
+const data = await res.json();
+const text = data?.content?.[0]?.text || '';
+const match = text.match(/\[[\s\S]*?\]/);
+if (!match) { console.log('scoreForexRelevance: no JSON in response, falling back to keyword filter'); return items; }
+const scores = JSON.parse(match[0]);
+const keep = new Set(scores.filter(s => s.r).map(s => Number(s.i)));
+const out = items.filter((_, i) => keep.has(i));
+console.log(`Claude relevance: ${out.length}/${items.length} kept`);
+return out;
+} catch(e) {
+console.log('scoreForexRelevance failed, fallback to keyword filter:', e.message);
+return items;
+}
+}
+
 async function saveNews(news, env) {
 const forexKeywords = [
 // central banks + policy
@@ -1946,7 +1972,8 @@ const currencyMap = [
 ];
 const ccyRegexes = currencyMap.map(([code, kws]) => [code, new RegExp('\\b(' + kws.join('|') + ')\\b','i')]);
 const filteredNews = news.filter(item => forexRegex.test(item.title || ''));
-console.log(`Forex-relevant: ${filteredNews.length}/${news.length}`);
+console.log(`Keyword pre-filter: ${filteredNews.length}/${news.length}`);
+const claudeFiltered = await scoreForexRelevance(filteredNews, env);
 
 // Subrequest budget fix: drop the dedup fetch and the per-item POST loop.
 // Previously this was 1 GET + up to 20 POSTs = up to 21 subrequests, which
@@ -1968,7 +1995,7 @@ const medKeywords = [
 'economic', 'growth', 'manufacturing', 'housing', 'consumer',
 'bank', 'policy', 'minister', 'government', 'budget', 'debt'
 ];
-const rows = filteredNews.slice(0, 30).filter(item => item.url).map(item => {
+const rows = claudeFiltered.slice(0, 30).filter(item => item.url).map(item => {
 const title = (item.title || '').toLowerCase();
 let impact = 'Low';
 if (highKeywords.some(kw => title.includes(kw))) impact = 'High';
