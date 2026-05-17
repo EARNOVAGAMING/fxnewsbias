@@ -203,6 +203,7 @@ tasks.push(pingIndexNow([
 ]).catch(e => console.log('IndexNow (insight) error:', e.message)));
 } else if (event.cron === '0 */3 * * *') {
 tasks.push(runSentimentAnalysis(env));
+tasks.push(generateAllPairSEO(env).catch(e => console.log('generateAllPairSEO error:', e.message)));
 // prices are handled by the */15 tick — no duplicate call here
 // Once every 3 hours is plenty for a retention sweep — system_state is
 // tiny and only needs to be pruned occasionally.
@@ -3206,4 +3207,123 @@ async function handleAdminData(request, env) {
     console.error('admin-data error:', e.message);
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
   }
+}
+
+// ============================================
+// SEO ARTICLE GENERATION (Claude Haiku)
+// ============================================
+
+const SEO_PAIRS = [
+  { slug: 'eur-usd',  name: 'EUR/USD', base: 'EUR', quote: 'USD', keywords: 'eurusd fundamental bias analysis, eurusd sentiment today, eurusd bias today' },
+  { slug: 'gbp-usd',  name: 'GBP/USD', base: 'GBP', quote: 'USD', keywords: 'gbpusd sentiment today, gbpusd bias analysis, cable forex today' },
+  { slug: 'usd-jpy',  name: 'USD/JPY', base: 'USD', quote: 'JPY', keywords: 'usdjpy sentiment today, usdjpy bias analysis, dollar yen forecast today' },
+  { slug: 'usd-chf',  name: 'USD/CHF', base: 'USD', quote: 'CHF', keywords: 'usd to chf forecast, usd chf forecast, usd chf sentiment' },
+  { slug: 'aud-usd',  name: 'AUD/USD', base: 'AUD', quote: 'USD', keywords: 'aud usd sentiment, aud usd bias analysis, audusd today' },
+  { slug: 'usd-cad',  name: 'USD/CAD', base: 'USD', quote: 'CAD', keywords: 'usdcad sentiment today, usdcad bias analysis, loonie forex today' },
+  { slug: 'nzd-usd',  name: 'NZD/USD', base: 'NZD', quote: 'USD', keywords: 'nzdusd sentiment today, nzdusd bias analysis, kiwi forex today' },
+  { slug: 'eur-gbp',  name: 'EUR/GBP', base: 'EUR', quote: 'GBP', keywords: 'eurgbp sentiment today, eurgbp bias analysis, euro sterling today' },
+  { slug: 'eur-jpy',  name: 'EUR/JPY', base: 'EUR', quote: 'JPY', keywords: 'eurjpy sentiment today, eurjpy bias analysis, euro yen today' },
+  { slug: 'gbp-jpy',  name: 'GBP/JPY', base: 'GBP', quote: 'JPY', keywords: 'current trend bias gbpjpy, gbpjpy sentiment today, pound yen today' },
+  { slug: 'aud-jpy',  name: 'AUD/JPY', base: 'AUD', quote: 'JPY', keywords: 'audjpy sentiment today, audjpy bias analysis, aussie yen today' },
+  { slug: 'aud-nzd',  name: 'AUD/NZD', base: 'AUD', quote: 'NZD', keywords: 'audnzd sentiment today, audnzd bias analysis, aud nzd today' },
+  { slug: 'eur-chf',  name: 'EUR/CHF', base: 'EUR', quote: 'CHF', keywords: 'eurchf sentiment today, eurchf bias analysis, euro franc today' },
+  { slug: 'cad-jpy',  name: 'CAD/JPY', base: 'CAD', quote: 'JPY', keywords: 'cadjpy sentiment today, cadjpy bias analysis, cad jpy today' },
+  { slug: 'chf-jpy',  name: 'CHF/JPY', base: 'CHF', quote: 'JPY', keywords: 'chfjpy sentiment today, chfjpy bias analysis, franc yen today' },
+];
+
+async function generatePairSEO(pair, score, bias, headlines, env) {
+  const dateStr = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const biasLabel = bias > 0 ? 'bullish' : bias < 0 ? 'bearish' : 'neutral';
+  const headlineList = headlines.length ? headlines.slice(0, 5).map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No major headlines at this time.';
+
+  const prompt = `You are an expert forex analyst writing a concise, SEO-optimised market update for ${pair.name} on ${dateStr}.
+
+Current data:
+- Sentiment bias score: ${score} (${biasLabel} — positive = ${pair.base} strength, negative = ${pair.quote} strength)
+- Key forex headlines (last 3 hours):\n${headlineList}
+
+Write a 3-paragraph HTML article using ONLY these tags: <p>, <strong>, <ul>, <li>. No headings, no other tags.
+
+Paragraph 1: Current ${pair.name} sentiment today — reference the bias score, explain what it means for direction.
+Paragraph 2: Key drivers from the headlines above — be specific. If no strong headlines, mention that markets are quiet.
+Paragraph 3: What to watch — forward-looking, mention next session, key levels or upcoming data if relevant.
+
+Important:
+- Naturally include these keywords: ${pair.keywords}, live forex sentiment, forex bias today 2026, news-based forex analysis
+- Keep it factual and data-driven. Do NOT invent specific price levels.
+- Total length: 200–280 words.
+- Return ONLY the raw HTML paragraphs, nothing else.`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, messages: [{ role: 'user', content: prompt }] }),
+  });
+  if (!resp.ok) throw new Error(`Haiku SEO ${pair.slug}: ${resp.status}`);
+  const data = await resp.json();
+  return data.content?.[0]?.text?.trim() || '';
+}
+
+async function saveSEOCache(slug, html, env) {
+  const url = `${env.SUPABASE_URL}/rest/v1/seo_cache`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
+      'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify({ slug, html, updated_at: new Date().toISOString() }),
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(`saveSEOCache ${slug}: ${r.status} ${t.slice(0, 200)}`);
+  }
+}
+
+async function generateAllPairSEO(env) {
+  // Fetch latest sentiment scores for all currencies
+  const sentResp = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment?select=currency,score,bias&order=fetched_at.desc&limit=16`, {
+    headers: { 'apikey': env.SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` },
+  });
+  const sentRows = sentResp.ok ? await sentResp.json() : [];
+  const sentMap = {};
+  for (const row of sentRows) {
+    if (!sentMap[row.currency]) sentMap[row.currency] = { score: row.score || 0, bias: row.bias || 0 };
+  }
+
+  // Fetch recent headlines (last 3 hours)
+  const cutoff = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+  const newsResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=title,impact&fetched_at=gte.${cutoff}&order=fetched_at.desc&limit=30`, {
+    headers: { 'apikey': env.SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` },
+  });
+  const newsRows = newsResp.ok ? await newsResp.json() : [];
+  const allHeadlines = newsRows.map(n => n.title).filter(Boolean);
+
+  console.log(`generateAllPairSEO: ${sentRows.length} sentiment rows, ${allHeadlines.length} headlines`);
+
+  // Process pairs in batches of 3 to avoid rate limits
+  const BATCH = 3;
+  for (let i = 0; i < SEO_PAIRS.length; i += BATCH) {
+    const batch = SEO_PAIRS.slice(i, i + BATCH);
+    await Promise.all(batch.map(async (pair) => {
+      try {
+        const baseData = sentMap[pair.base] || { score: 0, bias: 0 };
+        const quoteData = sentMap[pair.quote] || { score: 0, bias: 0 };
+        const pairScore = Math.round(baseData.score - quoteData.score);
+        const pairBias = baseData.bias - quoteData.bias;
+        const html = await generatePairSEO(pair, pairScore, pairBias, allHeadlines, env);
+        if (html) {
+          await saveSEOCache(pair.slug, html, env);
+          console.log(`SEO cached: ${pair.slug}`);
+        }
+      } catch (e) {
+        console.log(`SEO gen error for ${pair.slug}:`, e.message);
+      }
+    }));
+    // Small pause between batches to respect Anthropic rate limits
+    if (i + BATCH < SEO_PAIRS.length) await new Promise(r => setTimeout(r, 1000));
+  }
+  console.log('generateAllPairSEO: done');
 }

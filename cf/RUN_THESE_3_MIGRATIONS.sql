@@ -99,10 +99,37 @@ alter table public.news
     add constraint news_url_key unique (url);
 
 
+-- ---- 5) seo_cache ----------------------------------------------------------
+-- Stores Haiku-generated SEO HTML per forex pair page (slug = pair slug).
+-- The cron worker upserts every 3 hours; the Cloudflare Worker reads this
+-- at request time and injects HTML at the <!-- seo_inject --> marker.
+create table if not exists public.seo_cache (
+    slug       text        primary key,
+    html       text        not null default '',
+    updated_at timestamptz not null default now()
+);
+
+create or replace function public.seo_cache_touch_updated_at()
+returns trigger language plpgsql as $$
+begin new.updated_at := now(); return new; end;
+$$;
+
+drop trigger if exists seo_cache_set_updated_at on public.seo_cache;
+create trigger seo_cache_set_updated_at
+before update on public.seo_cache
+for each row execute function public.seo_cache_touch_updated_at();
+
+alter table public.seo_cache enable row level security;
+
+-- Allow the service-role (cron worker) to read/write; anon role gets SELECT.
+create policy if not exists "seo_cache_service_all" on public.seo_cache
+    for all using (true) with check (true);
+
+
 -- ---- Verification (optional) -------------------------------------------
 -- Run this after the above to confirm all 3 tables exist:
 --   select table_name from information_schema.tables
 --   where table_schema = 'public'
---     and table_name in ('system_state','staleness_incidents','cleanup_runs')
+--     and table_name in ('system_state','staleness_incidents','cleanup_runs','seo_cache')
 --   order by table_name;
--- Expected: all 3 rows.
+-- Expected: all 4 rows.
