@@ -176,6 +176,12 @@ return handleWeeklyReport(request, env, ctx);
 if (url.pathname === '/api/weekly-reports') {
 return handleWeeklyReportsList(request, env);
 }
+// Manual trigger — returns 202 immediately, runs generation in background
+if (url.pathname === '/api/generate-weekly-report') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+ctx.waitUntil(buildAndSaveWeeklyReport(env).catch(e => console.log('manual weekly report error:', e.message)));
+return new Response(JSON.stringify({ ok: true, message: 'Generating in background. Check /api/weekly-reports in ~40s.' }), { status: 202, headers: { 'Content-Type': 'application/json' } });
+}
 // Admin panel data — gated by Firebase ID token + admin email allowlist.
 // Read-only: lists Firebase Auth users + Firestore subscription tiers.
 if (url.pathname === '/admin-data') {
