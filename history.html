@@ -420,31 +420,59 @@ async function loadHistory(currency, days) {
     document.getElementById('chart-loading').style.display = 'none';
     document.getElementById('main-chart').style.display = 'block';
 
-    if (mainChart) mainChart.destroy();
+    if (mainChart) { mainChart.destroy(); mainChart = null; }
 
-    const ctx = document.getElementById('main-chart').getContext('2d');
+    const canvas = document.getElementById('main-chart');
+    const ctx = canvas.getContext('2d');
 
-    // Dynamic Y-axis with 10% padding
+    // Dynamic Y-axis: data range + 10% padding, clamped 0-100
     const dMin = Math.min(...scores), dMax = Math.max(...scores);
     const dRange = dMax - dMin || 8;
     const yMin = Math.max(0,   Math.floor(dMin - dRange * 0.10));
     const yMax = Math.min(100, Math.ceil (dMax + dRange * 0.10));
 
-    // Canvas gradient fill
-    const grad = ctx.createLinearGradient(0, 0, 0, 300);
+    // Canvas gradient — use actual canvas height so it survives resize
     const isBull = latest.bias === 'Bullish', isBear = latest.bias === 'Bearish';
     const lineCol = isBull ? '#059669' : isBear ? '#dc2626' : '#d97706';
-    const gradTop = isBull ? 'rgba(5,150,105,0.35)' : isBear ? 'rgba(220,38,38,0.35)' : 'rgba(217,119,6,0.35)';
-    const gradBot = isBull ? 'rgba(5,150,105,0.01)' : isBear ? 'rgba(220,38,38,0.01)' : 'rgba(217,119,6,0.01)';
-    grad.addColorStop(0, gradTop);
-    grad.addColorStop(1, gradBot);
+    const colA    = isBull ? '5,150,105' : isBear ? '220,38,38' : '217,119,6';
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.offsetHeight || 300);
+    grad.addColorStop(0, `rgba(${colA},0.35)`);
+    grad.addColorStop(1, `rgba(${colA},0.01)`);
 
-    // Point styles: only last point visible
+    // Point styles: only last point visible; all points on hover
     const pointRadii = scores.map((_,i) => i === scores.length-1 ? 5 : 0);
-    const pointHover = scores.map((_,i) => i === scores.length-1 ? 7 : 5);
+    const pointHover = scores.map(() => 5);
+
+    // Custom plugin: draws the neutral-50 line directly on canvas regardless of tick positions
+    const neutralLinePlugin = {
+      id: 'neutralLine',
+      beforeDraw(chart) {
+        const yAxis = chart.scales.y;
+        if (50 < yAxis.min || 50 > yAxis.max) return;
+        const y = yAxis.getPixelForValue(50);
+        const { left, right } = chart.chartArea;
+        const c = chart.ctx;
+        c.save();
+        c.beginPath();
+        c.setLineDash([6, 4]);
+        c.strokeStyle = 'rgba(245,158,11,0.75)';
+        c.lineWidth = 1.5;
+        c.moveTo(left, y);
+        c.lineTo(right, y);
+        c.stroke();
+        // Label
+        c.setLineDash([]);
+        c.fillStyle = '#d97706';
+        c.font = '700 10px Inter,sans-serif';
+        c.textAlign = 'left';
+        c.fillText('NEUTRAL 50', left + 4, y - 4);
+        c.restore();
+      }
+    };
 
     mainChart = new Chart(ctx, {
       type: 'line',
+      plugins: [neutralLinePlugin],
       data: {
         labels,
         datasets: [{
@@ -474,12 +502,13 @@ async function loadHistory(currency, days) {
             bodyColor: '#f1f5f9',
             padding: 10,
             cornerRadius: 8,
+            displayColors: false,
             callbacks: {
               title: (items) => items[0].label,
               label: (item) => {
                 const s = item.raw;
                 const b = s >= 60 ? '▲ Bullish' : s <= 40 ? '▼ Bearish' : '◆ Neutral';
-                return `  Score: ${s}  ${b}`;
+                return `  Score: ${s}   ${b}`;
               }
             }
           }
@@ -488,22 +517,12 @@ async function loadHistory(currency, days) {
           y: {
             min: yMin,
             max: yMax,
-            grid: {
-              color: (c) => {
-                if (c.tick.value === 50 && 50 >= yMin && 50 <= yMax) return 'rgba(245,158,11,0.5)';
-                return '#f1f5f9';
-              },
-              lineWidth: (c) => c.tick.value === 50 ? 1.5 : 1,
-              borderDash: (c) => c.tick.value === 50 ? [6,4] : []
-            },
+            grid: { color: '#f1f5f9' },
             ticks: {
               maxTicksLimit: 6,
-              callback: (val) => {
-                if (val === 50) return '— 50 Neutral';
-                return val;
-              },
-              color: (c) => c.tick.value === 50 ? '#d97706' : '#94a3b8',
-              font: (c) => c.tick.value === 50 ? { weight: '700', size: 11 } : { size: 11 }
+              color: '#94a3b8',
+              font: { size: 11 },
+              callback: (val) => val
             }
           },
           x: {
