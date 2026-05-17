@@ -1503,7 +1503,7 @@ try {
   if (rows.length && rows[0].report_json && Object.keys(rows[0].report_json).length > 0) {
     const row = rows[0];
     const payload = { ...row.report_json, week_end: row.week_end, week_start: row.week_start, generated_at: row.generated_at };
-    return new Response(JSON.stringify(payload), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600', ...cors } });
+    return new Response(JSON.stringify(payload), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', ...cors } });
   }
   // Fallback: build on demand (e.g. first ever load before Sunday cron runs)
   if (!weekParam) {
