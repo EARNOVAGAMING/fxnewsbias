@@ -79,6 +79,17 @@ nav a:hover{color:#60a5fa;}
 .section h2{font-size:26px;font-weight:800;margin-bottom:16px;color:var(--text);letter-spacing:-0.5px;}
 .section p{font-size:15px;color:var(--text-soft);line-height:1.8;margin-bottom:14px;}
 .section p strong{color:var(--text);}
+.team-member{display:grid;grid-template-columns:160px 1fr;gap:32px;align-items:start;margin-bottom:8px;}
+.team-photo-col{text-align:center;}
+.team-photo{width:140px;height:140px;object-fit:cover;border-radius:50%;border:3px solid var(--border-strong);display:block;margin:0 auto 10px;}
+.team-role{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;line-height:1.5;margin-bottom:6px;}
+.team-creds{font-size:11px;color:var(--text-muted);line-height:1.6;}
+.team-bio-col p.team-name{font-size:18px;font-weight:800;color:var(--text);margin-bottom:10px;letter-spacing:-.3px;}
+.team-divider{border:none;border-top:1px solid var(--border);margin:32px 0;}
+@media(max-width:640px){
+  .team-member{grid-template-columns:1fr;gap:16px;}
+  .team-photo{width:110px;height:110px;}
+}
 
 .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px;}
 .feature{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px;}
@@ -225,16 +236,40 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
     <p>Founded in <strong>2025</strong>, we're a remote team distributed globally — pooling <strong>15+ years of combined retail trading experience</strong> with engineering and AI expertise to build the tool we always wished existed.</p>
   </div>
 
-  <!-- Section 2.5: About the Founder (E-E-A-T / YMYL trust signal) -->
+  <!-- Section 2.5: Meet the Team (E-E-A-T / YMYL trust signal) -->
   <div class="section">
-    <h2>👤 About the Founder</h2>
-    <p><strong>Dinesh Santher — Founder, FXNewsBias. Based in Singapore.</strong></p>
-    <p>I'm a paramedic by profession, but financial markets have been my obsession for years. Between shifts, I went deep on the technical side of trading: backtesting strategies, building quantitative systems, automating crypto bots, and improving forex expert advisors with machine learning. I ran statistical analyses on multi-instrument coefficient coherence and watched my automated strategies actually perform in live markets.</p>
-    <p>The numbers worked. But something kept nagging me.</p>
-    <p>The biggest moves I saw in forex always traced back to one thing: <strong>news</strong>. A central bank surprise. An inflation shock. A geopolitical headline. No matter how clean my technical signals were, ignoring that fundamental layer cost me — and most retail traders I spoke to were either missing those stories entirely or finding them too late.</p>
-    <p>So I tried reading the news manually. That's when I hit the real problem: you can spend hours analyzing one headline and still miss the article that actually mattered. The vital news hides in volume. Skim one story, miss the one that moves the pair.</p>
-    <p><strong>FXNewsBias is the system I built for myself first, then opened to everyone.</strong> It ingests every major forex headline every three hours, scores sentiment across all 8 major currencies, and gives you one clear bias number per currency. No more reading 40 articles to find the 3 that move the market.</p>
-    <p>The news edge shouldn't be locked behind Bloomberg-tier subscriptions. Whether you trade five lots or fifty, you deserve the same fundamental clarity that institutional desks take for granted. Reach out via the <a href="/contact">contact page</a> anytime.</p>
+    <h2>👥 Meet the Team</h2>
+
+    <div class="team-member">
+      <div class="team-photo-col">
+        <img src="/dinesh.png" alt="Dinesh Santher" class="team-photo">
+        <div class="team-role">Founder &amp; Lead Developer</div>
+      </div>
+      <div class="team-bio-col">
+        <p class="team-name">Dinesh Santher</p>
+        <p>I'm a paramedic by profession, but financial markets have been my obsession for years. Between shifts, I went deep on the technical side of trading: backtesting strategies, building quantitative systems, automating crypto bots, and improving forex expert advisors with machine learning. I ran statistical analyses on multi-instrument coefficient coherence and watched my automated strategies actually perform in live markets.</p>
+        <p>The numbers worked. But something kept nagging me.</p>
+        <p>The biggest moves I saw in forex always traced back to one thing: <strong>news</strong>. A central bank surprise. An inflation shock. A geopolitical headline. No matter how clean my technical signals were, ignoring that fundamental layer cost me — and most retail traders I spoke to were either missing those stories entirely or finding them too late.</p>
+        <p>So I tried reading the news manually. That's when I hit the real problem: you can spend hours analyzing one headline and still miss the article that actually mattered. The vital news hides in volume. Skim one story, miss the one that moves the pair.</p>
+        <p><strong>FXNewsBias is the system I built for myself first, then opened to everyone.</strong> It ingests every major forex headline every three hours, scores sentiment across all 8 major currencies, and gives you one clear bias number per currency. No more reading 40 articles to find the 3 that move the market.</p>
+        <p>The news edge shouldn't be locked behind Bloomberg-tier subscriptions. Whether you trade five lots or fifty, you deserve the same fundamental clarity that institutional desks take for granted. Reach out via the <a href="/contact">contact page</a> anytime.</p>
+      </div>
+    </div>
+
+    <div class="team-divider"></div>
+
+    <div class="team-member">
+      <div class="team-photo-col">
+        <img src="/pavithra.jpg" alt="Pavithra" class="team-photo">
+        <div class="team-role">Quantitative Advisor &amp;<br>Editorial Strategist</div>
+        <div class="team-creds">MSc Actuarial Management<br>BSc Financial Mathematics</div>
+      </div>
+      <div class="team-bio-col">
+        <p class="team-name">Pavithra</p>
+        <p>I work at the intersection of financial markets, data interpretation, and content accuracy, with a focus on forex-related market analysis. I review financial market articles to ensure the analysis is clear, accurate, and logically consistent with real market conditions, and I validate whether the reasoning behind market views — such as bullish or bearish currency bias — is supported by relevant economic data and sound financial logic.</p>
+        <p>A key part of my role is assessing whether market sentiment and interpretations are justified, ensuring that any stated currency bias is backed by coherent macroeconomic reasoning aligned with real-world market drivers. I also evaluate how financial information is presented to users, flagging UX/UI issues that impact readability and clarity of dashboards, charts, and market content.</p>
+      </div>
+    </div>
   </div>
 
   <!-- Section 3: Free vs Pro Comparison -->
