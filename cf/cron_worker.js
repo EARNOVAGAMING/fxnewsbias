@@ -224,9 +224,10 @@ tasks.push(cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns er
 // know to recrawl the data-driven pages (homepage + 8 currencies +
 // 15 pairs + hub pages). This keeps cached search snippets fresh.
 tasks.push(pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (3h) error:', e.message)));
-} else if (event.cron === '0 22 * * 0') {
-// Sunday 22:00 UTC — publish weekly pro report covering Mon–Sun
-tasks.push(buildAndSaveWeeklyReport(env).catch(e => console.log('Weekly report (Sunday) error:', e.message)));
+// Sunday 21:00 UTC tick — generate weekly pro report (piggybacked; free plan = 5 cron cap)
+if (_dow === 0 && new Date().getUTCHours() === 21) {
+  tasks.push(buildAndSaveWeeklyReport(env).catch(e => console.log('Weekly report (Sunday) error:', e.message)));
+}
 } else {
 tasks.push(updatePrices(env));
 }
