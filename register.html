@@ -174,8 +174,12 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 
     <!-- Right Side -->
     <div class="register-right">
-      <h1>Create Free Account 🚀</h1>
-      <p>No credit card required. Free forever.</p>
+      <div id="paid-banner" style="display:none;background:linear-gradient(135deg,#065f46,#047857);color:#fff;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;line-height:1.6;">
+        <div style="font-weight:800;font-size:15px;margin-bottom:4px;">✅ Payment Successful!</div>
+        Create your account below to unlock your <strong>Pro access</strong> instantly. Use the same email you paid with.
+      </div>
+      <h1 id="register-heading">Create Free Account 🚀</h1>
+      <p id="register-sub">No credit card required. Free forever.</p>
 
       <div class="form-row">
         <div class="form-group">
@@ -279,12 +283,23 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 <script src="/analytics.js" defer></script>
 <script type="module" src="/firebase.js"></script>
 <script>
+// Detect post-payment flow
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('paid') === '1') {
+    document.getElementById('paid-banner').style.display = 'block';
+    document.getElementById('register-heading').textContent = 'Activate Your Pro Account';
+    document.getElementById('register-sub').textContent = 'Use the same email you paid with to unlock Pro instantly.';
+  }
+})();
+
 window.handleRegister = async function() {
   const username = document.querySelectorAll('input[type="text"]')[2].value;
   const email = document.querySelector('input[type="email"]').value;
   const password = document.querySelector('input[type="password"]').value;
   const termsChecked = document.getElementById('terms').checked;
   const disclaimerChecked = document.getElementById('disclaimer').checked;
+  const isPaidFlow = new URLSearchParams(window.location.search).get('paid') === '1';
 
   if (!username || !email || !password) {
     alert('Please fill in all required fields!');
@@ -304,6 +319,15 @@ window.handleRegister = async function() {
     attempts++;
     if (window.registerUser) {
       clearInterval(waitForFirebase);
+      // Override redirect to /report for paid users
+      if (isPaidFlow) {
+        const origRegister = window.registerUser;
+        window.registerUser = async function(e, p, u) {
+          const result = await origRegister(e, p, u);
+          setTimeout(() => window.location.href = '/report', 1500);
+          return result;
+        };
+      }
       await window.registerUser(email, password, username);
     } else if (attempts > 50) {
       clearInterval(waitForFirebase);
