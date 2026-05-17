@@ -3256,7 +3256,7 @@ Important:
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    headers: { 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, messages: [{ role: 'user', content: prompt }] }),
   });
   if (!resp.ok) throw new Error(`Haiku SEO ${pair.slug}: ${resp.status}`);
@@ -3269,8 +3269,8 @@ async function saveSEOCache(slug, html, env) {
   const r = await fetch(url, {
     method: 'POST',
     headers: {
-      'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
-      'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      'apikey': env.SUPABASE_SERVICE_KEY,
+      'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
       'Content-Type': 'application/json',
       'Prefer': 'resolution=merge-duplicates',
     },
@@ -3285,7 +3285,7 @@ async function saveSEOCache(slug, html, env) {
 async function generateAllPairSEO(env) {
   // Fetch latest sentiment scores for all currencies
   const sentResp = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment?select=currency,score,bias&order=fetched_at.desc&limit=16`, {
-    headers: { 'apikey': env.SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` },
+    headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
   });
   const sentRows = sentResp.ok ? await sentResp.json() : [];
   const sentMap = {};
@@ -3296,7 +3296,7 @@ async function generateAllPairSEO(env) {
   // Fetch recent headlines (last 3 hours)
   const cutoff = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
   const newsResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=title,impact&fetched_at=gte.${cutoff}&order=fetched_at.desc&limit=30`, {
-    headers: { 'apikey': env.SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` },
+    headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
   });
   const newsRows = newsResp.ok ? await newsResp.json() : [];
   const allHeadlines = newsRows.map(n => n.title).filter(Boolean);
