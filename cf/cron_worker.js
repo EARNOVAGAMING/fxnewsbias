@@ -519,7 +519,7 @@ return null;
 async function runSentimentAnalysis(env) {
 console.log('Starting sentiment analysis...');
 const news = await fetchAllNews();
-console.log(`Fetched ${news.length} news items from 12 sources`);
+console.log(`Fetched ${news.length} news items from 16 sources`);
 
 // Save news first, independently — news must not be gated on sentiment API success.
 // Previously saveNews was inside the try block after analyzeSentiment, so any
@@ -1777,9 +1777,8 @@ regime_warning: claudeOut.regime_warning || ''
 }
 
 async function fetchAllNews() {
-// 13 verified-working feeds (audited 2026-05-11). Each call lifts up to
-// PER_SOURCE_CAP items so we don't truncate a busy feed (BBC publishes 47,
-// CNBC 30, ActionForex 20). Overall cap of 100 is what Claude sees.
+// 17 feeds (audited 2026-05-18). FX-specific feeds added; generic Investing.com
+// and Nasdaq replaced with their FX/currencies sections for better signal.
 const PER_SOURCE_CAP = 15;
 const TOTAL_CAP = 100;
 const feeds = [
@@ -1788,6 +1787,11 @@ const feeds = [
 { url: 'https://www.forexlive.com/feed/', source: 'ForexLive' },
 { url: 'https://www.actionforex.com/feed/', source: 'Action Forex' },
 { url: 'https://www.forexcrunch.com/feed/', source: 'Forex Crunch' },
+{ url: 'https://www.fxdailyreport.com/feed/', source: 'FX Daily Report' },
+{ url: 'https://www.financemagnates.com/feed/', source: 'Finance Magnates' },
+{ url: 'https://www.leaprate.com/feed/', source: 'LeapRate' },
+{ url: 'https://www.investing.com/rss/news_285.rss', source: 'Investing.com FX' },
+{ url: 'https://www.nasdaq.com/feed/rssoutbound?category=currencies', source: 'Nasdaq Currencies' },
 // Macro / financial press
 { url: 'https://feeds.bbci.co.uk/news/business/rss.xml', source: 'BBC News' },
 { url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html', source: 'CNBC' },
@@ -1795,8 +1799,6 @@ const feeds = [
 { url: 'https://www.cnbc.com/id/15839135/device/rss/rss.html', source: 'CNBC Markets' },
 { url: 'https://www.marketwatch.com/rss/topstories', source: 'MarketWatch' },
 { url: 'https://feeds.a.dj.com/rss/RSSWSJD.xml', source: 'WSJ' },
-{ url: 'https://www.investing.com/rss/news.rss', source: 'Investing.com' },
-{ url: 'https://www.nasdaq.com/feed/rssoutbound', source: 'Nasdaq' },
 { url: 'https://finance.yahoo.com/news/rssindex', source: 'Yahoo Finance' },
 ];
 
