@@ -54,7 +54,7 @@ return handleContactSubmit(request, env);
 const _authed = () => url.searchParams.get('key') === env.CRON_TRIGGER_KEY;
 if (url.pathname === '/run') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
-await runSentimentAnalysis(env);
+await runSentimentAnalysis(env, { sendTelegram: false });
 return new Response('Sentiment analysis complete!', { status: 200 });
 }
 if (url.pathname === '/prices') {
@@ -595,14 +595,15 @@ return null;
 // ============================================
 // SENTIMENT ANALYSIS
 // ============================================
-async function runSentimentAnalysis(env) {
+// opts.sendTelegram — set false when called from self-heal or manual /run
+// so the scheduled-sentiment Telegram only fires from the real 3h cron tick.
+async function runSentimentAnalysis(env, opts = {}) {
+const { sendTelegram = true } = opts;
 console.log('Starting sentiment analysis...');
 const news = await fetchAllNews();
 console.log(`Fetched ${news.length} news items from 16 sources`);
 
 // Save news first, independently — news must not be gated on sentiment API success.
-// Previously saveNews was inside the try block after analyzeSentiment, so any
-// Claude API failure silently skipped the news insert and left the feed stale.
 try { await saveNews(news, env); console.log('News saved'); }
 catch(e) { console.log('saveNews failed:', e.message); }
 
@@ -610,20 +611,19 @@ try {
 const sentiment = await analyzeSentiment(news, env);
 console.log('Sentiment analysis complete');
 
-// Each downstream step is isolated - one failing must not block the others.
-// Telegram (user-visible) is fired FIRST so a saveSentiment hiccup
-// can never silently kill the alert (this has bitten us twice already).
-try { await sendTelegramAlert(env, sentiment); console.log('Telegram alert sent'); }
-catch(e) { console.log('Telegram step failed:', e.message); }
+// Telegram fires only on the scheduled 3h cron — NOT on self-heals or manual runs.
+// Self-heal retries every 30 min; without this guard every retry spammed the channel.
+if (sendTelegram) {
+  try { await sendTelegramAlert(env, sentiment); console.log('Telegram alert sent'); }
+  catch(e) { console.log('Telegram step failed:', e.message); }
+} else {
+  console.log('Telegram skipped (self-heal / manual run).');
+}
 
 try { await saveSentiment(sentiment, env); console.log('Sentiment saved'); }
 catch(e) { console.log('saveSentiment failed:', e.message); }
 
 } catch (error) {
-// Re-throw so the worker invocation counts as an error in the
-// Cloudflare dashboard. Previously this catch silently swallowed
-// Anthropic failures and the dashboard reported 0 errors while the
-// sentiment table went stale for hours.
 console.error('Error in sentiment analysis (top-level):', error && error.message);
 throw error;
 }
@@ -744,7 +744,7 @@ console.log('Staleness: skipping self-heal (primary scan already running this ti
 const label = isKnownIncident ? 'retrying' : 'attempting';
 console.log(`Staleness: ${label} self-heal via runSentimentAnalysis...`);
 rescueAttempted = true;
-try { await runSentimentAnalysis(env); }
+try { await runSentimentAnalysis(env, { sendTelegram: false }); }
 catch (e) { rescueErr = e; console.log('Staleness: self-heal failed:', e.message); }
 // Record attempt time so the 30-min cooldown starts now, win or lose.
 const healAttemptAt = new Date().toISOString();
