@@ -610,8 +610,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div></a>
 
     </div>
-<div class="sky-inline">
-  <ins class='dcmads' style='display:inline-block;width:160px;height:600px' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381909257' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5511" data-dcm-api-frameworks='[APIFRAMEWORKS]' data-dcm-omid-partner='[OMIDPARTNER]' data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5511" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
+<div style="text-align:center;margin:28px auto 24px;max-width:750px;padding:0 20px;">
+  <div style="font-size:11px;color:#64748b;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px;">Sponsored</div>
+  <ins class='dcmads' style='display:inline-block;width:728px;height:90px;max-width:100%;' data-dcm-placement='N800570.2009906CELLXPERT/B24282330.340388757' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=382&aff_id=44603&file_id=5416" data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=382&aff_id=44603&file_id=5416" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
 </div>
 <div id="pro-banner" style="background:linear-gradient(135deg,#1e40af,#2563eb);border-radius:12px;padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
   <div>
@@ -804,6 +805,29 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script src="/ticker.js" defer></script>
 <script src="/main.js" defer></script>
 <script type="module" src="/firebase.js"></script>
+
+<!-- Mobile sticky bottom CTA — Pepperstone affiliate, desktop hidden -->
+<div id="mob-sticky" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#0f2d5e,#1e40af);padding:10px 16px;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 -2px 12px rgba(0,0,0,.4);">
+  <div style="flex:1;min-width:0;">
+    <div style="font-size:10px;color:#93c5fd;letter-spacing:0.06em;text-transform:uppercase;">Sponsored · Pepperstone</div>
+    <div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Trade Forex with tight spreads</div>
+  </div>
+  <a href="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603" target="_blank" rel="noopener" style="flex-shrink:0;background:#fff;color:#1e40af;padding:8px 14px;border-radius:6px;font-weight:700;font-size:13px;text-decoration:none;">Open Account</a>
+  <button id="mob-sticky-close" style="flex-shrink:0;background:none;border:none;color:#93c5fd;font-size:22px;cursor:pointer;padding:0 0 0 4px;line-height:1;">×</button>
+</div>
+<script>
+(function(){
+  if(document.documentElement.getAttribute('data-pro')==='1')return;
+  if(window.innerWidth>768)return;
+  if(sessionStorage.getItem('pep_sticky_closed'))return;
+  var el=document.getElementById('mob-sticky');
+  el.style.display='flex';
+  document.getElementById('mob-sticky-close').addEventListener('click',function(){
+    el.style.display='none';
+    sessionStorage.setItem('pep_sticky_closed','1');
+  });
+})();
+</script>
 
 </body>
 </html>

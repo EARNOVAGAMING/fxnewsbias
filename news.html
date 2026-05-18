@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link rel="preload" as="image" href="/logo-fxnb.webp?v=2" type="image/webp">
-<link rel="preload" href="/news-page.js?v=20260517d" as="script">
+<link rel="preload" href="/news-page.js?v=20260518" as="script">
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#0f172a">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
@@ -94,12 +94,11 @@ nav a.active{font-weight:600;}
 .cat-tab.active{color:#f1f5f9;border-bottom-color:#2563eb;}
 
 /* MAIN LAYOUT */
-.main{max-width:1280px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:160px 1fr 320px;gap:24px;align-items:start;}
-@media(min-width:901px){.main{grid-template-columns:160px 1fr 320px;}aside{display:block;}}
-.sky-left,.sky-right{text-align:center;}
-.sky-left{position:sticky;top:20px;}
-html[data-pro="1"] .sky-left,html[data-pro="1"] .sky-right{display:none!important;}
-@media(max-width:900px){.sky-left,.sky-right{display:none!important;}}
+.main{max-width:1280px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;}
+@media(min-width:901px){.main{grid-template-columns:1fr 320px;}aside{display:block;}}
+.sky-right{text-align:center;}
+html[data-pro="1"] .sky-right{display:none!important;}
+@media(max-width:900px){.sky-right{display:none!important;}}
 
 /* NEWS FEED CONTAINER — #1e293b well so white cards float */
 #news-feed{min-height:900px;max-height:1800px;overflow-y:auto;background:#1e293b;border-radius:12px;padding:16px;scroll-behavior:smooth;}
@@ -314,9 +313,6 @@ footer{background:#080d1a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;bord
   </ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=382&aff_id=44603&file_id=5417" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
 </div>
 <main class="main">
-  <div class="sky-left">
-    <ins class='dcmads' style='display:inline-block;width:160px;height:600px' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381909257' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5511" data-dcm-api-frameworks='[APIFRAMEWORKS]' data-dcm-omid-partner='[OMIDPARTNER]' data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5511" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
-  </div>
   <div id="news-feed">
 
     <!-- Featured Story — placeholder visible immediately; JS replaces content on load -->
@@ -357,7 +353,10 @@ footer{background:#080d1a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;bord
       <input type="email" placeholder="your@email.com" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;margin-bottom:8px;">
       <button class="btn btn-primary" style="width:100%;">Subscribe Free</button>
     </div>
-    <div class="sky-right" style="margin-top:16px;">
+    <div class="sky-right" style="margin-top:16px;margin-bottom:12px;">
+      <ins class='dcmads' style='display:inline-block;width:160px;height:600px' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381909257' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5511" data-dcm-api-frameworks='[APIFRAMEWORKS]' data-dcm-omid-partner='[OMIDPARTNER]' data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5511" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
+    </div>
+    <div class="sky-right" style="margin-top:0;margin-bottom:16px;">
       <ins class='dcmads' style='display:inline-block;width:160px;height:600px' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381157430' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5510" data-dcm-api-frameworks='[APIFRAMEWORKS]' data-dcm-omid-partner='[OMIDPARTNER]' data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5510" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
     </div>
   </aside>
@@ -412,6 +411,6 @@ footer{background:#080d1a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;bord
 <script src="/analytics.js" defer></script>
 <script src="/ticker.js" defer></script>
 <script type="module" src="/firebase.js"></script>
-<script src="/news-page.js?v=20260517d" defer></script>
+<script src="/news-page.js?v=20260518" defer></script>
 </body>
 </html>
