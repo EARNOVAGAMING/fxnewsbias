@@ -497,7 +497,6 @@ let userProfile = null;
 let allPosts = [];
 let currentFilter = 'all';
 let userLikes = new Set();
-let userSaves = new Set();
 let viewedPosts = new Set();
 let selectedBias = '';
 let selectedImage = null;
@@ -554,16 +553,13 @@ onAuthStateChanged(auth, async (user) => {
       if (userDoc.exists()) userProfile = userDoc.data();
     } catch(e) { console.log('Profile load:', e); }
     
-    // Load likes/saves
+    // Load likes
     try {
       const likesQuery = query(collection(db, 'likes'), where('userEmail', '==', user.email));
       const likesSnap = await getDocs(likesQuery);
       likesSnap.forEach(d => userLikes.add(d.data().itemId));
       
-      const savesQuery = query(collection(db, 'saves'), where('userEmail', '==', user.email));
-      const savesSnap = await getDocs(savesQuery);
-      savesSnap.forEach(d => userSaves.add(d.data().itemId));
-    } catch(e) { console.log('Likes/saves load:', e); }
+    } catch(e) { console.log('Likes load:', e); }
     
     renderPosts();
   } else {
@@ -771,7 +767,6 @@ function renderPosts() {
     const col = colors[colorIdx];
     const isFeatured = (p.likes || 0) >= 5;
     const liked = userLikes.has(p.id);
-    const saved = userSaves.has(p.id);
     const isOwn = currentUser && currentUser.email === p.authorEmail;
     const biasClass = p.bias === 'Bullish' ? 'bias-bull' : p.bias === 'Bearish' ? 'bias-bear' : 'bias-neut';
     const biasShow = p.bias ? `<span class="post-bias ${biasClass}">${p.bias}</span>` : '';
@@ -804,7 +799,6 @@ function renderPosts() {
           <span class="post-action like-btn ${liked ? 'active' : ''}" data-id="${p.id}">${liked ? '❤️' : '🤍'} ${p.likes || 0}</span>
           <span class="post-action">👁️ ${p.views || 0}</span>
           <span class="post-action comment-toggle" data-id="${p.id}" style="cursor:pointer;">💬 ${p.comments || 0} Comment${(p.comments || 0) !== 1 ? 's' : ''}</span>
-          <span class="post-action save-btn ${saved ? 'active' : ''}" data-id="${p.id}">${saved ? '🔖' : '📑'} ${saved ? 'Saved' : 'Save'}</span>
         </div>
         <div class="comment-section" id="cs-${p.id}" style="display:none;"></div>
       </div>
@@ -822,15 +816,6 @@ function attachPostHandlers() {
       e.stopPropagation();
       if (!currentUser) { window.location.href = '/login'; return; }
       await togglePostLike(btn.dataset.id);
-    });
-  });
-  
-  // Save
-  document.querySelectorAll('.save-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if (!currentUser) { window.location.href = '/login'; return; }
-      await togglePostSave(btn.dataset.id);
     });
   });
   
@@ -1015,32 +1000,6 @@ async function togglePostLike(postId) {
       userLikes.add(postId);
     }
   } catch(e) { console.log('Like error:', e); }
-}
-
-async function togglePostSave(postId) {
-  if (!currentUser) return;
-  const userDocId = currentUser.email.replace(/[.#$[\]@]/g, '_');
-  const saveId = `${userDocId}_${postId}`;
-  const saveRef = doc(db, 'saves', saveId);
-  
-  try {
-    const saveDoc = await getDoc(saveRef);
-    if (saveDoc.exists()) {
-      await deleteDoc(saveRef);
-      userSaves.delete(postId);
-      showToast('Removed from saved', 'success');
-    } else {
-      await setDoc(saveRef, {
-        userEmail: currentUser.email,
-        itemId: postId,
-        itemType: 'post',
-        createdAt: serverTimestamp()
-      });
-      userSaves.add(postId);
-      showToast('Saved!', 'success');
-    }
-    renderPosts();
-  } catch(e) { console.log('Save error:', e); }
 }
 
 async function trackViews(posts) {

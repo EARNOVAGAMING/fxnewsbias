@@ -216,6 +216,26 @@ try {
   return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
 }
 }
+if (url.pathname === '/admin-update-post' && request.method === 'PATCH') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+try {
+  const { id, content, title } = await request.json();
+  if (!id) return new Response(JSON.stringify({ error: 'missing id' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+  const token = await getFirebaseToken(env);
+  const PROJECT_ID = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
+  const fields = {};
+  if (content !== undefined) fields.content = { stringValue: content };
+  if (title !== undefined) fields.title = { stringValue: title };
+  const mask = Object.keys(fields).map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+  const fsUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/posts/${id}?${mask}`;
+  const res = await fetch(fsUrl, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ fields }) });
+  const data = await res.json();
+  if (!res.ok) return new Response(JSON.stringify({ error: data }), { status: res.status, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ ok: true, id }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+} catch(e) {
+  return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+}
+}
 if (url.pathname === '/admin-delete-post' && request.method === 'DELETE') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 try {
