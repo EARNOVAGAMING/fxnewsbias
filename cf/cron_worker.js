@@ -275,9 +275,12 @@ return new Response('FXNewsBias Cron Worker Running', { status: 200 });
 async scheduled(event, env, ctx) {
 // Cron triggers:
 //   '*/15 * * * *'  -> price updates only (self-heal removed)
-//   '0 */3 * * *'   -> sequential chain: sentiment → pairSEO → currencySEO → cleanup
-//                      Sentiment runs first so SEO always reads fresh data.
-//                      Each step uses withRetry (3 attempts, 5s gap) and logs to step_runs.
+//   '0 */3 * * *'   -> sentiment only (writes fresh data to Supabase for SEO steps to read)
+//   '5 */3 * * *'   -> pairSEO only (reads latest sentiment from Supabase)
+//   '10 */3 * * *'  -> currencySEO only (reads latest sentiment from Supabase)
+//   '15 */3 * * *'  -> cleanup + IndexNow
+//                      All 4 share the same cycle_timestamp (floored to 3h UTC boundary).
+//                      Each step runs in its own fresh invocation with 1000 subrequest budget.
 //   '0 0 * * *'     -> ASEAN session insight (weekdays only)
 //   '0 6 * * *'     -> London session insight (weekdays only)
 //   '0 12 * * *'    -> NY session insight (weekdays only)
@@ -292,30 +295,28 @@ if (event.cron === '*/15 * * * *') {
 
 } else if (event.cron === '0 */3 * * *') {
   ctx.waitUntil((async () => {
-    // Step 1: sentiment — must complete before SEO reads Supabase
     await runSentimentAnalysis(env, { cycleTs });
-
-    // Step 2+3: SEO — run in parallel, both read the fresh sentiment just written
-    await Promise.all([
-      generateAllPairSEO(env, { cycleTs }),
-      generateAllCurrencySEO(env, { cycleTs }),
-    ]);
-
-    // Step 4: cleanup + IndexNow — fire in parallel, all best-effort
-    await Promise.all([
-      cleanupNews(env).catch(e => console.log('cleanupNews error:', e.message)),
-      cleanupSentiment(env).catch(e => console.log('cleanupSentiment error:', e.message)),
-      cleanupSystemState(env).catch(e => console.log('cleanupSystemState error:', e.message)),
-      cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns error:', e.message)),
-      cleanupStepRuns(env).catch(e => console.log('cleanupStepRuns error:', e.message)),
-      pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow error:', e.message)),
-    ]);
-
-    // Sunday 21:00 UTC — weekly pro report
+    // Sunday 21:00 UTC — weekly pro report runs after sentiment in the same invocation
     if (_dow === 0 && new Date().getUTCHours() === 21) {
       await buildAndSaveWeeklyReport(env).catch(e => console.log('Weekly report error:', e.message));
     }
   })());
+
+} else if (event.cron === '5 */3 * * *') {
+  ctx.waitUntil(generateAllPairSEO(env, { cycleTs }));
+
+} else if (event.cron === '10 */3 * * *') {
+  ctx.waitUntil(generateAllCurrencySEO(env, { cycleTs }));
+
+} else if (event.cron === '15 */3 * * *') {
+  ctx.waitUntil(Promise.all([
+    cleanupNews(env).catch(e => console.log('cleanupNews error:', e.message)),
+    cleanupSentiment(env).catch(e => console.log('cleanupSentiment error:', e.message)),
+    cleanupSystemState(env).catch(e => console.log('cleanupSystemState error:', e.message)),
+    cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns error:', e.message)),
+    cleanupStepRuns(env).catch(e => console.log('cleanupStepRuns error:', e.message)),
+    pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow error:', e.message)),
+  ]));
 
 } else if (SESSION_BY_CRON[event.cron] && !_isWeekend) {
   const session = SESSION_BY_CRON[event.cron];
@@ -1964,18 +1965,26 @@ regime_warning: claudeOut.regime_warning || ''
 }
 
 async function fetchAllNews() {
-// 8 feeds (trimmed 2026-05-18 from 16 to stay under the 50 subrequest/invocation limit).
-// Kept the highest-signal sources per category; removed duplicates and lower-tier feeds.
+// 16 feeds — full set restored on paid plan (1000 subrequests/invocation, no trimming needed).
+// Sentiment now runs in its own isolated invocation (0 */3) with a fresh 1000-subrequest budget.
 const PER_SOURCE_CAP = 15;
 const TOTAL_CAP = 100;
 const feeds = [
 // Forex / FX-specific
 { url: 'https://www.fxstreet.com/rss/news', source: 'FXStreet' },
 { url: 'https://www.forexlive.com/feed/', source: 'ForexLive' },
-{ url: 'https://www.investing.com/rss/news_285.rss', source: 'Investing.com FX' },
+{ url: 'https://www.actionforex.com/feed/', source: 'Action Forex' },
 { url: 'https://www.forexcrunch.com/feed/', source: 'Forex Crunch' },
+{ url: 'https://www.fxdailyreport.com/feed/', source: 'FX Daily Report' },
+{ url: 'https://www.financemagnates.com/feed/', source: 'Finance Magnates' },
+{ url: 'https://www.leaprate.com/feed/', source: 'LeapRate' },
+{ url: 'https://www.investing.com/rss/news_285.rss', source: 'Investing.com FX' },
+{ url: 'https://www.nasdaq.com/feed/rssoutbound?category=currencies', source: 'Nasdaq Currencies' },
 // Macro / financial press
 { url: 'https://feeds.bbci.co.uk/news/business/rss.xml', source: 'BBC News' },
+{ url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html', source: 'CNBC' },
+{ url: 'https://www.cnbc.com/id/100727362/device/rss/rss.html', source: 'CNBC Currencies' },
+{ url: 'https://www.cnbc.com/id/15839135/device/rss/rss.html', source: 'CNBC Markets' },
 { url: 'https://www.marketwatch.com/rss/topstories', source: 'MarketWatch' },
 { url: 'https://feeds.a.dj.com/rss/RSSWSJD.xml', source: 'WSJ' },
 { url: 'https://finance.yahoo.com/news/rssindex', source: 'Yahoo Finance' },
@@ -3542,7 +3551,6 @@ async function generateAllCurrencySEO(env, opts = {}) {
     const newsRows = newsResp.ok ? await newsResp.json() : [];
     console.log(`generateAllCurrencySEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
 
-    const generated = [];
     for (const ccy of SEO_CURRENCIES) {
       try {
         const sentData = sentMap[ccy.code] || { score: 50, bias: 'Neutral', drivers: [] };
@@ -3550,15 +3558,16 @@ async function generateAllCurrencySEO(env, opts = {}) {
         const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
         const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
         const html = await generateCurrencySEO(ccy, sentData, headlines, env);
-        if (html) generated.push({ slug: ccy.slug, html });
+        if (html) {
+          await saveSEOCache(ccy.slug, html, env);
+          console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100)`);
+        }
       } catch(e) {
         console.log(`Currency SEO error for ${ccy.code}:`, e.message);
       }
       await new Promise(r => setTimeout(r, 600));
     }
-    // 1 subrequest for all currencies instead of 8 — critical for staying under the 50 limit
-    await batchSaveSEOCache(generated, env);
-    console.log(`generateAllCurrencySEO: done, cached ${generated.length} currencies`);
+    console.log('generateAllCurrencySEO: done');
   }, env, cycleTs);
 }
 
@@ -3632,28 +3641,6 @@ async function saveSEOCache(slug, html, env) {
   }
 }
 
-// Batch upsert: 1 subrequest regardless of how many slugs — critical for staying under
-// the 50-subrequest-per-invocation limit when writing 15 pairs + 8 currencies.
-async function batchSaveSEOCache(entries, env) {
-  if (!entries.length) return;
-  const now = new Date().toISOString();
-  const rows = entries.map(({ slug, html }) => ({ slug, html, updated_at: now }));
-  const r = await fetch(`${env.SUPABASE_URL}/rest/v1/seo_cache`, {
-    method: 'POST',
-    headers: {
-      'apikey': env.SUPABASE_SERVICE_KEY,
-      'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates',
-    },
-    body: JSON.stringify(rows),
-    signal: AbortSignal.timeout(25000),
-  });
-  if (!r.ok) {
-    const t = await r.text();
-    throw new Error(`batchSaveSEOCache (${entries.length} rows): ${r.status} ${t.slice(0, 200)}`);
-  }
-}
 
 async function generateAllPairSEO(env, opts = {}) {
   const { cycleTs } = opts;
@@ -3677,23 +3664,19 @@ async function generateAllPairSEO(env, opts = {}) {
     const allHeadlines = newsRows.map(n => n.title).filter(Boolean);
     console.log(`generateAllPairSEO: ${sentRows.length} sentiment rows, ${allHeadlines.length} headlines`);
 
-    const generated = [];
     const BATCH = 3;
     for (let i = 0; i < SEO_PAIRS.length; i += BATCH) {
       const batch = SEO_PAIRS.slice(i, i + BATCH);
-      const results = await Promise.all(batch.map(async (pair) => {
+      await Promise.all(batch.map(async (pair) => {
         try {
           const baseData = sentMap[pair.base] || { score: 0, bias: 0 };
           const quoteData = sentMap[pair.quote] || { score: 0, bias: 0 };
           const html = await generatePairSEO(pair, Math.round(baseData.score - quoteData.score), baseData.bias - quoteData.bias, allHeadlines, env);
-          return html ? { slug: pair.slug, html } : null;
-        } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); return null; }
+          if (html) { await saveSEOCache(pair.slug, html, env); console.log(`SEO cached: ${pair.slug}`); }
+        } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
       }));
-      generated.push(...results.filter(Boolean));
       if (i + BATCH < SEO_PAIRS.length) await new Promise(r => setTimeout(r, 1000));
     }
-    // 1 subrequest for all pairs instead of 15 — critical for staying under the 50 limit
-    await batchSaveSEOCache(generated, env);
-    console.log(`generateAllPairSEO: done, cached ${generated.length} pairs`);
+    console.log('generateAllPairSEO: done');
   }, env, cycleTs);
 }

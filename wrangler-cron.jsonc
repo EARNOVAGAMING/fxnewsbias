@@ -5,8 +5,11 @@
   "compatibility_flags": ["nodejs_compat"],
   "triggers": {
     "crons": [
-      "*/15 * * * *",   // prices only (self-heal removed)
-      "0 */3 * * *",    // sentiment → pairSEO → currencySEO → cleanup (sequential)
+      "*/15 * * * *",   // prices (Twelve Data)
+      "0 */3 * * *",    // sentiment only
+      "5 */3 * * *",    // pairSEO only (reads fresh sentiment from Supabase)
+      "10 */3 * * *",   // currencySEO only (reads fresh sentiment from Supabase)
+      "15 */3 * * *",   // cleanup + IndexNow
       "0 0 * * *",      // ASEAN session insight
       "0 6 * * *",      // London session insight
       "0 12 * * *"      // NY session insight
