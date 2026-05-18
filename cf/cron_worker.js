@@ -2594,12 +2594,13 @@ Hard rules — violating any of these will make the article unusable:
 4. No generic filler like "markets await fresh catalysts" unless truly nothing happened.
 5. Natural SEO — include these terms once each where they fit: 'forex market analysis', 'currency strength', 'central bank', '${watchPair||biggestMover.currency+' pairs'}', 'exchange rate', 'price action'. Never force them.
 6. Tone: authoritative but readable — like FXStreet or Reuters FX desk, not academic.
-7. Total prose word count (all sections combined): 500–700 words.`;
+7. Total prose word count (all sections combined): 500–700 words.
+8. CRITICAL — "what_happened_intro" must ONLY reference headlines that directly affect ${biggestMover.currency}. Do NOT open a ${biggestMover.currency} article with a headline about a different currency (e.g. do not lead a USD article with a BoE/GBP headline). If a non-${biggestMover.currency} headline is contextually relevant (e.g. a risk-off event that drives safe-haven flows into USD), mention it briefly as a secondary factor only — never as the lead sentence.`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {'Content-Type':'application/json','x-api-key':env.CLAUDE_API_KEY,'anthropic-version':'2023-06-01'},
-    body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:2000, messages:[{role:'user',content:prompt}]})
+    body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:3000, messages:[{role:'user',content:prompt}]})
   });
   if (!resp.ok) throw new Error(`Anthropic HTTP ${resp.status}`);
   const data = await resp.json();
@@ -2612,8 +2613,10 @@ Hard rules — violating any of these will make the article unusable:
   // Glance widget is always data-driven
   const glance = _INS_CCY_ORDER.map(c=>{const x=sentiment[c];if(!x)return '';return `<div class="glance-cell" style="border-top-color:${_insBiasColor(x.bias)};"><div class="glance-ccy">${c}</div><div class="glance-score">${x.score}</div><div class="glance-arr" style="color:${_insBiasColor(x.bias)};">${_insBiasArrow(x.bias)} ${x.bias.slice(0,4)}</div></div>`;}).join('');
 
-  // News timeline is always data-driven
-  const tl = [...news].filter(n=>n.title).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)).slice(-4);
+  // News timeline: currency-relevant items first, pad with others, then sort by time
+  const _tlMover = news.filter(n=>n.title&&(n.currencies_affected||[]).includes(biggestMover.currency));
+  const _tlOther = news.filter(n=>n.title&&!_tlMover.includes(n));
+  const tl = [..._tlMover,..._tlOther].slice(0,4).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
   let timelineHtml = '';
   if (tl.length >= 2) {
     timelineHtml = `<h3 style="font-size:15px;font-weight:700;margin:18px 0 6px;color:#1a1a1a;letter-spacing:0.2px;">Today's news timeline</h3><ul class="timeline">`;
@@ -2676,10 +2679,16 @@ function _insBuildNarrative({sentiment, news, biggestMover}){
   const strongest = bulls[0]; const weakest = bears[0];
   const high = news.filter(n=>n.impact==='High');
   const moverNews = news.filter(n=>(n.currencies_affected||[]).includes(biggestMover.currency));
-  const top = high[0] || moverNews[0] || news[0];
+  // Prefer a high-impact headline that directly affects the featured currency; fall back to any mover news, then global high, then any news
+  const top = moverNews.find(n=>n.impact==='High') || moverNews[0] || high[0] || news[0];
   const moverHighlights = moverNews.slice(0,3);
-  const otherHigh = high.filter(n=>n!==top).slice(0,2);
-  const tl = [...news].filter(n=>n.title).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)).slice(-4);
+  // Supporting headlines: prefer currency-relevant ones, pad with other high-impact if needed
+  const moverOther = moverNews.filter(n=>n!==top).slice(0,2);
+  const otherHigh = moverOther.length >= 2 ? moverOther : [...moverOther, ...high.filter(n=>n!==top&&!moverOther.includes(n)).slice(0,2-moverOther.length)];
+  // Timeline: show currency-relevant news first, fill with others up to 4 items
+  const tlMover = moverNews.filter(n=>n.title);
+  const tlOther = news.filter(n=>n.title&&!tlMover.includes(n));
+  const tl = [...tlMover, ...tlOther].slice(0,4).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
   const moverName = _INS_CCY_NAMES[biggestMover.currency];
   const biasWord = biggestMover.bias.toLowerCase();
   const biasColorVal = _insBiasColor(biggestMover.bias);
