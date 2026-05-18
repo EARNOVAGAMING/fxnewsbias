@@ -4,6 +4,12 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // Enforce HTTPS — 301 redirect any HTTP request to the HTTPS equivalent
+    if (url.protocol === 'http:') {
+      url.protocol = 'https:';
+      return Response.redirect(url.toString(), 301);
+    }
+
     // Only intercept GET requests for pair pages
     const pairMatch = url.pathname.match(/^\/pairs\/([\w-]+)\/?$/);
     if (request.method === 'GET' && pairMatch) {

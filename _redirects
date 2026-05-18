@@ -17,6 +17,10 @@
 /how.html         /how         301
 /privacy.html     /privacy     301
 /terms.html       /terms       301
+/login.html       /login       301
+/register.html    /register    301
+/history.html     /history     301
+/report.html      /report      301
 
 # www -> apex redirect handled at Cloudflare DNS / page rule level
 # (Worker static assets only allows relative URLs, not cross-host redirects)
