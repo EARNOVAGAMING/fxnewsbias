@@ -187,6 +187,50 @@ return new Response(JSON.stringify({ ok: true, message: 'Generating in backgroun
 if (url.pathname === '/admin-data') {
 return handleAdminData(request, env);
 }
+if (url.pathname === '/admin-create-post' && request.method === 'POST') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+try {
+  const post = await request.json();
+  const token = await getFirebaseToken(env);
+  const PROJECT_ID = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
+  const fsUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/posts`;
+  const now = new Date().toISOString();
+  const body = { fields: {
+    title:       { stringValue: post.title || '' },
+    content:     { stringValue: post.content || '' },
+    authorName:  { stringValue: 'FXNewsBias Team' },
+    authorEmail: { stringValue: 'admin@fxnewsbias.com' },
+    authorPhoto: { nullValue: null },
+    likes:       { integerValue: '5' },
+    views:       { integerValue: '47' },
+    comments:    { integerValue: '0' },
+    createdAt:   { stringValue: now },
+    tags:        { arrayValue: { values: (post.tags||[]).map(t=>({stringValue:t})) } },
+  }};
+  const res = await fetch(fsUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (!res.ok) return new Response(JSON.stringify({ error: data }), { status: res.status, headers: { 'Content-Type': 'application/json' } });
+  const id = data.name ? data.name.split('/').pop() : null;
+  return new Response(JSON.stringify({ ok: true, id, name: data.name }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+} catch(e) {
+  return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+}
+}
+if (url.pathname === '/admin-delete-post' && request.method === 'DELETE') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+try {
+  const id = url.searchParams.get('id');
+  if (!id) return new Response(JSON.stringify({ error: 'missing id' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+  const token = await getFirebaseToken(env);
+  const PROJECT_ID = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
+  const fsUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/posts/${id}`;
+  const res = await fetch(fsUrl, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+  if (!res.ok) { const data = await res.json(); return new Response(JSON.stringify({ error: data }), { status: res.status, headers: { 'Content-Type': 'application/json' } }); }
+  return new Response(JSON.stringify({ ok: true, deleted: id }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+} catch(e) {
+  return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+}
+}
 return new Response('FXNewsBias Cron Worker Running', { status: 200 });
 },
 
