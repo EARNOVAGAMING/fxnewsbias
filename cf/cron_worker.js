@@ -125,6 +125,20 @@ return new Response(JSON.stringify(result, null, 2), {
 status: 200, headers: { 'Content-Type': 'application/json' }
 });
 }
+if (url.pathname === '/run-seo') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+try {
+  await Promise.all([
+    generateAllPairSEO(env),
+    generateAllCurrencySEO(env),
+  ]);
+  return new Response(JSON.stringify({ ok: true, msg: 'SEO generation complete — pairs + currencies' }), {
+    status: 200, headers: { 'Content-Type': 'application/json' }
+  });
+} catch(e) {
+  return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+}
+}
 if (url.pathname === '/run-insight') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const result = await generateDailyInsight(env);
