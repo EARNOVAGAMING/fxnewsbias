@@ -1,0 +1,15 @@
+{
+  "name": "fxnewsbias-cron",
+  "main": "/root/fxnewsbias/cf/cron_worker.js",
+  "compatibility_date": "2026-04-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "triggers": {
+    "crons": [
+      "*/15 * * * *",
+      "0 */3 * * *",
+      "0 0 * * *",
+      "0 6 * * *",
+      "0 12 * * *"
+    ]
+  }
+}
