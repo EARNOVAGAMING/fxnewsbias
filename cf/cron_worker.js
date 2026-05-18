@@ -641,31 +641,37 @@ alert_active_for_id: activeAlertId
 };
 
 if (isStale) {
-// Only fire once per incident — keyed on the id of the stuck "latest" row.
-if (activeAlertId === latest.id) {
-console.log('Staleness: still stale, alert already sent for sentiment id', latest.id);
-summary.action = 'noop-already-alerted';
+const HEAL_RETRY_MS = 30 * 60 * 1000; // retry self-heal every 30 min
+const isKnownIncident = activeAlertId === latest.id;
+const lastAttempt = prevState && prevState.last_heal_attempt_at
+  ? Date.parse(prevState.last_heal_attempt_at) : 0;
+const cooldownActive = (Date.now() - lastAttempt) < HEAL_RETRY_MS;
+
+// On a known incident, skip until cooldown elapses (or primary scan is running).
+if (isKnownIncident && (skipSelfHeal || cooldownActive)) {
+const minLeft = Math.round((HEAL_RETRY_MS - (Date.now() - lastAttempt)) / 60000);
+console.log(`Staleness: known incident — self-heal cooldown active (${minLeft} min left).`);
+summary.action = 'noop-cooldown';
 return summary;
 }
-// AUTO-RECOVER: before alerting humans, try to self-heal by re-running
-// the sentiment scan once. The 3-hourly cron may have failed silently
-// (e.g. Anthropic 429/529); the */15 staleness check will then close
-// the gap within 15 minutes instead of waiting for the next 3h tick.
-// We only attempt this on the *first* detection of a new stale row
-// (activeAlertId !== latest.id) so we never burn Anthropic calls in
-// a tight loop if the rescue itself keeps failing.
-// skipSelfHeal is set by the caller when the primary 3h scan is already
-// in flight on the same invocation — running both in parallel would
-// double-spend Anthropic and race the primary write.
+
+// AUTO-RECOVER: attempt self-heal on first detection OR after cooldown elapses.
+// skipSelfHeal is set when the primary 3h scan is already running this tick.
 let rescueErr = null;
 let rescueAttempted = false;
 if (skipSelfHeal) {
 console.log('Staleness: skipping self-heal (primary scan already running this tick).');
 } else {
-console.log('Staleness: attempting self-heal via runSentimentAnalysis...');
+const label = isKnownIncident ? 'retrying' : 'attempting';
+console.log(`Staleness: ${label} self-heal via runSentimentAnalysis...`);
 rescueAttempted = true;
 try { await runSentimentAnalysis(env); }
 catch (e) { rescueErr = e; console.log('Staleness: self-heal failed:', e.message); }
+// Record attempt time so the 30-min cooldown starts now, win or lose.
+const healAttemptAt = new Date().toISOString();
+if (isKnownIncident) {
+  await writeSystemState(env, STATE_KEY, { ...(prevState || {}), last_heal_attempt_at: healAttemptAt });
+}
 }
 if (rescueAttempted && !rescueErr) {
 // Re-read latest row to confirm recovery before declaring victory.
@@ -676,14 +682,20 @@ const recheck = await fetch(
 if (recheck.ok) {
 const newRows = await recheck.json();
 if (Array.isArray(newRows) && newRows.length && newRows[0].id !== latest.id) {
-console.log('Staleness: self-healed, fresh row at', newRows[0].created_at);
-summary.action = 'self-healed';
+console.log(`Staleness: self-healed${isKnownIncident ? ' (retry)' : ''}, fresh row at`, newRows[0].created_at);
+summary.action = isKnownIncident ? 'self-healed-retry' : 'self-healed';
 summary.recovered_at = newRows[0].created_at;
 return summary;
 }
 }
 }
-// Self-heal didn't produce a fresh row — proceed to alert humans.
+// Self-heal didn't produce a fresh row on a retry — stop here, try again next cooldown.
+if (isKnownIncident) {
+console.log('Staleness: retry self-heal did not produce a fresh row. Will retry in 30 min.');
+summary.action = 'retry-failed';
+return summary;
+}
+// First detection — alert humans.
 const lateBy = ageMs - cadenceMs;
 const text = `🚨 *FXNewsBias sentiment feed is stalled*\n\n`
 + `Latest sentiment row: \`${latest.created_at}\`\n`
@@ -696,6 +708,7 @@ const startedAt = new Date().toISOString();
 await writeSystemState(env, STATE_KEY, {
 active_for_id: latest.id,
 alerted_at: startedAt,
+last_heal_attempt_at: startedAt,
 latest_at: latest.created_at,
 age_minutes: summary.age_minutes,
 threshold_minutes: summary.threshold_minutes
