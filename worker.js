@@ -14,6 +14,25 @@ export default {
 
     if (request.method !== 'GET') return env.ASSETS.fetch(request);
 
+    // .html → clean URL: single 301. _redirects rules exist but the ASSETS
+    // binding serves exact file matches before redirect rules are evaluated,
+    // so these must fire here in the Worker before any file lookup occurs.
+    const HTML_REDIRECTS = {
+      '/index.html': '/', '/calendar.html': '/calendar',
+      '/currencies.html': '/currencies', '/pairs.html': '/pairs',
+      '/news.html': '/news', '/about.html': '/about',
+      '/community.html': '/community', '/contact.html': '/contact',
+      '/disclaimer.html': '/disclaimer', '/how.html': '/how',
+      '/privacy.html': '/privacy', '/terms.html': '/terms',
+      '/login.html': '/login', '/register.html': '/register',
+      '/history.html': '/history', '/report.html': '/report',
+    };
+    const cleanPath = HTML_REDIRECTS[url.pathname];
+    if (cleanPath) {
+      url.pathname = cleanPath;
+      return Response.redirect(url.toString(), 301);
+    }
+
     const pairMatch = url.pathname.match(/^\/pairs\/([\w-]+)\/?$/);
     if (pairMatch) return servePairPage(request, pairMatch[1], env);
 
