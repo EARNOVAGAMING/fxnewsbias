@@ -116,7 +116,7 @@ nav a.active{font-weight:600;}
 .filter-update{font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;margin-left:8px;}
 
 /* Pair card grid */
-.pair-grid{max-width:1280px;margin:0 auto 32px;padding:0 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;min-height:1600px;}
+.pair-grid{max-width:1280px;margin:0 auto 32px;padding:0 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;min-height:200px;}
 .pair-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;transition:all .15s;position:relative;}
 .pair-card:hover{border-color:var(--accent);box-shadow:0 6px 20px rgba(37,99,235,.08);}
 .pair-card.high-conviction{border-left:3px solid var(--accent);}
@@ -316,7 +316,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   </div>
 </div>
 
-<main>
+<main style="overflow-x:hidden;">
 <section class="page-head">
   <div class="page-head-inner">
     <div class="breadcrumb"><a href="/">Home</a> · Pairs</div>
@@ -354,8 +354,8 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   </div>
 </section>
 
-<div class="pepperstone-lb">
-  <ins class='dcmads' style='display:inline-block;width:728px;height:90px'
+<div class="pepperstone-lb" style="overflow:hidden;">
+  <ins class='dcmads' style='display:inline-block;width:728px;height:90px;max-width:100%;'
     data-dcm-placement='N800570.2009906CELLXPERT/B24282330.340388762'
     data-dcm-rendering-mode='iframe'
     data-dcm-https-only
@@ -366,7 +366,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     data-dcm-ltd='false'
     data-dcm-resettable-device-id=''
     data-dcm-app-id=''>
-    <script src='https://www.googletagservices.com/dcm/dcmads.js' async></script>
+    <script src='https://www.googletagservices.com/dcm/dcmads.js' async defer></script>
   </ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=382&aff_id=44603&file_id=5416" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
 </div>
 <div class="pepperstone-mobile">
@@ -407,10 +407,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
 <!-- PAIR GRID -->
 <section class="pair-grid" id="pair-grid"></section>
-
-<!-- AD -->
-<div class="section">
-</div>
 
 <!-- HOW TO READ -->
 <div class="section" style="padding:0 20px;">
@@ -463,6 +459,39 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     </div>
   </div>
 </section>
+
+<!-- Second Pepperstone ad — before SEO pair directory -->
+<div class="pepperstone-lb" style="overflow:hidden;margin:24px auto 8px;">
+  <div style="font-size:11px;color:#9ca3af;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px;text-align:center;">Sponsored</div>
+  <ins class='dcmads' style='display:inline-block;width:728px;height:90px;max-width:100%;'
+    data-dcm-placement='N800570.2009906CELLXPERT/B24282330.340388757'
+    data-dcm-rendering-mode='iframe'
+    data-dcm-https-only
+    data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=382&aff_id=44603&file_id=5416"
+    data-dcm-gdpr-applies='gdpr=${GDPR}'
+    data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}'
+    data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}'
+    data-dcm-ltd='false'
+    data-dcm-resettable-device-id=''
+    data-dcm-app-id=''>
+    <script src='https://www.googletagservices.com/dcm/dcmads.js' async defer></script>
+  </ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=382&aff_id=44603&file_id=5416" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
+</div>
+<div class="pepperstone-mobile" style="margin:16px auto 8px;">
+  <ins class='dcmads' style='display:inline-block;width:300px;height:250px;max-width:100%;'
+    data-dcm-placement='N800570.2009906CELLXPERT/B24282330.340388762'
+    data-dcm-rendering-mode='iframe'
+    data-dcm-https-only
+    data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=382&aff_id=44603&file_id=5417"
+    data-dcm-gdpr-applies='gdpr=${GDPR}'
+    data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}'
+    data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}'
+    data-dcm-ltd='false'
+    data-dcm-resettable-device-id=''
+    data-dcm-app-id=''>
+    <script src='https://www.googletagservices.com/dcm/dcmads.js' async defer></script>
+  </ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=382&aff_id=44603&file_id=5417" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
+</div>
 
 <section class="seo-pair-index" style="padding:32px 24px;background:var(--bg);border-top:1px solid var(--border);">
   <div style="max-width:1200px;margin:0 auto;">
