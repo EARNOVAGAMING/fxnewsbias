@@ -146,6 +146,10 @@ return new Response(JSON.stringify(result, null, 2), {
 status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' }
 });
 }
+if (url.pathname === '/step-runs') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+return handleStepRunsView(url, env);
+}
 if (url.pathname === '/incidents') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 return handleIncidentsView(url, env);
@@ -974,6 +978,143 @@ return Array.isArray(rows) ? rows : [];
 console.log('listRecentIncidents error:', e.message);
 return [];
 }
+}
+
+// ============================================
+// STEP RUNS DASHBOARD
+// ============================================
+
+async function handleStepRunsView(url, env) {
+  const step = url.searchParams.get('step') || '';
+  const limitRaw = parseInt(url.searchParams.get('limit'), 10);
+  const limit = Math.min(Math.max(isFinite(limitRaw) ? limitRaw : 40, 1), 200);
+  const format = (url.searchParams.get('format') || 'html').toLowerCase();
+
+  const params = new URLSearchParams();
+  params.set('select', 'id,step_name,started_at,ended_at,duration_seconds,status,error_message,retry_attempt,cycle_timestamp');
+  params.set('order', 'started_at.desc');
+  params.set('limit', String(limit));
+  if (step) params.set('step_name', `eq.${step}`);
+
+  let rows = [];
+  try {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/step_runs?${params.toString()}`, {
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+      signal: AbortSignal.timeout(25000)
+    });
+    if (r.ok) rows = await r.json();
+  } catch(e) {
+    console.log('handleStepRunsView fetch error:', e.message);
+  }
+
+  if (format === 'json') {
+    return new Response(JSON.stringify({ step: step || null, limit, count: rows.length, rows }, null, 2), {
+      status: 200, headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  const key = url.searchParams.get('key') || '';
+  return new Response(renderStepRunsHtml(rows, step, limit, key), {
+    status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  });
+}
+
+function renderStepRunsHtml(rows, step, limit, key) {
+  const STEP_NAMES = ['sentiment', 'pairSEO', 'currencySEO'];
+  const statusColor = { success: '#15803d', failed: '#b91c1c', partial: '#b45309' };
+  const statusBg    = { success: '#f0fdf4', failed: '#fef2f2', partial: '#fffbeb' };
+
+  // Build per-step summary cards from the rows
+  const cards = STEP_NAMES.map(name => {
+    const stepRows = rows.filter(r => r.step_name === name);
+    if (!stepRows.length) return { name, last: null, successRate: null, avgDuration: null };
+    const last = stepRows[0];
+    const total = stepRows.length;
+    const successes = stepRows.filter(r => r.status === 'success').length;
+    const durations = stepRows.filter(r => r.duration_seconds != null).map(r => r.duration_seconds);
+    const avgDuration = durations.length ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : null;
+    return { name, last, successRate: Math.round(100 * successes / total), avgDuration, total };
+  });
+
+  const cardsHtml = cards.map(c => `
+    <div class="card">
+      <div class="card-title">${escapeHtml(c.name)}</div>
+      ${c.last ? `
+        <div class="card-status" style="color:${statusColor[c.last.status] || '#64748b'}">
+          ${escapeHtml(c.last.status.toUpperCase())}
+        </div>
+        <div class="card-meta">Last run: ${escapeHtml(c.last.started_at ? c.last.started_at.replace('T',' ').slice(0,19)+' UTC' : '—')}</div>
+        <div class="card-meta">Success rate: <strong>${c.successRate}%</strong> (${c.total} runs shown)</div>
+        <div class="card-meta">Avg duration: <strong>${c.avgDuration != null ? c.avgDuration + 's' : '—'}</strong></div>
+        ${c.last.retry_attempt > 1 ? `<div class="card-meta warn">Last run needed ${c.last.retry_attempt} attempt(s)</div>` : ''}
+        ${c.last.status === 'failed' ? `<div class="card-meta err">Error: ${escapeHtml((c.last.error_message || '').slice(0, 120))}</div>` : ''}
+      ` : '<div class="card-meta">No data yet</div>'}
+    </div>`).join('');
+
+  const tableRows = rows.map(r => {
+    const bg = statusBg[r.status] || '';
+    const ago = r.started_at ? Math.round((Date.now() - Date.parse(r.started_at)) / 60000) : null;
+    const agoStr = ago != null ? (ago < 60 ? `${ago}m ago` : `${Math.round(ago/60)}h ago`) : '';
+    return `<tr style="background:${bg}">
+      <td><code>${escapeHtml(r.step_name)}</code></td>
+      <td style="color:${statusColor[r.status]||'#64748b'};font-weight:600">${escapeHtml(r.status)}</td>
+      <td>${escapeHtml(r.started_at ? r.started_at.replace('T',' ').slice(0,19)+' UTC' : '—')}<br><small style="color:#94a3b8">${escapeHtml(agoStr)}</small></td>
+      <td>${r.duration_seconds != null ? escapeHtml(String(r.duration_seconds)) + 's' : '—'}</td>
+      <td style="color:${r.retry_attempt > 1 ? '#b45309' : '#64748b'}">${escapeHtml(String(r.retry_attempt))}</td>
+      <td><code style="font-size:11px;color:#64748b">${escapeHtml((r.cycle_timestamp || '').slice(0,16).replace('T',' '))}</code></td>
+      <td style="color:#b91c1c;font-size:12px">${escapeHtml((r.error_message || '').slice(0, 200))}</td>
+    </tr>`;
+  }).join('');
+
+  const filterLinks = ['', ...STEP_NAMES].map(s =>
+    `<a href="?key=${encodeURIComponent(key)}&step=${encodeURIComponent(s)}&limit=${limit}" style="${s === step ? 'font-weight:700;text-decoration:none;color:#0f172a' : ''}">${s || 'All steps'}</a>`
+  ).join(' &nbsp;|&nbsp; ');
+
+  return `<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>FXNewsBias — Step Run Dashboard</title>
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="refresh" content="180">
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:20px 24px;color:#0f172a;background:#f1f5f9;font-size:14px}
+h1{font-size:17px;margin:0 0 4px;font-weight:700}
+.sub{color:#64748b;font-size:12px;margin:0 0 18px}
+.cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;min-width:180px;flex:1}
+.card-title{font-weight:700;font-size:13px;color:#1e293b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.card-status{font-size:20px;font-weight:800;margin-bottom:4px}
+.card-meta{font-size:12px;color:#475569;margin-top:2px}
+.card-meta.warn{color:#b45309}
+.card-meta.err{color:#b91c1c;word-break:break-word}
+.filters{margin-bottom:12px;font-size:13px}
+.filters a{color:#3b82f6}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13px;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+th,td{border-bottom:1px solid #e5e7eb;padding:8px 10px;vertical-align:top;text-align:left}
+th{background:#f8fafc;font-size:12px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+tr:last-child td{border-bottom:none}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.meta{color:#64748b;font-size:12px;margin:10px 0 14px}
+</style>
+</head><body>
+<h1>FXNewsBias — Cron Step Dashboard</h1>
+<p class="sub">Auto-refreshes every 3 min &nbsp;·&nbsp; Append <code>&format=json</code> for raw JSON &nbsp;·&nbsp; <a href="?key=${encodeURIComponent(key)}&step=&limit=${limit}&format=json">JSON export</a></p>
+
+<div class="cards">${cardsHtml}</div>
+
+<div class="filters">Filter: ${filterLinks}</div>
+
+<p class="meta">Showing last ${limit} rows${step ? ` for step <strong>${escapeHtml(step)}</strong>` : ''}.</p>
+
+<table>
+<thead><tr>
+  <th>Step</th><th>Status</th><th>Started</th><th>Duration</th><th>Attempts</th><th>Cycle</th><th>Error</th>
+</tr></thead>
+<tbody>
+${tableRows || '<tr><td colspan="7" style="color:#64748b;text-align:center;padding:20px">No step_runs rows yet — waiting for next 0 */3 cron tick.</td></tr>'}
+</tbody>
+</table>
+</body></html>`;
 }
 
 async function handleIncidentsView(url, env) {
