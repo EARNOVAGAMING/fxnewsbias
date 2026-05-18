@@ -1964,26 +1964,18 @@ regime_warning: claudeOut.regime_warning || ''
 }
 
 async function fetchAllNews() {
-// 17 feeds (audited 2026-05-18). FX-specific feeds added; generic Investing.com
-// and Nasdaq replaced with their FX/currencies sections for better signal.
+// 8 feeds (trimmed 2026-05-18 from 16 to stay under the 50 subrequest/invocation limit).
+// Kept the highest-signal sources per category; removed duplicates and lower-tier feeds.
 const PER_SOURCE_CAP = 15;
 const TOTAL_CAP = 100;
 const feeds = [
 // Forex / FX-specific
 { url: 'https://www.fxstreet.com/rss/news', source: 'FXStreet' },
 { url: 'https://www.forexlive.com/feed/', source: 'ForexLive' },
-{ url: 'https://www.actionforex.com/feed/', source: 'Action Forex' },
-{ url: 'https://www.forexcrunch.com/feed/', source: 'Forex Crunch' },
-{ url: 'https://www.fxdailyreport.com/feed/', source: 'FX Daily Report' },
-{ url: 'https://www.financemagnates.com/feed/', source: 'Finance Magnates' },
-{ url: 'https://www.leaprate.com/feed/', source: 'LeapRate' },
 { url: 'https://www.investing.com/rss/news_285.rss', source: 'Investing.com FX' },
-{ url: 'https://www.nasdaq.com/feed/rssoutbound?category=currencies', source: 'Nasdaq Currencies' },
+{ url: 'https://www.forexcrunch.com/feed/', source: 'Forex Crunch' },
 // Macro / financial press
 { url: 'https://feeds.bbci.co.uk/news/business/rss.xml', source: 'BBC News' },
-{ url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html', source: 'CNBC' },
-{ url: 'https://www.cnbc.com/id/100727362/device/rss/rss.html', source: 'CNBC Currencies' },
-{ url: 'https://www.cnbc.com/id/15839135/device/rss/rss.html', source: 'CNBC Markets' },
 { url: 'https://www.marketwatch.com/rss/topstories', source: 'MarketWatch' },
 { url: 'https://feeds.a.dj.com/rss/RSSWSJD.xml', source: 'WSJ' },
 { url: 'https://finance.yahoo.com/news/rssindex', source: 'Yahoo Finance' },
@@ -3550,6 +3542,7 @@ async function generateAllCurrencySEO(env, opts = {}) {
     const newsRows = newsResp.ok ? await newsResp.json() : [];
     console.log(`generateAllCurrencySEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
 
+    const generated = [];
     for (const ccy of SEO_CURRENCIES) {
       try {
         const sentData = sentMap[ccy.code] || { score: 50, bias: 'Neutral', drivers: [] };
@@ -3557,16 +3550,15 @@ async function generateAllCurrencySEO(env, opts = {}) {
         const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
         const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
         const html = await generateCurrencySEO(ccy, sentData, headlines, env);
-        if (html) {
-          await saveSEOCache(ccy.slug, html, env);
-          console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100)`);
-        }
+        if (html) generated.push({ slug: ccy.slug, html });
       } catch(e) {
         console.log(`Currency SEO error for ${ccy.code}:`, e.message);
       }
       await new Promise(r => setTimeout(r, 600));
     }
-    console.log('generateAllCurrencySEO: done');
+    // 1 subrequest for all currencies instead of 8 — critical for staying under the 50 limit
+    await batchSaveSEOCache(generated, env);
+    console.log(`generateAllCurrencySEO: done, cached ${generated.length} currencies`);
   }, env, cycleTs);
 }
 
@@ -3640,6 +3632,29 @@ async function saveSEOCache(slug, html, env) {
   }
 }
 
+// Batch upsert: 1 subrequest regardless of how many slugs — critical for staying under
+// the 50-subrequest-per-invocation limit when writing 15 pairs + 8 currencies.
+async function batchSaveSEOCache(entries, env) {
+  if (!entries.length) return;
+  const now = new Date().toISOString();
+  const rows = entries.map(({ slug, html }) => ({ slug, html, updated_at: now }));
+  const r = await fetch(`${env.SUPABASE_URL}/rest/v1/seo_cache`, {
+    method: 'POST',
+    headers: {
+      'apikey': env.SUPABASE_SERVICE_KEY,
+      'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify(rows),
+    signal: AbortSignal.timeout(25000),
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(`batchSaveSEOCache (${entries.length} rows): ${r.status} ${t.slice(0, 200)}`);
+  }
+}
+
 async function generateAllPairSEO(env, opts = {}) {
   const { cycleTs } = opts;
   await withRetry('pairSEO', async () => {
@@ -3662,19 +3677,23 @@ async function generateAllPairSEO(env, opts = {}) {
     const allHeadlines = newsRows.map(n => n.title).filter(Boolean);
     console.log(`generateAllPairSEO: ${sentRows.length} sentiment rows, ${allHeadlines.length} headlines`);
 
+    const generated = [];
     const BATCH = 3;
     for (let i = 0; i < SEO_PAIRS.length; i += BATCH) {
       const batch = SEO_PAIRS.slice(i, i + BATCH);
-      await Promise.all(batch.map(async (pair) => {
+      const results = await Promise.all(batch.map(async (pair) => {
         try {
           const baseData = sentMap[pair.base] || { score: 0, bias: 0 };
           const quoteData = sentMap[pair.quote] || { score: 0, bias: 0 };
           const html = await generatePairSEO(pair, Math.round(baseData.score - quoteData.score), baseData.bias - quoteData.bias, allHeadlines, env);
-          if (html) { await saveSEOCache(pair.slug, html, env); console.log(`SEO cached: ${pair.slug}`); }
-        } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
+          return html ? { slug: pair.slug, html } : null;
+        } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); return null; }
       }));
+      generated.push(...results.filter(Boolean));
       if (i + BATCH < SEO_PAIRS.length) await new Promise(r => setTimeout(r, 1000));
     }
-    console.log('generateAllPairSEO: done');
+    // 1 subrequest for all pairs instead of 15 — critical for staying under the 50 limit
+    await batchSaveSEOCache(generated, env);
+    console.log(`generateAllPairSEO: done, cached ${generated.length} pairs`);
   }, env, cycleTs);
 }
