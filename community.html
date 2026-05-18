@@ -116,6 +116,22 @@ nav a.active{font-weight:600;}
 .delete-post{margin-left:auto;font-size:11px;color:#9ca3af;cursor:pointer;}
 .delete-post:hover{color:var(--bear);}
 
+.comment-section{padding-top:14px;margin-top:4px;border-top:1px solid var(--border);}
+.comment-item{display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;}
+.comment-avatar{width:28px;height:28px;border-radius:50%;background:#dbeafe;color:#1e40af;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0;}
+.comment-body{flex:1;min-width:0;}
+.comment-meta{font-size:11px;color:var(--text-muted);margin-bottom:3px;}
+.comment-meta strong{color:var(--text);font-weight:600;}
+.comment-text{font-size:13px;color:var(--text);line-height:1.5;word-wrap:break-word;}
+.no-comments{font-size:12px;color:var(--text-muted);padding:6px 0 10px;}
+.comment-form{margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.comment-input{width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;resize:vertical;min-height:64px;}
+.comment-input:focus{outline:none;border-color:var(--accent);}
+.comment-actions{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+.comment-hint{font-size:11px;color:var(--text-muted);}
+.comment-login-prompt{font-size:13px;padding:10px 0;color:var(--text-muted);}
+.comment-login-prompt a{color:var(--accent);font-weight:600;}
+
 .read-more{font-size:12px;color:var(--accent);font-weight:600;cursor:pointer;display:inline-block;margin-bottom:8px;}
 
 .sidebar-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
@@ -459,7 +475,7 @@ if (topbarDate) {
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, where, limit, onSnapshot, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, where, orderBy, limit, onSnapshot, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
 
 const firebaseConfig = {
@@ -748,7 +764,7 @@ function renderPosts() {
   const colors = [{bg:'#dbeafe',color:'#1e40af'},{bg:'#fef3c7',color:'#92400e'},{bg:'#d1fae5',color:'#065f46'},{bg:'#fee2e2',color:'#991b1b'},{bg:'#e0e7ff',color:'#4338ca'},{bg:'#fce7f3',color:'#9d174d'}];
   
   postsContainer.innerHTML = filtered.map(p => {
-    const date = p.createdAt && p.createdAt.toDate ? p.createdAt.toDate() : new Date();
+    const date = p.createdAt ? (p.createdAt.toDate ? p.createdAt.toDate() : new Date(p.createdAt)) : new Date();
     const time = timeAgo(date);
     const initial = (p.authorName || 'U')[0].toUpperCase();
     const colorIdx = (p.authorName || 'U').charCodeAt(0) % colors.length;
@@ -786,9 +802,11 @@ function renderPosts() {
         ${isLong ? `<span class="read-more" data-expand="${p.id}">Read more →</span>` : ''}
         <div class="post-meta-bottom">
           <span class="post-action like-btn ${liked ? 'active' : ''}" data-id="${p.id}">${liked ? '❤️' : '🤍'} ${p.likes || 0}</span>
-          <span class="post-action save-btn ${saved ? 'active' : ''}" data-id="${p.id}">${saved ? '🔖' : '📑'} ${saved ? 'Saved' : 'Save'}</span>
           <span class="post-action">👁️ ${p.views || 0}</span>
+          <span class="post-action comment-toggle" data-id="${p.id}" style="cursor:pointer;">💬 ${p.comments || 0} Comment${(p.comments || 0) !== 1 ? 's' : ''}</span>
+          <span class="post-action save-btn ${saved ? 'active' : ''}" data-id="${p.id}">${saved ? '🔖' : '📑'} ${saved ? 'Saved' : 'Save'}</span>
         </div>
+        <div class="comment-section" id="cs-${p.id}" style="display:none;"></div>
       </div>
     `;
   }).join('');
@@ -816,6 +834,25 @@ function attachPostHandlers() {
     });
   });
   
+  // Comment toggle
+  document.querySelectorAll('.comment-toggle').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const postId = btn.dataset.id;
+      const section = document.getElementById(`cs-${postId}`);
+      if (!section) return;
+      const isOpen = section.style.display !== 'none';
+      if (isOpen) {
+        section.style.display = 'none';
+        btn.style.fontWeight = '';
+      } else {
+        section.style.display = 'block';
+        btn.style.fontWeight = '700';
+        await loadComments(postId);
+      }
+    });
+  });
+
   // Delete
   document.querySelectorAll('[data-delete]').forEach(btn => {
     btn.addEventListener('click', async (e) => {
@@ -855,6 +892,98 @@ function attachPostHandlers() {
       btn.style.display = 'none';
     });
   });
+}
+
+// COMMENTS
+async function loadComments(postId) {
+  const section = document.getElementById(`cs-${postId}`);
+  if (!section) return;
+  section.innerHTML = '<div style="padding:10px 0;color:#6b7280;font-size:12px;">Loading comments...</div>';
+  try {
+    const q = query(collection(db, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'), limit(100));
+    const snap = await getDocs(q);
+    const comments = [];
+    snap.forEach(d => comments.push({ id: d.id, ...d.data() }));
+    renderCommentSection(postId, comments, section);
+  } catch(e) {
+    console.log('Comments load error:', e);
+    section.innerHTML = '<div style="padding:10px 0;color:#ef4444;font-size:12px;">Failed to load comments. Please try again.</div>';
+  }
+}
+
+function renderCommentSection(postId, comments, section) {
+  const colors = [{bg:'#dbeafe',color:'#1e40af'},{bg:'#fef3c7',color:'#92400e'},{bg:'#d1fae5',color:'#065f46'},{bg:'#fee2e2',color:'#991b1b'},{bg:'#e0e7ff',color:'#4338ca'}];
+
+  const commentHtml = comments.length
+    ? comments.map(c => {
+        const date = c.createdAt ? (c.createdAt.toDate ? c.createdAt.toDate() : new Date(c.createdAt)) : new Date();
+        const initial = (c.authorName || 'U')[0].toUpperCase();
+        const colorIdx = (c.authorName || 'U').charCodeAt(0) % colors.length;
+        const col = colors[colorIdx];
+        const avatarHtml = c.authorPhoto
+          ? `<div class="comment-avatar" style="padding:0;overflow:hidden;"><img src="${escapeHtml(c.authorPhoto)}" style="width:100%;height:100%;object-fit:cover;" alt=""></div>`
+          : `<div class="comment-avatar" style="background:${col.bg};color:${col.color};">${initial}</div>`;
+        return `<div class="comment-item">${avatarHtml}<div class="comment-body"><div class="comment-meta"><strong>${escapeHtml(c.authorName || 'Anonymous')}</strong> · ${timeAgo(date)}</div><div class="comment-text">${escapeHtml(c.text)}</div></div></div>`;
+      }).join('')
+    : '<div class="no-comments">No comments yet — be the first to reply!</div>';
+
+  const inputHtml = currentUser
+    ? `<div class="comment-form">
+        <textarea class="comment-input" placeholder="Write a comment… (Ctrl+Enter to post)" maxlength="500" data-post="${postId}"></textarea>
+        <div class="comment-actions">
+          <span class="comment-hint">Max 500 characters</span>
+          <button class="btn btn-primary comment-submit" data-post="${postId}" style="padding:7px 16px;font-size:12px;">Post Comment</button>
+        </div>
+      </div>`
+    : `<div class="comment-login-prompt">💬 <a href="/login">Log in</a> to leave a comment</div>`;
+
+  section.innerHTML = `<div class="comments-list">${commentHtml}</div>${inputHtml}`;
+
+  const submitBtn = section.querySelector('.comment-submit');
+  const textarea = section.querySelector('.comment-input');
+
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async () => {
+      const text = textarea ? textarea.value.trim() : '';
+      if (!text) return;
+      await submitComment(postId, text, section);
+    });
+  }
+  if (textarea) {
+    textarea.addEventListener('keydown', async (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        const text = textarea.value.trim();
+        if (!text) return;
+        await submitComment(postId, text, section);
+      }
+    });
+  }
+}
+
+async function submitComment(postId, text, section) {
+  if (!currentUser || !text) return;
+  const submitBtn = section.querySelector('.comment-submit');
+  const textarea = section.querySelector('.comment-input');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Posting…'; }
+
+  try {
+    const username = currentUser.displayName || (userProfile && userProfile.username) || currentUser.email.split('@')[0];
+    await addDoc(collection(db, 'posts', postId, 'comments'), {
+      text,
+      authorEmail: currentUser.email,
+      authorName: username,
+      authorPhoto: (userProfile && userProfile.photoURL) || null,
+      createdAt: serverTimestamp()
+    });
+    await updateDoc(doc(db, 'posts', postId), { comments: increment(1) });
+    if (textarea) textarea.value = '';
+    showToast('Comment posted!', 'success');
+    await loadComments(postId);
+  } catch(e) {
+    console.log('Comment submit error:', e);
+    showToast('Error posting comment: ' + e.message, 'error');
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Post Comment'; }
+  }
 }
 
 // Image lightbox close
