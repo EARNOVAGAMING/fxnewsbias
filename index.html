@@ -311,6 +311,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 }
   @media(max-width:768px){
   .ad-leaderboard{display:none !important;}
+  body{padding-bottom:56px;}
   }
 </style>
 <style>nav>ul{display:none}.burger{display:flex!important;align-items:center;justify-content:center}</style>
@@ -497,7 +498,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
 <!-- Main Layout -->
 <main class="main">
-  <div>
+  <div style="min-width:0;">
     <div class="section-title">
       <span>Currency Sentiment</span>
       <a href="/currencies">View All →</a>
@@ -610,9 +611,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div></a>
 
     </div>
-<div style="text-align:center;margin:28px auto 24px;max-width:750px;padding:0 20px;">
+<div style="text-align:center;margin:28px auto 24px;max-width:750px;padding:0 20px;overflow:hidden;">
   <div style="font-size:11px;color:#64748b;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px;">Sponsored</div>
-  <ins class='dcmads' style='display:inline-block;width:728px;height:90px;max-width:100%;' data-dcm-placement='N800570.2009906CELLXPERT/B24282330.340388757' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=382&aff_id=44603&file_id=5416" data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=382&aff_id=44603&file_id=5416" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
+  <ins class='dcmads' style='display:inline-block;width:728px;height:90px;max-width:100%;' data-dcm-placement='N800570.2009906CELLXPERT/B24282330.340388762' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=382&aff_id=44603&file_id=5416" data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=382&aff_id=44603&file_id=5416" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
 </div>
 <div id="pro-banner" style="background:linear-gradient(135deg,#1e40af,#2563eb);border-radius:12px;padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
   <div>
@@ -684,7 +685,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     </div></a>
 
     <!-- Pepperstone 300×250 — hidden for Pro users via .ad-slot rule -->
-    <div class="ad-slot" style="background:none;border:none;min-height:auto;padding:0;display:block;margin-bottom:0;contain:none;text-align:center;">
+    <div class="ad-slot" style="background:none;border:none;min-height:auto;padding:0;display:block;margin-bottom:0;contain:none;text-align:center;max-width:100%;overflow:hidden;">
       <ins class='dcmads' style='display:inline-block;width:300px;height:250px'
         data-dcm-placement='N800570.2009906CELLXPERT/B24282330.340388762'
         data-dcm-rendering-mode='iframe'
@@ -751,8 +752,11 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 </script>
 
 <div class="sky-inline">
-  <ins class='dcmads' style='display:inline-block;width:160px;height:600px' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381157430' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5510" data-dcm-api-frameworks='[APIFRAMEWORKS]' data-dcm-omid-partner='[OMIDPARTNER]' data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5510" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
+  <ins class='dcmads' id="sky-inline-ins" style='display:inline-block;width:160px;height:600px' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381157430' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5510" data-dcm-api-frameworks='[APIFRAMEWORKS]' data-dcm-omid-partner='[OMIDPARTNER]' data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5510" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
 </div>
+<script>
+if(window.innerWidth>900){(function(){var s=document.createElement('script');s.src='https://www.googletagservices.com/dcm/dcmads.js';s.async=true;var ins=document.getElementById('sky-inline-ins');if(ins)ins.appendChild(s);})();}
+</script>
 
 <footer>
   <div class="footer-inner">
