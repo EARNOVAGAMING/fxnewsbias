@@ -2865,7 +2865,8 @@ function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMov
 .sidebar-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px;}.sidebar-h{font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;}
 .side-link{display:block;padding:10px 0;border-bottom:1px solid var(--border);color:#1a1a1a;font-size:14px;font-weight:600;line-height:1.4;}.side-link:last-child{border-bottom:none;}.side-link:hover{color:var(--accent);text-decoration:none;}
 .share-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}.share-btn{flex:1;text-align:center;padding:8px;background:#f8f9fa;border:1px solid var(--border);border-radius:6px;color:#1a1a1a;font-size:12px;font-weight:600;}.share-btn:hover{background:var(--accent);color:#fff;text-decoration:none;border-color:var(--accent);}
-footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}.footer-inner{max-width:1280px;margin:0 auto;}.footer-bottom{text-align:center;font-size:12px;padding-top:16px;border-top:1px solid #1e293b;color:#64748b;}.footer-bottom a{color:#94a3b8;}</style>
+footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}.footer-inner{max-width:1280px;margin:0 auto;}.footer-bottom{text-align:center;font-size:12px;padding-top:16px;border-top:1px solid #1e293b;color:#64748b;}.footer-bottom a{color:#94a3b8;}
+.art-sky{float:right;margin:0 0 16px 24px;}.art-sky-b{text-align:center;margin:32px auto;}html[data-pro="1"] .art-sky,html[data-pro="1"] .art-sky-b{display:none!important;}@media(max-width:768px){.art-sky,.art-sky-b{display:none!important;}}</style>
 <script type="application/ld+json">${ld}</script>
 <script type="application/ld+json">${breadcrumbLd}</script>
 <script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
@@ -2882,11 +2883,13 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <article class="article-card prose">
 <p class="lead">${N.lead}</p>
 <p class="standfirst">${N.standfirst}</p>
+<div class="art-sky"><ins class='dcmads' style='display:inline-block;width:160px;height:600px' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381909257' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5511" data-dcm-api-frameworks='[APIFRAMEWORKS]' data-dcm-omid-partner='[OMIDPARTNER]' data-dcm-gdpr-applies='gdpr=\${GDPR}' data-dcm-gdpr-consent='gdpr_consent=\${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=\${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5511" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" /></div>
 <h2 class="h2">What Happened</h2>${N.whatHappened}
 <h2 class="h2">Market Reaction</h2>${N.reaction}
 <h2 class="h2">What's Driving the Move</h2>${N.driversSection}
 <h2 class="h2">What to Watch Next</h2>${N.scenarios}${N.closing}
 <div class="glance"><div class="glance-h">📊 Bias snapshot at the time of writing</div><div class="glance-grid">${N.glance}</div></div>
+<div class="art-sky-b"><a href="https://trk.pepperstonepartners.com/aff_c?offer_id=391&aff_id=44603&file_id=5597"><img src="https://media.go2speed.org/brand/files/pepperstonegroup/391/TradingViewEssentials2401-StaticBanner-Affiliates-120x600-EN-02.png" width="120" height="600" border="0" /></a><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=391&aff_id=44603&file_id=5597" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" /></div>
 <div class="cta"><strong>Catch every session wrap as it drops.</strong> Bookmark <a href="/insight/">/insight/</a> or subscribe to our <a href="/insight/rss.xml">RSS feed</a> for fresh forex sentiment analysis 3 times a day — Asia, London and New York sessions.</div>
 <p class="ai-disclosure" style="margin-top:24px;padding:14px 16px;background:#f8fafc;border-left:3px solid #94a3b8;border-radius:4px;font-size:13px;color:#475569;line-height:1.6;"><strong>How this briefing was written:</strong> AI-drafted from real forex news headlines scanned every 3 hours by FXNewsBias, then auto-published on a fixed session schedule. Sentiment scores reflect news flow only — not technical signals or price action. This is information, not financial advice. Always cross-check with your own analysis before trading.</p>
 </article>
