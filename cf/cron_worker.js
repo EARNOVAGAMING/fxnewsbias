@@ -15,7 +15,7 @@ async function _getFont() {
   if (_fontBytes) return _fontBytes;
   const resp = await fetch(
     'https://raw.githubusercontent.com/google/fonts/main/ofl/notosans/NotoSans%5Bwdth%2Cwght%5D.ttf',
-    { headers: { 'User-Agent': 'fxnewsbias-cron' } }
+    { headers: { 'User-Agent': 'fxnewsbias-cron' }, signal: AbortSignal.timeout(25000) }
   );
   if (!resp.ok) throw new Error(`Font fetch failed: ${resp.status}`);
   _fontBytes = new Uint8Array(await resp.arrayBuffer());
@@ -221,7 +221,7 @@ try {
     createdAt:   { stringValue: now },
     tags:        { arrayValue: { values: (post.tags||[]).map(t=>({stringValue:t})) } },
   }};
-  const res = await fetch(fsUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body) });
+  const res = await fetch(fsUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body), signal: AbortSignal.timeout(25000) });
   const data = await res.json();
   if (!res.ok) return new Response(JSON.stringify({ error: data }), { status: res.status, headers: { 'Content-Type': 'application/json' } });
   const id = data.name ? data.name.split('/').pop() : null;
@@ -242,7 +242,7 @@ try {
   if (title !== undefined) fields.title = { stringValue: title };
   const mask = Object.keys(fields).map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
   const fsUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/posts/${id}?${mask}`;
-  const res = await fetch(fsUrl, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ fields }) });
+  const res = await fetch(fsUrl, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ fields }), signal: AbortSignal.timeout(25000) });
   const data = await res.json();
   if (!res.ok) return new Response(JSON.stringify({ error: data }), { status: res.status, headers: { 'Content-Type': 'application/json' } });
   return new Response(JSON.stringify({ ok: true, id }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -258,7 +258,7 @@ try {
   const token = await getFirebaseToken(env);
   const PROJECT_ID = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
   const fsUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/posts/${id}`;
-  const res = await fetch(fsUrl, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+  const res = await fetch(fsUrl, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }, signal: AbortSignal.timeout(25000) });
   if (!res.ok) { const data = await res.json(); return new Response(JSON.stringify({ error: data }), { status: res.status, headers: { 'Content-Type': 'application/json' } }); }
   return new Response(JSON.stringify({ ok: true, deleted: id }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 } catch(e) {
@@ -270,61 +270,149 @@ return new Response('FXNewsBias Cron Worker Running', { status: 200 });
 
 async scheduled(event, env, ctx) {
 // Cron triggers:
-//   '0 */3 * * *'  -> sentiment analysis (every 3 hours)
-//   '*/15 * * * *' -> price updates + staleness check (every 15 minutes)
-//   '0 0 * * *'    -> ASEAN session insight (Asia open, weekdays only)
-//   '0 6 * * *'    -> London session insight (London open, weekdays only)
-//   '0 12 * * *'   -> New York session insight (NY open, weekdays only)
-const tasks = [];
-const SESSION_BY_CRON = { '0 0 * * *': 'asean', '0 6 * * *': 'london', '0 12 * * *': 'newyork' };
-const _dow = new Date().getUTCDay(); // 0=Sun, 6=Sat
+//   '*/15 * * * *'  -> price updates only (self-heal removed)
+//   '0 */3 * * *'   -> sequential chain: sentiment → pairSEO → currencySEO → cleanup
+//                      Sentiment runs first so SEO always reads fresh data.
+//                      Each step uses withRetry (3 attempts, 5s gap) and logs to step_runs.
+//   '0 0 * * *'     -> ASEAN session insight (weekdays only)
+//   '0 6 * * *'     -> London session insight (weekdays only)
+//   '0 12 * * *'    -> NY session insight (weekdays only)
+const _dow = new Date().getUTCDay();
 const _isWeekend = _dow === 0 || _dow === 6;
-if (SESSION_BY_CRON[event.cron] && !_isWeekend) {
-const session = SESSION_BY_CRON[event.cron];
-tasks.push(generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)));
-// Tell Bing/Yandex to recrawl the insight index + homepage so the
-// freshly published session insight appears in search within minutes.
-tasks.push(pingIndexNow([
-  'https://fxnewsbias.com/',
-  'https://fxnewsbias.com/insight/',
-  'https://fxnewsbias.com/news',
-]).catch(e => console.log('IndexNow (insight) error:', e.message)));
+const cycleTs = _cycleTimestamp(event.cron);
+
+const SESSION_BY_CRON = { '0 0 * * *': 'asean', '0 6 * * *': 'london', '0 12 * * *': 'newyork' };
+
+if (event.cron === '*/15 * * * *') {
+  ctx.waitUntil(updatePrices(env));
+
 } else if (event.cron === '0 */3 * * *') {
-tasks.push(runSentimentAnalysis(env));
-tasks.push(generateAllPairSEO(env).catch(e => console.log('generateAllPairSEO error:', e.message)));
-tasks.push(generateAllCurrencySEO(env).catch(e => console.log('generateAllCurrencySEO error:', e.message)));
-// prices are handled by the */15 tick — no duplicate call here
-// Once every 3 hours is plenty for a retention sweep — system_state is
-// tiny and only needs to be pruned occasionally.
-tasks.push(cleanupSystemState(env).catch(e => console.log('Cleanup error:', e.message)));
-// News and sentiment grow unbounded with every cron tick — sweep them
-// on the same 3-hourly cadence so the Supabase tables stay manageable.
-tasks.push(cleanupNews(env).catch(e => console.log('cleanupNews error:', e.message)));
-tasks.push(cleanupSentiment(env).catch(e => console.log('cleanupSentiment error:', e.message)));
-// The cleanup_runs history table itself accumulates ~24 rows/day forever
-// (3 tables x 8 sweeps/day) — sweep it on the same tick so it stays
-// bounded. See cleanupCleanupRuns for retention details.
-tasks.push(cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns error:', e.message)));
-// After a fresh sentiment scan, ping IndexNow so Bing/Yandex/DDG
-// know to recrawl the data-driven pages (homepage + 8 currencies +
-// 15 pairs + hub pages). This keeps cached search snippets fresh.
-tasks.push(pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (3h) error:', e.message)));
-// Sunday 21:00 UTC tick — generate weekly pro report (piggybacked; free plan = 5 cron cap)
-if (_dow === 0 && new Date().getUTCHours() === 21) {
-  tasks.push(buildAndSaveWeeklyReport(env).catch(e => console.log('Weekly report (Sunday) error:', e.message)));
+  ctx.waitUntil((async () => {
+    // Step 1: sentiment — must complete before SEO reads Supabase
+    await runSentimentAnalysis(env, { cycleTs });
+
+    // Step 2+3: SEO — run in parallel, both read the fresh sentiment just written
+    await Promise.all([
+      generateAllPairSEO(env, { cycleTs }),
+      generateAllCurrencySEO(env, { cycleTs }),
+    ]);
+
+    // Step 4: cleanup + IndexNow — fire in parallel, all best-effort
+    await Promise.all([
+      cleanupNews(env).catch(e => console.log('cleanupNews error:', e.message)),
+      cleanupSentiment(env).catch(e => console.log('cleanupSentiment error:', e.message)),
+      cleanupSystemState(env).catch(e => console.log('cleanupSystemState error:', e.message)),
+      cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns error:', e.message)),
+      cleanupStepRuns(env).catch(e => console.log('cleanupStepRuns error:', e.message)),
+      pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow error:', e.message)),
+    ]);
+
+    // Sunday 21:00 UTC — weekly pro report
+    if (_dow === 0 && new Date().getUTCHours() === 21) {
+      await buildAndSaveWeeklyReport(env).catch(e => console.log('Weekly report error:', e.message));
+    }
+  })());
+
+} else if (SESSION_BY_CRON[event.cron] && !_isWeekend) {
+  const session = SESSION_BY_CRON[event.cron];
+  ctx.waitUntil(Promise.all([
+    generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)),
+    pingIndexNow(['https://fxnewsbias.com/', 'https://fxnewsbias.com/insight/', 'https://fxnewsbias.com/news']).catch(e => console.log('IndexNow (insight) error:', e.message)),
+  ]));
 }
-} else {
-tasks.push(updatePrices(env));
-}
-// Always run the staleness check so a stalled sentiment cron still gets noticed.
-// Skip self-heal on the 3h tick — the primary runSentimentAnalysis is already
-// in flight on this same invocation, so a parallel rescue would double-spend
-// Anthropic calls and race the primary write.
-const skipSelfHeal = (event.cron === '0 */3 * * *');
-tasks.push(checkSentimentFreshness(env, { skipSelfHeal }).catch(e => console.log('Staleness check error:', e.message)));
-ctx.waitUntil(Promise.all(tasks));
 }
 };
+
+// Returns the floor of the current time to the nearest 3-hour UTC boundary,
+// used as the cycle_timestamp field in step_runs so all 4 steps of the same
+// cycle share an identical timestamp regardless of their individual start times.
+function _cycleTimestamp(cron) {
+  if (cron === '*/15 * * * *') return new Date().toISOString();
+  const now = new Date();
+  const h = Math.floor(now.getUTCHours() / 3) * 3;
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), h, 0, 0, 0)).toISOString();
+}
+
+// ============================================
+// RETRY + STEP LOGGING INFRASTRUCTURE
+// ============================================
+
+// Wraps an async fn with up to 3 attempts and a fixed 5s wait between retries.
+// Returns the result on success, or null after all attempts fail (never throws).
+// On failure, writes a step_runs row and updates the consecutive-failure counter
+// in system_state — if 2+ consecutive cycles fail, fires a Telegram alert.
+async function withRetry(label, fn, env, cycleTs) {
+  const started = Date.now();
+  let lastErr = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const result = await fn();
+      const duration = Math.round((Date.now() - started) / 1000);
+      await _writeStepRun(env, {
+        step_name: label, started_at: new Date(started).toISOString(),
+        ended_at: new Date().toISOString(), duration_seconds: duration,
+        status: 'success', retry_attempt: attempt, cycle_timestamp: cycleTs || new Date().toISOString()
+      });
+      await _resetConsecutiveFailures(env, label);
+      return result;
+    } catch(e) {
+      lastErr = e;
+      console.log(`${label} attempt ${attempt}/3 failed: ${e.message}`);
+      if (attempt < 3) await new Promise(r => setTimeout(r, 5000));
+    }
+  }
+  // All 3 attempts exhausted
+  const duration = Math.round((Date.now() - started) / 1000);
+  const ct = cycleTs || new Date().toISOString();
+  await _writeStepRun(env, {
+    step_name: label, started_at: new Date(started).toISOString(),
+    ended_at: new Date().toISOString(), duration_seconds: duration,
+    status: 'failed', error_message: lastErr ? lastErr.message : 'unknown',
+    retry_attempt: 3, cycle_timestamp: ct
+  });
+  await _checkAndAlertConsecutiveFailures(env, label, lastErr ? lastErr.message : 'unknown', ct);
+  return null;
+}
+
+async function _writeStepRun(env, row) {
+  try {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/step_runs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: env.SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify(row),
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!r.ok) console.log('_writeStepRun non-ok:', r.status, (await r.text()).slice(0, 200));
+  } catch(e) {
+    console.log('_writeStepRun error:', e.message);
+  }
+}
+
+async function _resetConsecutiveFailures(env, label) {
+  const key = `step_consecutive_fail:${label}`;
+  await writeSystemState(env, key, { count: 0, last_cycle: new Date().toISOString() });
+}
+
+async function _checkAndAlertConsecutiveFailures(env, label, errMsg, cycleTs) {
+  const key = `step_consecutive_fail:${label}`;
+  const prev = await readSystemState(env, key);
+  const count = (prev && typeof prev.count === 'number' ? prev.count : 0) + 1;
+  await writeSystemState(env, key, { count, last_cycle: cycleTs, last_error: errMsg });
+  if (count >= 2) {
+    const text = `🚨 *FXNewsBias — step failure: ${label}*\n\n`
+      + `This step has failed *${count} consecutive cycles*.\n`
+      + `Last error: \`${errMsg.slice(0, 300)}\`\n`
+      + `Cycle: \`${cycleTs}\`\n\n`
+      + `Check Cloudflare worker logs for details.`;
+    await sendStalenessNotification(env, text).catch(e => console.log('Alert send error:', e.message));
+    console.log(`${label}: consecutive failure alert sent (count=${count})`);
+  }
+}
 
 // ============================================
 // INDEXNOW (Bing / Yandex / DuckDuckGo)
@@ -375,14 +463,9 @@ async function pingIndexNow(urlList) {
     const res = await fetch('https://api.indexnow.org/IndexNow', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify({
-        host: 'fxnewsbias.com',
-        key: INDEXNOW_KEY,
-        keyLocation: INDEXNOW_KEY_LOCATION,
-        urlList,
-      }),
+      body: JSON.stringify({ host: 'fxnewsbias.com', key: INDEXNOW_KEY, keyLocation: INDEXNOW_KEY_LOCATION, urlList }),
+      signal: AbortSignal.timeout(25000),
     });
-    // 200 = ok, 202 = accepted (queued), both are success.
     console.log(`IndexNow: ${urlList.length} URLs -> HTTP ${res.status}`);
   } catch (e) {
     console.log('IndexNow ping error:', e.message);
@@ -577,7 +660,8 @@ const jwt = `${signingInput}.${sigBase64}`;
 const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
 method: 'POST',
 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+signal: AbortSignal.timeout(25000)
 });
 
 const tokenData = await tokenRes.json();
@@ -595,76 +679,47 @@ return null;
 // ============================================
 // SENTIMENT ANALYSIS
 // ============================================
-// opts.sendTelegram — set false when called from self-heal or manual /run
-// so the scheduled-sentiment Telegram only fires from the real 3h cron tick.
+// Called exclusively from the '0 */3 * * *' scheduled cron.
+// withRetry handles up to 3 attempts (5s gap) and writes to step_runs.
+// Telegram fires once per successful cycle from the scheduled cron.
 async function runSentimentAnalysis(env, opts = {}) {
-const { sendTelegram = true } = opts;
+const { cycleTs } = opts;
+const ct = cycleTs || new Date().toISOString();
 console.log('Starting sentiment analysis...');
-const news = await fetchAllNews();
-console.log(`Fetched ${news.length} news items from 16 sources`);
 
-// Save news first, independently — news must not be gated on sentiment API success.
-try { await saveNews(news, env); console.log('News saved'); }
-catch(e) { console.log('saveNews failed:', e.message); }
+await withRetry('sentiment', async () => {
+  const news = await fetchAllNews();
+  console.log(`Fetched ${news.length} news items from 17 sources`);
 
-try {
-const sentiment = await analyzeSentiment(news, env);
-console.log('Sentiment analysis complete');
+  // Save news first — independent of sentiment API success
+  try { await saveNews(news, env); console.log('News saved'); }
+  catch(e) { console.log('saveNews failed:', e.message); }
 
-// Telegram fires only on the scheduled 3h cron — NOT on self-heals or manual runs.
-// Self-heal retries every 30 min; without this guard every retry spammed the channel.
-if (sendTelegram) {
+  const sentiment = await analyzeSentiment(news, env);
+  console.log('Sentiment analysis complete');
+
   try { await sendTelegramAlert(env, sentiment); console.log('Telegram alert sent'); }
   catch(e) { console.log('Telegram step failed:', e.message); }
-} else {
-  console.log('Telegram skipped (self-heal / manual run).');
-}
 
-try { await saveSentiment(sentiment, env); console.log('Sentiment saved'); }
-catch(e) { console.log('saveSentiment failed:', e.message); }
-
-} catch (error) {
-console.error('Error in sentiment analysis (top-level):', error && error.message);
-throw error;
-}
+  try { await saveSentiment(sentiment, env); console.log('Sentiment saved'); }
+  catch(e) { console.log('saveSentiment failed:', e.message); }
+}, env, ct);
 }
 
 // ============================================
-// SENTIMENT FRESHNESS / STALENESS ALERTING
+// SENTIMENT FRESHNESS CHECK (read-only diagnostic)
 // ============================================
-// Compares the latest sentiment.created_at to the observed cadence and
-// notifies the team (Telegram + optional generic webhook) when the feed is
-// more than ~1.5 cycles late. Alerts fire ONCE per incident — incident state
-// is keyed on the id of the stale latest-sentiment row, persisted in a small
-// `system_state` table in Supabase. When a fresh row arrives the alert is
-// auto-resolved and a recovery message is sent.
-//
-// Required Supabase table (one-time, run as SQL):
-//   create table if not exists system_state (
-//     key text primary key,
-//     value jsonb not null,
-//     updated_at timestamptz not null default now()
-//   );
-//
-// Optional env vars (in addition to TELEGRAM_BOT_TOKEN/TELEGRAM_CHANNEL_ID):
-//   STALENESS_WEBHOOK_URL   - optional generic webhook (Slack-compatible JSON)
-//   SLACK_WEBHOOK_URL       - optional Slack incoming webhook URL
-//   ALERT_EMAIL_TO          - optional comma-separated list of recipient emails
-//                             (requires RESEND_API_KEY; uses ALERT_EMAIL_FROM or
-//                              CONTACT_FROM_EMAIL or 'noreply@fxnewsbias.com')
-//   SENTIMENT_CADENCE_MS    - override cadence (default: derived, fallback 3h)
-//   STALENESS_MULTIPLIER    - override multiplier (default 1.5)
-async function checkSentimentFreshness(env, opts) {
-const skipSelfHeal = !!(opts && opts.skipSelfHeal);
-const STATE_KEY = 'sentiment_alert';
-const DEFAULT_CADENCE_MS = 3 * 60 * 60 * 1000; // 3 hours
+// Self-heal logic removed — failures are retried naturally at the next
+// scheduled 3-hour cycle. Consecutive-cycle failures trigger Telegram
+// via the withRetry / _checkAndAlertConsecutiveFailures path.
+// This function is retained only for the /check-staleness HTTP endpoint.
+async function checkSentimentFreshness(env) {
+const DEFAULT_CADENCE_MS = 3 * 60 * 60 * 1000;
 const multiplier = parseFloat(env.STALENESS_MULTIPLIER) || 1.5;
 
-// Pull the most recent few rows so we can both detect the latest update
-// and estimate the observed cadence between scheduled runs.
 const resp = await fetch(
 `${env.SUPABASE_URL}/rest/v1/sentiment?select=id,currency,created_at&order=created_at.desc&limit=20`,
-{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
+{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(25000) }
 );
 if (!resp.ok) {
 console.log('Staleness: failed to read sentiment table:', resp.status);
@@ -697,7 +752,7 @@ if (distinctTimes.length >= 2) {
 const gaps = [];
 for (let i = 1; i < distinctTimes.length; i++) gaps.push(distinctTimes[i - 1] - distinctTimes[i]);
 gaps.sort((a, b) => a - b);
-cadenceMs = gaps[Math.floor(gaps.length / 2)]; // median
+cadenceMs = gaps[Math.floor(gaps.length / 2)];
 }
 if (!cadenceMs || cadenceMs <= 0) cadenceMs = DEFAULT_CADENCE_MS;
 }
@@ -705,10 +760,7 @@ if (!cadenceMs || cadenceMs <= 0) cadenceMs = DEFAULT_CADENCE_MS;
 const thresholdMs = Math.round(cadenceMs * multiplier);
 const isStale = ageMs > thresholdMs;
 
-const prevState = await readSystemState(env, STATE_KEY);
-const activeAlertId = prevState && prevState.active_for_id ? prevState.active_for_id : null;
-
-const summary = {
+return {
 ok: true,
 latest_id: latest.id,
 latest_at: latest.created_at,
@@ -716,118 +768,8 @@ age_minutes: Math.round(ageMs / 60000),
 cadence_minutes: Math.round(cadenceMs / 60000),
 threshold_minutes: Math.round(thresholdMs / 60000),
 stale: isStale,
-alert_active_for_id: activeAlertId
+action: isStale ? 'stale' : 'fresh'
 };
-
-if (isStale) {
-const HEAL_RETRY_MS = 30 * 60 * 1000; // retry self-heal every 30 min
-const isKnownIncident = activeAlertId === latest.id;
-const lastAttempt = prevState && prevState.last_heal_attempt_at
-  ? Date.parse(prevState.last_heal_attempt_at) : 0;
-const cooldownActive = (Date.now() - lastAttempt) < HEAL_RETRY_MS;
-
-// On a known incident, skip until cooldown elapses (or primary scan is running).
-if (isKnownIncident && (skipSelfHeal || cooldownActive)) {
-const minLeft = Math.round((HEAL_RETRY_MS - (Date.now() - lastAttempt)) / 60000);
-console.log(`Staleness: known incident — self-heal cooldown active (${minLeft} min left).`);
-summary.action = 'noop-cooldown';
-return summary;
-}
-
-// AUTO-RECOVER: attempt self-heal on first detection OR after cooldown elapses.
-// skipSelfHeal is set when the primary 3h scan is already running this tick.
-let rescueErr = null;
-let rescueAttempted = false;
-if (skipSelfHeal) {
-console.log('Staleness: skipping self-heal (primary scan already running this tick).');
-} else {
-const label = isKnownIncident ? 'retrying' : 'attempting';
-console.log(`Staleness: ${label} self-heal via runSentimentAnalysis...`);
-rescueAttempted = true;
-try { await runSentimentAnalysis(env, { sendTelegram: false }); }
-catch (e) { rescueErr = e; console.log('Staleness: self-heal failed:', e.message); }
-// Record attempt time so the 30-min cooldown starts now, win or lose.
-const healAttemptAt = new Date().toISOString();
-if (isKnownIncident) {
-  await writeSystemState(env, STATE_KEY, { ...(prevState || {}), last_heal_attempt_at: healAttemptAt });
-}
-}
-if (rescueAttempted && !rescueErr) {
-// Re-read latest row to confirm recovery before declaring victory.
-const recheck = await fetch(
-`${env.SUPABASE_URL}/rest/v1/sentiment?select=id,created_at&order=created_at.desc&limit=1`,
-{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
-);
-if (recheck.ok) {
-const newRows = await recheck.json();
-if (Array.isArray(newRows) && newRows.length && newRows[0].id !== latest.id) {
-console.log(`Staleness: self-healed${isKnownIncident ? ' (retry)' : ''}, fresh row at`, newRows[0].created_at);
-summary.action = isKnownIncident ? 'self-healed-retry' : 'self-healed';
-summary.recovered_at = newRows[0].created_at;
-return summary;
-}
-}
-}
-// Self-heal didn't produce a fresh row on a retry — stop here, try again next cooldown.
-if (isKnownIncident) {
-console.log('Staleness: retry self-heal did not produce a fresh row. Will retry in 30 min.');
-summary.action = 'retry-failed';
-return summary;
-}
-// First detection — alert humans.
-const lateBy = ageMs - cadenceMs;
-const text = `🚨 *FXNewsBias sentiment feed is stalled*\n\n`
-+ `Latest sentiment row: \`${latest.created_at}\`\n`
-+ `Age: *${Math.round(ageMs / 60000)} min* (cadence ~${Math.round(cadenceMs / 60000)} min, `
-+ `threshold ${Math.round(thresholdMs / 60000)} min)\n`
-+ `Late by: *${Math.round(lateBy / 60000)} min*\n\n`
-+ `The sentiment cron has not produced a fresh row. Check the worker logs / Anthropic API / Supabase writes.`;
-await sendStalenessNotification(env, text);
-const startedAt = new Date().toISOString();
-await writeSystemState(env, STATE_KEY, {
-active_for_id: latest.id,
-alerted_at: startedAt,
-last_heal_attempt_at: startedAt,
-latest_at: latest.created_at,
-age_minutes: summary.age_minutes,
-threshold_minutes: summary.threshold_minutes
-});
-await recordIncidentStart(env, STATE_KEY, startedAt, {
-sentiment_id: latest.id,
-latest_at: latest.created_at,
-age_minutes: summary.age_minutes,
-cadence_minutes: summary.cadence_minutes,
-threshold_minutes: summary.threshold_minutes,
-late_by_minutes: Math.round(lateBy / 60000)
-});
-console.log('Staleness: alert sent for sentiment id', latest.id);
-summary.action = 'alert-sent';
-return summary;
-}
-
-// Fresh data: auto-resolve any active incident.
-if (activeAlertId && activeAlertId !== latest.id) {
-const text = `✅ *FXNewsBias sentiment feed recovered*\n\n`
-+ `Fresh sentiment row at \`${latest.created_at}\` (age ${Math.round(ageMs / 60000)} min). Alerts resolved.`;
-await sendStalenessNotification(env, text);
-const resolvedAt = new Date().toISOString();
-await recordIncidentResolved(env, STATE_KEY, resolvedAt, {
-recovered_sentiment_id: latest.id,
-latest_at: latest.created_at,
-age_minutes_at_recovery: summary.age_minutes
-});
-await writeSystemState(env, STATE_KEY, {
-active_for_id: null,
-resolved_at: resolvedAt,
-latest_at: latest.created_at
-});
-console.log('Staleness: incident resolved.');
-summary.action = 'resolved';
-return summary;
-}
-
-summary.action = 'fresh';
-return summary;
 }
 
 async function sendStalenessNotification(env, text) {
@@ -842,12 +784,8 @@ name: 'telegram',
 send: () => fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-chat_id: env.TELEGRAM_CHANNEL_ID,
-text,
-parse_mode: 'Markdown',
-disable_web_page_preview: true
-})
+body: JSON.stringify({ chat_id: env.TELEGRAM_CHANNEL_ID, text, parse_mode: 'Markdown', disable_web_page_preview: true }),
+signal: AbortSignal.timeout(25000)
 })
 });
 }
@@ -858,7 +796,8 @@ name: 'webhook',
 send: () => fetch(env.STALENESS_WEBHOOK_URL, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ text })
+body: JSON.stringify({ text }),
+signal: AbortSignal.timeout(25000)
 })
 });
 }
@@ -869,39 +808,27 @@ name: 'slack',
 send: () => fetch(env.SLACK_WEBHOOK_URL, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ text, mrkdwn: true })
+body: JSON.stringify({ text, mrkdwn: true }),
+signal: AbortSignal.timeout(25000)
 })
 });
 }
 
 if (env.ALERT_EMAIL_TO && env.RESEND_API_KEY) {
-const recipients = String(env.ALERT_EMAIL_TO)
-.split(',')
-.map(s => s.trim())
-.filter(Boolean);
+const recipients = String(env.ALERT_EMAIL_TO).split(',').map(s => s.trim()).filter(Boolean);
 if (recipients.length) {
 const fromEmail = env.ALERT_EMAIL_FROM || env.CONTACT_FROM_EMAIL || 'noreply@fxnewsbias.com';
 const subject = /\bTEST\b/.test(text)
 ? 'FXNewsBias: test staleness alert'
-: (/recovered/i.test(text)
-? 'FXNewsBias: sentiment feed recovered'
-: 'FXNewsBias: sentiment feed stalled');
+: (/recovered/i.test(text) ? 'FXNewsBias: sentiment feed recovered' : 'FXNewsBias: step failure alert');
 const htmlBody = `<pre style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;white-space:pre-wrap;">${escapeHtml(text)}</pre>`;
 channels.push({
 name: 'email',
 send: () => fetch('https://api.resend.com/emails', {
 method: 'POST',
-headers: {
-'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-'Content-Type': 'application/json'
-},
-body: JSON.stringify({
-from: `FXNewsBias Alerts <${fromEmail}>`,
-to: recipients,
-subject,
-text,
-html: htmlBody
-})
+headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: recipients, subject, text, html: htmlBody }),
+signal: AbortSignal.timeout(25000)
 })
 });
 }
@@ -941,7 +868,7 @@ async function readSystemState(env, key) {
 try {
 const r = await fetch(
 `${env.SUPABASE_URL}/rest/v1/system_state?key=eq.${encodeURIComponent(key)}&select=value`,
-{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` } }
+{ headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(25000) }
 );
 if (!r.ok) return null;
 const rows = await r.json();
@@ -1327,7 +1254,8 @@ headers: {
 apikey: env.SUPABASE_SERVICE_KEY,
 Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
 Prefer: 'return=minimal,count=exact'
-}
+},
+signal: AbortSignal.timeout(25000)
 });
 if (!r.ok) {
 const errText = await r.text();
@@ -1423,7 +1351,8 @@ headers: {
 apikey: env.SUPABASE_SERVICE_KEY,
 Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
 Prefer: 'return=minimal,count=exact'
-}
+},
+signal: AbortSignal.timeout(25000)
 });
 if (!r.ok) {
 const errText = await r.text();
@@ -1476,7 +1405,8 @@ headers: {
 apikey: env.SUPABASE_SERVICE_KEY,
 Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
 Prefer: 'return=minimal,count=exact'
-}
+},
+signal: AbortSignal.timeout(25000)
 });
 if (!r.ok) {
 const errText = await r.text();
@@ -1520,7 +1450,8 @@ headers: {
 apikey: env.SUPABASE_SERVICE_KEY,
 Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
 Prefer: 'return=minimal,count=exact'
-}
+},
+signal: AbortSignal.timeout(25000)
 });
 if (!r.ok) {
 const errText = await r.text();
@@ -1547,6 +1478,27 @@ return { ok: false, error: e.message, cutoff, retention_days: days };
 }
 }
 
+async function cleanupStepRuns(env) {
+const days = parseInt(env.STEP_RUNS_RETENTION_DAYS, 10) || 30;
+const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+try {
+const r = await fetch(`${env.SUPABASE_URL}/rest/v1/step_runs?created_at=lt.${encodeURIComponent(cutoff)}`, {
+method: 'DELETE',
+headers: {
+apikey: env.SUPABASE_SERVICE_KEY,
+Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+Prefer: 'return=minimal,count=exact'
+},
+signal: AbortSignal.timeout(25000)
+});
+if (!r.ok) { console.log('cleanupStepRuns non-ok:', r.status); return; }
+const count = parseDeletedCount(r);
+console.log(`cleanupStepRuns: deleted ${count} row(s) older than ${cutoff}`);
+} catch(e) {
+console.log('cleanupStepRuns error:', e.message);
+}
+}
+
 async function writeSystemState(env, key, value) {
 try {
 const r = await fetch(`${env.SUPABASE_URL}/rest/v1/system_state?on_conflict=key`, {
@@ -1557,7 +1509,8 @@ apikey: env.SUPABASE_SERVICE_KEY,
 Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
 Prefer: 'resolution=merge-duplicates,return=minimal'
 },
-body: JSON.stringify({ key, value, updated_at: new Date().toISOString() })
+body: JSON.stringify({ key, value, updated_at: new Date().toISOString() }),
+signal: AbortSignal.timeout(25000)
 });
 if (!r.ok) console.log('writeSystemState non-ok:', r.status, await r.text());
 } catch (e) {
@@ -1836,7 +1789,8 @@ try {
 const cRes = await fetch('https://api.anthropic.com/v1/messages', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
-body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4000, messages: [{ role: 'user', content: claudePrompt }] })
+body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4000, messages: [{ role: 'user', content: claudePrompt }] }),
+signal: AbortSignal.timeout(25000)
 });
 const cData = await cRes.json();
 const text = cData.content?.[0]?.text || '';
@@ -1993,14 +1947,11 @@ Respond ONLY in this exact JSON format (values shown are placeholders, replace w
 "NZD": {"score": 50, "bias": "Neutral", "drivers": ["<driver from headlines>", "<driver from headlines>", "<driver from headlines>"]}
 }`;
 
-// Retry Anthropic up to 3 times with exponential backoff. Anthropic
-// occasionally returns 429 (rate-limited) or 529 (overloaded), and a
-// single failure used to silently kill the entire 3-hourly scan. Each
-// failure mode is handled explicitly so we never insert garbage data.
-const backoffMs = [0, 2000, 5000];
+// Inner retry loop — 3 attempts, 5s fixed wait. Outer withRetry in
+// runSentimentAnalysis adds another 3-attempt layer at the cycle level.
 let lastErr = null;
-for (let attempt = 0; attempt < backoffMs.length; attempt++) {
-if (backoffMs[attempt] > 0) await new Promise(r => setTimeout(r, backoffMs[attempt]));
+for (let attempt = 1; attempt <= 3; attempt++) {
+if (attempt > 1) await new Promise(r => setTimeout(r, 5000));
 try {
 const response = await fetch('https://api.anthropic.com/v1/messages', {
 method: 'POST',
@@ -2011,13 +1962,10 @@ headers: {
 },
 body: JSON.stringify({
 model: 'claude-haiku-4-5-20251001',
-// 8 currencies x ~120 tokens each (score + bias + 3 drivers) = ~960 tokens.
-// 1000 was right at the edge — drivers running long would truncate the JSON
-// mid-currency, causing partial saves (only 3-6 of 8 currencies persisted).
-// 2500 gives generous headroom for verbose drivers without inflating cost.
 max_tokens: 2500,
 messages: [{ role: 'user', content: prompt }]
-})
+}),
+signal: AbortSignal.timeout(25000)
 });
 if (!response.ok) {
 const body = await response.text().catch(() => '');
@@ -2050,10 +1998,10 @@ throw new Error(`Sentiment response missing/malformed currencies: ${missing.join
 return parsed;
 } catch (e) {
 lastErr = e;
-console.log(`analyzeSentiment attempt ${attempt + 1}/${backoffMs.length} failed: ${e.message}`);
+console.log(`analyzeSentiment attempt ${attempt}/3 failed: ${e.message}`);
 }
 }
-throw new Error(`analyzeSentiment failed after ${backoffMs.length} attempts: ${lastErr && lastErr.message}`);
+throw new Error(`analyzeSentiment failed after 3 attempts: ${lastErr && lastErr.message}`);
 }
 
 async function saveSentiment(sentiment, env) {
@@ -2240,7 +2188,8 @@ chat_id: env.TELEGRAM_CHANNEL_ID,
 text: msg,
 parse_mode: 'HTML',
 disable_web_page_preview: false
-})
+}),
+signal: AbortSignal.timeout(25000)
 });
 const body = await r.text();
 if (!r.ok) {
@@ -2679,7 +2628,8 @@ Hard rules — violating any of these will make the article unusable:
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {'Content-Type':'application/json','x-api-key':env.CLAUDE_API_KEY,'anthropic-version':'2023-06-01'},
-    body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:3000, messages:[{role:'user',content:prompt}]})
+    body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:3000, messages:[{role:'user',content:prompt}]}),
+    signal: AbortSignal.timeout(25000),
   });
   if (!resp.ok) throw new Error(`Anthropic HTTP ${resp.status}`);
   const data = await resp.json();
@@ -3133,7 +3083,8 @@ async function _insSendFailureEmail(env, error, ctx) {
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: recipients, subject, text, html })
+      body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: recipients, subject, text, html }),
+      signal: AbortSignal.timeout(25000),
     });
     console.log('Insight failure email sent to', recipients.join(','));
   } catch (e) {
@@ -3297,7 +3248,8 @@ async function handleAdminData(request, env) {
     const verifyRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken })
+      body: JSON.stringify({ idToken }),
+      signal: AbortSignal.timeout(25000)
     });
     const verifyData = await verifyRes.json();
     const callerEmail = verifyData?.users?.[0]?.email;
@@ -3315,7 +3267,7 @@ async function handleAdminData(request, env) {
       const body = { targetProjectId: PROJECT_ID, maxResults: 500 };
       if (nextPageToken) body.nextPageToken = nextPageToken;
       const r = await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${PROJECT_ID}/accounts:batchGet?maxResults=500${nextPageToken ? '&nextPageToken=' + encodeURIComponent(nextPageToken) : ''}`, {
-        headers: { 'Authorization': `Bearer ${oauthToken}` }
+        headers: { 'Authorization': `Bearer ${oauthToken}` }, signal: AbortSignal.timeout(25000)
       });
       const d = await r.json();
       if (d.users) allUsers.push(...d.users);
@@ -3429,51 +3381,52 @@ Hard rules:
     method: 'POST',
     headers: { 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 450, messages: [{ role: 'user', content: prompt }] }),
+    signal: AbortSignal.timeout(25000),
   });
   if (!resp.ok) throw new Error(`Haiku currency SEO ${ccy.code}: ${resp.status}`);
   const data = await resp.json();
   return data.content?.[0]?.text?.trim() || '';
 }
 
-async function generateAllCurrencySEO(env) {
-  // Fetch latest sentiment (score + bias + drivers) for all 8 currencies
-  const sentResp = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment?select=currency,score,bias,drivers&order=id.desc&limit=16`, {
-    headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
-  });
-  const sentRows = sentResp.ok ? await sentResp.json() : [];
-  const sentMap = {};
-  for (const row of sentRows) {
-    if (!sentMap[row.currency]) sentMap[row.currency] = { score: row.score||50, bias: row.bias||'Neutral', drivers: row.drivers||[] };
-  }
-
-  // Fetch recent headlines (last 3 hours) with currencies_affected
-  const cutoff = new Date(Date.now() - 3*60*60*1000).toISOString();
-  const newsResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=title,currencies_affected&fetched_at=gte.${cutoff}&order=fetched_at.desc&limit=50`, {
-    headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
-  });
-  const newsRows = newsResp.ok ? await newsResp.json() : [];
-
-  console.log(`generateAllCurrencySEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
-
-  for (const ccy of SEO_CURRENCIES) {
-    try {
-      const sentData = sentMap[ccy.code] || { score: 50, bias: 'Neutral', drivers: [] };
-      // Prioritise headlines that directly mention this currency
-      const relevant = newsRows.filter(n => (n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
-      const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
-      const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
-
-      const html = await generateCurrencySEO(ccy, sentData, headlines, env);
-      if (html) {
-        await saveSEOCache(ccy.slug, html, env);
-        console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100)`);
-      }
-    } catch(e) {
-      console.log(`Currency SEO error for ${ccy.code}:`, e.message);
+async function generateAllCurrencySEO(env, opts = {}) {
+  const { cycleTs } = opts;
+  await withRetry('currencySEO', async () => {
+    const sentResp = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment?select=currency,score,bias,drivers&order=id.desc&limit=16`, {
+      headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+      signal: AbortSignal.timeout(25000),
+    });
+    const sentRows = sentResp.ok ? await sentResp.json() : [];
+    const sentMap = {};
+    for (const row of sentRows) {
+      if (!sentMap[row.currency]) sentMap[row.currency] = { score: row.score||50, bias: row.bias||'Neutral', drivers: row.drivers||[] };
     }
-    await new Promise(r => setTimeout(r, 600)); // 600ms between requests — respect Anthropic rate limits
-  }
-  console.log('generateAllCurrencySEO: done');
+
+    const cutoff = new Date(Date.now() - 6*60*60*1000).toISOString(); // 6h window to tolerate staggered cron
+    const newsResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=title,currencies_affected&fetched_at=gte.${cutoff}&order=fetched_at.desc&limit=50`, {
+      headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+      signal: AbortSignal.timeout(25000),
+    });
+    const newsRows = newsResp.ok ? await newsResp.json() : [];
+    console.log(`generateAllCurrencySEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
+
+    for (const ccy of SEO_CURRENCIES) {
+      try {
+        const sentData = sentMap[ccy.code] || { score: 50, bias: 'Neutral', drivers: [] };
+        const relevant = newsRows.filter(n => (n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
+        const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
+        const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
+        const html = await generateCurrencySEO(ccy, sentData, headlines, env);
+        if (html) {
+          await saveSEOCache(ccy.slug, html, env);
+          console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100)`);
+        }
+      } catch(e) {
+        console.log(`Currency SEO error for ${ccy.code}:`, e.message);
+      }
+      await new Promise(r => setTimeout(r, 600));
+    }
+    console.log('generateAllCurrencySEO: done');
+  }, env, cycleTs);
 }
 
 const SEO_PAIRS = [
@@ -3521,6 +3474,7 @@ Important:
     method: 'POST',
     headers: { 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, messages: [{ role: 'user', content: prompt }] }),
+    signal: AbortSignal.timeout(25000),
   });
   if (!resp.ok) throw new Error(`Haiku SEO ${pair.slug}: ${resp.status}`);
   const data = await resp.json();
@@ -3528,8 +3482,7 @@ Important:
 }
 
 async function saveSEOCache(slug, html, env) {
-  const url = `${env.SUPABASE_URL}/rest/v1/seo_cache`;
-  const r = await fetch(url, {
+  const r = await fetch(`${env.SUPABASE_URL}/rest/v1/seo_cache`, {
     method: 'POST',
     headers: {
       'apikey': env.SUPABASE_SERVICE_KEY,
@@ -3538,6 +3491,7 @@ async function saveSEOCache(slug, html, env) {
       'Prefer': 'resolution=merge-duplicates',
     },
     body: JSON.stringify({ slug, html, updated_at: new Date().toISOString() }),
+    signal: AbortSignal.timeout(25000),
   });
   if (!r.ok) {
     const t = await r.text();
@@ -3545,48 +3499,41 @@ async function saveSEOCache(slug, html, env) {
   }
 }
 
-async function generateAllPairSEO(env) {
-  // Fetch latest sentiment scores for all currencies
-  const sentResp = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment?select=currency,score,bias&order=fetched_at.desc&limit=16`, {
-    headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
-  });
-  const sentRows = sentResp.ok ? await sentResp.json() : [];
-  const sentMap = {};
-  for (const row of sentRows) {
-    if (!sentMap[row.currency]) sentMap[row.currency] = { score: row.score || 0, bias: row.bias || 0 };
-  }
+async function generateAllPairSEO(env, opts = {}) {
+  const { cycleTs } = opts;
+  await withRetry('pairSEO', async () => {
+    const sentResp = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment?select=currency,score,bias&order=created_at.desc&limit=16`, {
+      headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+      signal: AbortSignal.timeout(25000),
+    });
+    const sentRows = sentResp.ok ? await sentResp.json() : [];
+    const sentMap = {};
+    for (const row of sentRows) {
+      if (!sentMap[row.currency]) sentMap[row.currency] = { score: row.score || 0, bias: row.bias || 0 };
+    }
 
-  // Fetch recent headlines (last 3 hours)
-  const cutoff = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
-  const newsResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=title,impact&fetched_at=gte.${cutoff}&order=fetched_at.desc&limit=30`, {
-    headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
-  });
-  const newsRows = newsResp.ok ? await newsResp.json() : [];
-  const allHeadlines = newsRows.map(n => n.title).filter(Boolean);
+    const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(); // 6h window to tolerate staggered cron
+    const newsResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=title,impact&fetched_at=gte.${cutoff}&order=fetched_at.desc&limit=30`, {
+      headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+      signal: AbortSignal.timeout(25000),
+    });
+    const newsRows = newsResp.ok ? await newsResp.json() : [];
+    const allHeadlines = newsRows.map(n => n.title).filter(Boolean);
+    console.log(`generateAllPairSEO: ${sentRows.length} sentiment rows, ${allHeadlines.length} headlines`);
 
-  console.log(`generateAllPairSEO: ${sentRows.length} sentiment rows, ${allHeadlines.length} headlines`);
-
-  // Process pairs in batches of 3 to avoid rate limits
-  const BATCH = 3;
-  for (let i = 0; i < SEO_PAIRS.length; i += BATCH) {
-    const batch = SEO_PAIRS.slice(i, i + BATCH);
-    await Promise.all(batch.map(async (pair) => {
-      try {
-        const baseData = sentMap[pair.base] || { score: 0, bias: 0 };
-        const quoteData = sentMap[pair.quote] || { score: 0, bias: 0 };
-        const pairScore = Math.round(baseData.score - quoteData.score);
-        const pairBias = baseData.bias - quoteData.bias;
-        const html = await generatePairSEO(pair, pairScore, pairBias, allHeadlines, env);
-        if (html) {
-          await saveSEOCache(pair.slug, html, env);
-          console.log(`SEO cached: ${pair.slug}`);
-        }
-      } catch (e) {
-        console.log(`SEO gen error for ${pair.slug}:`, e.message);
-      }
-    }));
-    // Small pause between batches to respect Anthropic rate limits
-    if (i + BATCH < SEO_PAIRS.length) await new Promise(r => setTimeout(r, 1000));
-  }
-  console.log('generateAllPairSEO: done');
+    const BATCH = 3;
+    for (let i = 0; i < SEO_PAIRS.length; i += BATCH) {
+      const batch = SEO_PAIRS.slice(i, i + BATCH);
+      await Promise.all(batch.map(async (pair) => {
+        try {
+          const baseData = sentMap[pair.base] || { score: 0, bias: 0 };
+          const quoteData = sentMap[pair.quote] || { score: 0, bias: 0 };
+          const html = await generatePairSEO(pair, Math.round(baseData.score - quoteData.score), baseData.bias - quoteData.bias, allHeadlines, env);
+          if (html) { await saveSEOCache(pair.slug, html, env); console.log(`SEO cached: ${pair.slug}`); }
+        } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
+      }));
+      if (i + BATCH < SEO_PAIRS.length) await new Promise(r => setTimeout(r, 1000));
+    }
+    console.log('generateAllPairSEO: done');
+  }, env, cycleTs);
 }

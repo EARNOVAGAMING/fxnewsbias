@@ -5,11 +5,11 @@
   "compatibility_flags": ["nodejs_compat"],
   "triggers": {
     "crons": [
-      "*/15 * * * *",
-      "0 */3 * * *",
-      "0 0 * * *",
-      "0 6 * * *",
-      "0 12 * * *"
+      "*/15 * * * *",   // prices only (self-heal removed)
+      "0 */3 * * *",    // sentiment → pairSEO → currencySEO → cleanup (sequential)
+      "0 0 * * *",      // ASEAN session insight
+      "0 6 * * *",      // London session insight
+      "0 12 * * *"      // NY session insight
     ]
   }
 }
