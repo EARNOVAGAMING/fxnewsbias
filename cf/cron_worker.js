@@ -278,6 +278,7 @@ tasks.push(pingIndexNow([
 } else if (event.cron === '0 */3 * * *') {
 tasks.push(runSentimentAnalysis(env));
 tasks.push(generateAllPairSEO(env).catch(e => console.log('generateAllPairSEO error:', e.message)));
+tasks.push(generateAllCurrencySEO(env).catch(e => console.log('generateAllCurrencySEO error:', e.message)));
 // prices are handled by the */15 tick — no duplicate call here
 // Once every 3 hours is plenty for a retention sweep — system_state is
 // tiny and only needs to be pruned occasionally.
@@ -3371,6 +3372,95 @@ async function handleAdminData(request, env) {
 // ============================================
 // SEO ARTICLE GENERATION (Claude Haiku)
 // ============================================
+
+const SEO_CURRENCIES = [
+  { slug:'ccy-usd', code:'USD', name:'US Dollar',          bank:'Federal Reserve (Fed)',                  pairs:'EUR/USD, USD/JPY, GBP/USD', keywords:'usd sentiment today, us dollar bias today, dollar forecast, usd fundamental analysis' },
+  { slug:'ccy-eur', code:'EUR', name:'Euro',                bank:'European Central Bank (ECB)',             pairs:'EUR/USD, EUR/GBP, EUR/JPY', keywords:'eur sentiment today, euro bias today, euro forecast, eur fundamental analysis' },
+  { slug:'ccy-gbp', code:'GBP', name:'British Pound',       bank:'Bank of England (BoE)',                  pairs:'GBP/USD, EUR/GBP, GBP/JPY', keywords:'gbp sentiment today, pound bias today, sterling forecast, gbp fundamental analysis' },
+  { slug:'ccy-jpy', code:'JPY', name:'Japanese Yen',        bank:'Bank of Japan (BoJ)',                    pairs:'USD/JPY, EUR/JPY, GBP/JPY', keywords:'jpy sentiment today, yen bias today, japanese yen forecast, jpy fundamental analysis' },
+  { slug:'ccy-aud', code:'AUD', name:'Australian Dollar',   bank:'Reserve Bank of Australia (RBA)',        pairs:'AUD/USD, AUD/JPY, AUD/NZD', keywords:'aud sentiment today, aussie bias today, australian dollar forecast, aud fundamental analysis' },
+  { slug:'ccy-cad', code:'CAD', name:'Canadian Dollar',     bank:'Bank of Canada (BoC)',                   pairs:'USD/CAD, CAD/JPY',           keywords:'cad sentiment today, loonie bias today, canadian dollar forecast, cad fundamental analysis' },
+  { slug:'ccy-chf', code:'CHF', name:'Swiss Franc',         bank:'Swiss National Bank (SNB)',              pairs:'USD/CHF, EUR/CHF, CHF/JPY', keywords:'chf sentiment today, franc bias today, swiss franc forecast, chf fundamental analysis' },
+  { slug:'ccy-nzd', code:'NZD', name:'New Zealand Dollar',  bank:'Reserve Bank of New Zealand (RBNZ)',    pairs:'NZD/USD, AUD/NZD',           keywords:'nzd sentiment today, kiwi bias today, new zealand dollar forecast, nzd fundamental analysis' },
+];
+
+async function generateCurrencySEO(ccy, sentData, headlines, env) {
+  const dateStr = new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const score   = sentData.score || 50;
+  const bias    = sentData.bias  || 'Neutral';
+  const drivers = (Array.isArray(sentData.drivers) ? sentData.drivers : []).slice(0,3).join('; ') || 'mixed signals across the board';
+  const headlineList = headlines.length ? headlines.slice(0,5).map((h,i)=>`${i+1}. ${h}`).join('\n') : 'No major headlines in this window.';
+
+  const prompt = `You are a senior FX analyst at a major bank writing the "What Is Driving the ${ccy.code} Today" section of a live market page on ${dateStr}.
+
+Current ${ccy.code} data:
+- Sentiment score: ${score}/100 (${bias})
+- Key drivers: ${drivers}
+- Recent headlines:\n${headlineList}
+
+Write exactly 2 short paragraphs using ONLY <p> and <strong> tags. No headings, no lists, no other tags.
+
+Paragraph 1: What the ${ccy.name} is doing right now — reference the score (${score}/100), the bias (${bias}), specific drivers. Be direct and data-specific.
+Paragraph 2: What to watch — upcoming catalysts, key risks, best ${ccy.code} pairs to track (${ccy.pairs}).
+
+Hard rules:
+- Never write "as of [date]", "it is worth noting", "it is important to", "in conclusion", "furthermore", "it is clear that"
+- No markdown symbols. No bullet points.
+- Confident, direct tone — no fluff. Vary sentence length.
+- Naturally include: ${ccy.keywords}
+- 120–170 words total.
+- Return ONLY the raw HTML. Nothing else.`;
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 450, messages: [{ role: 'user', content: prompt }] }),
+  });
+  if (!resp.ok) throw new Error(`Haiku currency SEO ${ccy.code}: ${resp.status}`);
+  const data = await resp.json();
+  return data.content?.[0]?.text?.trim() || '';
+}
+
+async function generateAllCurrencySEO(env) {
+  // Fetch latest sentiment (score + bias + drivers) for all 8 currencies
+  const sentResp = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment?select=currency,score,bias,drivers&order=id.desc&limit=16`, {
+    headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+  });
+  const sentRows = sentResp.ok ? await sentResp.json() : [];
+  const sentMap = {};
+  for (const row of sentRows) {
+    if (!sentMap[row.currency]) sentMap[row.currency] = { score: row.score||50, bias: row.bias||'Neutral', drivers: row.drivers||[] };
+  }
+
+  // Fetch recent headlines (last 3 hours) with currencies_affected
+  const cutoff = new Date(Date.now() - 3*60*60*1000).toISOString();
+  const newsResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=title,currencies_affected&fetched_at=gte.${cutoff}&order=fetched_at.desc&limit=50`, {
+    headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+  });
+  const newsRows = newsResp.ok ? await newsResp.json() : [];
+
+  console.log(`generateAllCurrencySEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
+
+  for (const ccy of SEO_CURRENCIES) {
+    try {
+      const sentData = sentMap[ccy.code] || { score: 50, bias: 'Neutral', drivers: [] };
+      // Prioritise headlines that directly mention this currency
+      const relevant = newsRows.filter(n => (n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
+      const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
+      const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
+
+      const html = await generateCurrencySEO(ccy, sentData, headlines, env);
+      if (html) {
+        await saveSEOCache(ccy.slug, html, env);
+        console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100)`);
+      }
+    } catch(e) {
+      console.log(`Currency SEO error for ${ccy.code}:`, e.message);
+    }
+    await new Promise(r => setTimeout(r, 600)); // 600ms between requests — respect Anthropic rate limits
+  }
+  console.log('generateAllCurrencySEO: done');
+}
 
 const SEO_PAIRS = [
   { slug: 'eur-usd',  name: 'EUR/USD', base: 'EUR', quote: 'USD', keywords: 'eurusd fundamental bias analysis, eurusd sentiment today, eurusd bias today' },
