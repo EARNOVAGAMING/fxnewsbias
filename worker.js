@@ -48,7 +48,7 @@ export default {
 // ── Pair pages ────────────────────────────────────────────────────────────────
 async function servePairPage(request, slug, env) {
   const assetUrl = new URL(request.url);
-  assetUrl.pathname = `/pairs/${slug}/index.html`;
+  assetUrl.pathname = `/pairs/${slug}/`;
 
   const [assetResp, seoHtml] = await Promise.all([
     env.ASSETS.fetch(new Request(assetUrl.toString(), request)),
@@ -62,7 +62,7 @@ async function servePairPage(request, slug, env) {
 // ── Currency pages ────────────────────────────────────────────────────────────
 async function serveCurrencyPage(request, code, env) {
   const assetUrl = new URL(request.url);
-  assetUrl.pathname = `/currencies/${code}/index.html`;
+  assetUrl.pathname = `/currencies/${code}/`;
 
   const [assetResp, seoHtml] = await Promise.all([
     env.ASSETS.fetch(new Request(assetUrl.toString(), request)),
