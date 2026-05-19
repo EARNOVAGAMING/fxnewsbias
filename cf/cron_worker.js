@@ -3242,6 +3242,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 function _insRenderIndex(articles){
   const dateStr = new Date().toUTCString().split(' ').slice(0,4).join(' ');
   const items = articles.map(a=>`<article class="ix-card"><div class="ix-meta"><span class="ix-cat">${_insEsc(a.category||'Market Wrap')}</span><span class="ix-date">${a.dateLabel}</span></div><h2 class="ix-title"><a href="/insight/${a.slug}">${_insEsc(a.headline)}</a></h2><p class="ix-desc">${_insEsc(a.summary)}</p><a class="ix-read" href="/insight/${a.slug}">Read full insight →</a></article>`).join('');
+  const collectionLd = JSON.stringify({"@context":"https://schema.org","@type":"CollectionPage","name":"Daily Forex Insights","description":"Forex market wraps with focus on the highest-impact news, market reaction, and what to watch next. Published 3 times a day for the Asia, London and New York sessions.","url":_INS_SITE+"/insight/","publisher":{"@type":"Organization","name":"FXNewsBias","url":_INS_SITE,"logo":{"@type":"ImageObject","url":_INS_SITE+"/og-image.png"}},"mainEntity":{"@type":"ItemList","numberOfItems":articles.length,"itemListElement":articles.map((a,i)=>({"@type":"ListItem","position":i+1,"url":_INS_SITE+"/insight/"+a.slug,"name":a.headline}))}});
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="/favicon.ico"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
@@ -3261,6 +3262,7 @@ function _insRenderIndex(articles){
 .sidebar-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px;}.sidebar-h{font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;}.side-link{display:block;padding:10px 0;border-bottom:1px solid var(--border);color:#1a1a1a;font-size:14px;font-weight:600;line-height:1.4;}.side-link:last-child{border-bottom:none;}.side-link:hover{color:#2563eb;text-decoration:none;}
 footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}.footer-inner{max-width:1280px;margin:0 auto;}.footer-bottom{text-align:center;font-size:12px;padding-top:16px;border-top:1px solid #1e293b;color:#64748b;}.footer-bottom a{color:#94a3b8;}</style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},{"@type":"ListItem","position":2,"name":"Daily Insights","item":"https://fxnewsbias.com/insight/"}]}</script>
+<script type="application/ld+json">${collectionLd}</script>
 <script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
 </head><body>
 <div class="topbar"><div class="topbar-inner"><div><span style="color:#94a3b8;">📅 ${dateStr}</span></div><div><a href="/news" style="color:#94a3b8;margin-left:14px;">News</a></div></div></div>
