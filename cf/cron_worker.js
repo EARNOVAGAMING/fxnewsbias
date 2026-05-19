@@ -129,10 +129,11 @@ if (url.pathname === '/run-seo') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 // Run in background — SEO generation takes >30s (15 pairs + 8 currencies via Haiku),
 // so we can't await it within the HTTP response window. Return immediately.
-ctx.waitUntil(Promise.all([
-  generateAllPairSEO(env).catch(e => console.log('run-seo pairSEO error:', e.message)),
-  generateAllCurrencySEO(env).catch(e => console.log('run-seo currencySEO error:', e.message)),
-]));
+// Sequential to avoid concurrent GitHub ref-update conflicts (422 race condition).
+ctx.waitUntil((async () => {
+  await generateAllPairSEO(env).catch(e => console.log('run-seo pairSEO error:', e.message));
+  await generateAllCurrencySEO(env).catch(e => console.log('run-seo currencySEO error:', e.message));
+})());
 return new Response(JSON.stringify({ ok: true, msg: 'SEO generation started in background — check /title-status in ~2 minutes' }), {
   status: 202, headers: { 'Content-Type': 'application/json' }
 });
@@ -3468,36 +3469,45 @@ async function _insCommitFiles(env, files, commitMessage) {
   const repo = env.GITHUB_REPO || 'fxnewsbias';
   const branch = env.GITHUB_BRANCH || 'main';
 
-  // Get current head commit
-  const ref = await _insGh(env, 'GET', `/repos/{owner}/{repo}/git/ref/heads/${branch}`);
-  const baseSha = ref.object.sha;
-  const baseCommit = await _insGh(env, 'GET', `/repos/{owner}/{repo}/git/commits/${baseSha}`);
-  const baseTreeSha = baseCommit.tree.sha;
-
-  // Create blobs for each file.
+  // Create blobs once — they are content-addressed and reusable across retry attempts.
   // Pass { binary: true } for files where content is already a base64 string (e.g. PNG).
-  const treeItems = [];
+  const blobShas = new Map();
   for (const f of files) {
     const blob = await _insGh(env, 'POST', `/repos/{owner}/{repo}/git/blobs`, {
       content: f.binary ? f.content : btoa(unescape(encodeURIComponent(f.content))),
       encoding: 'base64'
     });
-    treeItems.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
+    blobShas.set(f.path, blob.sha);
   }
 
-  // Create tree
-  const tree = await _insGh(env, 'POST', `/repos/{owner}/{repo}/git/trees`, {
-    base_tree: baseTreeSha, tree: treeItems
-  });
+  // Retry the tree→commit→ref-update loop up to 3 times.
+  // On a 422 the branch has moved (e.g. concurrent cron commit); re-read HEAD
+  // and rebuild the commit on top of the new tip.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const ref = await _insGh(env, 'GET', `/repos/{owner}/{repo}/git/ref/heads/${branch}`);
+    const baseSha = ref.object.sha;
+    const baseCommit = await _insGh(env, 'GET', `/repos/{owner}/{repo}/git/commits/${baseSha}`);
+    const baseTreeSha = baseCommit.tree.sha;
 
-  // Create commit
-  const commit = await _insGh(env, 'POST', `/repos/{owner}/{repo}/git/commits`, {
-    message: commitMessage, tree: tree.sha, parents: [baseSha]
-  });
+    const treeItems = files.map(f => ({ path: f.path, mode: '100644', type: 'blob', sha: blobShas.get(f.path) }));
+    const tree = await _insGh(env, 'POST', `/repos/{owner}/{repo}/git/trees`, {
+      base_tree: baseTreeSha, tree: treeItems
+    });
+    const commit = await _insGh(env, 'POST', `/repos/{owner}/{repo}/git/commits`, {
+      message: commitMessage, tree: tree.sha, parents: [baseSha]
+    });
 
-  // Update ref
-  await _insGh(env, 'PATCH', `/repos/{owner}/{repo}/git/refs/heads/${branch}`, { sha: commit.sha });
-  return commit.sha;
+    try {
+      await _insGh(env, 'PATCH', `/repos/{owner}/{repo}/git/refs/heads/${branch}`, { sha: commit.sha });
+      return commit.sha;
+    } catch(e) {
+      if (attempt < 3 && e.message && e.message.includes('422')) {
+        await new Promise(r => setTimeout(r, 800 * attempt));
+        continue;
+      }
+      throw e;
+    }
+  }
 }
 
 async function _insSendFailureEmail(env, error, ctx) {
