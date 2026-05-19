@@ -3623,7 +3623,8 @@ const SEO_CURRENCIES = [
 ];
 
 async function generateCurrencySEO(ccy, sentData, headlines, env) {
-  const dateStr = new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const dateStr  = new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const dateShort = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
   const score   = sentData.score || 50;
   const bias    = sentData.bias  || 'Neutral';
   const drivers = (Array.isArray(sentData.drivers) ? sentData.drivers : []).slice(0,3).join('; ') || 'mixed signals across the board';
@@ -3647,17 +3648,26 @@ Hard rules:
 - Confident, direct tone — no fluff. Vary sentence length.
 - Naturally include: ${ccy.keywords}
 - 120–170 words total.
-- Return ONLY the raw HTML. Nothing else.`;
+
+Return ONLY valid JSON (no markdown, no code fences):
+{"page_title":"<max 65 chars — format: '${ccy.code} ${bias} ${score}/100 | ${ccy.name} + specific catalyst from headlines above — ${dateShort} - FXNewsBias'. Must name a real catalyst, not generic text.>","html":"<the two paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 450, messages: [{ role: 'user', content: prompt }] }),
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, messages: [{ role: 'user', content: prompt }] }),
     signal: AbortSignal.timeout(25000),
   });
   if (!resp.ok) throw new Error(`Haiku currency SEO ${ccy.code}: ${resp.status}`);
   const data = await resp.json();
-  return data.content?.[0]?.text?.trim() || '';
+  const raw = data.content?.[0]?.text?.trim() || '';
+  let pageTitle = '', html = raw;
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
+  }
+  if (!pageTitle) pageTitle = `${ccy.code} ${bias} ${score}/100 | ${ccy.name} Sentiment — ${dateShort} - FXNewsBias`;
+  return { pageTitle, html };
 }
 
 async function generateAllCurrencySEO(env, opts = {}) {
@@ -3681,22 +3691,51 @@ async function generateAllCurrencySEO(env, opts = {}) {
     const newsRows = newsResp.ok ? await newsResp.json() : [];
     console.log(`generateAllCurrencySEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
 
+    const titleUpdates = [];
     for (const ccy of SEO_CURRENCIES) {
       try {
         const sentData = sentMap[ccy.code] || { score: 50, bias: 'Neutral', drivers: [] };
         const relevant = newsRows.filter(n => (n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
         const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
         const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
-        const html = await generateCurrencySEO(ccy, sentData, headlines, env);
+        const { pageTitle, html } = await generateCurrencySEO(ccy, sentData, headlines, env);
         if (html) {
           await saveSEOCache(ccy.slug, html, env);
-          console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100)`);
+          console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100) — title: ${pageTitle}`);
         }
+        if (pageTitle) titleUpdates.push({ path: `currencies/${ccy.code.toLowerCase()}/index.html`, pageTitle });
       } catch(e) {
         console.log(`Currency SEO error for ${ccy.code}:`, e.message);
       }
       await new Promise(r => setTimeout(r, 600));
     }
+
+    // Patch <title>, og:title, twitter:title in each static HTML file and commit as one batch
+    if (titleUpdates.length > 0) {
+      try {
+        const fileContents = await Promise.all(titleUpdates.map(({ path }) => _insGetFile(env, path)));
+        const filesToCommit = [];
+        for (let i = 0; i < titleUpdates.length; i++) {
+          const { path, pageTitle } = titleUpdates[i];
+          const current = fileContents[i];
+          if (!current) { console.log(`Currency title patch: file not found ${path}`); continue; }
+          const safe = pageTitle.replace(/"/g, '&quot;');
+          const patched = current
+            .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
+            .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${safe}"`)
+            .replace(/(<meta name="twitter:title" content=")[^"]*"/, `$1${safe}"`);
+          filesToCommit.push({ path, content: patched });
+        }
+        if (filesToCommit.length > 0) {
+          const dateLabel = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+          await _insCommitFiles(env, filesToCommit, `seo: update currency page titles — ${dateLabel}`);
+          console.log(`Currency SEO: committed ${filesToCommit.length} title patches`);
+        }
+      } catch(e) {
+        console.log('Currency SEO title commit error:', e.message);
+      }
+    }
+
     console.log('generateAllCurrencySEO: done');
   }, env, cycleTs);
 }
@@ -3720,8 +3759,9 @@ const SEO_PAIRS = [
 ];
 
 async function generatePairSEO(pair, score, bias, headlines, env) {
-  const dateStr = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const biasLabel = bias > 0 ? 'bullish' : bias < 0 ? 'bearish' : 'neutral';
+  const dateStr   = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const dateShort = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const biasLabel = bias > 0 ? 'Bullish' : bias < 0 ? 'Bearish' : 'Neutral';
   const headlineList = headlines.length ? headlines.slice(0, 5).map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No major headlines at this time.';
 
   const prompt = `You are an expert forex analyst writing a concise, SEO-optimised market update for ${pair.name} on ${dateStr}.
@@ -3740,17 +3780,26 @@ Important:
 - Naturally include these keywords: ${pair.keywords}, live forex sentiment, forex bias today 2026, news-based forex analysis
 - Keep it factual and data-driven. Do NOT invent specific price levels.
 - Total length: 200–280 words.
-- Return ONLY the raw HTML paragraphs, nothing else.`;
+
+Return ONLY valid JSON (no markdown, no code fences):
+{"page_title":"<max 65 chars — format: '${pair.name} ${biasLabel} Today | specific catalyst from headlines — ${dateShort} - FXNewsBias'. Must name a real catalyst.>","html":"<the three paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, messages: [{ role: 'user', content: prompt }] }),
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 750, messages: [{ role: 'user', content: prompt }] }),
     signal: AbortSignal.timeout(25000),
   });
   if (!resp.ok) throw new Error(`Haiku SEO ${pair.slug}: ${resp.status}`);
   const data = await resp.json();
-  return data.content?.[0]?.text?.trim() || '';
+  const raw = data.content?.[0]?.text?.trim() || '';
+  let pageTitle = '', html = raw;
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
+  }
+  if (!pageTitle) pageTitle = `${pair.name} ${biasLabel} Bias Today | ${pair.name} Sentiment — ${dateShort} - FXNewsBias`;
+  return { pageTitle, html };
 }
 
 async function saveSEOCache(slug, html, env) {
@@ -3794,6 +3843,7 @@ async function generateAllPairSEO(env, opts = {}) {
     const allHeadlines = newsRows.map(n => n.title).filter(Boolean);
     console.log(`generateAllPairSEO: ${sentRows.length} sentiment rows, ${allHeadlines.length} headlines`);
 
+    const titleUpdates = [];
     const BATCH = 3;
     for (let i = 0; i < SEO_PAIRS.length; i += BATCH) {
       const batch = SEO_PAIRS.slice(i, i + BATCH);
@@ -3801,12 +3851,40 @@ async function generateAllPairSEO(env, opts = {}) {
         try {
           const baseData = sentMap[pair.base] || { score: 0, bias: 0 };
           const quoteData = sentMap[pair.quote] || { score: 0, bias: 0 };
-          const html = await generatePairSEO(pair, Math.round(baseData.score - quoteData.score), baseData.bias - quoteData.bias, allHeadlines, env);
-          if (html) { await saveSEOCache(pair.slug, html, env); console.log(`SEO cached: ${pair.slug}`); }
+          const { pageTitle, html } = await generatePairSEO(pair, Math.round(baseData.score - quoteData.score), baseData.bias - quoteData.bias, allHeadlines, env);
+          if (html) { await saveSEOCache(pair.slug, html, env); console.log(`SEO cached: ${pair.slug} — title: ${pageTitle}`); }
+          if (pageTitle) titleUpdates.push({ path: `pairs/${pair.slug}/index.html`, pageTitle });
         } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
       }));
       if (i + BATCH < SEO_PAIRS.length) await new Promise(r => setTimeout(r, 1000));
     }
+
+    // Patch <title>, og:title, twitter:title in each static HTML file and commit as one batch
+    if (titleUpdates.length > 0) {
+      try {
+        const fileContents = await Promise.all(titleUpdates.map(({ path }) => _insGetFile(env, path)));
+        const filesToCommit = [];
+        for (let i = 0; i < titleUpdates.length; i++) {
+          const { path, pageTitle } = titleUpdates[i];
+          const current = fileContents[i];
+          if (!current) { console.log(`Pair title patch: file not found ${path}`); continue; }
+          const safe = pageTitle.replace(/"/g, '&quot;');
+          const patched = current
+            .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
+            .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${safe}"`)
+            .replace(/(<meta name="twitter:title" content=")[^"]*"/, `$1${safe}"`);
+          filesToCommit.push({ path, content: patched });
+        }
+        if (filesToCommit.length > 0) {
+          const dateLabel = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          await _insCommitFiles(env, filesToCommit, `seo: update pair page titles — ${dateLabel}`);
+          console.log(`Pair SEO: committed ${filesToCommit.length} title patches`);
+        }
+      } catch(e) {
+        console.log('Pair SEO title commit error:', e.message);
+      }
+    }
+
     console.log('generateAllPairSEO: done');
   }, env, cycleTs);
 }
