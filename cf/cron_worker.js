@@ -3733,7 +3733,7 @@ async function generateAllCurrencySEO(env, opts = {}) {
           await saveSEOCache(ccy.slug, html, env);
           console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100) — title: ${pageTitle}`);
         }
-        if (pageTitle) titleUpdates.push({ path: `currencies/${ccy.code.toLowerCase()}/index.html`, pageTitle });
+        if (pageTitle) titleUpdates.push({ path: `currencies/${ccy.code.toLowerCase()}/index.html`, pageTitle, ccy, sentData });
       } catch(e) {
         console.log(`Currency SEO error for ${ccy.code}:`, e.message);
       }
@@ -3746,14 +3746,32 @@ async function generateAllCurrencySEO(env, opts = {}) {
         const fileContents = await Promise.all(titleUpdates.map(({ path }) => _insGetFile(env, path)));
         const filesToCommit = [];
         for (let i = 0; i < titleUpdates.length; i++) {
-          const { path, pageTitle } = titleUpdates[i];
+          const { path, pageTitle, ccy, sentData } = titleUpdates[i];
           const current = fileContents[i];
           if (!current) { console.log(`Currency title patch: file not found ${path}`); continue; }
           const safe = pageTitle.replace(/"/g, '&quot;');
+
+          // Extract catalyst from title: "CODE BIAS SCORE/100 | CATALYST — DATE"
+          const catMatch = pageTitle.match(/[|:]\s*(.+?)\s*[—–-]\s*\d/);
+          const catalyst = catMatch ? catMatch[1].trim() : `${ccy.name} market analysis`;
+          const bias = sentData.bias || 'Neutral';
+          const score = sentData.score || 50;
+          const dateShort = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+          // Dynamic meta description (max 155 chars)
+          const descRaw = `${ccy.code} (${ccy.name}) is ${bias} today (${score}/100). ${catalyst}. Live news-based forex sentiment & bias — ${dateShort}.`;
+          const safeDesc = descRaw.replace(/"/g, '&quot;').slice(0, 155);
+
+          // H1: keep flag span, replace static "CODE Sentiment & NAME Bias" with bias + score + catalyst
+          const h1Cat = catalyst.length > 40 ? catalyst.slice(0, 37) + '...' : catalyst;
+          const h1Text = `${ccy.code} ${bias} ${score}/100 — ${h1Cat}`;
+
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
             .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${safe}"`)
-            .replace(/(<meta name="twitter:title" content=")[^"]*"/, `$1${safe}"`);
+            .replace(/(<meta name="twitter:title" content=")[^"]*"/, `$1${safe}"`)
+            .replace(/(<meta name="description" content=")[^"]*"/, `$1${safeDesc}"`)
+            .replace(/(<h1[^>]*><span[^>]*>[^<]*<\/span>\s*)[^<]*(<\/h1>)/, `$1${h1Text}$2`);
           filesToCommit.push({ path, content: patched });
         }
         if (filesToCommit.length > 0) {
