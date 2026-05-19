@@ -80,6 +80,12 @@ function injectAndServe(html, seoHtml, assetResp) {
   // Always refresh dateModified in JSON-LD so Google sees today's date
   let result = html.replace(/"dateModified":"[\d-]+"/, `"dateModified":"${today}"`);
 
+  // Update visible "Page reviewed" date to match today
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const d = new Date();
+  const todayHuman = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  result = result.replace(/📅 Page reviewed: \d+ [A-Za-z]+ \d+/, `📅 Page reviewed: ${todayHuman}`);
+
   // Inject AI-written analysis at placeholder
   const placeholder = '<!-- seo_inject -->';
   if (seoHtml && result.includes(placeholder)) {
