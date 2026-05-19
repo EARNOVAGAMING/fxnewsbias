@@ -325,7 +325,7 @@ if (event.cron === '*/15 * * * *') {
   const session = SESSION_BY_CRON[event.cron];
   ctx.waitUntil(Promise.all([
     generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)),
-    pingIndexNow(['https://fxnewsbias.com/', 'https://fxnewsbias.com/insight/', 'https://fxnewsbias.com/news']).catch(e => console.log('IndexNow (insight) error:', e.message)),
+    pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (insight) error:', e.message)),
   ]));
 }
 }
