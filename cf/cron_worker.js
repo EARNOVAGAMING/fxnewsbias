@@ -3888,7 +3888,7 @@ async function generateAllPairSEO(env, opts = {}) {
           const pairHeadlines = [...relevant, ...others].filter(Boolean).slice(0, 6);
           const { pageTitle, html } = await generatePairSEO(pair, pairScore, pairHeadlines, env);
           if (html) { await saveSEOCache(pair.slug, html, env); console.log(`SEO cached: ${pair.slug} — title: ${pageTitle}`); }
-          if (pageTitle) titleUpdates.push({ path: `pairs/${pair.slug}/index.html`, pageTitle });
+          if (pageTitle) titleUpdates.push({ path: `pairs/${pair.slug}/index.html`, pageTitle, pair, pairScore });
         } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
       }));
       if (i + BATCH < SEO_PAIRS.length) await new Promise(r => setTimeout(r, 1000));
@@ -3900,14 +3900,31 @@ async function generateAllPairSEO(env, opts = {}) {
         const fileContents = await Promise.all(titleUpdates.map(({ path }) => _insGetFile(env, path)));
         const filesToCommit = [];
         for (let i = 0; i < titleUpdates.length; i++) {
-          const { path, pageTitle } = titleUpdates[i];
+          const { path, pageTitle, pair, pairScore } = titleUpdates[i];
           const current = fileContents[i];
           if (!current) { console.log(`Pair title patch: file not found ${path}`); continue; }
           const safe = pageTitle.replace(/"/g, '&quot;');
+
+          // Extract catalyst from title: "PAIR BIAS Today | CATALYST — DATE" or "...: CATALYST — DATE"
+          const catMatch = pageTitle.match(/[|:]\s*(.+?)\s*[—–-]\s*\d/) ;
+          const catalyst = catMatch ? catMatch[1].trim() : `${pair.name} forex sentiment`;
+          const biasLabel = pairScore > 10 ? 'Bullish' : pairScore < -10 ? 'Bearish' : 'Neutral';
+          const dateShort = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+          // Dynamic meta description (max 155 chars)
+          const descRaw = `${pair.name} is ${biasLabel} today. ${catalyst}. Live news-based forex sentiment & bias for traders — ${dateShort}.`;
+          const safeDesc = descRaw.replace(/"/g, '&quot;').slice(0, 155);
+
+          // H1: keep flag span, replace static "Sentiment Today" with bias + catalyst
+          const h1Cat = catalyst.length > 45 ? catalyst.slice(0, 42) + '...' : catalyst;
+          const h1Text = `${pair.name} ${biasLabel} Today — ${h1Cat}`;
+
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
             .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${safe}"`)
-            .replace(/(<meta name="twitter:title" content=")[^"]*"/, `$1${safe}"`);
+            .replace(/(<meta name="twitter:title" content=")[^"]*"/, `$1${safe}"`)
+            .replace(/(<meta name="description" content=")[^"]*"/, `$1${safeDesc}"`)
+            .replace(/(<h1[^>]*><span[^>]*>[^<]*<\/span>\s*)[^<]*(<\/h1>)/, `$1${h1Text}$2`);
           filesToCommit.push({ path, content: patched });
         }
         if (filesToCommit.length > 0) {
