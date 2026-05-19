@@ -3763,8 +3763,7 @@ async function generateAllCurrencySEO(env, opts = {}) {
           const safeDesc = descRaw.replace(/"/g, '&quot;').slice(0, 155);
 
           // H1: keep flag span, replace static "CODE Sentiment & NAME Bias" with bias + score + catalyst
-          const h1Cat = catalyst.length > 40 ? catalyst.slice(0, 37) + '...' : catalyst;
-          const h1Text = `${ccy.code} ${bias} ${score}/100 — ${h1Cat}`;
+          const h1Text = `${ccy.code} ${bias} ${score}/100 — ${catalyst}`;
 
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
@@ -3934,8 +3933,7 @@ async function generateAllPairSEO(env, opts = {}) {
           const safeDesc = descRaw.replace(/"/g, '&quot;').slice(0, 155);
 
           // H1: keep flag span, replace static "Sentiment Today" with bias + catalyst
-          const h1Cat = catalyst.length > 45 ? catalyst.slice(0, 42) + '...' : catalyst;
-          const h1Text = `${pair.name} ${biasLabel} Today — ${h1Cat}`;
+          const h1Text = `${pair.name} ${biasLabel} Today — ${catalyst}`;
 
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
