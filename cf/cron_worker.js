@@ -1301,11 +1301,19 @@ async function handleTitleStatus(url, env) {
 
   const renderRows = (pages, results) => pages.map((p, i) => {
     const { title, ok } = results[i];
-    const titleColor = !ok ? 'color:#b91c1c' : title.includes('Sentiment Today') || title.includes('Sentiment & Forecast Today') ? 'color:#b45309' : 'color:#166534';
-    const badge = !ok ? '<span style="background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">ERR</span>'
-      : title.includes('Sentiment Today') || title.includes('Sentiment & Forecast Today')
+    const isOldStatic = title.includes('Sentiment Today') || title.includes('Sentiment & Forecast Today');
+    const hasDate = /—\s*\d{1,2}\s+\w+\s+\d{4}/.test(title);
+    const isQuiet = /Quiet Market|No Major Headlines/i.test(title);
+    const isDynamic = !isOldStatic && hasDate && !isQuiet;
+    const isStale   = !isOldStatic && hasDate && isQuiet;
+    const titleColor = !ok ? 'color:#b91c1c' : isOldStatic ? 'color:#b45309' : isStale ? 'color:#6b7280' : 'color:#166534';
+    const badge = !ok
+      ? '<span style="background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">ERR</span>'
+      : isOldStatic
         ? '<span style="background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">STATIC</span>'
-        : '<span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">DYNAMIC</span>';
+        : isStale
+          ? '<span style="background:#f3f4f6;color:#4b5563;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">STALE</span>'
+          : '<span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">DYNAMIC</span>';
     return `<tr>
       <td><a href="${SITE}${p.path}" target="_blank" style="font-weight:600;color:#2563eb">${escapeHtml(p.label)}</a><br><code style="font-size:11px;color:#64748b">${escapeHtml(p.path)}</code></td>
       <td style="${titleColor}">${escapeHtml(title)}&nbsp;${badge}</td>
@@ -1316,8 +1324,9 @@ async function handleTitleStatus(url, env) {
   const ccyRows = renderRows(CURRENCIES, ccyResults);
   const pairRows = renderRows(PAIRS, pairResults);
 
-  const dynamicCcy = ccyResults.filter(r => r.ok && !r.title.includes('Sentiment Today')).length;
-  const dynamicPair = pairResults.filter(r => r.ok && !r.title.includes('Sentiment & Forecast Today')).length;
+  const isDynamicTitle = t => !t.includes('Sentiment Today') && !t.includes('Sentiment & Forecast Today') && /—\s*\d{1,2}\s+\w+\s+\d{4}/.test(t) && !/Quiet Market|No Major Headlines/i.test(t);
+  const dynamicCcy  = ccyResults.filter(r => r.ok && isDynamicTitle(r.title)).length;
+  const dynamicPair = pairResults.filter(r => r.ok && isDynamicTitle(r.title)).length;
 
   const html = `<!doctype html>
 <html lang="en"><head>
@@ -3907,10 +3916,10 @@ const SEO_PAIRS = [
   { slug: 'chf-jpy',  name: 'CHF/JPY', base: 'CHF', quote: 'JPY', keywords: 'chfjpy sentiment today, chfjpy bias analysis, franc yen today' },
 ];
 
-async function generatePairSEO(pair, score, bias, headlines, env) {
+async function generatePairSEO(pair, score, headlines, env) {
   const dateStr   = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const dateShort = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  const biasLabel = bias > 0 ? 'Bullish' : bias < 0 ? 'Bearish' : 'Neutral';
+  const biasLabel = score > 10 ? 'Bullish' : score < -10 ? 'Bearish' : 'Neutral';
   const headlineList = headlines.length ? headlines.slice(0, 5).map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No major headlines at this time.';
 
   const prompt = `You are an expert forex analyst writing a concise, SEO-optimised market update for ${pair.name} on ${dateStr}.
@@ -3998,9 +4007,10 @@ async function generateAllPairSEO(env, opts = {}) {
       const batch = SEO_PAIRS.slice(i, i + BATCH);
       await Promise.all(batch.map(async (pair) => {
         try {
-          const baseData = sentMap[pair.base] || { score: 0, bias: 0 };
-          const quoteData = sentMap[pair.quote] || { score: 0, bias: 0 };
-          const { pageTitle, html } = await generatePairSEO(pair, Math.round(baseData.score - quoteData.score), baseData.bias - quoteData.bias, allHeadlines, env);
+          const baseData = sentMap[pair.base] || { score: 0 };
+          const quoteData = sentMap[pair.quote] || { score: 0 };
+          const pairScore = Math.round((baseData.score||0) - (quoteData.score||0));
+          const { pageTitle, html } = await generatePairSEO(pair, pairScore, allHeadlines, env);
           if (html) { await saveSEOCache(pair.slug, html, env); console.log(`SEO cached: ${pair.slug} — title: ${pageTitle}`); }
           if (pageTitle) titleUpdates.push({ path: `pairs/${pair.slug}/index.html`, pageTitle });
         } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
