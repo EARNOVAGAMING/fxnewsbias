@@ -3438,7 +3438,15 @@ async function _insListExistingArticles(env) {
 async function _insGetFile(env, path) {
   try {
     const data = await _insGh(env, 'GET', `/repos/{owner}/{repo}/contents/${path}?ref=${env.GITHUB_BRANCH || 'main'}`);
-    if (data && data.content) return atob(data.content.replace(/\n/g,''));
+    if (data && data.content) {
+      // atob() returns a binary string (byte values as char codes), NOT a Unicode string.
+      // Files with non-ASCII characters (emojis, em-dashes, arrows) must be decoded
+      // via TextDecoder to get a proper UTF-8 JS string before any string operations.
+      // Passing a binary string to btoa(unescape(encodeURIComponent(...))) double-encodes
+      // every byte above 127, corrupting all multi-byte sequences.
+      const bytes = Uint8Array.from(atob(data.content.replace(/\n/g, '')), c => c.charCodeAt(0));
+      return new TextDecoder('utf-8').decode(bytes);
+    }
   } catch (_) {}
   return null;
 }
