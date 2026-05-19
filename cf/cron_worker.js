@@ -1303,16 +1303,15 @@ async function handleTitleStatus(url, env) {
     const { title, ok } = results[i];
     const isOldStatic = title.includes('Sentiment Today') || title.includes('Sentiment & Forecast Today');
     const hasDate = /—\s*\d{1,2}\s+\w+\s+\d{4}/.test(title);
-    const isQuiet = /Quiet Market|No Major Headlines/i.test(title);
-    const isDynamic = !isOldStatic && hasDate && !isQuiet;
-    const isStale   = !isOldStatic && hasDate && isQuiet;
-    const titleColor = !ok ? 'color:#b91c1c' : isOldStatic ? 'color:#b45309' : isStale ? 'color:#6b7280' : 'color:#166534';
+    const isGeneric = !isOldStatic && hasDate && /Quiet Market|No Major Headlines/i.test(title);
+    const isDynamic = !isOldStatic && hasDate && !isGeneric;
+    const titleColor = !ok ? 'color:#b91c1c' : isOldStatic ? 'color:#b45309' : isGeneric ? 'color:#6b7280' : 'color:#166534';
     const badge = !ok
       ? '<span style="background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">ERR</span>'
       : isOldStatic
         ? '<span style="background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">STATIC</span>'
-        : isStale
-          ? '<span style="background:#f3f4f6;color:#4b5563;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">STALE</span>'
+        : isGeneric
+          ? '<span style="background:#f3f4f6;color:#4b5563;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">GENERIC</span>'
           : '<span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:3px;font-size:11px;font-weight:700">DYNAMIC</span>';
     return `<tr>
       <td><a href="${SITE}${p.path}" target="_blank" style="font-weight:600;color:#2563eb">${escapeHtml(p.label)}</a><br><code style="font-size:11px;color:#64748b">${escapeHtml(p.path)}</code></td>
@@ -1324,9 +1323,14 @@ async function handleTitleStatus(url, env) {
   const ccyRows = renderRows(CURRENCIES, ccyResults);
   const pairRows = renderRows(PAIRS, pairResults);
 
-  const isDynamicTitle = t => !t.includes('Sentiment Today') && !t.includes('Sentiment & Forecast Today') && /—\s*\d{1,2}\s+\w+\s+\d{4}/.test(t) && !/Quiet Market|No Major Headlines/i.test(t);
-  const dynamicCcy  = ccyResults.filter(r => r.ok && isDynamicTitle(r.title)).length;
-  const dynamicPair = pairResults.filter(r => r.ok && isDynamicTitle(r.title)).length;
+  const _isOldStatic = t => t.includes('Sentiment Today') || t.includes('Sentiment & Forecast Today');
+  const _hasDate     = t => /—\s*\d{1,2}\s+\w+\s+\d{4}/.test(t);
+  const _isGeneric   = t => !_isOldStatic(t) && _hasDate(t) && /Quiet Market|No Major Headlines/i.test(t);
+  const _isDynamic   = t => !_isOldStatic(t) && _hasDate(t) && !_isGeneric(t);
+  const dynamicCcy   = ccyResults.filter(r => r.ok && _isDynamic(r.title)).length;
+  const dynamicPair  = pairResults.filter(r => r.ok && _isDynamic(r.title)).length;
+  const genericCcy   = ccyResults.filter(r => r.ok && _isGeneric(r.title)).length;
+  const genericPair  = pairResults.filter(r => r.ok && _isGeneric(r.title)).length;
 
   const html = `<!doctype html>
 <html lang="en"><head>
@@ -1361,12 +1365,12 @@ a{color:#2563eb;text-decoration:none}a:hover{text-decoration:underline}
   <div class="card">
     <div class="card-title">Currencies</div>
     <div class="card-status" style="color:${dynamicCcy === CURRENCIES.length ? '#16a34a' : '#b45309'}">${dynamicCcy}/${CURRENCIES.length}</div>
-    <div class="card-meta">dynamic titles</div>
+    <div class="card-meta">dynamic${genericCcy > 0 ? ` &nbsp;·&nbsp; <span style="color:#6b7280">${genericCcy} generic</span>` : ''}</div>
   </div>
   <div class="card">
     <div class="card-title">Pairs</div>
     <div class="card-status" style="color:${dynamicPair === PAIRS.length ? '#16a34a' : '#b45309'}">${dynamicPair}/${PAIRS.length}</div>
-    <div class="card-meta">dynamic titles</div>
+    <div class="card-meta">dynamic${genericPair > 0 ? ` &nbsp;·&nbsp; <span style="color:#6b7280">${genericPair} generic</span>` : ''}</div>
   </div>
   <div class="card">
     <div class="card-title">Total Pages</div>
@@ -3931,16 +3935,17 @@ Current data:
 Write a 3-paragraph HTML article using ONLY these tags: <p>, <strong>, <ul>, <li>. No headings, no other tags.
 
 Paragraph 1: Current ${pair.name} sentiment today — reference the bias score, explain what it means for direction.
-Paragraph 2: Key drivers from the headlines above — be specific. If no strong headlines, mention that markets are quiet.
+Paragraph 2: Key drivers from the headlines — be specific about the most relevant macro or FX catalyst affecting this pair. Always name a real catalyst (rate expectations, economic data, geopolitical event, central bank statement, commodity move, etc.).
 Paragraph 3: What to watch — forward-looking, mention next session, key levels or upcoming data if relevant.
 
 Important:
 - Naturally include these keywords: ${pair.keywords}, live forex sentiment, forex bias today 2026, news-based forex analysis
 - Keep it factual and data-driven. Do NOT invent specific price levels.
 - Total length: 200–280 words.
+- NEVER use the phrase "Quiet Markets" or "No Major Headlines" — always identify a real driver.
 
 Return ONLY valid JSON (no markdown, no code fences):
-{"page_title":"<max 65 chars — format: '${pair.name} ${biasLabel} Today | specific catalyst from headlines — ${dateShort} - FXNewsBias'. Must name a real catalyst.>","html":"<the three paragraphs>"}`;
+{"page_title":"<max 65 chars — format: '${pair.name} ${biasLabel} Today | [specific catalyst from headlines] — ${dateShort} - FXNewsBias'. Must name a real catalyst, not generic text.>","html":"<the three paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -3993,13 +3998,12 @@ async function generateAllPairSEO(env, opts = {}) {
     }
 
     const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(); // 6h window to tolerate staggered cron
-    const newsResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=title,impact&fetched_at=gte.${cutoff}&order=fetched_at.desc&limit=30`, {
+    const newsResp = await fetch(`${env.SUPABASE_URL}/rest/v1/news?select=title,currencies_affected&fetched_at=gte.${cutoff}&order=fetched_at.desc&limit=50`, {
       headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}` },
       signal: AbortSignal.timeout(25000),
     });
     const newsRows = newsResp.ok ? await newsResp.json() : [];
-    const allHeadlines = newsRows.map(n => n.title).filter(Boolean);
-    console.log(`generateAllPairSEO: ${sentRows.length} sentiment rows, ${allHeadlines.length} headlines`);
+    console.log(`generateAllPairSEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
 
     const titleUpdates = [];
     const BATCH = 3;
@@ -4010,7 +4014,11 @@ async function generateAllPairSEO(env, opts = {}) {
           const baseData = sentMap[pair.base] || { score: 0 };
           const quoteData = sentMap[pair.quote] || { score: 0 };
           const pairScore = Math.round((baseData.score||0) - (quoteData.score||0));
-          const { pageTitle, html } = await generatePairSEO(pair, pairScore, allHeadlines, env);
+          // Filter headlines: pair-relevant first, then global macro fallback (mirrors currency approach)
+          const relevant = newsRows.filter(n => { const c = n.currencies_affected||[]; return c.includes(pair.base) || c.includes(pair.quote); }).map(n => n.title);
+          const others   = newsRows.filter(n => { const c = n.currencies_affected||[]; return !c.includes(pair.base) && !c.includes(pair.quote); }).map(n => n.title);
+          const pairHeadlines = [...relevant, ...others].filter(Boolean).slice(0, 6);
+          const { pageTitle, html } = await generatePairSEO(pair, pairScore, pairHeadlines, env);
           if (html) { await saveSEOCache(pair.slug, html, env); console.log(`SEO cached: ${pair.slug} — title: ${pageTitle}`); }
           if (pageTitle) titleUpdates.push({ path: `pairs/${pair.slug}/index.html`, pageTitle });
         } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
