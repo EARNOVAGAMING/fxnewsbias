@@ -127,17 +127,15 @@ status: 200, headers: { 'Content-Type': 'application/json' }
 }
 if (url.pathname === '/run-seo') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
-try {
-  await Promise.all([
-    generateAllPairSEO(env),
-    generateAllCurrencySEO(env),
-  ]);
-  return new Response(JSON.stringify({ ok: true, msg: 'SEO generation complete — pairs + currencies' }), {
-    status: 200, headers: { 'Content-Type': 'application/json' }
-  });
-} catch(e) {
-  return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-}
+// Run in background — SEO generation takes >30s (15 pairs + 8 currencies via Haiku),
+// so we can't await it within the HTTP response window. Return immediately.
+ctx.waitUntil(Promise.all([
+  generateAllPairSEO(env).catch(e => console.log('run-seo pairSEO error:', e.message)),
+  generateAllCurrencySEO(env).catch(e => console.log('run-seo currencySEO error:', e.message)),
+]));
+return new Response(JSON.stringify({ ok: true, msg: 'SEO generation started in background — check /title-status in ~2 minutes' }), {
+  status: 202, headers: { 'Content-Type': 'application/json' }
+});
 }
 if (url.pathname === '/run-insight') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
