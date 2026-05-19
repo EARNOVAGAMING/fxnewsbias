@@ -2882,7 +2882,8 @@ Write a professional, SEO-optimised forex market briefing. Return ONLY valid JSO
   ],
   "bull_case": "2–3 sentences. What specific upcoming data release, central bank event, or technical confirmation would extend the ${biasWord} move? Name a real catalyst if one exists in the next 48 hours. Plain text.",
   "bear_case": "2–3 sentences. What specific COUNTER-catalyst — a different narrative entirely from the bull case — would reverse the view and snap ${biggestMover.currency} pairs back? Plain text.",
-  "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:00 UTC / London 06:00 UTC / New York 12:00 UTC). Plain text."
+  "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:00 UTC / London 06:00 UTC / New York 12:00 UTC). Plain text.",
+  "page_title": "Unique SEO <title> tag, max 65 chars. Must name the specific catalyst from the news above — NOT generic phrases like 'Strengthens as Bullish News Flow Builds'. Include the currency name and one concrete event. Example format: '${sessMeta.label}: ${_INS_CCY_NAMES[biggestMover.currency]} Rallies on [Specific Event] — ${dateLabel}'. Swap in the real catalyst."
 }
 
 Hard rules — violating any of these will make the article unusable:
@@ -2968,7 +2969,7 @@ Hard rules — violating any of these will make the article unusable:
   const scenarios = `<div class="scenario-box"><div class="scenario-title">📈 Bull case for the move</div><div class="scenario-text">${bullCase}</div></div><div class="scenario-box" style="border-left-color:#dc2626;"><div class="scenario-title" style="color:#dc2626;">📉 Risk to the view</div><div class="scenario-text">${bearCase}</div></div>`;
   const closing = `<p>${_insEsc(String(ai.closing_note||'The next session wrap lands within the day — Asia at 00:00 UTC, London at 06:00 UTC, New York at 12:00 UTC.').trim())}</p>`;
 
-  return {lead, standfirst, whatHappened, reaction, driversSection, scenarios, closing, glance};
+  return {lead, standfirst, whatHappened, reaction, driversSection, scenarios, closing, glance, pageTitle: String(ai.page_title||'').trim()};
 }
 
 function _insBuildNarrative({sentiment, news, biggestMover}){
@@ -3147,6 +3148,7 @@ function _insBuildOgSvg({ headline, sessionShort, dateLabel, biggestMover }) {
 function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category, narrative, ogImageOverride}){
   const url = `${_INS_SITE}/insight/${slug}`;
   const shortHeadline = String(headline).split(" — ")[0]; const h = _insEsc(headline), hShort = _insEsc(shortHeadline), s = _insEsc(summary);
+  const pageTitle = (narrative && narrative.pageTitle) ? _insEsc(narrative.pageTitle) : h;
   const N = narrative || _insBuildNarrative({sentiment, news, biggestMover});
   const sidebarCcys = _INS_CCY_ORDER.slice(0,5).map(c=>{const x=sentiment[c];if(!x)return '';return `<a class="side-link" href="/currencies"><span style="color:${_insBiasColor(x.bias)};font-weight:700;">${_insBiasArrow(x.bias)} ${c}</span> · <span style="color:#6b7280;font-weight:500;">${x.bias} ${x.score}/100</span></a>`;}).join('');
   // ogImageOverride = slug-specific PNG when SVG→PNG conversion succeeded.
@@ -3160,10 +3162,10 @@ function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMov
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="icon" href="/favicon.ico"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
-<title>${hShort} | FXNewsBias</title><meta name="description" content="${s}"><meta name="robots" content="index, follow"><meta name="author" content="FXNewsBias Team"><link rel="canonical" href="${url}">
-<meta property="og:type" content="article"><meta property="og:title" content="${hShort}"><meta property="og:description" content="${s}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ogImage}"><meta property="og:image:secure_url" content="${ogImage}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${hShort} — FXNewsBias daily insight"><meta property="og:site_name" content="FXNewsBias">
+<title>${pageTitle} | FXNewsBias</title><meta name="description" content="${s}"><meta name="robots" content="index, follow"><meta name="author" content="FXNewsBias Team"><link rel="canonical" href="${url}">
+<meta property="og:type" content="article"><meta property="og:title" content="${pageTitle}"><meta property="og:description" content="${s}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ogImage}"><meta property="og:image:secure_url" content="${ogImage}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${pageTitle} — FXNewsBias daily insight"><meta property="og:site_name" content="FXNewsBias">
 <meta property="article:published_time" content="${dateISO}"><meta property="article:author" content="FXNewsBias Team"><meta property="article:section" content="Forex Analysis">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${hShort}"><meta name="twitter:description" content="${s}"><meta name="twitter:image" content="${ogImage}"><meta name="twitter:image:alt" content="${hShort} — FXNewsBias daily insight">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${pageTitle}"><meta name="twitter:description" content="${s}"><meta name="twitter:image" content="${ogImage}"><meta name="twitter:image:alt" content="${pageTitle} — FXNewsBias daily insight">
 <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}:root{--bg:#fff;--bg-soft:#f8f9fa;--border:#e5e7eb;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}.topbar-left,.topbar-right{display:flex;gap:14px;color:#94a3b8;}.topbar a{color:#94a3b8;text-decoration:none;}.topbar a:hover{color:#fff;}
 .page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}.crumb{font-size:13px;color:#94a3b8;margin-bottom:10px;}.crumb a{color:#94a3b8;text-decoration:none;}
