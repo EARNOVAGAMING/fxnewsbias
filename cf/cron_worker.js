@@ -3717,22 +3717,26 @@ async function generateAllCurrencySEO(env, opts = {}) {
     console.log(`generateAllCurrencySEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
 
     const titleUpdates = [];
-    for (const ccy of SEO_CURRENCIES) {
-      try {
-        const sentData = sentMap[ccy.code] || { score: 50, bias: 'Neutral', drivers: [] };
-        const relevant = newsRows.filter(n => (n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
-        const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
-        const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
-        const { pageTitle, html } = await generateCurrencySEO(ccy, sentData, headlines, env);
-        if (html) {
-          await saveSEOCache(ccy.slug, html, env);
-          console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100) — title: ${pageTitle}`);
+    const CCY_BATCH = 4;
+    for (let ci = 0; ci < SEO_CURRENCIES.length; ci += CCY_BATCH) {
+      const ccyBatch = SEO_CURRENCIES.slice(ci, ci + CCY_BATCH);
+      await Promise.all(ccyBatch.map(async (ccy) => {
+        try {
+          const sentData = sentMap[ccy.code] || { score: 50, bias: 'Neutral', drivers: [] };
+          const relevant = newsRows.filter(n => (n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
+          const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
+          const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
+          const { pageTitle, html } = await generateCurrencySEO(ccy, sentData, headlines, env);
+          if (html) {
+            try { await saveSEOCache(ccy.slug, html, env); } catch(ce) { console.log(`cache ${ccy.code}:`, ce.message); }
+            console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100) — title: ${pageTitle}`);
+          }
+          if (pageTitle) titleUpdates.push({ path: `currencies/${ccy.code.toLowerCase()}/index.html`, pageTitle, ccy, sentData });
+        } catch(e) {
+          console.log(`Currency SEO error for ${ccy.code}:`, e.message);
         }
-        if (pageTitle) titleUpdates.push({ path: `currencies/${ccy.code.toLowerCase()}/index.html`, pageTitle, ccy, sentData });
-      } catch(e) {
-        console.log(`Currency SEO error for ${ccy.code}:`, e.message);
-      }
-      await new Promise(r => setTimeout(r, 600));
+      }));
+      if (ci + CCY_BATCH < SEO_CURRENCIES.length) await new Promise(r => setTimeout(r, 600));
     }
 
     // Patch <title>, og:title, twitter:title in each static HTML file and commit as one batch
@@ -3900,7 +3904,10 @@ async function generateAllPairSEO(env, opts = {}) {
           const others   = newsRows.filter(n => { const c = n.currencies_affected||[]; return !c.includes(pair.base) && !c.includes(pair.quote); }).map(n => n.title);
           const pairHeadlines = [...relevant, ...others].filter(Boolean).slice(0, 6);
           const { pageTitle, html } = await generatePairSEO(pair, pairScore, pairHeadlines, env);
-          if (html) { await saveSEOCache(pair.slug, html, env); console.log(`SEO cached: ${pair.slug} — title: ${pageTitle}`); }
+          if (html) {
+            try { await saveSEOCache(pair.slug, html, env); } catch(ce) { console.log(`cache ${pair.slug}:`, ce.message); }
+            console.log(`SEO processed: ${pair.slug} — title: ${pageTitle}`);
+          }
           if (pageTitle) titleUpdates.push({ path: `pairs/${pair.slug}/index.html`, pageTitle, pair, pairScore });
         } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
       }));
