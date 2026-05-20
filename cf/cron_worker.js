@@ -2896,7 +2896,7 @@ Write a professional, SEO-optimised forex market briefing. Return ONLY valid JSO
   "bull_case": "2–3 sentences. What specific upcoming data release, central bank event, or technical confirmation would extend the ${biasWord} move? Name a real catalyst if one exists in the next 48 hours. Plain text.",
   "bear_case": "2–3 sentences. What specific COUNTER-catalyst — a different narrative entirely from the bull case — would reverse the view and snap ${biggestMover.currency} pairs back? Plain text.",
   "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:00 UTC / London 06:00 UTC / New York 12:00 UTC). Plain text.",
-  "page_title": "Unique SEO <title> tag, max 65 chars. Must name the specific catalyst from the news above — NOT generic phrases like 'Strengthens as Bullish News Flow Builds'. Include the currency name and one concrete event. Example format: '${sessMeta.label}: ${_INS_CCY_NAMES[biggestMover.currency]} Rallies on [Specific Event] — ${dateLabel}'. Swap in the real catalyst."
+  "page_title": "Unique SEO <title> tag, max 65 chars. MANDATORY: name the SPECIFIC real-world catalyst from the headlines above — the actual event, level, data print, or central bank action. BANNED phrases (using any of these = failure): 'Strengthens as Bullish News Flow Builds', 'Slides as Bearish News Pressure Builds', 'Quiet Forex Session', 'Mixed Forex Bias', 'Risk-On Mood', 'Risk-Off Sweeps'. BAD example: '${sessMeta.label}: ${_INS_CCY_NAMES[biggestMover.currency]} Strengthens as Bullish News Flow Builds'. GOOD examples: 'USD Rallies Above 99.40 on Fed Rate Bets & Yen Weakness', 'GBP Slides as UK Jobs Data Misses, BoE Rate Bets Pare', 'AUD Falls Below 0.7150 as RBA Pause Fears Weigh'. Include the session label ONLY if space allows. Always end with — ${dateLabel} unless it would exceed 65 chars."
 }
 
 Hard rules — violating any of these will make the article unusable:
@@ -3167,8 +3167,9 @@ function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMov
   // ogImageOverride = slug-specific PNG when SVG→PNG conversion succeeded.
   // Falls back to per-currency PNG which is always available.
   const ogImage = ogImageOverride || `${_INS_SITE}/og/insight/${biggestMover.currency}.png`;
-  const ld = JSON.stringify({"@context":"https://schema.org","@type":"NewsArticle","headline":headline,"description":summary,"datePublished":dateISO,"dateModified":dateISO,"author":{"@type":"Organization","name":"FXNewsBias Team","url":_INS_SITE},"publisher":{"@type":"Organization","name":"FXNewsBias","logo":{"@type":"ImageObject","url":`${_INS_SITE}/logo-fxnb.png`}},"mainEntityOfPage":{"@type":"WebPage","@id":url},"image":ogImage,"articleSection":"Forex Analysis"});
-  const breadcrumbLd = JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":`${_INS_SITE}/`},{"@type":"ListItem","position":2,"name":"Daily Insights","item":`${_INS_SITE}/insight/`},{"@type":"ListItem","position":3,"name":shortHeadline,"item":url}]});
+  const schemaHeadline = (narrative && narrative.pageTitle) ? narrative.pageTitle : headline;
+  const ld = JSON.stringify({"@context":"https://schema.org","@type":"NewsArticle","headline":schemaHeadline,"description":summary,"datePublished":dateISO,"dateModified":dateISO,"author":{"@type":"Organization","name":"FXNewsBias Team","url":_INS_SITE},"publisher":{"@type":"Organization","name":"FXNewsBias","logo":{"@type":"ImageObject","url":`${_INS_SITE}/logo-fxnb.png`}},"mainEntityOfPage":{"@type":"WebPage","@id":url},"image":ogImage,"articleSection":"Forex Analysis"});
+  const breadcrumbLd = JSON.stringify({"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":`${_INS_SITE}/`},{"@type":"ListItem","position":2,"name":"Daily Insights","item":`${_INS_SITE}/insight/`},{"@type":"ListItem","position":3,"name":schemaHeadline,"item":url}]});
   const cat = _insEsc(category||'Market Wrap');
   const dateStr = new Date().toUTCString().split(' ').slice(0,4).join(' ');
   return `<!DOCTYPE html>
@@ -3212,7 +3213,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <nav class="nav"></nav>
 <header class="page-head"><div class="page-head-inner">
 <div class="crumb"><a href="/">Home</a> · <a href="/insight/">Daily Insights</a> · <span>${dateLabel}</span></div>
-<span class="cat-tag">${cat}</span><h1 class="page-title">${h}</h1><p class="page-sub">${s}</p>
+<span class="cat-tag">${cat}</span><h1 class="page-title">${pageTitle}</h1><p class="page-sub">${s}</p>
 <div class="byline"><span class="byline-author">By FXNewsBias Team</span><span class="byline-dot">·</span><span>Published ${dateLabel}</span><span class="byline-dot">·</span><span>4 min read</span></div>
 </div></header>
 <div class="main">
