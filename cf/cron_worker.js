@@ -2896,7 +2896,7 @@ Write a professional, SEO-optimised forex market briefing. Return ONLY valid JSO
   "bull_case": "2–3 sentences. What specific upcoming data release, central bank event, or technical confirmation would extend the ${biasWord} move? Name a real catalyst if one exists in the next 48 hours. Plain text.",
   "bear_case": "2–3 sentences. What specific COUNTER-catalyst — a different narrative entirely from the bull case — would reverse the view and snap ${biggestMover.currency} pairs back? Plain text.",
   "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:00 UTC / London 06:00 UTC / New York 12:00 UTC). Plain text.",
-  "page_title": "Unique SEO <title> tag, max 65 chars. MANDATORY: name the SPECIFIC real-world catalyst from the headlines above — the actual event, level, data print, or central bank action. BANNED phrases (using any of these = failure): 'Strengthens as Bullish News Flow Builds', 'Slides as Bearish News Pressure Builds', 'Quiet Forex Session', 'Mixed Forex Bias', 'Risk-On Mood', 'Risk-Off Sweeps'. BAD example: '${sessMeta.label}: ${_INS_CCY_NAMES[biggestMover.currency]} Strengthens as Bullish News Flow Builds'. GOOD examples: 'USD Rallies Above 99.40 on Fed Rate Bets & Yen Weakness', 'GBP Slides as UK Jobs Data Misses, BoE Rate Bets Pare', 'AUD Falls Below 0.7150 as RBA Pause Fears Weigh'. Include the session label ONLY if space allows. Always end with — ${dateLabel} unless it would exceed 65 chars."
+  "page_title": "Unique SEO <title> tag, max 65 chars. MANDATORY: name the SPECIFIC real-world catalyst — the actual event, price level, data print, or central bank action from the headlines above. BANNED (any = failure): 'Strengthens as Bullish News Flow Builds', 'Slides as Bearish News Pressure Builds', 'Quiet Forex Session', 'Mixed Forex Bias', 'Risk-On Mood', 'Risk-Off Sweeps', any score notation like '72/100' or 'X/100'. BAD examples: 'USD Hits 72/100 on Fed Rate-Hike Signals', 'USD Strengthens as Bullish News Flow Builds'. GOOD examples: 'USD Rallies Above 99.40 on Fed Rate Bets & Yen Weakness', 'GBP Slides as UK Jobs Data Misses, BoE Rate Bets Pare', 'AUD Falls Below 0.7150 as RBA Pause Fears Weigh'. Do NOT include the date or score — the date is in the URL and byline already."
 }
 
 Hard rules — violating any of these will make the article unusable:
@@ -3674,7 +3674,7 @@ Hard rules:
 - 120–170 words total.
 
 Return ONLY valid JSON (no markdown, no code fences):
-{"page_title":"<max 65 chars — format: '${ccy.code} ${bias} ${score}/100 | ${ccy.name} + specific catalyst from headlines above — ${dateShort} - FXNewsBias'. Must name a real catalyst, not generic text.>","html":"<the two paragraphs>"}`;
+{"page_title":"<max 65 chars — format: '${ccy.code} ${bias} ${score}/100 | specific catalyst from headlines — ${dateShort}'. Rules: (1) Must name a real catalyst, not generic. (2) Em dash — before date, never a plain hyphen. (3) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (4) No brand suffix like FXNewsBias.>","html":"<the two paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -3690,7 +3690,8 @@ Return ONLY valid JSON (no markdown, no code fences):
   if (jsonMatch) {
     try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
   }
-  if (!pageTitle) pageTitle = `${ccy.code} ${bias} ${score}/100 | ${ccy.name} Sentiment — ${dateShort} - FXNewsBias`;
+  if (!pageTitle) pageTitle = `${ccy.code} ${bias} ${score}/100 | ${ccy.name} Sentiment — ${dateShort}`;
+  pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
   return { pageTitle, html };
 }
 
@@ -3716,22 +3717,26 @@ async function generateAllCurrencySEO(env, opts = {}) {
     console.log(`generateAllCurrencySEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
 
     const titleUpdates = [];
-    for (const ccy of SEO_CURRENCIES) {
-      try {
-        const sentData = sentMap[ccy.code] || { score: 50, bias: 'Neutral', drivers: [] };
-        const relevant = newsRows.filter(n => (n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
-        const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
-        const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
-        const { pageTitle, html } = await generateCurrencySEO(ccy, sentData, headlines, env);
-        if (html) {
-          await saveSEOCache(ccy.slug, html, env);
-          console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100) — title: ${pageTitle}`);
+    const CCY_BATCH = 4;
+    for (let ci = 0; ci < SEO_CURRENCIES.length; ci += CCY_BATCH) {
+      const ccyBatch = SEO_CURRENCIES.slice(ci, ci + CCY_BATCH);
+      await Promise.all(ccyBatch.map(async (ccy) => {
+        try {
+          const sentData = sentMap[ccy.code] || { score: 50, bias: 'Neutral', drivers: [] };
+          const relevant = newsRows.filter(n => (n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
+          const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
+          const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
+          const { pageTitle, html } = await generateCurrencySEO(ccy, sentData, headlines, env);
+          if (html) {
+            try { await saveSEOCache(ccy.slug, html, env); } catch(ce) { console.log(`cache ${ccy.code}:`, ce.message); }
+            console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100) — title: ${pageTitle}`);
+          }
+          if (pageTitle) titleUpdates.push({ path: `currencies/${ccy.code.toLowerCase()}/index.html`, pageTitle, ccy, sentData });
+        } catch(e) {
+          console.log(`Currency SEO error for ${ccy.code}:`, e.message);
         }
-        if (pageTitle) titleUpdates.push({ path: `currencies/${ccy.code.toLowerCase()}/index.html`, pageTitle, ccy, sentData });
-      } catch(e) {
-        console.log(`Currency SEO error for ${ccy.code}:`, e.message);
-      }
-      await new Promise(r => setTimeout(r, 600));
+      }));
+      if (ci + CCY_BATCH < SEO_CURRENCIES.length) await new Promise(r => setTimeout(r, 600));
     }
 
     // Patch <title>, og:title, twitter:title in each static HTML file and commit as one batch
@@ -3824,7 +3829,7 @@ Important:
 - NEVER use the phrase "Quiet Markets" or "No Major Headlines" — always identify a real driver.
 
 Return ONLY valid JSON (no markdown, no code fences):
-{"page_title":"<max 65 chars — format: '${pair.name} ${biasLabel} Today | [specific catalyst from headlines] — ${dateShort} - FXNewsBias'. Must name a real catalyst, not generic text.>","html":"<the three paragraphs>"}`;
+{"page_title":"<max 65 chars — format: '${pair.name} ${biasLabel} Today | specific catalyst from headlines — ${dateShort}'. Rules: (1) Must name a real catalyst, not generic. (2) Em dash — before date, never a plain hyphen. (3) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (4) No brand suffix.>","html":"<the three paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -3840,7 +3845,8 @@ Return ONLY valid JSON (no markdown, no code fences):
   if (jsonMatch) {
     try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
   }
-  if (!pageTitle) pageTitle = `${pair.name} ${biasLabel} Bias Today | ${pair.name} Sentiment — ${dateShort} - FXNewsBias`;
+  if (!pageTitle) pageTitle = `${pair.name} ${biasLabel} Bias Today | ${pair.name} Sentiment — ${dateShort}`;
+  pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
   return { pageTitle, html };
 }
 
@@ -3898,7 +3904,10 @@ async function generateAllPairSEO(env, opts = {}) {
           const others   = newsRows.filter(n => { const c = n.currencies_affected||[]; return !c.includes(pair.base) && !c.includes(pair.quote); }).map(n => n.title);
           const pairHeadlines = [...relevant, ...others].filter(Boolean).slice(0, 6);
           const { pageTitle, html } = await generatePairSEO(pair, pairScore, pairHeadlines, env);
-          if (html) { await saveSEOCache(pair.slug, html, env); console.log(`SEO cached: ${pair.slug} — title: ${pageTitle}`); }
+          if (html) {
+            try { await saveSEOCache(pair.slug, html, env); } catch(ce) { console.log(`cache ${pair.slug}:`, ce.message); }
+            console.log(`SEO processed: ${pair.slug} — title: ${pageTitle}`);
+          }
           if (pageTitle) titleUpdates.push({ path: `pairs/${pair.slug}/index.html`, pageTitle, pair, pairScore });
         } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
       }));
