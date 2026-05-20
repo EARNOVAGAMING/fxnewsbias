@@ -46,7 +46,7 @@
       "legalName": "FXNewsBias",
       "url": "https://fxnewsbias.com/",
       "description": "Real-time AI-powered forex news sentiment dashboard for 8 major currencies and 15 currency pairs. Updated every 3 hours from live news.",
-      "foundingDate": "2026-05",
+      "foundingDate": "2026-05-01",
       "logo": {
         "@type": "ImageObject",
         "url": "https://fxnewsbias.com/logo-fxnb.png",
@@ -91,8 +91,7 @@
 <meta property="og:description" content="Free AI-powered forex news sentiment analysis. Track real-time currency sentiment for all major pairs.">
 <meta property="og:url" content="https://fxnewsbias.com/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://fxnewsbias.com/og-image.png">
-<meta property="og:image:secure_url" content="https://fxnewsbias.com/og-image.png">
+<meta property="og:image" content="https://fxnewsbias.com/og/home.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -506,7 +505,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 
     <div class="sentiment-grid">
 
-      <a href="/currencies" style="text-decoration:none;color:inherit;">
+      <a href="/currencies/usd/" style="text-decoration:none;color:inherit;" aria-label="USD sentiment">
       <div class="sent-card" data-currency="USD">
         <div class="sent-head">
           <span class="sent-flag">🇺🇸</span>
@@ -519,7 +518,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies" style="text-decoration:none;color:inherit;">
+      <a href="/currencies/eur/" style="text-decoration:none;color:inherit;" aria-label="EUR sentiment">
       <div class="sent-card" data-currency="EUR">
         <div class="sent-head">
           <span class="sent-flag">🇪🇺</span>
@@ -532,7 +531,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies" style="text-decoration:none;color:inherit;">
+      <a href="/currencies/gbp/" style="text-decoration:none;color:inherit;" aria-label="GBP sentiment">
       <div class="sent-card" data-currency="GBP">
         <div class="sent-head">
           <span class="sent-flag">🇬🇧</span>
@@ -545,7 +544,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies" style="text-decoration:none;color:inherit;">
+      <a href="/currencies/jpy/" style="text-decoration:none;color:inherit;" aria-label="JPY sentiment">
       <div class="sent-card" data-currency="JPY">
         <div class="sent-head">
           <span class="sent-flag">🇯🇵</span>
@@ -558,7 +557,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies" style="text-decoration:none;color:inherit;">
+      <a href="/currencies/aud/" style="text-decoration:none;color:inherit;" aria-label="AUD sentiment">
       <div class="sent-card" data-currency="AUD">
         <div class="sent-head">
           <span class="sent-flag">🇦🇺</span>
@@ -571,7 +570,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies" style="text-decoration:none;color:inherit;">
+      <a href="/currencies/cad/" style="text-decoration:none;color:inherit;" aria-label="CAD sentiment">
       <div class="sent-card" data-currency="CAD">
         <div class="sent-head">
           <span class="sent-flag">🇨🇦</span>
@@ -584,7 +583,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies" style="text-decoration:none;color:inherit;">
+      <a href="/currencies/chf/" style="text-decoration:none;color:inherit;" aria-label="CHF sentiment">
       <div class="sent-card" data-currency="CHF">
         <div class="sent-head">
           <span class="sent-flag">🇨🇭</span>
@@ -597,7 +596,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <div class="sent-driver loading-pulse">Fetching data...</div>
       </div></a>
 
-      <a href="/currencies" style="text-decoration:none;color:inherit;">
+      <a href="/currencies/nzd/" style="text-decoration:none;color:inherit;" aria-label="NZD sentiment">
       <div class="sent-card" data-currency="NZD">
         <div class="sent-head">
           <span class="sent-flag">🇳🇿</span>
@@ -613,7 +612,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     </div>
 <div style="text-align:center;margin:28px auto 24px;max-width:750px;padding:0 20px;overflow:hidden;">
   <div style="font-size:11px;color:#64748b;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px;">Sponsored</div>
-  <ins class='dcmads' style='display:inline-block;width:728px;height:90px;max-width:100%;' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381910820' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5519" data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5519" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
+  <ins class='dcmads' style='display:inline-block;width:728px;height:90px;max-width:100%;' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381910820' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5519" data-dcm-gdpr-applies='gdpr=${GDPR}' data-dcm-gdpr-consent='gdpr_consent=${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js' async></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5519" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
 </div>
 <div id="pro-banner" style="background:linear-gradient(135deg,#1e40af,#2563eb);border-radius:12px;padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
   <div>
@@ -786,9 +785,9 @@ if(window.innerWidth>900){
       <div class="footer-col">
         <h4>Community</h4>
         <ul>
-          <li><a href="/community">Latest Posts</a></li>
-          <li><a href="/community">Top Traders</a></li>
-          <li><a href="/community">Guidelines</a></li>
+          <li><a href="/community">Community Hub</a></li>
+          <li><a href="/report">Weekly Report</a></li>
+          <li><a href="/history">Sentiment History</a></li>
         </ul>
       </div>
       <div class="footer-col">
