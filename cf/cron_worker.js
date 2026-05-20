@@ -3745,7 +3745,7 @@ async function generateAllCurrencySEO(env, opts = {}) {
           const safe = pageTitle.replace(/"/g, '&quot;');
 
           // Extract catalyst from title: "CODE BIAS SCORE/100 | CATALYST — DATE"
-          const catMatch = pageTitle.match(/[|:]\s*(.+?)\s*[—–-]\s*\d/);
+          const catMatch = pageTitle.match(/[|:]\s*(.+?)\s*(?:[—–-]|\|)\s*\d/);
           const catalyst = catMatch ? catMatch[1].trim() : `${ccy.name} market analysis`;
           const bias = sentData.bias || 'Neutral';
           const score = sentData.score || 50;
