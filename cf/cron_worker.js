@@ -3443,34 +3443,23 @@ async function generateDailyInsight(env, session) {
     if (wordCount < 500) throw new Error(`Article too short: ${wordCount} words (need 500+)`);
     console.log(`Insight: generated ${wordCount} words, slug=${slug}`);
 
-    // 5. List existing articles to rebuild index/RSS
-    const existing = await _insListExistingArticles(env);
-    const allSlugs = [`${slug}.html`, ...existing.filter(n => n !== `${slug}.html`)];
-    // Keep most recent 50 for index/RSS (oldest still served, just not listed)
-    const articlesMeta = [];
-    articlesMeta.push({ slug, headline: sessionHeadline, summary: sessionSummary, dateISO, dateLabel, category: sessionCategory });
-    const _CCY_CODES = new Set(['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD']);
-    for (const fname of existing.slice(0, 49)) {
-      if (fname === `${slug}.html`) continue;
-      const m = fname.match(/^(\d{4}-\d{2}-\d{2})-(.+)\.html$/);
-      if (!m) continue;
-      const oldDate = new Date(m[1] + 'T06:00:00Z');
-      const oldSlug = fname.replace(/\.html$/, '');
-      // Title-case the slug, but uppercase 3-letter currency codes (USD, GBP, etc).
-      const titled = oldSlug.replace(/^\d{4}-\d{2}-\d{2}-/, '').split('-').map(w => {
-        const u = w.toUpperCase();
-        if (_CCY_CODES.has(u)) return u;
-        return w.charAt(0).toUpperCase() + w.slice(1);
-      }).join(' ');
-      articlesMeta.push({
-        slug: oldSlug,
-        headline: titled,
-        summary: 'Previous daily forex insight from the FXNewsBias sentiment engine.',
-        dateISO: oldDate.toISOString(),
-        dateLabel: oldDate.toUTCString().split(' ').slice(0,4).join(' ')
-      });
-    }
-    articlesMeta.sort((a,b) => b.dateISO.localeCompare(a.dateISO));
+    // 5. Build articlesMeta from articles.json manifest (real titles/summaries)
+    //    Prepend the new article, then merge with stored manifest entries.
+    const indexHeadline = (narrative && narrative.pageTitle) ? narrative.pageTitle : sessionHeadline;
+    const newEntry = { slug, headline: indexHeadline, summary: sessionSummary, dateISO, dateLabel, category: sessionCategory };
+
+    let storedEntries = [];
+    try {
+      const manifestRaw = await _insGetFile(env, 'insight/articles.json');
+      if (manifestRaw) storedEntries = JSON.parse(manifestRaw);
+    } catch (_) {}
+
+    // Merge: new entry first, then stored entries excluding this slug, cap at 50
+    const articlesMeta = [newEntry, ...storedEntries.filter(e => e.slug !== slug)].slice(0, 50);
+
+    // Write updated manifest back (included in commit below)
+    const updatedManifest = JSON.stringify(articlesMeta, null, 2);
+
 
     // 6. Build sitemap update
     const oldSitemap = (await _insGetFile(env, 'sitemap.xml')) || '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>';
@@ -3514,10 +3503,11 @@ async function generateDailyInsight(env, session) {
     const sha = await _insCommitFiles(env, [
       { path: `insight/${slug}.html`, content: finalArticleHtml },
       ogFileEntry,
+      { path: 'insight/articles.json', content: updatedManifest },
       { path: 'insight/index.html', content: _insRenderIndex(articlesMeta) },
       { path: 'insight/rss.xml', content: _insRenderRss(articlesMeta) },
       { path: 'sitemap.xml', content: newSitemap }
-    ], `Daily insight (${sessMeta.label}): ${angle.headline}`);
+    ], `Daily insight (${sessMeta.label}): ${indexHeadline}`);
 
     console.log(`Insight: committed ${sha.slice(0,7)} - ${slug}`);
     return { ok: true, slug, sha, wordCount };
