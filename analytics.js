@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded",function(){const e=[25,50,75,100],t
       }
       if(d['@type']==='BreadcrumbList'){
         (d.itemListElement||[]).forEach(function(item){
-          if(item.item&&!item.item.endsWith('/'))item.item=item.item+'/';
+          if(item.item&&!item.item.endsWith('/')&&!/\/insight\/[^\/]+$/.test(item.item))item.item=item.item+'/';
         });
         el.textContent=JSON.stringify(d);
       }

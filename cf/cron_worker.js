@@ -2896,7 +2896,7 @@ Write a professional, SEO-optimised forex market briefing. Return ONLY valid JSO
   "bull_case": "2–3 sentences. What specific upcoming data release, central bank event, or technical confirmation would extend the ${biasWord} move? Name a real catalyst if one exists in the next 48 hours. Plain text.",
   "bear_case": "2–3 sentences. What specific COUNTER-catalyst — a different narrative entirely from the bull case — would reverse the view and snap ${biggestMover.currency} pairs back? Plain text.",
   "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:00 UTC / London 06:00 UTC / New York 12:00 UTC). Plain text.",
-  "page_title": "Unique SEO <title> tag, max 65 chars. MANDATORY: name the SPECIFIC real-world catalyst from the headlines above — the actual event, level, data print, or central bank action. BANNED phrases (using any of these = failure): 'Strengthens as Bullish News Flow Builds', 'Slides as Bearish News Pressure Builds', 'Quiet Forex Session', 'Mixed Forex Bias', 'Risk-On Mood', 'Risk-Off Sweeps'. BAD example: '${sessMeta.label}: ${_INS_CCY_NAMES[biggestMover.currency]} Strengthens as Bullish News Flow Builds'. GOOD examples: 'USD Rallies Above 99.40 on Fed Rate Bets & Yen Weakness', 'GBP Slides as UK Jobs Data Misses, BoE Rate Bets Pare', 'AUD Falls Below 0.7150 as RBA Pause Fears Weigh'. Include the session label ONLY if space allows. Always end with — ${dateLabel} unless it would exceed 65 chars."
+  "page_title": "Unique SEO <title> tag, max 65 chars. MANDATORY: name the SPECIFIC real-world catalyst — the actual event, price level, data print, or central bank action from the headlines above. BANNED (any = failure): 'Strengthens as Bullish News Flow Builds', 'Slides as Bearish News Pressure Builds', 'Quiet Forex Session', 'Mixed Forex Bias', 'Risk-On Mood', 'Risk-Off Sweeps', any score notation like '72/100' or 'X/100'. BAD examples: 'USD Hits 72/100 on Fed Rate-Hike Signals', 'USD Strengthens as Bullish News Flow Builds'. GOOD examples: 'USD Rallies Above 99.40 on Fed Rate Bets & Yen Weakness', 'GBP Slides as UK Jobs Data Misses, BoE Rate Bets Pare', 'AUD Falls Below 0.7150 as RBA Pause Fears Weigh'. Do NOT include the date or score — the date is in the URL and byline already."
 }
 
 Hard rules — violating any of these will make the article unusable:
@@ -3674,7 +3674,7 @@ Hard rules:
 - 120–170 words total.
 
 Return ONLY valid JSON (no markdown, no code fences):
-{"page_title":"<max 65 chars — format: '${ccy.code} ${bias} ${score}/100 | ${ccy.name} + specific catalyst from headlines above — ${dateShort} - FXNewsBias'. Must name a real catalyst, not generic text.>","html":"<the two paragraphs>"}`;
+{"page_title":"<max 65 chars — format: '${ccy.code} ${bias} ${score}/100 | specific catalyst from headlines — ${dateShort}'. Rules: (1) Must name a real catalyst, not generic. (2) Em dash — before date, never a plain hyphen. (3) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (4) No brand suffix like FXNewsBias.>","html":"<the two paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -3690,7 +3690,8 @@ Return ONLY valid JSON (no markdown, no code fences):
   if (jsonMatch) {
     try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
   }
-  if (!pageTitle) pageTitle = `${ccy.code} ${bias} ${score}/100 | ${ccy.name} Sentiment — ${dateShort} - FXNewsBias`;
+  if (!pageTitle) pageTitle = `${ccy.code} ${bias} ${score}/100 | ${ccy.name} Sentiment — ${dateShort}`;
+  pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
   return { pageTitle, html };
 }
 
@@ -3824,7 +3825,7 @@ Important:
 - NEVER use the phrase "Quiet Markets" or "No Major Headlines" — always identify a real driver.
 
 Return ONLY valid JSON (no markdown, no code fences):
-{"page_title":"<max 65 chars — format: '${pair.name} ${biasLabel} Today | [specific catalyst from headlines] — ${dateShort} - FXNewsBias'. Must name a real catalyst, not generic text.>","html":"<the three paragraphs>"}`;
+{"page_title":"<max 65 chars — format: '${pair.name} ${biasLabel} Today | specific catalyst from headlines — ${dateShort}'. Rules: (1) Must name a real catalyst, not generic. (2) Em dash — before date, never a plain hyphen. (3) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (4) No brand suffix.>","html":"<the three paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -3840,7 +3841,8 @@ Return ONLY valid JSON (no markdown, no code fences):
   if (jsonMatch) {
     try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
   }
-  if (!pageTitle) pageTitle = `${pair.name} ${biasLabel} Bias Today | ${pair.name} Sentiment — ${dateShort} - FXNewsBias`;
+  if (!pageTitle) pageTitle = `${pair.name} ${biasLabel} Bias Today | ${pair.name} Sentiment — ${dateShort}`;
+  pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
   return { pageTitle, html };
 }
 
