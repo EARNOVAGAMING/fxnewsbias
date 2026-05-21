@@ -60,8 +60,17 @@ header{background:#0f172a;padding:16px 0;border-bottom:1px solid #1e293b;positio
 .share-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* ARCHIVE */
-.archive-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:16px;}
+.archive-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:14px;}
 .archive-label::after{content:'';flex:1;height:1px;background:#e2e8f0;}
+
+/* FILTER CHIPS */
+.filter-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
+.filter-chip{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;transition:.15s;font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.filter-chip:hover{border-color:#93c5fd;color:#2563eb;}
+.filter-chip.active{background:#2563eb;border-color:#2563eb;color:#fff;}
+.filter-chip.all-chip{font-family:'Inter',-apple-system,sans-serif;letter-spacing:0;}
+.no-results{text-align:center;padding:32px 20px;color:#94a3b8;font-size:13px;display:none;}
+.no-results.show{display:block;}
 
 .archive-list{display:flex;flex-direction:column;gap:12px;}
 .archive-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .2s,box-shadow .2s;}
@@ -139,6 +148,8 @@ footer a:hover{color:#fff;}
   </div>
 
   <div class="archive-label">🗂️ Archive</div>
+  <div class="filter-row" id="filter-row"></div>
+  <div class="no-results" id="no-results">No forecasts found for this pair.</div>
   <div id="archive-container">
     <div style="height:72px;border-radius:12px;margin-bottom:12px;" class="loading-shimmer"></div>
     <div style="height:72px;border-radius:12px;margin-bottom:12px;" class="loading-shimmer"></div>
@@ -259,7 +270,7 @@ async function loadForecasts() {
     }
 
     archiveBox.innerHTML = `<div class="archive-list">${archive.map(f => `
-      <div class="archive-card" data-id="${f.id}">
+      <div class="archive-card" data-id="${f.id}" data-pairs="${escHtml((f.pairs||[]).join(','))}">
         <div class="archive-head">
           <div class="archive-left">
             <div class="archive-date">${fmtDateShort(f.publishedAt)}</div>
@@ -282,6 +293,34 @@ async function loadForecasts() {
         card.classList.toggle('open');
       });
     });
+
+    // Build filter chips from unique pairs in archive
+    const allPairs = [...new Set(archive.flatMap(f => f.pairs || []))].sort();
+    const filterRow = document.getElementById('filter-row');
+    const noResults = document.getElementById('no-results');
+
+    if (allPairs.length) {
+      filterRow.innerHTML =
+        `<button class="filter-chip all-chip active" data-pair="ALL">All Forecasts</button>` +
+        allPairs.map(p => `<button class="filter-chip" data-pair="${escHtml(p)}">${escHtml(p)}</button>`).join('');
+
+      filterRow.addEventListener('click', e => {
+        const chip = e.target.closest('.filter-chip');
+        if (!chip) return;
+        filterRow.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+
+        const selected = chip.dataset.pair;
+        let visible = 0;
+        archiveBox.querySelectorAll('.archive-card').forEach(card => {
+          const pairs = card.dataset.pairs ? card.dataset.pairs.split(',') : [];
+          const show = selected === 'ALL' || pairs.includes(selected);
+          card.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+        noResults.classList.toggle('show', visible === 0);
+      });
+    }
 
   } catch(e) {
     console.error(e);
