@@ -3690,7 +3690,7 @@ Return ONLY valid JSON (no markdown, no code fences):
   if (jsonMatch) {
     try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
   }
-  if (!pageTitle) pageTitle = `${ccy.code} ${bias} ${score}/100 | ${ccy.name} Sentiment — ${dateShort}`;
+  if (!pageTitle) pageTitle = `${ccy.code} ${bias} | ${ccy.name} Sentiment — ${dateShort}`;
   pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
   return { pageTitle, html };
 }
@@ -3762,7 +3762,7 @@ async function generateAllCurrencySEO(env, opts = {}) {
           const safeDesc = descRaw.replace(/"/g, '&quot;').slice(0, 155);
 
           // H1: keep flag span, replace static "CODE Sentiment & NAME Bias" with bias + score + catalyst
-          const h1Text = `${ccy.code} ${bias} ${score}/100 — ${catalyst}`;
+          const h1Text = `${ccy.code} ${bias} — ${catalyst}`;
 
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
