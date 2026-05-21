@@ -239,7 +239,7 @@ async function loadForecasts() {
           ${top.bias ? `<span class="bias-pill ${biasClass(top.bias)}">${biasIcon(top.bias)} ${escHtml(top.bias)}</span>` : ''}
         </div>
         <h2>${escHtml(top.title)}</h2>
-        ${top.imageUrl ? `<img class="forecast-img" src="${escHtml(top.imageUrl)}" alt="${escHtml(top.title)}">` : ''}
+        ${top.imageUrl ? `<img class="forecast-img" src="${top.imageUrl}" alt="${escHtml(top.title)}">` : ''}
         ${pairsHtml(top.pairs)}
         <div class="forecast-body">${escHtml(top.content)}</div>
         <div class="forecast-footer">
