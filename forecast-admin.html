@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forecast Admin — FXNewsBias</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,'Inter',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+
+/* AUTH WALL */
+#auth-wall{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.auth-card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:40px 36px;width:100%;max-width:380px;text-align:center;}
+.auth-logo{font-size:22px;font-weight:800;color:#fff;margin-bottom:6px;}
+.auth-sub{font-size:13px;color:#64748b;margin-bottom:28px;}
+.auth-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;}
+.auth-btn:hover{background:#1d4ed8;}
+.auth-err{margin-top:14px;font-size:12px;color:#f87171;min-height:18px;}
+
+/* APP */
+#app{display:none;}
+
+/* TOP BAR */
+.topbar{background:#1e293b;border-bottom:1px solid #334155;padding:12px 0;position:sticky;top:0;z-index:50;}
+.topbar-inner{max-width:860px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.topbar-logo{font-size:16px;font-weight:800;color:#fff;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.user-chip{font-size:12px;color:#94a3b8;}
+.signout-btn{font-size:12px;padding:5px 12px;background:transparent;border:1px solid #475569;border-radius:6px;color:#94a3b8;cursor:pointer;transition:.15s;}
+.signout-btn:hover{border-color:#94a3b8;color:#e2e8f0;}
+.preview-link{font-size:12px;padding:5px 12px;background:#2563eb;border:none;border-radius:6px;color:#fff;cursor:pointer;font-weight:600;text-decoration:none;}
+
+/* MAIN */
+.main{max-width:860px;margin:0 auto;padding:32px 20px 80px;}
+
+/* SECTION LABELS */
+.section-head{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.section-head::after{content:'';flex:1;height:1px;background:#1e293b;}
+
+/* EDITOR CARD */
+.editor-card{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:28px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.form-row.one{grid-template-columns:1fr;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+label{font-size:12px;font-weight:600;color:#94a3b8;}
+input[type="text"],input[type="date"],select,textarea{background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:14px;padding:10px 12px;width:100%;transition:border-color .15s;font-family:inherit;}
+input[type="text"]:focus,input[type="date"]:focus,select:focus,textarea:focus{outline:none;border-color:#2563eb;}
+input[type="text"]::placeholder,textarea::placeholder{color:#475569;}
+textarea{resize:vertical;min-height:260px;line-height:1.7;}
+select{cursor:pointer;}
+
+/* PAIRS PICKER */
+.pairs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;}
+.pair-check{display:none;}
+.pair-label{display:flex;align-items:center;justify-content:center;padding:7px 6px;background:#0f172a;border:1px solid #334155;border-radius:7px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;transition:.15s;font-family:monospace;}
+.pair-check:checked+.pair-label{background:rgba(37,99,235,.2);border-color:#2563eb;color:#93c5fd;}
+
+/* ACTION ROW */
+.action-row{display:flex;gap:10px;align-items:center;margin-top:20px;flex-wrap:wrap;}
+.btn{padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.15s;}
+.btn-primary{background:#2563eb;color:#fff;}
+.btn-primary:hover{background:#1d4ed8;}
+.btn-primary:disabled{background:#1e3a5f;color:#475569;cursor:not-allowed;}
+.btn-ghost{background:transparent;border:1px solid #334155;color:#94a3b8;}
+.btn-ghost:hover{border-color:#64748b;color:#e2e8f0;}
+.btn-danger{background:transparent;border:1px solid #dc2626;color:#f87171;}
+.btn-danger:hover{background:#7f1d1d;color:#fca5a5;}
+.edit-badge{display:none;align-items:center;gap:8px;background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.3);border-radius:6px;padding:4px 12px;font-size:12px;color:#fde047;}
+.edit-badge.show{display:flex;}
+.save-status{font-size:12px;color:#64748b;min-width:120px;}
+.save-ok{color:#34d399;}
+.save-err{color:#f87171;}
+
+/* CHARACTER COUNT */
+.char-hint{font-size:11px;color:#475569;text-align:right;margin-top:4px;}
+
+/* FORECAST LIST */
+.list-card{background:#1e293b;border:1px solid #334155;border-radius:14px;overflow:hidden;margin-top:32px;}
+.list-item{padding:18px 22px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;transition:background .1s;}
+.list-item:last-child{border-bottom:none;}
+.list-item:hover{background:#1a2843;}
+.list-meta{flex:1;min-width:0;}
+.list-date{font-size:11px;color:#64748b;font-family:monospace;margin-bottom:4px;}
+.list-title{font-size:14px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-pairs{font-size:11px;color:#475569;margin-top:4px;}
+.list-actions{display:flex;gap:8px;flex-shrink:0;}
+.list-edit{padding:5px 12px;background:transparent;border:1px solid #334155;border-radius:6px;font-size:12px;color:#94a3b8;cursor:pointer;transition:.15s;}
+.list-edit:hover{border-color:#2563eb;color:#93c5fd;}
+.list-del{padding:5px 12px;background:transparent;border:1px solid #334155;border-radius:6px;font-size:12px;color:#94a3b8;cursor:pointer;transition:.15s;}
+.list-del:hover{border-color:#dc2626;color:#f87171;}
+.bias-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;}
+.dot-bull{background:#34d399;}
+.dot-bear{background:#f87171;}
+.dot-neut{background:#fbbf24;}
+
+/* EMPTY STATE */
+.list-empty{padding:32px;text-align:center;color:#475569;font-size:13px;}
+
+/* LOADING SPINNER */
+.spinner{width:18px;height:18px;border:2px solid #334155;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .form-row{grid-template-columns:1fr;}
+  .pairs-grid{grid-template-columns:repeat(4,1fr);}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH WALL -->
+<div id="auth-wall">
+  <div class="auth-card">
+    <div class="auth-logo">FXNewsBias</div>
+    <div class="auth-sub">Forecast Admin · Sign in to continue</div>
+    <button class="auth-btn" id="google-signin-btn">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+      Sign in with Google
+    </button>
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-logo">📊 Forecast Admin</div>
+      <div class="topbar-right">
+        <span class="user-chip" id="user-email"></span>
+        <a href="/forecast.html" target="_blank" class="preview-link">View Live →</a>
+        <button class="signout-btn" id="signout-btn">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- EDITOR -->
+    <div class="section-head" id="editor-label">New Forecast</div>
+    <div class="editor-card">
+      <div class="form-row one">
+        <div class="form-group">
+          <label for="f-title">Title</label>
+          <input type="text" id="f-title" placeholder="e.g. USD bulls stall ahead of Fed minutes — 21 May 2026" maxlength="160">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="f-date">Date</label>
+          <input type="date" id="f-date">
+        </div>
+        <div class="form-group">
+          <label for="f-bias">Overall Bias</label>
+          <select id="f-bias">
+            <option value="">— Select bias —</option>
+            <option value="Bullish">🟢 Bullish</option>
+            <option value="Bearish">🔴 Bearish</option>
+            <option value="Neutral">🟡 Neutral</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Pairs Covered</label>
+        <div class="pairs-grid" id="pairs-grid"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="f-content">Forecast Content</label>
+        <textarea id="f-content" placeholder="Write your daily forex forecast here...&#10;&#10;Use blank lines to separate paragraphs.&#10;&#10;Example:&#10;The US Dollar strengthened today as..."></textarea>
+        <div class="char-hint" id="char-count">0 characters</div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-primary" id="publish-btn">Publish Forecast</button>
+        <div class="edit-badge" id="edit-badge">✏️ Editing — <span id="edit-title-preview"></span></div>
+        <button class="btn btn-ghost" id="cancel-edit-btn" style="display:none;">Cancel Edit</button>
+        <span class="save-status" id="save-status"></span>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="section-head" style="margin-top:40px;">All Forecasts</div>
+    <div class="list-card" id="forecast-list">
+      <div class="list-empty"><span class="spinner"></span> Loading forecasts…</div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs,
+  addDoc, updateDoc, deleteDoc, doc, serverTimestamp, Timestamp }
+  from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+const FB_CONFIG = {
+  apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
+  authDomain: "fxnewsbias.firebaseapp.com",
+  projectId: "fxnewsbias",
+  storageBucket: "fxnewsbias.firebasestorage.app",
+  messagingSenderId: "414710041736",
+  appId: "1:414710041736:web:00e79ccc58fdb94e98633d"
+};
+const ALLOWED_EMAILS = ["dineshsanther123gf@gmail.com"];
+
+const app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// ── DOM refs ──────────────────────────────────────────────
+const authWall   = document.getElementById('auth-wall');
+const appEl      = document.getElementById('app');
+const authErr    = document.getElementById('auth-err');
+const userEmail  = document.getElementById('user-email');
+const signoutBtn = document.getElementById('signout-btn');
+const signinBtn  = document.getElementById('google-signin-btn');
+
+const fTitle    = document.getElementById('f-title');
+const fDate     = document.getElementById('f-date');
+const fBias     = document.getElementById('f-bias');
+const fContent  = document.getElementById('f-content');
+const charCount = document.getElementById('char-count');
+const publishBtn  = document.getElementById('publish-btn');
+const cancelBtn   = document.getElementById('cancel-edit-btn');
+const editBadge   = document.getElementById('edit-badge');
+const editPreview = document.getElementById('edit-title-preview');
+const saveStatus  = document.getElementById('save-status');
+const listEl      = document.getElementById('forecast-list');
+const editorLabel = document.getElementById('editor-label');
+
+// ── Pairs list ────────────────────────────────────────────
+const PAIRS = ['EUR/USD','GBP/USD','USD/JPY','USD/CHF','AUD/USD','USD/CAD','NZD/USD',
+  'EUR/GBP','EUR/JPY','GBP/JPY','EUR/CHF','EUR/AUD','EUR/CAD','AUD/JPY','GBP/CHF',
+  'XAU/USD','USD/MXN','USD/SGD'];
+
+const grid = document.getElementById('pairs-grid');
+PAIRS.forEach(p => {
+  const id = 'p-' + p.replace('/','');
+  grid.insertAdjacentHTML('beforeend',
+    `<input type="checkbox" class="pair-check" id="${id}" value="${p}">` +
+    `<label class="pair-label" for="${id}">${p}</label>`);
+});
+
+// ── Helpers ───────────────────────────────────────────────
+function todayISO() {
+  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local tz
+}
+function fmtDateShort(ts) {
+  const d = ts && ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function biasClass(b) {
+  return b === 'Bullish' ? 'dot-bull' : b === 'Bearish' ? 'dot-bear' : 'dot-neut';
+}
+function setStatus(msg, type='') {
+  saveStatus.textContent = msg;
+  saveStatus.className = 'save-status' + (type ? ' save-'+type : '');
+  if (type === 'ok') setTimeout(() => saveStatus.textContent = '', 3000);
+}
+function getSelectedPairs() {
+  return [...document.querySelectorAll('.pair-check:checked')].map(c => c.value);
+}
+function setPairs(pairs=[]) {
+  document.querySelectorAll('.pair-check').forEach(c => {
+    c.checked = pairs.includes(c.value);
+  });
+}
+function resetForm() {
+  fTitle.value = '';
+  fDate.value = todayISO();
+  fBias.value = '';
+  fContent.value = '';
+  setPairs([]);
+  charCount.textContent = '0 characters';
+  editingId = null;
+  publishBtn.textContent = 'Publish Forecast';
+  publishBtn.disabled = false;
+  cancelBtn.style.display = 'none';
+  editBadge.classList.remove('show');
+  editorLabel.textContent = 'New Forecast';
+  setStatus('');
+}
+
+// ── State ─────────────────────────────────────────────────
+let editingId = null;
+
+// ── Char counter ──────────────────────────────────────────
+fContent.addEventListener('input', () => {
+  charCount.textContent = fContent.value.length.toLocaleString() + ' characters';
+});
+
+// ── Auth ──────────────────────────────────────────────────
+signinBtn.addEventListener('click', async () => {
+  authErr.textContent = '';
+  signinBtn.disabled = true;
+  try {
+    const result = await signInWithPopup(auth, provider);
+    if (!ALLOWED_EMAILS.includes(result.user.email)) {
+      await signOut(auth);
+      authErr.textContent = 'Access denied — this admin is restricted.';
+    }
+  } catch(e) {
+    authErr.textContent = e.message;
+  } finally {
+    signinBtn.disabled = false;
+  }
+});
+
+signoutBtn.addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, user => {
+  if (user && ALLOWED_EMAILS.includes(user.email)) {
+    authWall.style.display = 'none';
+    appEl.style.display = 'block';
+    userEmail.textContent = user.email;
+    fDate.value = todayISO();
+    loadList();
+  } else {
+    authWall.style.display = 'flex';
+    appEl.style.display = 'none';
+  }
+});
+
+// ── Publish / Update ──────────────────────────────────────
+publishBtn.addEventListener('click', async () => {
+  const title   = fTitle.value.trim();
+  const content = fContent.value.trim();
+  const bias    = fBias.value;
+  const dateVal = fDate.value;
+  const pairs   = getSelectedPairs();
+
+  if (!title)   { fTitle.focus(); setStatus('Title is required.', 'err'); return; }
+  if (!content) { fContent.focus(); setStatus('Content is required.', 'err'); return; }
+  if (!dateVal) { setStatus('Date is required.', 'err'); return; }
+
+  const publishedAt = Timestamp.fromDate(new Date(dateVal + 'T12:00:00'));
+
+  publishBtn.disabled = true;
+  publishBtn.textContent = editingId ? 'Saving…' : 'Publishing…';
+  setStatus('');
+
+  try {
+    const user = auth.currentUser;
+    const payload = {
+      title, content, bias, pairs, publishedAt,
+      authorEmail: user.email,
+      authorName: user.displayName || 'FXNewsBias',
+      updatedAt: serverTimestamp()
+    };
+
+    if (editingId) {
+      await updateDoc(doc(db, 'forecasts', editingId), payload);
+      setStatus('Saved!', 'ok');
+    } else {
+      payload.createdAt = serverTimestamp();
+      await addDoc(collection(db, 'forecasts'), payload);
+      setStatus('Published!', 'ok');
+    }
+
+    resetForm();
+    loadList();
+  } catch(e) {
+    setStatus('Error: ' + e.message, 'err');
+    publishBtn.disabled = false;
+    publishBtn.textContent = editingId ? 'Save Changes' : 'Publish Forecast';
+  }
+});
+
+cancelBtn.addEventListener('click', resetForm);
+
+// ── Load list ─────────────────────────────────────────────
+async function loadList() {
+  listEl.innerHTML = '<div class="list-empty"><span class="spinner"></span> Loading…</div>';
+  try {
+    const q = query(collection(db, 'forecasts'), orderBy('publishedAt', 'desc'), limit(100));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      listEl.innerHTML = '<div class="list-empty">No forecasts yet — create your first one above.</div>';
+      return;
+    }
+    const rows = [];
+    snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
+    listEl.innerHTML = rows.map(f => {
+      const dateStr = f.publishedAt ? fmtDateShort(f.publishedAt) : '—';
+      const pairsStr = f.pairs && f.pairs.length ? f.pairs.join(', ') : '';
+      const dot = f.bias ? `<span class="bias-dot ${biasClass(f.bias)}"></span>` : '';
+      return `<div class="list-item" data-id="${f.id}">
+        <div class="list-meta">
+          <div class="list-date">${dateStr}${f.bias ? ' · ' + dot + escHtml(f.bias) : ''}</div>
+          <div class="list-title">${escHtml(f.title)}</div>
+          ${pairsStr ? `<div class="list-pairs">${escHtml(pairsStr)}</div>` : ''}
+        </div>
+        <div class="list-actions">
+          <button class="list-edit" data-id="${f.id}">Edit</button>
+          <button class="list-del" data-id="${f.id}">Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Edit buttons
+    listEl.querySelectorAll('.list-edit').forEach(btn => {
+      btn.addEventListener('click', () => startEdit(btn.dataset.id, rows));
+    });
+    // Delete buttons
+    listEl.querySelectorAll('.list-del').forEach(btn => {
+      btn.addEventListener('click', () => confirmDelete(btn.dataset.id, rows));
+    });
+  } catch(e) {
+    listEl.innerHTML = `<div class="list-empty" style="color:#f87171;">Failed to load: ${escHtml(e.message)}</div>`;
+  }
+}
+
+// ── Edit ──────────────────────────────────────────────────
+function startEdit(id, rows) {
+  const f = rows.find(r => r.id === id);
+  if (!f) return;
+  editingId = id;
+
+  fTitle.value = f.title || '';
+  fBias.value  = f.bias  || '';
+  fContent.value = f.content || '';
+  charCount.textContent = fContent.value.length.toLocaleString() + ' characters';
+  setPairs(f.pairs || []);
+
+  if (f.publishedAt) {
+    const d = f.publishedAt.toDate ? f.publishedAt.toDate() : new Date(f.publishedAt);
+    fDate.value = d.toLocaleDateString('en-CA');
+  }
+
+  publishBtn.textContent = 'Save Changes';
+  publishBtn.disabled = false;
+  cancelBtn.style.display = 'inline-flex';
+  editBadge.classList.add('show');
+  editPreview.textContent = (f.title || '').slice(0, 40) + ((f.title||'').length > 40 ? '…' : '');
+  editorLabel.textContent = 'Edit Forecast';
+
+  // Scroll to editor
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  fTitle.focus();
+}
+
+// ── Delete ────────────────────────────────────────────────
+async function confirmDelete(id, rows) {
+  const f = rows.find(r => r.id === id);
+  if (!f) return;
+  const ok = window.confirm(`Delete "${f.title}"?\n\nThis cannot be undone.`);
+  if (!ok) return;
+  try {
+    await deleteDoc(doc(db, 'forecasts', id));
+    if (editingId === id) resetForm();
+    loadList();
+  } catch(e) {
+    alert('Delete failed: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>

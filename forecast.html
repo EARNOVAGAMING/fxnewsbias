@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Forex Forecast — FXNewsBias</title>
+<meta name="description" content="Daily forex forecast and analysis. Bullish or bearish outlook for major currency pairs, updated every trading day.">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:#f8fafc;color:#1e293b;line-height:1.6;}
+a{text-decoration:none;color:inherit;}
+
+/* HEADER */
+header{background:#0f172a;padding:16px 0;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;}
+.header-inner{max-width:900px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;}
+.logo img{height:32px;}
+.logo-tag{font-size:11px;font-weight:600;background:#2563eb;color:#fff;padding:2px 8px;border-radius:4px;letter-spacing:.5px;}
+.header-link{color:#94a3b8;font-size:13px;font-weight:500;}
+.header-link:hover{color:#fff;}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#fff;padding:48px 0 40px;}
+.hero-inner{max-width:900px;margin:0 auto;padding:0 20px;}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(37,99,235,.25);border:1px solid rgba(96,165,250,.3);color:#93c5fd;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:4px 12px;border-radius:20px;margin-bottom:16px;}
+.hero h1{font-size:32px;font-weight:800;line-height:1.2;margin-bottom:10px;}
+.hero h1 span{color:#3b82f6;}
+.hero p{color:#94a3b8;font-size:15px;max-width:560px;}
+.hero-meta{margin-top:18px;display:flex;gap:20px;flex-wrap:wrap;}
+.hero-meta-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;}
+
+/* MAIN LAYOUT */
+.page{max-width:900px;margin:0 auto;padding:32px 20px;}
+
+/* TODAY'S FORECAST CARD */
+.today-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:16px;}
+.today-label::after{content:'';flex:1;height:1px;background:#e2e8f0;}
+
+.forecast-main{background:#fff;border:2px solid #2563eb;border-radius:16px;padding:28px 32px;margin-bottom:40px;box-shadow:0 4px 24px rgba(37,99,235,.08);}
+.forecast-main-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+.forecast-date{font-size:12px;font-weight:600;color:#64748b;font-family:'JetBrains Mono',monospace;}
+.bias-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.bias-bull{background:#d1fae5;color:#065f46;}
+.bias-bear{background:#fee2e2;color:#991b1b;}
+.bias-neut{background:#fef3c7;color:#92400e;}
+.forecast-main h2{font-size:22px;font-weight:800;line-height:1.3;color:#0f172a;margin-bottom:14px;}
+.pairs-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
+.pair-tag{background:#f1f5f9;color:#475569;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;}
+.forecast-body{font-size:15px;color:#334155;line-height:1.8;white-space:pre-wrap;word-wrap:break-word;}
+.forecast-body p{margin-bottom:12px;}
+.forecast-footer{margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.forecast-author{font-size:12px;color:#94a3b8;}
+.share-row{display:flex;gap:8px;}
+.share-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;text-decoration:none;}
+.share-x{background:#000;color:#fff;}
+.share-tg{background:#229ed9;color:#fff;}
+
+/* ARCHIVE */
+.archive-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:16px;}
+.archive-label::after{content:'';flex:1;height:1px;background:#e2e8f0;}
+
+.archive-list{display:flex;flex-direction:column;gap:12px;}
+.archive-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .2s,box-shadow .2s;}
+.archive-card:hover{border-color:#93c5fd;box-shadow:0 2px 12px rgba(37,99,235,.06);}
+.archive-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;gap:12px;}
+.archive-left{flex:1;min-width:0;}
+.archive-date{font-size:11px;font-weight:600;color:#94a3b8;font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+.archive-title{font-size:15px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.archive-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.archive-chev{color:#94a3b8;font-size:18px;transition:transform .2s;}
+.archive-card.open .archive-chev{transform:rotate(180deg);}
+.archive-body{display:none;padding:0 20px 18px;font-size:14px;color:#475569;line-height:1.7;border-top:1px solid #f1f5f9;margin-top:0;white-space:pre-wrap;word-wrap:break-word;}
+.archive-card.open .archive-body{display:block;padding-top:14px;}
+.archive-pairs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:#94a3b8;}
+.empty h3{font-size:18px;font-weight:700;color:#475569;margin-bottom:8px;}
+
+/* LOADING */
+.loading-shimmer{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* FOOTER */
+footer{background:#0f172a;color:#64748b;padding:28px 0;margin-top:48px;text-align:center;font-size:13px;}
+footer a{color:#94a3b8;margin:0 10px;}
+footer a:hover{color:#fff;}
+
+@media(max-width:640px){
+  .hero h1{font-size:24px;}
+  .forecast-main{padding:20px;}
+  .forecast-main h2{font-size:18px;}
+  .archive-head{flex-direction:column;align-items:flex-start;}
+  .archive-right{width:100%;justify-content:space-between;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <img src="/logo-fxnb.png" alt="FXNewsBias">
+      <span class="logo-tag">Forecast</span>
+    </a>
+    <a href="/" class="header-link">← Back to Markets</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">📈 Daily Analysis</div>
+    <h1>Forex <span>Forecast</span></h1>
+    <p>Daily outlook for major currency pairs — bias, key levels, and what to watch today.</p>
+    <div class="hero-meta">
+      <span class="hero-meta-item">🕐 Published every trading day</span>
+      <span class="hero-meta-item">📊 Based on live sentiment data</span>
+      <span class="hero-meta-item">🗓️ Full history below</span>
+    </div>
+  </div>
+</section>
+
+<div class="page">
+
+  <div class="today-label">📅 Today's Forecast</div>
+
+  <div id="today-container">
+    <div class="forecast-main">
+      <div style="height:24px;width:140px;margin-bottom:18px;" class="loading-shimmer"></div>
+      <div style="height:28px;width:80%;margin-bottom:14px;" class="loading-shimmer"></div>
+      <div style="height:16px;width:100%;margin-bottom:8px;" class="loading-shimmer"></div>
+      <div style="height:16px;width:90%;margin-bottom:8px;" class="loading-shimmer"></div>
+      <div style="height:16px;width:95%;" class="loading-shimmer"></div>
+    </div>
+  </div>
+
+  <div class="archive-label">🗂️ Archive</div>
+  <div id="archive-container">
+    <div style="height:72px;border-radius:12px;margin-bottom:12px;" class="loading-shimmer"></div>
+    <div style="height:72px;border-radius:12px;margin-bottom:12px;" class="loading-shimmer"></div>
+    <div style="height:72px;border-radius:12px;" class="loading-shimmer"></div>
+  </div>
+
+</div>
+
+<footer>
+  <a href="/">Markets</a>
+  <a href="/currencies">Currencies</a>
+  <a href="/pairs">Pairs</a>
+  <a href="/news">News</a>
+  <a href="/community">Community</a>
+  <br><br>
+  © 2026 FXNewsBias · <a href="/disclaimer">Disclaimer</a> · Not financial advice
+</footer>
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+const app = getApps().length ? getApps()[0] : initializeApp({
+  apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
+  authDomain: "fxnewsbias.firebaseapp.com",
+  projectId: "fxnewsbias",
+  storageBucket: "fxnewsbias.firebasestorage.app",
+  messagingSenderId: "414710041736",
+  appId: "1:414710041736:web:00e79ccc58fdb94e98633d"
+});
+const db = getFirestore(app);
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function biasClass(b) {
+  if (!b) return '';
+  return b === 'Bullish' ? 'bias-bull' : b === 'Bearish' ? 'bias-bear' : 'bias-neut';
+}
+function biasIcon(b) {
+  return b === 'Bullish' ? '🟢' : b === 'Bearish' ? '🔴' : b === 'Neutral' ? '🟡' : '';
+}
+function fmtDate(ts) {
+  const d = ts && ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+function fmtDateShort(ts) {
+  const d = ts && ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+function shareXUrl(title, bias) {
+  const text = `${biasIcon(bias)} ${title} — Daily Forex Forecast by @fxnewsbias`;
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(location.href)}`;
+}
+function shareTgUrl(title) {
+  return `https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(title)}`;
+}
+function pairsHtml(pairs) {
+  if (!pairs || !pairs.length) return '';
+  return `<div class="pairs-row">${pairs.map(p=>`<span class="pair-tag">${escHtml(p)}</span>`).join('')}</div>`;
+}
+
+async function loadForecasts() {
+  try {
+    const q = query(collection(db, 'forecasts'), orderBy('publishedAt', 'desc'), limit(50));
+    const snap = await getDocs(q);
+    const all = [];
+    snap.forEach(d => all.push({ id: d.id, ...d.data() }));
+
+    const todayBox = document.getElementById('today-container');
+    const archiveBox = document.getElementById('archive-container');
+
+    if (!all.length) {
+      todayBox.innerHTML = `<div class="empty"><h3>No forecasts yet</h3><p>Check back tomorrow for the first daily forecast.</p></div>`;
+      archiveBox.innerHTML = '';
+      return;
+    }
+
+    // Today's forecast = most recent entry
+    const top = all[0];
+    todayBox.innerHTML = `
+      <div class="forecast-main">
+        <div class="forecast-main-header">
+          <div>
+            <div class="forecast-date">${fmtDate(top.publishedAt)}</div>
+          </div>
+          ${top.bias ? `<span class="bias-pill ${biasClass(top.bias)}">${biasIcon(top.bias)} ${escHtml(top.bias)}</span>` : ''}
+        </div>
+        <h2>${escHtml(top.title)}</h2>
+        ${pairsHtml(top.pairs)}
+        <div class="forecast-body">${escHtml(top.content)}</div>
+        <div class="forecast-footer">
+          <span class="forecast-author">by FXNewsBias</span>
+          <div class="share-row">
+            <a href="${shareXUrl(top.title, top.bias)}" target="_blank" rel="noopener noreferrer" class="share-btn share-x">𝕏 Share</a>
+            <a href="${shareTgUrl(top.title)}" target="_blank" rel="noopener noreferrer" class="share-btn share-tg">📱 Telegram</a>
+          </div>
+        </div>
+      </div>`;
+
+    // Archive = everything else
+    const archive = all.slice(1);
+    if (!archive.length) {
+      archiveBox.innerHTML = `<div class="empty"><p>More forecasts coming soon — check back daily.</p></div>`;
+      return;
+    }
+
+    archiveBox.innerHTML = `<div class="archive-list">${archive.map(f => `
+      <div class="archive-card" data-id="${f.id}">
+        <div class="archive-head">
+          <div class="archive-left">
+            <div class="archive-date">${fmtDateShort(f.publishedAt)}</div>
+            <div class="archive-title">${escHtml(f.title)}</div>
+          </div>
+          <div class="archive-right">
+            ${f.bias ? `<span class="bias-pill ${biasClass(f.bias)}" style="font-size:10px;">${biasIcon(f.bias)} ${escHtml(f.bias)}</span>` : ''}
+            <span class="archive-chev">▾</span>
+          </div>
+        </div>
+        <div class="archive-body">
+          ${pairsHtml(f.pairs)}
+          ${escHtml(f.content)}
+        </div>
+      </div>`).join('')}</div>`;
+
+    // Toggle open/close
+    archiveBox.querySelectorAll('.archive-card').forEach(card => {
+      card.querySelector('.archive-head').addEventListener('click', () => {
+        card.classList.toggle('open');
+      });
+    });
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('today-container').innerHTML = `<div class="empty"><h3>Failed to load</h3><p>${e.message}</p></div>`;
+  }
+}
+
+loadForecasts();
+</script>
+
+</body>
+</html>
