@@ -12,6 +12,12 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
+    // www → apex 301
+    if (url.hostname === 'www.fxnewsbias.com') {
+      url.hostname = 'fxnewsbias.com';
+      return Response.redirect(url.toString(), 301);
+    }
+
     if (request.method !== 'GET') return env.ASSETS.fetch(request);
 
     // .html → clean URL: single 301. _redirects rules exist but the ASSETS
