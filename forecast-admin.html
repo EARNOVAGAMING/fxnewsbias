@@ -51,6 +51,26 @@ input[type="text"]::placeholder,textarea::placeholder{color:#475569;}
 textarea{resize:vertical;min-height:260px;line-height:1.7;}
 select{cursor:pointer;}
 
+/* IMAGE UPLOAD */
+.img-upload-area{border:2px dashed #334155;border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:.2s;background:#0f172a;position:relative;}
+.img-upload-area:hover{border-color:#2563eb;background:rgba(37,99,235,.05);}
+.img-upload-area.has-img{border-style:solid;border-color:#334155;padding:0;overflow:hidden;}
+.img-upload-area input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.img-upload-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;}
+.img-upload-placeholder svg{opacity:.4;}
+.img-upload-placeholder span{font-size:12px;color:#475569;}
+.img-upload-placeholder strong{font-size:13px;color:#94a3b8;}
+#img-preview{display:none;width:100%;max-height:280px;object-fit:cover;border-radius:8px;pointer-events:none;}
+.img-upload-area.has-img #img-preview{display:block;}
+.img-upload-area.has-img .img-upload-placeholder{display:none;}
+.img-actions{display:flex;gap:8px;margin-top:8px;}
+.img-change-btn{font-size:11px;padding:4px 10px;background:transparent;border:1px solid #334155;border-radius:5px;color:#94a3b8;cursor:pointer;}
+.img-change-btn:hover{border-color:#64748b;color:#e2e8f0;}
+.img-remove-btn{font-size:11px;padding:4px 10px;background:transparent;border:1px solid #334155;border-radius:5px;color:#f87171;cursor:pointer;}
+.img-remove-btn:hover{border-color:#dc2626;}
+.img-upload-progress{height:3px;background:#334155;border-radius:2px;margin-top:8px;overflow:hidden;display:none;}
+.img-upload-progress-bar{height:100%;background:#2563eb;width:0%;transition:width .3s;}
+
 /* PAIRS PICKER */
 .pairs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;}
 .pair-check{display:none;}
@@ -65,8 +85,6 @@ select{cursor:pointer;}
 .btn-primary:disabled{background:#1e3a5f;color:#475569;cursor:not-allowed;}
 .btn-ghost{background:transparent;border:1px solid #334155;color:#94a3b8;}
 .btn-ghost:hover{border-color:#64748b;color:#e2e8f0;}
-.btn-danger{background:transparent;border:1px solid #dc2626;color:#f87171;}
-.btn-danger:hover{background:#7f1d1d;color:#fca5a5;}
 .edit-badge{display:none;align-items:center;gap:8px;background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.3);border-radius:6px;padding:4px 12px;font-size:12px;color:#fde047;}
 .edit-badge.show{display:flex;}
 .save-status{font-size:12px;color:#64748b;min-width:120px;}
@@ -78,13 +96,15 @@ select{cursor:pointer;}
 
 /* FORECAST LIST */
 .list-card{background:#1e293b;border:1px solid #334155;border-radius:14px;overflow:hidden;margin-top:32px;}
-.list-item{padding:18px 22px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;transition:background .1s;}
+.list-item{padding:16px 22px;border-bottom:1px solid #0f172a;display:flex;justify-content:space-between;align-items:center;gap:12px;transition:background .1s;}
 .list-item:last-child{border-bottom:none;}
 .list-item:hover{background:#1a2843;}
+.list-thumb{width:48px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#0f172a;}
+.list-thumb-placeholder{width:48px;height:36px;border-radius:6px;flex-shrink:0;background:#0f172a;border:1px solid #334155;}
 .list-meta{flex:1;min-width:0;}
-.list-date{font-size:11px;color:#64748b;font-family:monospace;margin-bottom:4px;}
-.list-title{font-size:14px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.list-pairs{font-size:11px;color:#475569;margin-top:4px;}
+.list-date{font-size:11px;color:#64748b;font-family:monospace;margin-bottom:3px;}
+.list-title{font-size:13px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-pairs{font-size:11px;color:#475569;margin-top:2px;}
 .list-actions{display:flex;gap:8px;flex-shrink:0;}
 .list-edit{padding:5px 12px;background:transparent;border:1px solid #334155;border-radius:6px;font-size:12px;color:#94a3b8;cursor:pointer;transition:.15s;}
 .list-edit:hover{border-color:#2563eb;color:#93c5fd;}
@@ -142,10 +162,35 @@ select{cursor:pointer;}
     <!-- EDITOR -->
     <div class="section-head" id="editor-label">New Forecast</div>
     <div class="editor-card">
+
       <div class="form-row one">
         <div class="form-group">
           <label for="f-title">Title</label>
           <input type="text" id="f-title" placeholder="e.g. USD bulls stall ahead of Fed minutes — 21 May 2026" maxlength="160">
+        </div>
+      </div>
+
+      <div class="form-row one">
+        <div class="form-group">
+          <label>Cover Image <span style="color:#475569;font-weight:400;">(optional)</span></label>
+          <div class="img-upload-area" id="img-upload-area">
+            <input type="file" id="f-image" accept="image/*">
+            <div class="img-upload-placeholder">
+              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 20.25h18A.75.75 0 0021.75 19.5V6.75A.75.75 0 0021 6H3a.75.75 0 00-.75.75v12A.75.75 0 003 20.25z"/>
+              </svg>
+              <strong>Click to upload image</strong>
+              <span>JPG, PNG, WebP — shown above the article</span>
+            </div>
+            <img id="img-preview" alt="Cover preview">
+          </div>
+          <div class="img-actions" id="img-actions" style="display:none;">
+            <button type="button" class="img-change-btn" id="img-change-btn">Change image</button>
+            <button type="button" class="img-remove-btn" id="img-remove-btn">Remove</button>
+          </div>
+          <div class="img-upload-progress" id="img-progress">
+            <div class="img-upload-progress-bar" id="img-progress-bar"></div>
+          </div>
         </div>
       </div>
 
@@ -200,6 +245,8 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChang
 import { getFirestore, collection, query, orderBy, limit, getDocs,
   addDoc, updateDoc, deleteDoc, doc, serverTimestamp, Timestamp }
   from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject }
+  from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
 
 const FB_CONFIG = {
   apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
@@ -211,9 +258,10 @@ const FB_CONFIG = {
 };
 const ALLOWED_EMAILS = ["dineshsanther123gf@gmail.com"];
 
-const app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
-const auth = getAuth(app);
-const db   = getFirestore(app);
+const app      = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
+const auth     = getAuth(app);
+const db       = getFirestore(app);
+const storage  = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 // ── DOM refs ──────────────────────────────────────────────
@@ -224,11 +272,11 @@ const userEmail  = document.getElementById('user-email');
 const signoutBtn = document.getElementById('signout-btn');
 const signinBtn  = document.getElementById('google-signin-btn');
 
-const fTitle    = document.getElementById('f-title');
-const fDate     = document.getElementById('f-date');
-const fBias     = document.getElementById('f-bias');
-const fContent  = document.getElementById('f-content');
-const charCount = document.getElementById('char-count');
+const fTitle     = document.getElementById('f-title');
+const fDate      = document.getElementById('f-date');
+const fBias      = document.getElementById('f-bias');
+const fContent   = document.getElementById('f-content');
+const charCount  = document.getElementById('char-count');
 const publishBtn  = document.getElementById('publish-btn');
 const cancelBtn   = document.getElementById('cancel-edit-btn');
 const editBadge   = document.getElementById('edit-badge');
@@ -236,6 +284,15 @@ const editPreview = document.getElementById('edit-title-preview');
 const saveStatus  = document.getElementById('save-status');
 const listEl      = document.getElementById('forecast-list');
 const editorLabel = document.getElementById('editor-label');
+
+const imgInput      = document.getElementById('f-image');
+const imgArea       = document.getElementById('img-upload-area');
+const imgPreview    = document.getElementById('img-preview');
+const imgActions    = document.getElementById('img-actions');
+const imgChangeBtn  = document.getElementById('img-change-btn');
+const imgRemoveBtn  = document.getElementById('img-remove-btn');
+const imgProgress   = document.getElementById('img-progress');
+const imgProgressBar= document.getElementById('img-progress-bar');
 
 // ── Pairs list ────────────────────────────────────────────
 const PAIRS = ['EUR/USD','GBP/USD','USD/JPY','USD/CHF','AUD/USD','USD/CAD','NZD/USD',
@@ -250,9 +307,42 @@ PAIRS.forEach(p => {
     `<label class="pair-label" for="${id}">${p}</label>`);
 });
 
+// ── Image state ───────────────────────────────────────────
+let selectedFile    = null;  // new file chosen by user
+let existingImgUrl  = null;  // URL from Firestore when editing
+let removeExisting  = false; // user clicked "Remove" on existing image
+
+function showImgPreview(src) {
+  imgPreview.src = src;
+  imgArea.classList.add('has-img');
+  imgActions.style.display = 'flex';
+}
+function clearImgPreview() {
+  imgPreview.src = '';
+  imgArea.classList.remove('has-img');
+  imgActions.style.display = 'none';
+  imgInput.value = '';
+  selectedFile = null;
+}
+
+imgInput.addEventListener('change', () => {
+  const file = imgInput.files[0];
+  if (!file) return;
+  selectedFile = file;
+  removeExisting = false;
+  showImgPreview(URL.createObjectURL(file));
+});
+
+imgChangeBtn.addEventListener('click', () => imgInput.click());
+imgRemoveBtn.addEventListener('click', () => {
+  clearImgPreview();
+  removeExisting = true;
+  existingImgUrl = null;
+});
+
 // ── Helpers ───────────────────────────────────────────────
 function todayISO() {
-  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local tz
+  return new Date().toLocaleDateString('en-CA');
 }
 function fmtDateShort(ts) {
   const d = ts && ts.toDate ? ts.toDate() : new Date(ts);
@@ -278,19 +368,46 @@ function setPairs(pairs=[]) {
   });
 }
 function resetForm() {
-  fTitle.value = '';
-  fDate.value = todayISO();
-  fBias.value = '';
+  fTitle.value   = '';
+  fDate.value    = todayISO();
+  fBias.value    = '';
   fContent.value = '';
   setPairs([]);
   charCount.textContent = '0 characters';
-  editingId = null;
+  clearImgPreview();
+  existingImgUrl = null;
+  removeExisting = false;
+  editingId      = null;
   publishBtn.textContent = 'Publish Forecast';
-  publishBtn.disabled = false;
+  publishBtn.disabled    = false;
   cancelBtn.style.display = 'none';
   editBadge.classList.remove('show');
   editorLabel.textContent = 'New Forecast';
+  imgProgress.style.display = 'none';
+  imgProgressBar.style.width = '0%';
   setStatus('');
+}
+
+async function uploadImage(file) {
+  return new Promise((resolve, reject) => {
+    const ext  = file.name.split('.').pop();
+    const path = `forecast-images/${Date.now()}.${ext}`;
+    const storageRef = ref(storage, path);
+    const task = uploadBytesResumable(storageRef, file);
+
+    imgProgress.style.display = 'block';
+    task.on('state_changed',
+      snap => {
+        imgProgressBar.style.width = Math.round(snap.bytesTransferred / snap.totalBytes * 100) + '%';
+      },
+      err => { imgProgress.style.display = 'none'; reject(err); },
+      async () => {
+        imgProgress.style.display = 'none';
+        const url = await getDownloadURL(task.snapshot.ref);
+        resolve(url);
+      }
+    );
+  });
 }
 
 // ── State ─────────────────────────────────────────────────
@@ -304,7 +421,7 @@ fContent.addEventListener('input', () => {
 // ── Auth ──────────────────────────────────────────────────
 signinBtn.addEventListener('click', async () => {
   authErr.textContent = '';
-  signinBtn.disabled = true;
+  signinBtn.disabled  = true;
   try {
     const result = await signInWithPopup(auth, provider);
     if (!ALLOWED_EMAILS.includes(result.user.email)) {
@@ -323,13 +440,13 @@ signoutBtn.addEventListener('click', () => signOut(auth));
 onAuthStateChanged(auth, user => {
   if (user && ALLOWED_EMAILS.includes(user.email)) {
     authWall.style.display = 'none';
-    appEl.style.display = 'block';
-    userEmail.textContent = user.email;
+    appEl.style.display    = 'block';
+    userEmail.textContent  = user.email;
     fDate.value = todayISO();
     loadList();
   } else {
     authWall.style.display = 'flex';
-    appEl.style.display = 'none';
+    appEl.style.display    = 'none';
   }
 });
 
@@ -341,7 +458,7 @@ publishBtn.addEventListener('click', async () => {
   const dateVal = fDate.value;
   const pairs   = getSelectedPairs();
 
-  if (!title)   { fTitle.focus(); setStatus('Title is required.', 'err'); return; }
+  if (!title)   { fTitle.focus();   setStatus('Title is required.', 'err'); return; }
   if (!content) { fContent.focus(); setStatus('Content is required.', 'err'); return; }
   if (!dateVal) { setStatus('Date is required.', 'err'); return; }
 
@@ -353,11 +470,23 @@ publishBtn.addEventListener('click', async () => {
 
   try {
     const user = auth.currentUser;
+
+    // Resolve final imageUrl
+    let imageUrl = existingImgUrl || null;
+    if (selectedFile) {
+      setStatus('Uploading image…');
+      imageUrl = await uploadImage(selectedFile);
+      setStatus('');
+    } else if (removeExisting) {
+      imageUrl = null;
+    }
+
     const payload = {
       title, content, bias, pairs, publishedAt,
+      imageUrl: imageUrl || null,
       authorEmail: user.email,
-      authorName: user.displayName || 'FXNewsBias',
-      updatedAt: serverTimestamp()
+      authorName:  user.displayName || 'FXNewsBias',
+      updatedAt:   serverTimestamp()
     };
 
     if (editingId) {
@@ -392,11 +521,16 @@ async function loadList() {
     }
     const rows = [];
     snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
+
     listEl.innerHTML = rows.map(f => {
-      const dateStr = f.publishedAt ? fmtDateShort(f.publishedAt) : '—';
+      const dateStr  = f.publishedAt ? fmtDateShort(f.publishedAt) : '—';
       const pairsStr = f.pairs && f.pairs.length ? f.pairs.join(', ') : '';
-      const dot = f.bias ? `<span class="bias-dot ${biasClass(f.bias)}"></span>` : '';
+      const dot      = f.bias ? `<span class="bias-dot ${biasClass(f.bias)}"></span>` : '';
+      const thumb    = f.imageUrl
+        ? `<img class="list-thumb" src="${escHtml(f.imageUrl)}" alt="">`
+        : `<div class="list-thumb-placeholder"></div>`;
       return `<div class="list-item" data-id="${f.id}">
+        ${thumb}
         <div class="list-meta">
           <div class="list-date">${dateStr}${f.bias ? ' · ' + dot + escHtml(f.bias) : ''}</div>
           <div class="list-title">${escHtml(f.title)}</div>
@@ -409,11 +543,9 @@ async function loadList() {
       </div>`;
     }).join('');
 
-    // Edit buttons
     listEl.querySelectorAll('.list-edit').forEach(btn => {
       btn.addEventListener('click', () => startEdit(btn.dataset.id, rows));
     });
-    // Delete buttons
     listEl.querySelectorAll('.list-del').forEach(btn => {
       btn.addEventListener('click', () => confirmDelete(btn.dataset.id, rows));
     });
@@ -428,8 +560,8 @@ function startEdit(id, rows) {
   if (!f) return;
   editingId = id;
 
-  fTitle.value = f.title || '';
-  fBias.value  = f.bias  || '';
+  fTitle.value   = f.title   || '';
+  fBias.value    = f.bias    || '';
   fContent.value = f.content || '';
   charCount.textContent = fContent.value.length.toLocaleString() + ' characters';
   setPairs(f.pairs || []);
@@ -439,14 +571,23 @@ function startEdit(id, rows) {
     fDate.value = d.toLocaleDateString('en-CA');
   }
 
-  publishBtn.textContent = 'Save Changes';
-  publishBtn.disabled = false;
+  // Image
+  selectedFile   = null;
+  removeExisting = false;
+  existingImgUrl = f.imageUrl || null;
+  if (existingImgUrl) {
+    showImgPreview(existingImgUrl);
+  } else {
+    clearImgPreview();
+  }
+
+  publishBtn.textContent  = 'Save Changes';
+  publishBtn.disabled     = false;
   cancelBtn.style.display = 'inline-flex';
   editBadge.classList.add('show');
   editPreview.textContent = (f.title || '').slice(0, 40) + ((f.title||'').length > 40 ? '…' : '');
   editorLabel.textContent = 'Edit Forecast';
 
-  // Scroll to editor
   window.scrollTo({ top: 0, behavior: 'smooth' });
   fTitle.focus();
 }

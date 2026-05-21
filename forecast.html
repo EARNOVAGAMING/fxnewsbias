@@ -51,12 +51,13 @@ header{background:#0f172a;padding:16px 0;border-bottom:1px solid #1e293b;positio
 .pair-tag{background:#f1f5f9;color:#475569;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;}
 .forecast-body{font-size:15px;color:#334155;line-height:1.8;white-space:pre-wrap;word-wrap:break-word;}
 .forecast-body p{margin-bottom:12px;}
+.forecast-img{width:100%;max-height:360px;object-fit:cover;border-radius:10px;margin-bottom:18px;display:block;}
 .forecast-footer{margin-top:20px;padding-top:16px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
 .forecast-author{font-size:12px;color:#94a3b8;}
-.share-row{display:flex;gap:8px;}
-.share-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;text-decoration:none;}
-.share-x{background:#000;color:#fff;}
-.share-tg{background:#229ed9;color:#fff;}
+.share-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#334155;transition:.15s;}
+.share-btn:hover{border-color:#93c5fd;color:#1d4ed8;}
+.share-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e293b;color:#e2e8f0;font-size:13px;font-weight:600;padding:10px 22px;border-radius:8px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:999;}
+.share-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* ARCHIVE */
 .archive-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin-bottom:16px;}
@@ -160,6 +161,24 @@ footer a:hover{color:#fff;}
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
+const toast = document.getElementById('share-toast');
+let toastTimer;
+function showToast(msg) {
+  clearTimeout(toastTimer);
+  toast.textContent = msg;
+  toast.classList.add('show');
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+function sharePost(title) {
+  if (navigator.share) {
+    navigator.share({ title, url: location.href }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(location.href)
+      .then(() => showToast('Link copied!'))
+      .catch(() => showToast('Copy: ' + location.href));
+  }
+}
+
 const app = getApps().length ? getApps()[0] : initializeApp({
   apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
   authDomain: "fxnewsbias.firebaseapp.com",
@@ -187,13 +206,6 @@ function fmtDate(ts) {
 function fmtDateShort(ts) {
   const d = ts && ts.toDate ? ts.toDate() : new Date(ts);
   return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
-}
-function shareXUrl(title, bias) {
-  const text = `${biasIcon(bias)} ${title} — Daily Forex Forecast by @fxnewsbias`;
-  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(location.href)}`;
-}
-function shareTgUrl(title) {
-  return `https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(title)}`;
 }
 function pairsHtml(pairs) {
   if (!pairs || !pairs.length) return '';
@@ -227,14 +239,15 @@ async function loadForecasts() {
           ${top.bias ? `<span class="bias-pill ${biasClass(top.bias)}">${biasIcon(top.bias)} ${escHtml(top.bias)}</span>` : ''}
         </div>
         <h2>${escHtml(top.title)}</h2>
+        ${top.imageUrl ? `<img class="forecast-img" src="${escHtml(top.imageUrl)}" alt="${escHtml(top.title)}">` : ''}
         ${pairsHtml(top.pairs)}
         <div class="forecast-body">${escHtml(top.content)}</div>
         <div class="forecast-footer">
           <span class="forecast-author">by FXNewsBias</span>
-          <div class="share-row">
-            <a href="${shareXUrl(top.title, top.bias)}" target="_blank" rel="noopener noreferrer" class="share-btn share-x">𝕏 Share</a>
-            <a href="${shareTgUrl(top.title)}" target="_blank" rel="noopener noreferrer" class="share-btn share-tg">📱 Telegram</a>
-          </div>
+          <button class="share-btn" onclick="sharePost(${JSON.stringify(top.title)})">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share
+          </button>
         </div>
       </div>`;
 
@@ -279,5 +292,6 @@ async function loadForecasts() {
 loadForecasts();
 </script>
 
+<div class="share-toast" id="share-toast">Link copied!</div>
 </body>
 </html>
