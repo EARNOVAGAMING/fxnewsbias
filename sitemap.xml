@@ -1,43 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://fxnewsbias.com/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>1.0</priority></url>
-  <url><loc>https://fxnewsbias.com/currencies</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://fxnewsbias.com/news</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://fxnewsbias.com/calendar</loc><lastmod>2026-05-18</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/community</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/insight/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/history</loc><lastmod>2026-05-18</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/report</loc><lastmod>2026-05-18</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/about</loc><lastmod>2026-05-18</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://fxnewsbias.com/how</loc><lastmod>2026-05-18</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://fxnewsbias.com/contact</loc><lastmod>2026-05-18</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://fxnewsbias.com/disclaimer</loc><lastmod>2026-05-18</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://fxnewsbias.com/privacy</loc><lastmod>2026-05-18</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://fxnewsbias.com/terms</loc><lastmod>2026-05-18</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://fxnewsbias.com/currencies/usd/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/currencies/eur/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/currencies/gbp/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/currencies/jpy/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/currencies/aud/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/currencies/cad/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/currencies/chf/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/currencies/nzd/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/eur-usd/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/gbp-usd/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/usd-jpy/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/usd-chf/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/aud-usd/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/usd-cad/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/nzd-usd/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/eur-gbp/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/eur-jpy/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/eur-chf/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/gbp-jpy/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/aud-jpy/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/chf-jpy/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/cad-jpy/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/pairs/aud-nzd/</loc><lastmod>2026-05-18</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://fxnewsbias.com/currencies</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://fxnewsbias.com/news</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://fxnewsbias.com/calendar</loc><lastmod>2026-05-21</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/community</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/insight/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/history</loc><lastmod>2026-05-21</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/report</loc><lastmod>2026-05-21</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/about</loc><lastmod>2026-05-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://fxnewsbias.com/how</loc><lastmod>2026-05-21</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://fxnewsbias.com/contact</loc><lastmod>2026-05-21</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://fxnewsbias.com/disclaimer</loc><lastmod>2026-05-21</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://fxnewsbias.com/privacy</loc><lastmod>2026-05-21</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://fxnewsbias.com/terms</loc><lastmod>2026-05-21</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://fxnewsbias.com/currencies/usd/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/currencies/eur/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/currencies/gbp/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/currencies/jpy/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/currencies/aud/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/currencies/cad/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/currencies/chf/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/currencies/nzd/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/eur-usd/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/gbp-usd/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/usd-jpy/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/usd-chf/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/aud-usd/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/usd-cad/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/nzd-usd/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/eur-gbp/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/eur-jpy/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/eur-chf/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/gbp-jpy/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/aud-jpy/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/chf-jpy/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/cad-jpy/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/pairs/aud-nzd/</loc><lastmod>2026-05-21</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/insight/2026-05-13-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-13</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/insight/2026-05-14-asia-gbp-weakens-bearish-pressure</loc><lastmod>2026-05-14</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/insight/2026-05-14-london-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-14</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
@@ -46,10 +46,10 @@
   <url><loc>https://fxnewsbias.com/insight/2026-05-15-london-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-15</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/insight/2026-05-15-ny-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-15</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/insight/2026-05-16-asia-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-16</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/insight/2026-05-18-asia-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-18</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/insight/2026-05-18-london-nzd-weakens-bearish-pressure</loc><lastmod>2026-05-18</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/insight/2026-05-18-london-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-18</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://fxnewsbias.com/insight/2026-05-18-ny-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-18</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/insight/2026-05-21-asia-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-21</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/insight/2026-05-21-london-nzd-weakens-bearish-pressure</loc><lastmod>2026-05-21</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/insight/2026-05-21-london-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-21</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://fxnewsbias.com/insight/2026-05-21-ny-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-21</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/insight/2026-05-19-asia-aud-strengthens-bullish-sentiment</loc><lastmod>2026-05-19</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/insight/2026-05-19-london-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-19</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://fxnewsbias.com/insight/2026-05-19-ny-usd-strengthens-bullish-sentiment</loc><lastmod>2026-05-19</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
