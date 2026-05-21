@@ -256,7 +256,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
         <li><a href="/calendar">Calendar</a></li>
         <li><a href="/news">News</a></li>
         <li><a href="/insight/">Insights</a></li>
-          <li><a href="/insight/">Daily Insights</a></li>
         <li><a href="/community" class="active">Community</a></li>
       </ul>
     </nav>
@@ -431,7 +430,6 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
           <li><a href="/calendar">Calendar</a></li>
           <li><a href="/news">News</a></li>
           <li><a href="/insight/">Insights</a></li>
-          <li><a href="/insight/">Daily Insights</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -885,14 +883,23 @@ async function loadComments(postId) {
   if (!section) return;
   section.innerHTML = '<div style="padding:10px 0;color:#6b7280;font-size:12px;">Loading comments...</div>';
   try {
-    const q = query(collection(db, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'), limit(100));
+    // No orderBy in the query (avoid composite index requirement); sort client-side
+    const q = query(collection(db, 'posts', postId, 'comments'), limit(100));
     const snap = await getDocs(q);
     const comments = [];
     snap.forEach(d => comments.push({ id: d.id, ...d.data() }));
+    comments.sort((a, b) => {
+      const aT = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const bT = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return aT - bT;
+    });
     renderCommentSection(postId, comments, section);
   } catch(e) {
-    console.log('Comments load error:', e);
-    section.innerHTML = '<div style="padding:10px 0;color:#ef4444;font-size:12px;">Failed to load comments. Please try again.</div>';
+    console.error('Comments load error:', e.code, e.message);
+    const isPerms = e.code === 'permission-denied';
+    section.innerHTML = `<div style="padding:10px 0;color:#ef4444;font-size:12px;">${isPerms ? '🔒 Comments are not accessible — Firestore rules need updating (see admin).' : 'Failed to load comments (' + (e.code || e.message) + ').'} <span id="retry-${postId}" style="cursor:pointer;color:#2563eb;font-weight:600;">↺ Retry</span></div>`;
+    const retryBtn = document.getElementById(`retry-${postId}`);
+    if (retryBtn) retryBtn.addEventListener('click', () => loadComments(postId));
   }
 }
 
@@ -1003,6 +1010,7 @@ async function togglePostLike(postId) {
 }
 
 async function trackViews(posts) {
+  if (!currentUser) return; // views only tracked for logged-in users
   for (const p of posts) {
     if (viewedPosts.has(p.id)) continue;
     viewedPosts.add(p.id);
