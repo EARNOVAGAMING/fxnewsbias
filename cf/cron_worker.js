@@ -153,7 +153,7 @@ try {
 }
 if (url.pathname === '/run-insight') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
-const result = await generateDailyInsight(env);
+const result = await generateDailyInsight(env, url.searchParams.get('session') || undefined);
 return new Response(JSON.stringify(result, null, 2), {
 status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' }
 });
