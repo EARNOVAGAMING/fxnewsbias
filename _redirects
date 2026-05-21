@@ -1,3 +1,6 @@
+# www → apex redirect (canonical domain)
+https://www.fxnewsbias.com/* https://fxnewsbias.com/:splat 301
+
 # Force a single canonical URL for the homepage so Google doesn't see
 # /index.html and / as two pages. 301 = permanent (passes SEO weight).
 /index.html  /  301
