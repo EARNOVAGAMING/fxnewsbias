@@ -877,14 +877,13 @@ function attachPostHandlers() {
   });
 }
 
-// COMMENTS
+// COMMENTS — queries top-level 'comments' collection (matches Firestore rules)
 async function loadComments(postId) {
   const section = document.getElementById(`cs-${postId}`);
   if (!section) return;
   section.innerHTML = '<div style="padding:10px 0;color:#6b7280;font-size:12px;">Loading comments...</div>';
   try {
-    // No orderBy in the query (avoid composite index requirement); sort client-side
-    const q = query(collection(db, 'posts', postId, 'comments'), limit(100));
+    const q = query(collection(db, 'comments'), where('postId', '==', postId), limit(100));
     const snap = await getDocs(q);
     const comments = [];
     snap.forEach(d => comments.push({ id: d.id, ...d.data() }));
@@ -897,7 +896,7 @@ async function loadComments(postId) {
   } catch(e) {
     console.error('Comments load error:', e.code, e.message);
     const isPerms = e.code === 'permission-denied';
-    section.innerHTML = `<div style="padding:10px 0;color:#ef4444;font-size:12px;">${isPerms ? '🔒 Comments are not accessible — Firestore rules need updating (see admin).' : 'Failed to load comments (' + (e.code || e.message) + ').'} <span id="retry-${postId}" style="cursor:pointer;color:#2563eb;font-weight:600;">↺ Retry</span></div>`;
+    section.innerHTML = `<div style="padding:10px 0;color:#ef4444;font-size:12px;">${isPerms ? '🔒 Comments blocked — check Firestore rules.' : 'Failed to load comments (' + (e.code || e.message) + ').'} <span id="retry-${postId}" style="cursor:pointer;color:#2563eb;font-weight:600;">↺ Retry</span></div>`;
     const retryBtn = document.getElementById(`retry-${postId}`);
     if (retryBtn) retryBtn.addEventListener('click', () => loadComments(postId));
   }
@@ -960,7 +959,8 @@ async function submitComment(postId, text, section) {
 
   try {
     const username = currentUser.displayName || (userProfile && userProfile.username) || currentUser.email.split('@')[0];
-    await addDoc(collection(db, 'posts', postId, 'comments'), {
+    await addDoc(collection(db, 'comments'), {
+      postId,
       text,
       authorEmail: currentUser.email,
       authorName: username,
