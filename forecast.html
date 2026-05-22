@@ -72,19 +72,16 @@ header{background:#0f172a;padding:16px 0;border-bottom:1px solid #1e293b;positio
 .no-results{text-align:center;padding:32px 20px;color:#94a3b8;font-size:13px;display:none;}
 .no-results.show{display:block;}
 
-.archive-list{display:flex;flex-direction:column;gap:12px;}
-.archive-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .2s,box-shadow .2s;}
-.archive-card:hover{border-color:#93c5fd;box-shadow:0 2px 12px rgba(37,99,235,.06);}
-.archive-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;gap:12px;}
-.archive-left{flex:1;min-width:0;}
-.archive-date{font-size:11px;font-weight:600;color:#94a3b8;font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
-.archive-title{font-size:15px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.archive-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.archive-chev{color:#94a3b8;font-size:18px;transition:transform .2s;}
-.archive-card.open .archive-chev{transform:rotate(180deg);}
-.archive-body{display:none;padding:0 20px 18px;font-size:14px;color:#475569;line-height:1.7;border-top:1px solid #f1f5f9;margin-top:0;white-space:pre-wrap;word-wrap:break-word;}
-.archive-card.open .archive-body{display:block;padding-top:14px;}
-.archive-pairs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.archive-date{font-size:11px;font-weight:600;color:#94a3b8;font-family:'JetBrains Mono',monospace;}
+.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.blog-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;display:block;color:inherit;transition:border-color .2s,box-shadow .2s,transform .2s;}
+.blog-card:hover{border-color:#93c5fd;box-shadow:0 4px 20px rgba(37,99,235,.1);transform:translateY(-2px);}
+.blog-thumb{width:100%;height:160px;object-fit:cover;display:block;}
+.blog-thumb-ph{width:100%;height:160px;background:linear-gradient(135deg,#1e293b 0%,#1e3a5f 100%);display:flex;align-items:center;justify-content:center;font-size:32px;}
+.blog-card-body{padding:14px 16px 16px;}
+.blog-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.blog-title{font-size:15px;font-weight:700;color:#0f172a;line-height:1.4;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.blog-read{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:#2563eb;}
 
 /* EMPTY */
 .empty{text-align:center;padding:60px 20px;color:#94a3b8;}
@@ -103,8 +100,7 @@ footer a:hover{color:#fff;}
   .hero h1{font-size:24px;}
   .forecast-main{padding:20px;}
   .forecast-main h2{font-size:18px;}
-  .archive-head{flex-direction:column;align-items:flex-start;}
-  .archive-right{width:100%;justify-content:space-between;}
+  .blog-grid{grid-template-columns:1fr;}
 }
 </style>
 </head>
@@ -180,13 +176,14 @@ function showToast(msg) {
   toast.classList.add('show');
   toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
-function sharePost(title) {
+function sharePost(title, url) {
+  const shareUrl = url || location.href;
   if (navigator.share) {
-    navigator.share({ title, url: location.href }).catch(() => {});
+    navigator.share({ title, url: shareUrl }).catch(() => {});
   } else {
-    navigator.clipboard.writeText(location.href)
+    navigator.clipboard.writeText(shareUrl)
       .then(() => showToast('Link copied!'))
-      .catch(() => showToast('Copy: ' + location.href));
+      .catch(() => showToast('Copy: ' + shareUrl));
   }
 }
 
@@ -255,10 +252,13 @@ async function loadForecasts() {
         <div class="forecast-body">${escHtml(top.content)}</div>
         <div class="forecast-footer">
           <span class="forecast-author">by FXNewsBias</span>
-          <button class="share-btn" onclick="sharePost(${JSON.stringify(top.title)})">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            Share
-          </button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <a href="/forecast/post/?id=${top.id}" style="font-size:12px;font-weight:700;color:#2563eb;">View post →</a>
+            <button class="share-btn" onclick="sharePost(${JSON.stringify(top.title)}, '/forecast/post/?id=${top.id}')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share
+            </button>
+          </div>
         </div>
       </div>`;
 
@@ -269,30 +269,21 @@ async function loadForecasts() {
       return;
     }
 
-    archiveBox.innerHTML = `<div class="archive-list">${archive.map(f => `
-      <div class="archive-card" data-id="${f.id}" data-pairs="${escHtml((f.pairs||[]).join(','))}">
-        <div class="archive-head">
-          <div class="archive-left">
-            <div class="archive-date">${fmtDateShort(f.publishedAt)}</div>
-            <div class="archive-title">${escHtml(f.title)}</div>
-          </div>
-          <div class="archive-right">
+    archiveBox.innerHTML = `<div class="blog-grid">${archive.map(f => `
+      <a class="blog-card" href="/forecast/post/?id=${f.id}" data-pairs="${escHtml((f.pairs||[]).join(','))}">
+        ${f.imageUrl
+          ? `<img class="blog-thumb" src="${f.imageUrl}" alt="${escHtml(f.title)}" loading="lazy">`
+          : `<div class="blog-thumb-ph">📈</div>`}
+        <div class="blog-card-body">
+          <div class="blog-meta">
+            <span class="archive-date">${fmtDateShort(f.publishedAt)}</span>
             ${f.bias ? `<span class="bias-pill ${biasClass(f.bias)}" style="font-size:10px;">${biasIcon(f.bias)} ${escHtml(f.bias)}</span>` : ''}
-            <span class="archive-chev">▾</span>
           </div>
-        </div>
-        <div class="archive-body">
+          <div class="blog-title">${escHtml(f.title)}</div>
           ${pairsHtml(f.pairs)}
-          ${escHtml(f.content)}
+          <span class="blog-read">Read forecast →</span>
         </div>
-      </div>`).join('')}</div>`;
-
-    // Toggle open/close
-    archiveBox.querySelectorAll('.archive-card').forEach(card => {
-      card.querySelector('.archive-head').addEventListener('click', () => {
-        card.classList.toggle('open');
-      });
-    });
+      </a>`).join('')}</div>`;
 
     // Build filter chips from unique pairs in archive
     const allPairs = [...new Set(archive.flatMap(f => f.pairs || []))].sort();
@@ -312,7 +303,7 @@ async function loadForecasts() {
 
         const selected = chip.dataset.pair;
         let visible = 0;
-        archiveBox.querySelectorAll('.archive-card').forEach(card => {
+        archiveBox.querySelectorAll('.blog-card').forEach(card => {
           const pairs = card.dataset.pairs ? card.dataset.pairs.split(',') : [];
           const show = selected === 'ALL' || pairs.includes(selected);
           card.style.display = show ? '' : 'none';
