@@ -14,13 +14,20 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#f8fafc;color:#1e29
 a{text-decoration:none;color:inherit;}
 
 /* HEADER */
-header{background:#0f172a;padding:16px 0;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;}
-.header-inner{max-width:900px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
-.logo{font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;}
-.logo img{height:32px;}
-.logo-tag{font-size:11px;font-weight:600;background:#2563eb;color:#fff;padding:2px 8px;border-radius:4px;letter-spacing:.5px;}
-.header-link{color:#94a3b8;font-size:13px;font-weight:500;}
-.header-link:hover{color:#fff;}
+header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.18);}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo img{height:36px;}
+nav ul{list-style:none;display:flex;gap:24px;}
+nav a{text-decoration:none;color:#f1f5f9;font-weight:500;font-size:14px;}
+nav a:hover,nav a.active{color:#60a5fa;}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:7px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;}
+.btn-outline{border:1px solid #334155;color:#f1f5f9;background:none;}
+.btn-outline:hover{border-color:#60a5fa;color:#60a5fa;}
+.btn-primary{background:#2563eb;color:#fff;border:none;}
+.btn-primary:hover{background:#1d4ed8;}
+.burger{background:none;border:none;cursor:pointer;width:40px;height:40px;display:none;}
 
 /* HERO */
 .hero{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#fff;padding:48px 0 40px;}
@@ -106,13 +113,27 @@ footer a:hover{color:#fff;}
 </head>
 <body>
 
+<style>nav>ul{display:none}.burger{display:flex!important;align-items:center;justify-content:center}</style>
 <header>
   <div class="header-inner">
-    <a href="/" class="logo">
-      <img src="/logo-fxnb.png" alt="FXNewsBias">
-      <span class="logo-tag">Forecast</span>
-    </a>
-    <a href="/" class="header-link">← Back to Markets</a>
+    <a href="/" class="logo"><img src="/logo-fxnb.png?v=2" alt="FX News Bias"></a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies">Currencies</a></li>
+        <li><a href="/pairs">Pairs</a></li>
+        <li><a href="/calendar">Calendar</a></li>
+        <li><a href="/news">News</a></li>
+        <li><a href="/insight/">Insights</a></li>
+        <li><a href="/forecast/" class="active">Forecast</a></li>
+        <li><a href="/community">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login" class="btn btn-outline">Login</a>
+      <a href="/register" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
   </div>
 </header>
 
@@ -323,5 +344,8 @@ loadForecasts();
 </script>
 
 <div class="share-toast" id="share-toast">Link copied!</div>
+<script src="/nav.js" defer></script>
+<script src="/cookie.js" defer></script>
+<script src="/analytics.js" defer></script>
 </body>
 </html>
