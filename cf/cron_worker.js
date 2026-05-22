@@ -3874,12 +3874,12 @@ Hard rules:
 - Naturally include these keywords: ${pair.keywords}, live forex sentiment, forex bias today 2026, news-based forex analysis
 - Keep it factual and data-driven. Do NOT invent specific price levels.
 - Total length: 200–280 words.
-- NEVER write vague phrases like "rate expectations", "strength dominates", "sentiment shift", "rate divergence", "[currency] strength", "risk sentiment", "risk appetite shapes", "quiet markets", "no major headlines", "markets await" — always name the actual event.
+- NEVER write vague phrases like "rate expectations", "strength dominates", "sentiment shift", "rate divergence", "[currency] strength", "risk sentiment", "risk appetite", "quiet markets", "no major headlines", "no major catalysts", "absence of data", "lack of data", "no data", "markets await" — if headlines are quiet, describe positioning, technical levels, or the macro backdrop instead.
 
 Title rules — STRICT format: "${pair.name} ${biasLabel} Today | [CATALYST] — ${dateShort}"
-CATALYST must be a named real-world event (data release name, central bank action, geopolitical event, named commodity move). Max 65 chars total.
-BANNED words/phrases in title (any = failure): "Rate Expectations", "Strength Dominates", "Sentiment Shift", "Rate Divergence", "CHF Strength", "USD Strength", "EUR Strength", "GBP Strength", "AUD Strength", "JPY Strength", "CAD Strength", "NZD Strength", "Risk Appetite", "Risk Sentiment", "Markets Await", "Sentiment Bullish", "Sentiment Bearish", "Sentiment Neutral", "Bias Today —" (without pipe), score notation like "72/100".
-Rules: (1) Em dash — before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC, SNB not snb. (3) No brand suffix. (4) Always include the word "Today" after ${biasLabel}.
+CATALYST must name a specific named event, policy decision, data print, or macro theme. If headlines are quiet, describe the POSITIONING or TECHNICAL driver (e.g. "USD Holds Near 99 as Traders Await FOMC", "EUR Tests Support on Thin Volume"). Never acknowledge the absence of news. Max 65 chars total.
+BANNED words/phrases in title (any = failure): "Rate Expectations", "Strength Dominates", "Sentiment Shift", "Rate Divergence", "CHF Strength", "USD Strength", "EUR Strength", "GBP Strength", "AUD Strength", "JPY Strength", "CAD Strength", "NZD Strength", "Risk Appetite", "Risk Sentiment", "Markets Await", "Sentiment Bullish", "Sentiment Bearish", "Sentiment Neutral", "Bias Today —" (without pipe), "No Major", "Absence of", "Lack of", "No Data", "No Catalyst", "Quiet Session", score notation like "72/100".
+Rules: (1) Em dash — before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC, SNB not snb. (3) No brand suffix. (4) ALWAYS use format "PAIR Bullish/Bearish/Neutral Today | CATALYST — DATE" — never "Sentiment Bullish" or "Bias Today —".
 
 Return ONLY valid JSON (no markdown, no code fences):
 {"page_title":"<title here>","html":"<the three paragraphs>"}`;
