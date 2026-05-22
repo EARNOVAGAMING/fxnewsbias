@@ -3306,7 +3306,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <header class="page-head"><div class="page-head-inner">
 <div class="crumb"><a href="/">Home</a> · <span>Daily Insights</span></div>
 <h1 class="page-title">Daily Forex Insights</h1>
-<p class="page-sub">Forex market wraps focused on the highest-impact news, the currencies that moved, and what traders should watch over the next 24 hours. Published 3 times a day — Asia session at 00:05 UTC (08:05 MYT), London session at 06:05 UTC (14:05 MYT), and New York session at 12:05 UTC (20:05 MYT).</p>
+<p class="page-sub">Forex market wraps focused on the highest-impact news, the currencies that moved, and what traders should watch over the next 24 hours. Daily forex session wraps — Asia 08:05, London 14:05, New York 20:05 (MYT). Monday to Friday.</p>
 </div></header>
 <div class="main">
 <div><div class="ix-grid">${items}</div><div class="rss-card"><a href="/insight/rss.xml">📡 Subscribe via RSS</a><div style="font-size:13px;color:#1e40af;margin-top:6px;">Get new insights in Feedly, Inoreader, or any RSS reader</div></div></div>
