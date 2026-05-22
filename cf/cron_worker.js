@@ -289,21 +289,21 @@ return new Response('FXNewsBias Cron Worker Running', { status: 200 });
 
 async scheduled(event, env, ctx) {
 // Cron triggers:
-//   '*/15 * * * *'  -> price updates only (self-heal removed)
-//   '0 */3 * * *'   -> sentiment only (writes fresh data to Supabase for SEO steps to read)
-//   '5 */3 * * *'   -> pairSEO only (reads latest sentiment from Supabase)
-//   '10 */3 * * *'  -> currencySEO only (reads latest sentiment from Supabase)
+//   '*/15 * * * *'  -> price updates only
+//   '0 */3 * * *'   -> sentiment only (writes fresh data; SEO steps read from this)
+//   '7 */3 * * *'   -> pairSEO only   (7 min after sentiment — no Anthropic clash)
+//   '10 */3 * * *'  -> currencySEO only (10 min after sentiment)
 //   '15 */3 * * *'  -> cleanup + IndexNow
-//                      All 4 share the same cycle_timestamp (floored to 3h UTC boundary).
-//                      Each step runs in its own fresh invocation with 1000 subrequest budget.
-//   '0 0 * * *'     -> ASEAN session insight (weekdays only)
-//   '0 6 * * *'     -> London session insight (weekdays only)
-//   '0 12 * * *'    -> NY session insight (weekdays only)
+//   '5 0 * * *'     -> ASEAN insight  (5 min after 00:00 sentiment — weekdays only)
+//   '5 6 * * *'     -> London insight (5 min after 06:00 sentiment — weekdays only)
+//   '5 12 * * *'    -> NY insight     (5 min after 12:00 sentiment — weekdays only)
+//   Insight runs 5 min after sentiment so Anthropic is free (no simultaneous API clash).
+//   PairSEO at :07 gives insight's single Haiku call time to finish before pairs' 15 calls start.
 const _dow = new Date().getUTCDay();
 const _isWeekend = _dow === 0 || _dow === 6;
 const cycleTs = _cycleTimestamp(event.cron);
 
-const SESSION_BY_CRON = { '0 0 * * *': 'asean', '0 6 * * *': 'london', '0 12 * * *': 'newyork' };
+const SESSION_BY_CRON = { '5 0 * * *': 'asean', '5 6 * * *': 'london', '5 12 * * *': 'newyork' };
 
 if (event.cron === '*/15 * * * *') {
   ctx.waitUntil(updatePrices(env));
@@ -317,7 +317,7 @@ if (event.cron === '*/15 * * * *') {
     }
   })());
 
-} else if (event.cron === '5 */3 * * *') {
+} else if (event.cron === '7 */3 * * *') {
   ctx.waitUntil(generateAllPairSEO(env, { cycleTs }));
 
 } else if (event.cron === '10 */3 * * *') {
@@ -338,8 +338,8 @@ if (event.cron === '*/15 * * * *') {
   ctx.waitUntil(Promise.all([
     generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)),
     pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (insight) error:', e.message)),
-    // Midnight run also syncs forecast posts into sitemap
-    ...(event.cron === '0 0 * * *' ? [syncForecastSitemap(env).catch(e => console.log('syncForecastSitemap error:', e.message))] : []),
+    // Midnight (00:05) run also syncs forecast posts into sitemap
+    ...(event.cron === '5 0 * * *' ? [syncForecastSitemap(env).catch(e => console.log('syncForecastSitemap error:', e.message))] : []),
   ]));
 }
 }
