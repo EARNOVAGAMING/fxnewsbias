@@ -338,6 +338,8 @@ if (event.cron === '*/15 * * * *') {
   ctx.waitUntil(Promise.all([
     generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)),
     pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (insight) error:', e.message)),
+    // Midnight run also syncs forecast posts into sitemap
+    ...(event.cron === '0 0 * * *' ? [syncForecastSitemap(env).catch(e => console.log('syncForecastSitemap error:', e.message))] : []),
   ]));
 }
 }
@@ -476,6 +478,37 @@ const ALL_DATA_URLS = [
   'https://fxnewsbias.com/pairs/cad-jpy/',
   'https://fxnewsbias.com/pairs/aud-nzd/',
 ];
+
+async function syncForecastSitemap(env) {
+  const API_KEY = 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
+  const PROJECT = 'fxnewsbias';
+  const SITE = 'https://fxnewsbias.com';
+  const today = new Date().toISOString().slice(0, 10);
+
+  const res = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/forecasts?pageSize=100&key=${API_KEY}`);
+  if (!res.ok) throw new Error(`Firestore REST ${res.status}`);
+  const data = await res.json();
+  if (!data.documents || !data.documents.length) { console.log('syncForecastSitemap: no forecasts'); return; }
+
+  const docIds = data.documents.map(d => d.name.split('/').pop());
+  const oldSitemap = (await _insGetFile(env, 'sitemap.xml')) || '';
+  let newSitemap = oldSitemap;
+  const newUrls = [];
+
+  for (const id of docIds) {
+    if (!newSitemap.includes(id)) {
+      const entry = `  <url><loc>${SITE}/forecast/post/?id=${id}</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+      newSitemap = newSitemap.replace('</urlset>', entry + '\n</urlset>');
+      newUrls.push(`${SITE}/forecast/post/?id=${id}`);
+    }
+  }
+
+  if (!newUrls.length) { console.log('syncForecastSitemap: already up to date'); return; }
+
+  await _insCommitFiles(env, [{ path: 'sitemap.xml', content: newSitemap }], `chore(sitemap): add ${newUrls.length} forecast post URL(s)`);
+  await pingIndexNow(newUrls).catch(e => console.log('IndexNow forecast:', e.message));
+  console.log(`syncForecastSitemap: added ${newUrls.length} URLs`);
+}
 
 async function pingIndexNow(urlList) {
   if (!urlList || urlList.length === 0) return;
