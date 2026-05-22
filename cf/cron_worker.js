@@ -3266,7 +3266,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 </article>
 <aside>
 <div class="sidebar-card"><div class="sidebar-h">📊 Live Currency Bias</div>${sidebarCcys}<a class="side-link" style="text-align:center;color:#2563eb;border-top:1px solid #e5e7eb;margin-top:6px;padding-top:12px;" href="/currencies">View all 8 currencies →</a></div>
-<div class="sidebar-card"><div class="sidebar-h">🔗 Explore More</div><a class="side-link" href="/">Live Sentiment Dashboard</a><a class="side-link" href="/pairs">28-Pair Bias Matrix</a><a class="side-link" href="/calendar">Economic Calendar</a><a class="side-link" href="/news">Latest Forex News</a><a class="side-link" href="/insight/">All Daily Insights</a></div>
+<div class="sidebar-card"><div class="sidebar-h">🔗 Explore More</div><a class="side-link" href="/">Live Sentiment Dashboard</a><a class="side-link" href="/pairs">All Forex Pairs</a><a class="side-link" href="/calendar">Economic Calendar</a><a class="side-link" href="/news">Latest Forex News</a><a class="side-link" href="/insight/">All Daily Insights</a></div>
 <div class="sidebar-card"><div class="sidebar-h">📤 Share This Insight</div><div class="share-row"><a class="share-btn" href="https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(headline)}" target="_blank" rel="noopener">𝕏 Twitter</a><a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}" target="_blank" rel="noopener">LinkedIn</a></div></div>
 </aside>
 </div>
@@ -3311,7 +3311,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <div class="main">
 <div><div class="ix-grid">${items}</div><div class="rss-card"><a href="/insight/rss.xml">📡 Subscribe via RSS</a><div style="font-size:13px;color:#1e40af;margin-top:6px;">Get new insights in Feedly, Inoreader, or any RSS reader</div></div></div>
 <aside>
-<div class="sidebar-card"><div class="sidebar-h">📊 Live Tools</div><a class="side-link" href="/">Sentiment Dashboard</a><a class="side-link" href="/currencies">Currency Strength Meter</a><a class="side-link" href="/pairs">28-Pair Bias Matrix</a><a class="side-link" href="/calendar">Economic Calendar</a><a class="side-link" href="/news">Forex News Feed</a></div>
+<div class="sidebar-card"><div class="sidebar-h">📊 Live Tools</div><a class="side-link" href="/">Sentiment Dashboard</a><a class="side-link" href="/currencies">Currency Strength Meter</a><a class="side-link" href="/pairs">All Forex Pairs</a><a class="side-link" href="/calendar">Economic Calendar</a><a class="side-link" href="/news">Forex News Feed</a></div>
 <div class="sidebar-card"><div class="sidebar-h">ℹ️ About These Insights</div><p style="font-size:13.5px;color:#374151;line-height:1.6;">Each insight focuses on the highest-impact news from the past 24 hours, the currency reaction, the drivers behind the move, and forward-looking scenarios for the next session.</p></div>
 </aside>
 </div>
@@ -3454,13 +3454,12 @@ async function generateDailyInsight(env, session) {
     const angle = _insDetectAngle(sentiment);
     const dateISO = new Date().toISOString();
     const today = dateISO.slice(0, 10);
-    const slug = `${today}-${sessMeta.short}-${angle.slug}`;
     const dateLabel = new Date().toUTCString().split(' ').slice(0,4).join(' ');
     const sessionHeadline = `${sessMeta.label}: ${angle.headline}`;
     const sessionSummary = `${sessMeta.intro} ${angle.summary}`;
     const sessionCategory = `${sessMeta.label} • ${angle.category}`;
 
-    // Build AI narrative; fall back to template if Claude is unavailable
+    // Build AI narrative FIRST so we can derive a unique, event-specific slug from it
     let narrative = null;
     try {
       narrative = await _insBuildNarrativeAI(env, {sentiment, news, biggestMover: angle.biggestMover, sessMeta, angle});
@@ -3468,6 +3467,19 @@ async function generateDailyInsight(env, session) {
     } catch (e) {
       console.log('Insight: AI narrative failed, using template fallback:', e.message);
     }
+
+    // Derive slug from AI page_title for unique URLs; fall back to formulaic angle.slug
+    const indexHeadline = (narrative && narrative.pageTitle) ? narrative.pageTitle : sessionHeadline;
+    let slugTail = angle.slug;
+    if (narrative && narrative.pageTitle) {
+      slugTail = narrative.pageTitle
+        .toLowerCase()
+        .replace(/[''ʼ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60);
+    }
+    const slug = `${today}-${sessMeta.short}-${slugTail}`;
 
     const articleHtml = _insRenderArticle({ headline: sessionHeadline, slug, summary: sessionSummary, sentiment, news, biggestMover: angle.biggestMover, dateISO, dateLabel, category: sessionCategory, narrative });
 
@@ -3479,7 +3491,6 @@ async function generateDailyInsight(env, session) {
 
     // 5. Build articlesMeta from articles.json manifest (real titles/summaries)
     //    Prepend the new article, then merge with stored manifest entries.
-    const indexHeadline = (narrative && narrative.pageTitle) ? narrative.pageTitle : sessionHeadline;
     const newEntry = { slug, headline: indexHeadline, summary: sessionSummary, dateISO, dateLabel, category: sessionCategory };
 
     let storedEntries = [];
