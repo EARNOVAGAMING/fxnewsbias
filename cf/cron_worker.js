@@ -2928,7 +2928,7 @@ Write a professional, SEO-optimised forex market briefing. Return ONLY valid JSO
   ],
   "bull_case": "2–3 sentences. What specific upcoming data release, central bank event, or technical confirmation would extend the ${biasWord} move? Name a real catalyst if one exists in the next 48 hours. Plain text.",
   "bear_case": "2–3 sentences. What specific COUNTER-catalyst — a different narrative entirely from the bull case — would reverse the view and snap ${biggestMover.currency} pairs back? Plain text.",
-  "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:00 UTC / London 06:00 UTC / New York 12:00 UTC). Plain text.",
+  "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:05 UTC / London 06:05 UTC / New York 12:05 UTC). Plain text.",
   "page_title": "Unique SEO <title> tag, max 65 chars. MANDATORY: name the SPECIFIC real-world catalyst — the actual event, price level, data print, or central bank action from the headlines above. BANNED (any = failure): 'Strengthens as Bullish News Flow Builds', 'Slides as Bearish News Pressure Builds', 'Quiet Forex Session', 'Mixed Forex Bias', 'Risk-On Mood', 'Risk-Off Sweeps', any score notation like '72/100' or 'X/100'. BAD examples: 'USD Hits 72/100 on Fed Rate-Hike Signals', 'USD Strengthens as Bullish News Flow Builds'. GOOD examples: 'USD Rallies Above 99.40 on Fed Rate Bets & Yen Weakness', 'GBP Slides as UK Jobs Data Misses, BoE Rate Bets Pare', 'AUD Falls Below 0.7150 as RBA Pause Fears Weigh'. Do NOT include the date or score — the date is in the URL and byline already."
 }
 
@@ -3013,7 +3013,7 @@ Hard rules — violating any of these will make the article unusable:
   const bullCase = _insEsc(String(ai.bull_case||'').trim());
   const bearCase = _insEsc(String(ai.bear_case||'').trim());
   const scenarios = `<div class="scenario-box"><div class="scenario-title">📈 Bull case for the move</div><div class="scenario-text">${bullCase}</div></div><div class="scenario-box" style="border-left-color:#dc2626;"><div class="scenario-title" style="color:#dc2626;">📉 Risk to the view</div><div class="scenario-text">${bearCase}</div></div>`;
-  const closing = `<p>${_insEsc(String(ai.closing_note||'The next session wrap lands within the day — Asia at 00:00 UTC, London at 06:00 UTC, New York at 12:00 UTC.').trim())}</p>`;
+  const closing = `<p>${_insEsc(String(ai.closing_note||'The next session wrap lands within the day — Asia at 00:05 UTC, London at 06:05 UTC, New York at 12:05 UTC.').trim())}</p>`;
 
   return {lead, standfirst, whatHappened, reaction, driversSection, scenarios, closing, glance, pageTitle: String(ai.page_title||'').trim()};
 }
@@ -3098,7 +3098,7 @@ function _insBuildNarrative({sentiment, news, biggestMover}){
     : `a sharp change in the headline flow`;
   const bearCase = `The main risk to this view is ${bearTrigger} — either could quickly unwind the ${biasWord} positioning and snap the ${_insEsc(moverName)} bias back toward 50/100. Watch ${biggestMover.currency} pairs for early signs of reversal if the next central-bank wire pushes against the current narrative.`;
   const scenarios = `<div class="scenario-box"><div class="scenario-title">📈 Bull case for the move</div><div class="scenario-text">${bullCase}</div></div><div class="scenario-box" style="border-left-color:#dc2626;"><div class="scenario-title" style="color:#dc2626;">📉 Risk to the view</div><div class="scenario-text">${bearCase}</div></div>`;
-  const closing = `<p>The next session wrap lands within the day — Asia at <strong>00:00 UTC</strong>, London at <strong>06:00 UTC</strong>, New York at <strong>12:00 UTC</strong> — and will reset the picture against the latest overnight headlines. For live tracking through the day, the <a href="/">sentiment dashboard</a>, <a href="/currencies">currency strength meter</a>, and <a href="/calendar">economic calendar</a> all update in real time.</p>`;
+  const closing = `<p>The next session wrap lands within the day — Asia at <strong>00:05 UTC</strong>, London at <strong>06:05 UTC</strong>, New York at <strong>12:05 UTC</strong> — and will reset the picture against the latest overnight headlines. For live tracking through the day, the <a href="/">sentiment dashboard</a>, <a href="/currencies">currency strength meter</a>, and <a href="/calendar">economic calendar</a> all update in real time.</p>`;
 
   const glance = _INS_CCY_ORDER.map(c=>{const x=sentiment[c];if(!x)return '';return `<div class="glance-cell" style="border-top-color:${_insBiasColor(x.bias)};"><div class="glance-ccy">${c}</div><div class="glance-score">${x.score}</div><div class="glance-arr" style="color:${_insBiasColor(x.bias)};">${_insBiasArrow(x.bias)} ${x.bias.slice(0,4)}</div></div>`;}).join('');
 
@@ -3306,7 +3306,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <header class="page-head"><div class="page-head-inner">
 <div class="crumb"><a href="/">Home</a> · <span>Daily Insights</span></div>
 <h1 class="page-title">Daily Forex Insights</h1>
-<p class="page-sub">Forex market wraps focused on the highest-impact news, the currencies that moved, and what traders should watch over the next 24 hours. Published 3 times a day — Asia session at 00:00 UTC, London session at 06:00 UTC, and New York session at 12:00 UTC.</p>
+<p class="page-sub">Forex market wraps focused on the highest-impact news, the currencies that moved, and what traders should watch over the next 24 hours. Published 3 times a day — Asia session at 00:05 UTC (08:05 MYT), London session at 06:05 UTC (14:05 MYT), and New York session at 12:05 UTC (20:05 MYT).</p>
 </div></header>
 <div class="main">
 <div><div class="ix-grid">${items}</div><div class="rss-card"><a href="/insight/rss.xml">📡 Subscribe via RSS</a><div style="font-size:13px;color:#1e40af;margin-top:6px;">Get new insights in Feedly, Inoreader, or any RSS reader</div></div></div>
