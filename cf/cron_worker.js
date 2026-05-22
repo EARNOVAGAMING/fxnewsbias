@@ -380,7 +380,11 @@ async function withRetry(label, fn, env, cycleTs) {
     } catch(e) {
       lastErr = e;
       console.log(`${label} attempt ${attempt}/3 failed: ${e.message}`);
-      if (attempt < 3) await new Promise(r => setTimeout(r, 5000));
+      if (attempt < 3) {
+        // Wait longer on Anthropic overload (529) to give servers time to recover
+        const delay = /529|overload/i.test(e.message) ? 30000 : 5000;
+        await new Promise(r => setTimeout(r, delay));
+      }
     }
   }
   // All 3 attempts exhausted
