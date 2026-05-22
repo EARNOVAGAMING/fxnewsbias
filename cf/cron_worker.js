@@ -475,6 +475,19 @@ const ALL_DATA_URLS = [
   'https://fxnewsbias.com/pairs/chf-jpy/',
   'https://fxnewsbias.com/pairs/cad-jpy/',
   'https://fxnewsbias.com/pairs/aud-nzd/',
+  'https://fxnewsbias.com/pairs/eur-aud/',
+  'https://fxnewsbias.com/pairs/eur-cad/',
+  'https://fxnewsbias.com/pairs/eur-nzd/',
+  'https://fxnewsbias.com/pairs/gbp-chf/',
+  'https://fxnewsbias.com/pairs/gbp-aud/',
+  'https://fxnewsbias.com/pairs/gbp-cad/',
+  'https://fxnewsbias.com/pairs/gbp-nzd/',
+  'https://fxnewsbias.com/pairs/nzd-jpy/',
+  'https://fxnewsbias.com/pairs/aud-cad/',
+  'https://fxnewsbias.com/pairs/aud-chf/',
+  'https://fxnewsbias.com/pairs/nzd-cad/',
+  'https://fxnewsbias.com/pairs/nzd-chf/',
+  'https://fxnewsbias.com/pairs/cad-chf/',
 ];
 
 async function pingIndexNow(urlList) {
@@ -3802,6 +3815,19 @@ const SEO_PAIRS = [
   { slug: 'eur-chf',  name: 'EUR/CHF', base: 'EUR', quote: 'CHF', keywords: 'eurchf sentiment today, eurchf bias analysis, euro franc today' },
   { slug: 'cad-jpy',  name: 'CAD/JPY', base: 'CAD', quote: 'JPY', keywords: 'cadjpy sentiment today, cadjpy bias analysis, cad jpy today' },
   { slug: 'chf-jpy',  name: 'CHF/JPY', base: 'CHF', quote: 'JPY', keywords: 'chfjpy sentiment today, chfjpy bias analysis, franc yen today' },
+  { slug: 'eur-aud',  name: 'EUR/AUD', base: 'EUR', quote: 'AUD', keywords: 'euraud sentiment today, euraud bias analysis, euro australian dollar today' },
+  { slug: 'eur-cad',  name: 'EUR/CAD', base: 'EUR', quote: 'CAD', keywords: 'eurcad sentiment today, eurcad bias analysis, euro canadian dollar today' },
+  { slug: 'eur-nzd',  name: 'EUR/NZD', base: 'EUR', quote: 'NZD', keywords: 'eurnzd sentiment today, eurnzd bias analysis, euro new zealand dollar today' },
+  { slug: 'gbp-chf',  name: 'GBP/CHF', base: 'GBP', quote: 'CHF', keywords: 'gbpchf sentiment today, gbpchf bias analysis, pound swiss franc today' },
+  { slug: 'gbp-aud',  name: 'GBP/AUD', base: 'GBP', quote: 'AUD', keywords: 'gbpaud sentiment today, gbpaud bias analysis, pound aussie today' },
+  { slug: 'gbp-cad',  name: 'GBP/CAD', base: 'GBP', quote: 'CAD', keywords: 'gbpcad sentiment today, gbpcad bias analysis, pound cad today' },
+  { slug: 'gbp-nzd',  name: 'GBP/NZD', base: 'GBP', quote: 'NZD', keywords: 'gbpnzd sentiment today, gbpnzd bias analysis, pound kiwi today' },
+  { slug: 'nzd-jpy',  name: 'NZD/JPY', base: 'NZD', quote: 'JPY', keywords: 'nzdjpy sentiment today, nzdjpy bias analysis, kiwi yen today' },
+  { slug: 'aud-cad',  name: 'AUD/CAD', base: 'AUD', quote: 'CAD', keywords: 'audcad sentiment today, audcad bias analysis, aussie loonie today' },
+  { slug: 'aud-chf',  name: 'AUD/CHF', base: 'AUD', quote: 'CHF', keywords: 'audchf sentiment today, audchf bias analysis, aussie franc today' },
+  { slug: 'nzd-cad',  name: 'NZD/CAD', base: 'NZD', quote: 'CAD', keywords: 'nzdcad sentiment today, nzdcad bias analysis, kiwi loonie today' },
+  { slug: 'nzd-chf',  name: 'NZD/CHF', base: 'NZD', quote: 'CHF', keywords: 'nzdchf sentiment today, nzdchf bias analysis, kiwi franc today' },
+  { slug: 'cad-chf',  name: 'CAD/CHF', base: 'CAD', quote: 'CHF', keywords: 'cadchf sentiment today, cadchf bias analysis, loonie franc today' },
 ];
 
 async function generatePairSEO(pair, score, headlines, env) {
