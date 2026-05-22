@@ -232,14 +232,25 @@ if (!postId) {
             ${pairsHtml}
             <div class="post-content">${escHtml(f.content)}</div>
             <div class="post-footer">
-              <span class="post-author">by FXNewsBias</span>
-              <button class="share-btn" onclick="sharePost(${JSON.stringify(f.title)})">
+              <span class="post-author">by FXNewsBias Team</span>
+              <button class="share-btn" id="post-share-btn">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                 Share
               </button>
             </div>
           </div>
         </div>`;
+
+      document.getElementById('post-share-btn').addEventListener('click', () => {
+        const url = location.href;
+        if (navigator.share) {
+          navigator.share({ title: f.title, url }).catch(() => {});
+        } else {
+          navigator.clipboard.writeText(url)
+            .then(() => showToast('Link copied!'))
+            .catch(() => showToast('Copy: ' + url));
+        }
+      });
 
       // Load more forecasts (exclude current)
       const q = query(collection(db, 'forecasts'), orderBy('publishedAt', 'desc'), limit(10));
