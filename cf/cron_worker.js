@@ -3718,7 +3718,7 @@ Hard rules:
 - 120–170 words total.
 
 Return ONLY valid JSON (no markdown, no code fences):
-{"page_title":"<max 65 chars — format: '${ccy.code} ${bias} ${score}/100 | specific catalyst from headlines — ${dateShort}'. Rules: (1) Must name a real catalyst, not generic. (2) Em dash — before date, never a plain hyphen. (3) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (4) No brand suffix like FXNewsBias.>","html":"<the two paragraphs>"}`;
+{"page_title":"<max 65 chars — STRICT format: '${ccy.code} ${bias} ${score}/100 | [CATALYST] — ${dateShort}'. CATALYST must name a specific real-world event from the headlines (e.g. named data print, central bank decision, specific inflation figure, named geopolitical event). BANNED in title (any = failure): 'Rate Expectations', 'Strength', 'Weakness', 'Sentiment Shift', 'Markets Await', 'Rate Divergence', 'Risk Appetite', 'Risk Sentiment', score notation like '72/100' outside the fixed slot. Rules: (1) Em dash — before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (3) No brand suffix.>","html":"<the two paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -3863,17 +3863,22 @@ Current data:
 Write a 3-paragraph HTML article using ONLY these tags: <p>, <strong>, <ul>, <li>. No headings, no other tags.
 
 Paragraph 1: Current ${pair.name} sentiment today — reference the bias score, explain what it means for direction.
-Paragraph 2: Key drivers from the headlines — be specific about the most relevant macro or FX catalyst affecting this pair. Always name a real catalyst (rate expectations, economic data, geopolitical event, central bank statement, commodity move, etc.).
-Paragraph 3: What to watch — forward-looking, mention next session, key levels or upcoming data if relevant.
+Paragraph 2: Key drivers — name the SPECIFIC real-world event from the headlines above (e.g. a named data print, a central bank rate decision, a specific inflation figure, a named geopolitical development, a commodity price move). For cross pairs (e.g. EUR/JPY, GBP/JPY), name the distinct driver for EACH component currency — do not merge them into one generic phrase.
+Paragraph 3: What to watch — forward-looking, mention next session, specific upcoming data or risk events if relevant.
 
-Important:
+Hard rules:
 - Naturally include these keywords: ${pair.keywords}, live forex sentiment, forex bias today 2026, news-based forex analysis
 - Keep it factual and data-driven. Do NOT invent specific price levels.
 - Total length: 200–280 words.
-- NEVER use the phrase "Quiet Markets" or "No Major Headlines" — always identify a real driver.
+- NEVER write vague phrases like "rate expectations", "strength dominates", "sentiment shift", "rate divergence", "[currency] strength", "risk sentiment", "risk appetite shapes", "quiet markets", "no major headlines", "markets await" — always name the actual event.
+
+Title rules — STRICT format: "${pair.name} ${biasLabel} Today | [CATALYST] — ${dateShort}"
+CATALYST must be a named real-world event (data release name, central bank action, geopolitical event, named commodity move). Max 65 chars total.
+BANNED words/phrases in title (any = failure): "Rate Expectations", "Strength Dominates", "Sentiment Shift", "Rate Divergence", "CHF Strength", "USD Strength", "EUR Strength", "GBP Strength", "AUD Strength", "JPY Strength", "CAD Strength", "NZD Strength", "Risk Appetite", "Risk Sentiment", "Markets Await", "Sentiment Bullish", "Sentiment Bearish", "Sentiment Neutral", "Bias Today —" (without pipe), score notation like "72/100".
+Rules: (1) Em dash — before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC, SNB not snb. (3) No brand suffix. (4) Always include the word "Today" after ${biasLabel}.
 
 Return ONLY valid JSON (no markdown, no code fences):
-{"page_title":"<max 65 chars — format: '${pair.name} ${biasLabel} Today | specific catalyst from headlines — ${dateShort}'. Rules: (1) Must name a real catalyst, not generic. (2) Em dash — before date, never a plain hyphen. (3) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (4) No brand suffix.>","html":"<the three paragraphs>"}`;
+{"page_title":"<title here>","html":"<the three paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
