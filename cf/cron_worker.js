@@ -501,9 +501,9 @@ async function syncForecastSitemap(env) {
 
   for (const id of docIds) {
     if (!newSitemap.includes(id)) {
-      const entry = `  <url><loc>${SITE}/forecast/post/?id=${id}</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+      const entry = `  <url><loc>${SITE}/forecast/${id}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
       newSitemap = newSitemap.replace('</urlset>', entry + '\n</urlset>');
-      newUrls.push(`${SITE}/forecast/post/?id=${id}`);
+      newUrls.push(`${SITE}/forecast/${id}/`);
     }
   }
 
@@ -3817,6 +3817,8 @@ async function generateAllCurrencySEO(env, opts = {}) {
             .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${safe}"`)
             .replace(/(<meta name="twitter:title" content=")[^"]*"/, `$1${safe}"`)
             .replace(/(<meta name="description" content=")[^"]*"/, `$1${safeDesc}"`)
+            .replace(/(<meta property="og:description" content=")[^"]*"/, `$1${safeDesc}"`)
+            .replace(/(<meta name="twitter:description" content=")[^"]*"/, `$1${safeDesc}"`)
             .replace(/(<h1[^>]*><span[^>]*>[^<]*<\/span>\s*)[^<]*(<\/h1>)/, `$1${h1Text}$2`);
           filesToCommit.push({ path, content: patched });
         }
@@ -3996,6 +3998,8 @@ async function generateAllPairSEO(env, opts = {}) {
             .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${safe}"`)
             .replace(/(<meta name="twitter:title" content=")[^"]*"/, `$1${safe}"`)
             .replace(/(<meta name="description" content=")[^"]*"/, `$1${safeDesc}"`)
+            .replace(/(<meta property="og:description" content=")[^"]*"/, `$1${safeDesc}"`)
+            .replace(/(<meta name="twitter:description" content=")[^"]*"/, `$1${safeDesc}"`)
             .replace(/(<h1[^>]*><span[^>]*>[^<]*<\/span>\s*)[^<]*(<\/h1>)/, `$1${h1Text}$2`);
           filesToCommit.push({ path, content: patched });
         }
