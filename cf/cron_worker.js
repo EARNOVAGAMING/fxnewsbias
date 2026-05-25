@@ -294,16 +294,17 @@ async scheduled(event, env, ctx) {
 //   '7 */3 * * *'   -> pairSEO only   (7 min after sentiment — no Anthropic clash)
 //   '10 */3 * * *'  -> currencySEO only (10 min after sentiment)
 //   '15 */3 * * *'  -> cleanup + IndexNow
-//   '5 0 * * *'     -> ASEAN insight  (5 min after 00:00 sentiment — weekdays only)
-//   '5 6 * * *'     -> London insight (5 min after 06:00 sentiment — weekdays only)
-//   '5 12 * * *'    -> NY insight     (5 min after 12:00 sentiment — weekdays only)
-//   Insight runs 5 min after sentiment so Anthropic is free (no simultaneous API clash).
-//   PairSEO at :07 gives insight's single Haiku call time to finish before pairs' 15 calls start.
+//   '13 0 * * *'    -> ASEAN insight  (13 min after 00:00 sentiment — weekdays only)
+//   '13 6 * * *'    -> London insight (13 min after 06:00 sentiment — weekdays only)
+//   '13 12 * * *'   -> NY insight     (13 min after 12:00 sentiment — weekdays only)
+//   Insight runs at :13 — after sentiment (:00, finishes by :07 even with withRetry outer retry),
+//   after pairSEO (:07, 5 batches×26s finishes ~:09:10), after currencySEO (:10, 2 batches finishes ~:11).
+//   Cleanup at :15 has zero Claude calls so no clash if insight is still running.
 const _dow = new Date().getUTCDay();
 const _isWeekend = _dow === 0 || _dow === 6;
 const cycleTs = _cycleTimestamp(event.cron);
 
-const SESSION_BY_CRON = { '5 0 * * *': 'asean', '5 6 * * *': 'london', '5 12 * * *': 'newyork' };
+const SESSION_BY_CRON = { '13 0 * * *': 'asean', '13 6 * * *': 'london', '13 12 * * *': 'newyork' };
 
 if (event.cron === '*/15 * * * *') {
   ctx.waitUntil(updatePrices(env));
