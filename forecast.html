@@ -92,7 +92,7 @@ nav a:hover,nav a.active{color:#60a5fa;}
 .no-results{text-align:center;padding:32px 20px;color:#94a3b8;font-size:13px;display:none;}
 .no-results.show{display:block;}
 
-.archive-date{font-size:11px;font-weight:600;color:#94a3b8;font-family:'JetBrains Mono',monospace;}
+.archive-date{font-size:11px;font-weight:600;color:#64748b;font-family:'JetBrains Mono',monospace;}
 .blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
 .blog-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;display:block;color:inherit;transition:border-color .2s,box-shadow .2s,transform .2s;}
 .blog-card:hover{border-color:#93c5fd;box-shadow:0 4px 20px rgba(37,99,235,.1);transform:translateY(-2px);}
@@ -199,8 +199,40 @@ footer a:hover{color:#fff;}
 </footer>
 
 <script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+const FS_URL = 'https://firestore.googleapis.com/v1/projects/fxnewsbias/databases/(default)/documents';
+const FS_KEY = 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
+
+function parseVal(v) {
+  if (!v) return null;
+  if ('stringValue' in v) return v.stringValue;
+  if ('integerValue' in v) return Number(v.integerValue);
+  if ('doubleValue' in v) return v.doubleValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('timestampValue' in v) return new Date(v.timestampValue.replace(/(\.\d{3})\d+(Z)$/, '$1$2'));
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(parseVal);
+  if ('mapValue' in v) { const o={}; for (const [k,w] of Object.entries(v.mapValue.fields||{})) o[k]=parseVal(w); return o; }
+  return null;
+}
+function parseDoc(doc) {
+  const id = doc.name.split('/').pop();
+  const data = {};
+  for (const [k,v] of Object.entries(doc.fields||{})) data[k] = parseVal(v);
+  data._createTime = new Date((doc.createTime||'').replace(/(\.\d{3})\d+(Z)$/, '$1$2'));
+  return { id, ...data };
+}
+async function queryForecasts() {
+  const res = await fetch(`${FS_URL}:runQuery?key=${FS_KEY}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ structuredQuery: {
+      from: [{collectionId:'forecasts'}],
+      orderBy: [{field:{fieldPath:'publishedAt'},direction:'DESCENDING'}],
+      limit: 50
+    }})
+  });
+  const arr = await res.json();
+  return arr.filter(r => r.document).map(r => parseDoc(r.document));
+}
 
 const toast = document.getElementById('share-toast');
 let toastTimer;
@@ -221,16 +253,6 @@ function sharePost(title, url) {
   }
 }
 
-const app = getApps().length ? getApps()[0] : initializeApp({
-  apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
-  authDomain: "fxnewsbias.firebaseapp.com",
-  projectId: "fxnewsbias",
-  storageBucket: "fxnewsbias.firebasestorage.app",
-  messagingSenderId: "414710041736",
-  appId: "1:414710041736:web:00e79ccc58fdb94e98633d"
-});
-const db = getFirestore(app);
-
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -241,13 +263,23 @@ function biasClass(b) {
 function biasIcon(b) {
   return b === 'Bullish' ? '🟢' : b === 'Bearish' ? '🔴' : b === 'Neutral' ? '🟡' : '';
 }
-function fmtDate(ts) {
-  const d = ts && ts.toDate ? ts.toDate() : new Date(ts);
+function fmtDate(d) {
   return d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 }
-function fmtDateShort(ts) {
-  const d = ts && ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+function fmtPosted(d) {
+  const date = d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  const time = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', timeZone:'UTC' });
+  return `${date} · ${time} UTC`;
+}
+function timeAgo(d) {
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return Math.floor(s / 86400) + 'd ago';
+}
+function bestDate(f) {
+  return (f.publishedAt instanceof Date && !isNaN(f.publishedAt)) ? f.publishedAt : f._createTime;
 }
 function pairsHtml(pairs) {
   if (!pairs || !pairs.length) return '';
@@ -256,10 +288,7 @@ function pairsHtml(pairs) {
 
 async function loadForecasts() {
   try {
-    const q = query(collection(db, 'forecasts'), orderBy('publishedAt', 'desc'), limit(50));
-    const snap = await getDocs(q);
-    const all = [];
-    snap.forEach(d => all.push({ id: d.id, ...d.data() }));
+    const all = await queryForecasts();
 
     const todayBox = document.getElementById('today-container');
     const archiveBox = document.getElementById('archive-container');
@@ -270,13 +299,12 @@ async function loadForecasts() {
       return;
     }
 
-    // Today's forecast = most recent entry
     const top = all[0];
     todayBox.innerHTML = `
       <div class="forecast-main">
         <div class="forecast-main-header">
           <div>
-            <div class="forecast-date">${fmtDate(top.publishedAt)}</div>
+            <div class="forecast-date" title="${fmtPosted(bestDate(top))}">Posted ${timeAgo(bestDate(top))} · ${fmtPosted(bestDate(top))}</div>
           </div>
           ${top.bias ? `<span class="bias-pill ${biasClass(top.bias)}">${biasIcon(top.bias)} ${escHtml(top.bias)}</span>` : ''}
         </div>
@@ -287,7 +315,7 @@ async function loadForecasts() {
         <div class="forecast-footer">
           <span class="forecast-author">by FXNewsBias Team</span>
           <div style="display:flex;gap:8px;align-items:center;">
-            <a href="/forecast/post/?id=${top.id}" style="font-size:12px;font-weight:700;color:#2563eb;">View post →</a>
+            <a href="/forecast/${top.id}/" style="font-size:12px;font-weight:700;color:#2563eb;">View post →</a>
             <button class="share-btn" id="today-share-btn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
               Share
@@ -297,10 +325,9 @@ async function loadForecasts() {
       </div>`;
 
     document.getElementById('today-share-btn').addEventListener('click', () => {
-      sharePost(top.title, `/forecast/post/?id=${top.id}`);
+      sharePost(top.title, `/forecast/${top.id}/`);
     });
 
-    // Archive = everything else
     const archive = all.slice(1);
     if (!archive.length) {
       archiveBox.innerHTML = `<div class="empty"><p>More forecasts coming soon — check back daily.</p></div>`;
@@ -308,13 +335,13 @@ async function loadForecasts() {
     }
 
     archiveBox.innerHTML = `<div class="blog-grid">${archive.map(f => `
-      <a class="blog-card" href="/forecast/post/?id=${f.id}" data-pairs="${escHtml((f.pairs||[]).join(','))}">
+      <a class="blog-card" href="/forecast/${f.id}/" data-pairs="${escHtml((f.pairs||[]).join(','))}">
         ${f.imageUrl
           ? `<img class="blog-thumb" src="${f.imageUrl}" alt="${escHtml(f.title)}" loading="lazy">`
           : `<div class="blog-thumb-ph">📈</div>`}
         <div class="blog-card-body">
           <div class="blog-meta">
-            <span class="archive-date">${fmtDateShort(f.publishedAt)}</span>
+            <span class="archive-date" title="${fmtPosted(bestDate(f))}">${timeAgo(bestDate(f))} · ${fmtPosted(bestDate(f))}</span>
             ${f.bias ? `<span class="bias-pill ${biasClass(f.bias)}" style="font-size:10px;">${biasIcon(f.bias)} ${escHtml(f.bias)}</span>` : ''}
           </div>
           <div class="blog-title">${escHtml(f.title)}</div>
@@ -323,7 +350,6 @@ async function loadForecasts() {
         </div>
       </a>`).join('')}</div>`;
 
-    // Build filter chips from unique pairs in archive
     const allPairs = [...new Set(archive.flatMap(f => f.pairs || []))].sort();
     const filterRow = document.getElementById('filter-row');
     const noResults = document.getElementById('no-results');

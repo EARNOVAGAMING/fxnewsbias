@@ -537,6 +537,7 @@ async function loadList() {
           ${pairsStr ? `<div class="list-pairs">${escHtml(pairsStr)}</div>` : ''}
         </div>
         <div class="list-actions">
+          <a class="list-edit" href="/forecast/${f.id}/" target="_blank">View</a>
           <button class="list-edit" data-id="${f.id}">Edit</button>
           <button class="list-del" data-id="${f.id}">Delete</button>
         </div>

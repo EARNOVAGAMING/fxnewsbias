@@ -56,6 +56,17 @@ nav a:hover,nav a.active{color:#60a5fa;}
 .pair-tag{background:#f1f5f9;color:#475569;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;}
 .post-content{font-size:15px;color:#334155;line-height:1.85;white-space:pre-wrap;word-wrap:break-word;}
 .post-content p{margin-bottom:14px;}
+.post-hero{background:#0f172a;padding:28px 32px 24px;}
+.post-breadcrumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.post-breadcrumb a{font-size:12px;font-weight:600;color:#60a5fa;}
+.post-breadcrumb a:hover{color:#93c5fd;}
+.post-breadcrumb-sep{font-size:12px;color:#475569;}
+.post-breadcrumb-cur{font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;}
+.post-hero-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.post-hero .post-date{color:#94a3b8;}
+.post-hero h1{font-size:26px;font-weight:800;line-height:1.3;color:#f1f5f9;margin-bottom:12px;}
+.post-hero .pairs-row{margin-bottom:0;}
+.post-hero .pair-tag{background:rgba(255,255,255,.08);color:#cbd5e1;}
 .post-footer{margin-top:28px;padding-top:18px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
 .post-author{font-size:12px;color:#94a3b8;}
 .share-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #e2e8f0;background:#fff;color:#334155;transition:.15s;}
@@ -89,6 +100,8 @@ footer a:hover{color:#fff;}
 @media(max-width:640px){
   .post-body{padding:20px;}
   .post-title{font-size:20px;}
+  .post-hero{padding:20px;}
+  .post-hero h1{font-size:20px;}
   .more-grid{grid-template-columns:1fr 1fr;}
 }
 </style>
@@ -122,10 +135,14 @@ footer a:hover{color:#fff;}
 <div class="page">
   <div id="post-container">
     <div class="post-card">
-      <div style="height:320px;" class="loading-shimmer"></div>
+      <div class="post-hero">
+        <div style="height:12px;width:70px;margin-bottom:16px;border-radius:4px;background:#1e293b;"></div>
+        <div style="height:14px;width:160px;margin-bottom:12px;border-radius:4px;background:#1e293b;"></div>
+        <div style="height:24px;width:85%;margin-bottom:8px;border-radius:6px;background:#1e293b;"></div>
+        <div style="height:24px;width:60%;border-radius:6px;background:#1e293b;"></div>
+      </div>
+      <div style="height:280px;" class="loading-shimmer"></div>
       <div class="post-body">
-        <div style="height:20px;width:160px;margin-bottom:16px;" class="loading-shimmer"></div>
-        <div style="height:32px;width:85%;margin-bottom:12px;" class="loading-shimmer"></div>
         <div style="height:16px;width:100%;margin-bottom:8px;" class="loading-shimmer"></div>
         <div style="height:16px;width:92%;margin-bottom:8px;" class="loading-shimmer"></div>
         <div style="height:16px;width:97%;" class="loading-shimmer"></div>
@@ -157,8 +174,45 @@ footer a:hover{color:#fff;}
 <script src="/cookie.js" defer></script>
 <script src="/analytics.js" defer></script>
 <script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+const FS_URL = 'https://firestore.googleapis.com/v1/projects/fxnewsbias/databases/(default)/documents';
+const FS_KEY = 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
+
+function parseVal(v) {
+  if (!v) return null;
+  if ('stringValue' in v) return v.stringValue;
+  if ('integerValue' in v) return Number(v.integerValue);
+  if ('doubleValue' in v) return v.doubleValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('timestampValue' in v) return new Date(v.timestampValue.replace(/(\.\d{3})\d+(Z)$/, '$1$2'));
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(parseVal);
+  if ('mapValue' in v) { const o={}; for (const [k,w] of Object.entries(v.mapValue.fields||{})) o[k]=parseVal(w); return o; }
+  return null;
+}
+function parseDoc(doc) {
+  const id = doc.name.split('/').pop();
+  const data = {};
+  for (const [k,v] of Object.entries(doc.fields||{})) data[k] = parseVal(v);
+  data._createTime = new Date((doc.createTime||'').replace(/(\.\d{3})\d+(Z)$/, '$1$2'));
+  return { id, ...data };
+}
+async function getPost(id) {
+  const res = await fetch(`${FS_URL}/forecasts/${id}?key=${FS_KEY}`);
+  if (!res.ok) return null;
+  return parseDoc(await res.json());
+}
+async function getRecentPosts(limitN, excludeId) {
+  const res = await fetch(`${FS_URL}:runQuery?key=${FS_KEY}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ structuredQuery: {
+      from: [{collectionId:'forecasts'}],
+      orderBy: [{field:{fieldPath:'publishedAt'},direction:'DESCENDING'}],
+      limit: limitN
+    }})
+  });
+  const arr = await res.json();
+  return arr.filter(r => r.document && r.document.name.split('/').pop() !== excludeId).map(r => parseDoc(r.document));
+}
 
 const toast = document.getElementById('share-toast');
 let toastTimer;
@@ -179,16 +233,6 @@ window.sharePost = function(title) {
   }
 };
 
-const app = getApps().length ? getApps()[0] : initializeApp({
-  apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
-  authDomain: "fxnewsbias.firebaseapp.com",
-  projectId: "fxnewsbias",
-  storageBucket: "fxnewsbias.firebasestorage.app",
-  messagingSenderId: "414710041736",
-  appId: "1:414710041736:web:00e79ccc58fdb94e98633d"
-});
-const db = getFirestore(app);
-
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
@@ -198,32 +242,30 @@ function biasClass(b) {
 function biasIcon(b) {
   return b === 'Bullish' ? '🟢' : b === 'Bearish' ? '🔴' : b === 'Neutral' ? '🟡' : '';
 }
-function fmtDate(ts) {
-  const d = ts && ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-}
-function fmtDateShort(ts) {
-  const d = ts && ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+function fmtPosted(d) {
+  const date = d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  const time = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', timeZone:'UTC' });
+  return `${date} · ${time} UTC`;
 }
 
 const params = new URLSearchParams(location.search);
 const postId = params.get('id');
 const container = document.getElementById('post-container');
 
+// Redirect legacy ?id= URLs to clean /forecast/ID/ URLs
+if (postId) { location.replace(`/forecast/${postId}/`); }
+
 if (!postId) {
   container.innerHTML = `<div class="error-box"><h3>No forecast selected</h3><p><a href="/forecast/" style="color:#2563eb;">← Go back to all forecasts</a></p></div>`;
 } else {
   (async () => {
     try {
-      const snap = await getDoc(doc(db, 'forecasts', postId));
-      if (!snap.exists()) {
+      const f = await getPost(postId);
+      if (!f) {
         container.innerHTML = `<div class="error-box"><h3>Forecast not found</h3><p><a href="/forecast/" style="color:#2563eb;">← Go back to all forecasts</a></p></div>`;
         return;
       }
-      const f = { id: snap.id, ...snap.data() };
 
-      // Update page title + meta
       document.title = `${f.title} — FXNewsBias`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) metaDesc.setAttribute('content', f.title + ' — Daily forex forecast from FXNewsBias.');
@@ -234,14 +276,23 @@ if (!postId) {
 
       container.innerHTML = `
         <div class="post-card">
-          ${f.imageUrl ? `<img class="post-img" src="${f.imageUrl}" alt="${escHtml(f.title)}">` : ''}
-          <div class="post-body">
-            <div class="post-meta">
-              <span class="post-date">${fmtDate(f.publishedAt)}</span>
+          <div class="post-hero">
+            <div class="post-breadcrumb">
+              <a href="/">Home</a>
+              <span class="post-breadcrumb-sep">›</span>
+              <a href="/forecast/">Forecast</a>
+              <span class="post-breadcrumb-sep">›</span>
+              <span class="post-breadcrumb-cur">${escHtml(f.title)}</span>
+            </div>
+            <div class="post-hero-meta">
+              <span class="post-date">${fmtPosted(f._createTime)}</span>
               ${f.bias ? `<span class="bias-pill ${biasClass(f.bias)}">${biasIcon(f.bias)} ${escHtml(f.bias)}</span>` : ''}
             </div>
-            <h1 class="post-title">${escHtml(f.title)}</h1>
+            <h1>${escHtml(f.title)}</h1>
             ${pairsHtml}
+          </div>
+          ${f.imageUrl ? `<img class="post-img" src="${f.imageUrl}" alt="${escHtml(f.title)}">` : ''}
+          <div class="post-body">
             <div class="post-content">${escHtml(f.content)}</div>
             <div class="post-footer">
               <span class="post-author">by FXNewsBias Team</span>
@@ -264,12 +315,7 @@ if (!postId) {
         }
       });
 
-      // Load more forecasts (exclude current)
-      const q = query(collection(db, 'forecasts'), orderBy('publishedAt', 'desc'), limit(10));
-      const moresnap = await getDocs(q);
-      const others = [];
-      moresnap.forEach(d => { if (d.id !== postId) others.push({ id: d.id, ...d.data() }); });
-      const moreItems = others.slice(0, 4);
+      const moreItems = (await getRecentPosts(10, postId)).slice(0, 4);
       if (moreItems.length) {
         document.getElementById('more-section').style.display = '';
         document.getElementById('more-grid').innerHTML = moreItems.map(m => `
@@ -278,7 +324,7 @@ if (!postId) {
               ? `<img class="more-thumb" src="${m.imageUrl}" alt="${escHtml(m.title)}" loading="lazy">`
               : `<div class="more-thumb-ph">📈</div>`}
             <div class="more-card-body">
-              <div class="more-date">${fmtDateShort(m.publishedAt)}</div>
+              <div class="more-date">${fmtPosted(m._createTime)}</div>
               <div class="more-title">${escHtml(m.title)}</div>
             </div>
           </a>`).join('');
