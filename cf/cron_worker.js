@@ -3246,6 +3246,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <script type="application/ld+json">${ld}</script>
 <script type="application/ld+json">${breadcrumbLd}</script>
 <script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
+<script>(function(){var p=localStorage.getItem("fxnb_is_pro")==="true";if(p)document.documentElement.dataset.pro="1";if(!p){var s=document.createElement("script");s.async=true;s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4857533156344939";s.crossOrigin="anonymous";document.head.appendChild(s);}window.addEventListener("userLoaded",function(e){if(e.detail&&e.detail.isPro){localStorage.setItem("fxnb_is_pro","true");document.documentElement.dataset.pro="1";document.querySelectorAll('ins.adsbygoogle,.adsbygoogle,iframe[id^="google_ads"],iframe[src*="googleads"]').forEach(function(el){el.style.display="none";});}else if(e.detail&&e.detail.isPro===false){localStorage.setItem("fxnb_is_pro","false");}});})();</script>
 </head><body>
 <div class="topbar"><div class="topbar-inner"><div class="topbar-left"><span>📅 ${dateStr}</span></div><div class="topbar-right"><a href="/insight/">Daily Insights</a><a href="/news">News</a></div></div></div>
 <style>@media(max-width:768px){.nav-menu,.nav-actions{display:none!important;}.nav-toggle{display:flex!important;}}@media(min-width:769px){.nav-toggle{display:flex!important;}.nav-menu,.nav-actions{display:none!important;}}</style>
