@@ -2933,7 +2933,7 @@ Write a professional, SEO-optimised forex market briefing. Return ONLY valid JSO
   ],
   "bull_case": "2–3 sentences. What specific upcoming data release, central bank event, or technical confirmation would extend the ${biasWord} move? Name a real catalyst if one exists in the next 48 hours. Plain text.",
   "bear_case": "2–3 sentences. What specific COUNTER-catalyst — a different narrative entirely from the bull case — would reverse the view and snap ${biggestMover.currency} pairs back? Plain text.",
-  "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:05 UTC / London 06:05 UTC / New York 12:05 UTC). Plain text.",
+  "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:13 UTC / London 06:13 UTC / New York 12:13 UTC). Plain text.",
   "page_title": "Unique SEO <title> tag, max 65 chars. MANDATORY: name the SPECIFIC real-world catalyst — the actual event, price level, data print, or central bank action from the headlines above. BANNED (any = failure): 'Strengthens as Bullish News Flow Builds', 'Slides as Bearish News Pressure Builds', 'Quiet Forex Session', 'Mixed Forex Bias', 'Risk-On Mood', 'Risk-Off Sweeps', any score notation like '72/100' or 'X/100'. BAD examples: 'USD Hits 72/100 on Fed Rate-Hike Signals', 'USD Strengthens as Bullish News Flow Builds'. GOOD examples: 'USD Rallies Above 99.40 on Fed Rate Bets & Yen Weakness', 'GBP Slides as UK Jobs Data Misses, BoE Rate Bets Pare', 'AUD Falls Below 0.7150 as RBA Pause Fears Weigh'. Do NOT include the date or score — the date is in the URL and byline already."
 }
 
@@ -2950,8 +2950,8 @@ Hard rules — violating any of these will make the article unusable:
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {'Content-Type':'application/json','x-api-key':env.CLAUDE_API_KEY,'anthropic-version':'2023-06-01'},
-    body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:3000, messages:[{role:'user',content:prompt}]}),
-    signal: AbortSignal.timeout(25000),
+    body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:1500, messages:[{role:'user',content:prompt}]}),
+    signal: AbortSignal.timeout(90000), // 90s — Haiku needs up to ~35s under peak API load; 90s = safe ceiling
   });
   if (!resp.ok) throw new Error(`Anthropic HTTP ${resp.status}`);
   const data = await resp.json();
