@@ -3272,10 +3272,10 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <aside>
 <div class="sidebar-card"><div class="sidebar-h">📊 Live Currency Bias</div>${sidebarCcys}<a class="side-link" style="text-align:center;color:#2563eb;border-top:1px solid #e5e7eb;margin-top:6px;padding-top:12px;" href="/currencies">View all 8 currencies →</a></div>
 <div class="sidebar-card"><div class="sidebar-h">🔗 Explore More</div><a class="side-link" href="/">Live Sentiment Dashboard</a><a class="side-link" href="/pairs">All Forex Pairs</a><a class="side-link" href="/calendar">Economic Calendar</a><a class="side-link" href="/news">Latest Forex News</a><a class="side-link" href="/insight/">All Daily Insights</a></div>
-<div class="sidebar-card"><div class="sidebar-h">📤 Share This Insight</div><div class="share-row"><a class="share-btn" href="https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(headline)}" target="_blank" rel="noopener">𝕏 Twitter</a><a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}" target="_blank" rel="noopener">LinkedIn</a></div></div>
+<div class="sidebar-card"><div class="sidebar-h">📤 Share This Insight</div><div class="share-row"><a class="share-btn" href="https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(headline)}" target="_blank" rel="noopener">𝕏 Twitter</a><a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}" target="_blank" rel="noopener">LinkedIn</a><a class="share-btn" href="https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(headline)}" target="_blank" rel="noopener">🔴 Reddit</a></div></div>
 </aside>
 </div>
-<footer><div class="footer-inner"><div class="footer-bottom">© ${new Date().getFullYear()} FXNewsBias · <a href="/about">About</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/insight/">All Daily Insights</a> · <a href="/insight/rss.xml">RSS</a></div></div></footer>
+<footer><div class="footer-inner"><div class="footer-bottom">© ${new Date().getFullYear()} FXNewsBias · <a href="/about">About</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/insight/">All Daily Insights</a> · <a href="/insight/rss.xml">RSS</a> · <a href="https://www.reddit.com/u/fxnewsbias/s/1bZFbWSZ50" target="_blank" rel="noopener noreferrer">🔴 Reddit</a></div></div></footer>
 </body></html>`;
 }
 
