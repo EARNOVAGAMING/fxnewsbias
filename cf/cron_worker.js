@@ -3815,11 +3815,11 @@ async function generateAllCurrencySEO(env, opts = {}) {
 
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
-            .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${safe}"`)
-            .replace(/(<meta name="twitter:title" content=")[^"]*"/, `$1${safe}"`)
-            .replace(/(<meta name="description" content=")[^"]*"/, `$1${safeDesc}"`)
-            .replace(/(<meta property="og:description" content=")[^"]*"/, `$1${safeDesc}"`)
-            .replace(/(<meta name="twitter:description" content=")[^"]*"/, `$1${safeDesc}"`)
+            .replace(/<meta property="og:title"[^>]*>/, `<meta property="og:title" content="${safe}">`)
+            .replace(/<meta name="twitter:title"[^>]*>/, `<meta name="twitter:title" content="${safe}">`)
+            .replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${safeDesc}">`)
+            .replace(/<meta property="og:description"[^>]*>/, `<meta property="og:description" content="${safeDesc}">`)
+            .replace(/<meta name="twitter:description"[^>]*>/, `<meta name="twitter:description" content="${safeDesc}">`)
             .replace(/(<h1[^>]*><span[^>]*>[^<]*<\/span>\s*)[^<]*(<\/h1>)/, `$1${h1Text}$2`);
           filesToCommit.push({ path, content: patched });
         }
@@ -3996,11 +3996,11 @@ async function generateAllPairSEO(env, opts = {}) {
 
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
-            .replace(/(<meta property="og:title" content=")[^"]*"/, `$1${safe}"`)
-            .replace(/(<meta name="twitter:title" content=")[^"]*"/, `$1${safe}"`)
-            .replace(/(<meta name="description" content=")[^"]*"/, `$1${safeDesc}"`)
-            .replace(/(<meta property="og:description" content=")[^"]*"/, `$1${safeDesc}"`)
-            .replace(/(<meta name="twitter:description" content=")[^"]*"/, `$1${safeDesc}"`)
+            .replace(/<meta property="og:title"[^>]*>/, `<meta property="og:title" content="${safe}">`)
+            .replace(/<meta name="twitter:title"[^>]*>/, `<meta name="twitter:title" content="${safe}">`)
+            .replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${safeDesc}">`)
+            .replace(/<meta property="og:description"[^>]*>/, `<meta property="og:description" content="${safeDesc}">`)
+            .replace(/<meta name="twitter:description"[^>]*>/, `<meta name="twitter:description" content="${safeDesc}">`)
             .replace(/(<h1[^>]*><span[^>]*>[^<]*<\/span>\s*)[^<]*(<\/h1>)/, `$1${h1Text}$2`);
           filesToCommit.push({ path, content: patched });
         }
