@@ -173,6 +173,13 @@ return new Response(JSON.stringify(result, null, 2), {
   status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' }
 });
 }
+if (url.pathname === '/backfill-audience') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await backfillResendAudience(env);
+return new Response(JSON.stringify(result, null, 2), {
+  status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' }
+});
+}
 if (url.pathname === '/incidents') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 return handleIncidentsView(url, env);
@@ -1185,6 +1192,71 @@ https://fxnewsbias.com`;
 // ============================================
 // DAILY BROADCAST EMAIL (London insight → all users, 06:30 UTC = 2:30pm MYT)
 // ============================================
+
+async function backfillResendAudience(env) {
+  const AUDIENCE_ID = '7b690548-4533-43f5-a22f-bf862d1366ff';
+  const FS_KEY      = 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
+  const FS_BASE     = 'https://firestore.googleapis.com/v1/projects/fxnewsbias/databases/(default)/documents';
+
+  // 1. Fetch all users from Firestore
+  const results = { added: [], skipped: [], errors: [] };
+  let pageToken = null;
+  let allUsers  = [];
+
+  do {
+    const qs  = pageToken ? `?pageSize=100&pageToken=${pageToken}&key=${FS_KEY}` : `?pageSize=100&key=${FS_KEY}`;
+    const res = await fetch(`${FS_BASE}/users${qs}`, { signal: AbortSignal.timeout(10000) });
+    const data = await res.json();
+    const docs = data.documents || [];
+    for (const doc of docs) {
+      const f = doc.fields || {};
+      const email    = f.email?.stringValue    || '';
+      const username = f.username?.stringValue || '';
+      if (email && email.includes('@')) allUsers.push({ email, username });
+    }
+    pageToken = data.nextPageToken || null;
+  } while (pageToken);
+
+  console.log(`backfillResendAudience: found ${allUsers.length} users in Firestore`);
+
+  // 2. Add each to Resend audience
+  for (const { email, username } of allUsers) {
+    const firstName = username.split(' ')[0] || '';
+    const lastName  = username.split(' ').slice(1).join(' ') || '';
+    try {
+      const resp = await fetch(`https://api.resend.com/audiences/${AUDIENCE_ID}/contacts`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, first_name: firstName, last_name: lastName, unsubscribed: false }),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (resp.ok) {
+        results.added.push(email);
+        console.log(`backfill: added ${email}`);
+      } else {
+        const err = await resp.text();
+        // 409 = already exists — not an error
+        if (resp.status === 409) {
+          results.skipped.push(email);
+        } else {
+          results.errors.push({ email, error: `${resp.status} ${err.slice(0,100)}` });
+          console.log(`backfill: error for ${email}: ${resp.status}`);
+        }
+      }
+    } catch (e) {
+      results.errors.push({ email, error: e.message });
+    }
+  }
+
+  return {
+    ok: true,
+    total: allUsers.length,
+    added: results.added.length,
+    skipped: results.skipped.length,
+    errors: results.errors.length,
+    detail: results,
+  };
+}
 
 async function sendTestBroadcast(env, testEmail) {
   try {
