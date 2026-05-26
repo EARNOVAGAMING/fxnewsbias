@@ -12,7 +12,10 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
-    if (request.method !== 'GET') return env.ASSETS.fetch(request);
+    // Allow HEAD through to dynamic routing so Googlebot HEAD crawls return
+    // 200 (not 404) for dynamically-generated pages like /forecast/:id/.
+    // All other non-GET/HEAD methods (POST, PUT …) go straight to ASSETS.
+    if (request.method !== 'GET' && request.method !== 'HEAD') return env.ASSETS.fetch(request);
 
     // .html → clean URL: single 301. _redirects rules exist but the ASSETS
     // binding serves exact file matches before redirect rules are evaluated,
@@ -30,6 +33,19 @@ export default {
     const cleanPath = HTML_REDIRECTS[url.pathname];
     if (cleanPath) {
       url.pathname = cleanPath;
+      return Response.redirect(url.toString(), 301);
+    }
+
+    // Insight articles — /insight/SLUG.html or /insight/SLUG/ → 301 to /insight/SLUG
+    // Cloudflare ASSETS emits a 307 (temp) for these; we need a permanent 301.
+    const insightHtmlMatch = url.pathname.match(/^\/insight\/([\w-]+)\.html$/);
+    if (insightHtmlMatch) {
+      url.pathname = `/insight/${insightHtmlMatch[1]}`;
+      return Response.redirect(url.toString(), 301);
+    }
+    const insightSlashMatch = url.pathname.match(/^\/insight\/([\w-]+)\/$/);
+    if (insightSlashMatch) {
+      url.pathname = `/insight/${insightSlashMatch[1]}`;
       return Response.redirect(url.toString(), 301);
     }
 
