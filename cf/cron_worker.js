@@ -165,6 +165,14 @@ return handleStepRunsView(url, env);
 if (url.pathname === '/send-welcome-email' && request.method === 'POST') {
 return handleWelcomeEmail(request, env);
 }
+if (url.pathname === '/test-broadcast') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const testEmail = url.searchParams.get('email') || 'dineshsanther123gf@gmail.com';
+const result = await sendTestBroadcast(env, testEmail);
+return new Response(JSON.stringify(result, null, 2), {
+  status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' }
+});
+}
 if (url.pathname === '/incidents') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 return handleIncidentsView(url, env);
@@ -1178,71 +1186,95 @@ https://fxnewsbias.com`;
 // DAILY BROADCAST EMAIL (London insight → all users, 06:30 UTC = 2:30pm MYT)
 // ============================================
 
-async function sendDailyBroadcast(env) {
-  if (!env.RESEND_API_KEY) { console.log('sendDailyBroadcast: RESEND_API_KEY missing'); return; }
+async function sendTestBroadcast(env, testEmail) {
+  try {
+    const html = await _buildBroadcastHtml(env, testEmail.split('@')[0]);
+    if (!html) throw new Error('Could not build broadcast HTML');
+    const { headline } = await _getLatestLondonInsight(env);
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: `FXNewsBias <${env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com'}>`,
+        to: [testEmail],
+        subject: `[TEST] 📊 ${headline}`,
+        html,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!resp.ok) { const e = await resp.text(); throw new Error(`Resend error: ${resp.status} ${e.slice(0,200)}`); }
+    const data = await resp.json();
+    console.log(`sendTestBroadcast: sent to ${testEmail} — id ${data.id}`);
+    return { ok: true, id: data.id, to: testEmail };
+  } catch (e) {
+    console.error('sendTestBroadcast error:', e.message);
+    return { ok: false, error: e.message };
+  }
+}
 
-  // 1. Load articles.json and find latest London insight
+async function _getLatestLondonInsight(env) {
   const manifestRaw = await _insGetFile(env, 'insight/articles.json');
   if (!manifestRaw) throw new Error('Could not load articles.json');
   const articles = JSON.parse(manifestRaw);
   const london = articles.find(a => a.slug && a.slug.includes('-london-'));
-  if (!london) throw new Error('No London insight found in articles.json');
+  if (!london) throw new Error('No London insight found');
+  return london;
+}
 
+async function _buildBroadcastHtml(env, firstName = 'Trader') {
+  const london = await _getLatestLondonInsight(env);
   const { slug, headline, summary, dateLabel, category } = london;
   const articleUrl = `https://fxnewsbias.com/insight/${slug}`;
   const ogImage    = `https://fxnewsbias.com/og/insight/${slug}.png`;
   const sessionTag = category || 'London Session';
 
-  // 2. Fetch the insight HTML and extract 3 content paragraphs
   const articleHtml = await _insGetFile(env, `insight/${slug}.html`);
-  let sections = ['', '', ''];
+  let sections = [summary, 'Check the live sentiment dashboard for the latest bias scores across all major pairs.', 'The NY session insight drops at 8pm Malaysia time — watch the insights page for the latest.'];
   if (articleHtml) {
     const paras = [];
     const pRe = /<p[^>]*>([\s\S]*?)<\/p>/g;
     let m;
     while ((m = pRe.exec(articleHtml)) !== null) {
-      const text = m[1].replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, c => ({'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&#39;':"'",'&ldquo;':'"','&rdquo;':'"','&ndash;':'–','&mdash;':'—','&nbsp;':' '}[c]||c)).trim();
+      const text = m[1].replace(/<[^>]+>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#39;/g,"'").replace(/&ldquo;/g,'"').replace(/&rdquo;/g,'"').replace(/&ndash;/g,'–').replace(/&mdash;/g,'—').replace(/&nbsp;/g,' ').trim();
       if (text.length > 100) paras.push(text);
       if (paras.length === 3) break;
     }
-    sections = [
-      paras[0] || summary,
-      paras[1] || 'Check the live sentiment dashboard for the latest bias scores across all major pairs.',
-      paras[2] || 'The New York session insight drops at 8pm Malaysia time — watch the insights page for the latest.',
-    ];
+    if (paras[0]) sections[0] = paras[0];
+    if (paras[1]) sections[1] = paras[1];
+    if (paras[2]) sections[2] = paras[2];
   }
 
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
+  const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-  // 3. Build email HTML
-  const html = `<!doctype html>
+  return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FXNewsBias</title></head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;"><tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:600px;width:100%;">
   <tr><td style="background:#0f172a;padding:30px 40px;text-align:center;">
     <p style="margin:0 0 8px;font-size:11px;color:#475569;letter-spacing:.12em;text-transform:uppercase;font-weight:700;">FXNewsBias · London Session Insight</p>
-    <h1 style="margin:0 0 8px;color:#fff;font-size:22px;font-weight:800;line-height:1.3;">${_insEsc(headline)}</h1>
-    <p style="margin:0;font-size:13px;color:#64748b;">${_insEsc(sessionTag)} · ${today} · 2:30pm 🇲🇾</p>
+    <h1 style="margin:0 0 8px;color:#fff;font-size:22px;font-weight:800;line-height:1.3;">${esc(headline)}</h1>
+    <p style="margin:0;font-size:13px;color:#64748b;">${esc(sessionTag)} · ${today} · 2:30pm 🇲🇾</p>
   </td></tr>
   <tr><td style="background:linear-gradient(90deg,#1e3a8a,#1d4ed8);padding:13px 40px;text-align:center;">
     <p style="margin:0;font-size:13px;color:#bfdbfe;font-weight:500;">London is open — here is today's forex sentiment picture 📊</p>
   </td></tr>
-  <tr><td style="padding:0;"><img src="${_insEsc(ogImage)}" width="600" style="display:block;width:100%;max-width:600px;" alt="${_insEsc(headline)}"></td></tr>
+  <tr><td style="padding:0;"><img src="${esc(ogImage)}" width="600" style="display:block;width:100%;max-width:600px;" alt="${esc(headline)}"></td></tr>
   <tr><td style="padding:36px 40px 20px;">
-    <p style="margin:0 0 20px;font-size:16px;color:#0f172a;line-height:1.6;">Hi {{first_name | fallback: "Trader"}},</p>
-    <p style="margin:0 0 28px;font-size:15px;color:#334155;line-height:1.75;">${_insEsc(summary)}</p>
+    <p style="margin:0 0 20px;font-size:16px;color:#0f172a;line-height:1.6;">Hi ${esc(firstName)},</p>
+    <p style="margin:0 0 28px;font-size:15px;color:#334155;line-height:1.75;">${esc(summary)}</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;"><tr><td style="padding:18px 20px;background:#f8fafc;border-left:4px solid #1d4ed8;border-radius:0 8px 8px 0;">
       <p style="margin:0 0 5px;font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:.08em;text-transform:uppercase;">What Happened</p>
-      <p style="margin:0;font-size:14px;color:#475569;line-height:1.7;">${_insEsc(sections[0])}</p>
+      <p style="margin:0;font-size:14px;color:#475569;line-height:1.7;">${esc(sections[0])}</p>
     </td></tr></table>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;"><tr><td style="padding:18px 20px;background:#f8fafc;border-left:4px solid #7c3aed;border-radius:0 8px 8px 0;">
       <p style="margin:0 0 5px;font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:.08em;text-transform:uppercase;">Key Driver</p>
-      <p style="margin:0;font-size:14px;color:#475569;line-height:1.7;">${_insEsc(sections[1])}</p>
+      <p style="margin:0;font-size:14px;color:#475569;line-height:1.7;">${esc(sections[1])}</p>
     </td></tr></table>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;"><tr><td style="padding:18px 20px;background:#f8fafc;border-left:4px solid #0891b2;border-radius:0 8px 8px 0;">
       <p style="margin:0 0 5px;font-size:11px;font-weight:700;color:#0891b2;letter-spacing:.08em;text-transform:uppercase;">What to Watch</p>
-      <p style="margin:0;font-size:14px;color:#475569;line-height:1.7;">${_insEsc(sections[2])}</p>
+      <p style="margin:0;font-size:14px;color:#475569;line-height:1.7;">${esc(sections[2])}</p>
     </td></tr></table>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;"><tr><td align="center">
       <a href="${articleUrl}" style="display:inline-block;background:#1e40af;color:#fff;font-size:15px;font-weight:700;padding:15px 40px;border-radius:8px;text-decoration:none;">Read Full London Insight →</a>
@@ -1275,10 +1307,20 @@ async function sendDailyBroadcast(env) {
   </td></tr>
 </table></td></tr></table>
 </body></html>`;
+}
+
+async function sendDailyBroadcast(env) {
+  if (!env.RESEND_API_KEY) { console.log('sendDailyBroadcast: RESEND_API_KEY missing'); return; }
+
+  const london = await _getLatestLondonInsight(env);
+  const { headline, dateLabel } = london;
+  const html = await _buildBroadcastHtml(env, '{{first_name | fallback: "Trader"}}');
+  if (!html) throw new Error('Could not build broadcast HTML');
 
   const subject = `📊 ${headline}`;
+  const today   = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
 
-  // 4. Create broadcast in Resend
+  // Create broadcast in Resend
   const createRes = await fetch('https://api.resend.com/broadcasts', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
