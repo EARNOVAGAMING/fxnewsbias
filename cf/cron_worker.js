@@ -342,6 +342,10 @@ if (event.cron === '*/15 * * * *') {
     // Midnight (00:05) run also syncs forecast posts into sitemap
     ...(event.cron === '5 0 * * *' ? [syncForecastSitemap(env).catch(e => console.log('syncForecastSitemap error:', e.message))] : []),
   ]));
+
+} else if (event.cron === '30 6 * * *' && !_isWeekend) {
+  // 06:30 UTC = 2:30pm MYT — send London insight as daily broadcast to all users
+  ctx.waitUntil(sendDailyBroadcast(env).catch(e => console.log('sendDailyBroadcast error:', e.message)));
 }
 }
 };
@@ -1156,7 +1160,158 @@ https://fxnewsbias.com`;
     console.log(`Welcome email fetch error for ${email}:`, e.message);
   }
 
+  // Add user to Resend audience so they receive future broadcasts
+  if (env.RESEND_API_KEY && email) {
+    const firstName = name.split(' ')[0] || '';
+    const lastName  = name.split(' ').slice(1).join(' ') || '';
+    fetch('https://api.resend.com/audiences/7b690548-4533-43f5-a22f-bf862d1366ff/contacts', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, first_name: firstName, last_name: lastName, unsubscribed: false }),
+    }).catch(e => console.log('Resend audience sync error:', e.message));
+  }
+
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
+}
+
+// ============================================
+// DAILY BROADCAST EMAIL (London insight → all users, 06:30 UTC = 2:30pm MYT)
+// ============================================
+
+async function sendDailyBroadcast(env) {
+  if (!env.RESEND_API_KEY) { console.log('sendDailyBroadcast: RESEND_API_KEY missing'); return; }
+
+  // 1. Load articles.json and find latest London insight
+  const manifestRaw = await _insGetFile(env, 'insight/articles.json');
+  if (!manifestRaw) throw new Error('Could not load articles.json');
+  const articles = JSON.parse(manifestRaw);
+  const london = articles.find(a => a.slug && a.slug.includes('-london-'));
+  if (!london) throw new Error('No London insight found in articles.json');
+
+  const { slug, headline, summary, dateLabel, category } = london;
+  const articleUrl = `https://fxnewsbias.com/insight/${slug}`;
+  const ogImage    = `https://fxnewsbias.com/og/insight/${slug}.png`;
+  const sessionTag = category || 'London Session';
+
+  // 2. Fetch the insight HTML and extract 3 content paragraphs
+  const articleHtml = await _insGetFile(env, `insight/${slug}.html`);
+  let sections = ['', '', ''];
+  if (articleHtml) {
+    const paras = [];
+    const pRe = /<p[^>]*>([\s\S]*?)<\/p>/g;
+    let m;
+    while ((m = pRe.exec(articleHtml)) !== null) {
+      const text = m[1].replace(/<[^>]+>/g, '').replace(/&[a-z#0-9]+;/g, c => ({'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&#39;':"'",'&ldquo;':'"','&rdquo;':'"','&ndash;':'–','&mdash;':'—','&nbsp;':' '}[c]||c)).trim();
+      if (text.length > 100) paras.push(text);
+      if (paras.length === 3) break;
+    }
+    sections = [
+      paras[0] || summary,
+      paras[1] || 'Check the live sentiment dashboard for the latest bias scores across all major pairs.',
+      paras[2] || 'The New York session insight drops at 8pm Malaysia time — watch the insights page for the latest.',
+    ];
+  }
+
+  const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
+
+  // 3. Build email HTML
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FXNewsBias</title></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:600px;width:100%;">
+  <tr><td style="background:#0f172a;padding:30px 40px;text-align:center;">
+    <p style="margin:0 0 8px;font-size:11px;color:#475569;letter-spacing:.12em;text-transform:uppercase;font-weight:700;">FXNewsBias · London Session Insight</p>
+    <h1 style="margin:0 0 8px;color:#fff;font-size:22px;font-weight:800;line-height:1.3;">${_insEsc(headline)}</h1>
+    <p style="margin:0;font-size:13px;color:#64748b;">${_insEsc(sessionTag)} · ${today} · 2:30pm 🇲🇾</p>
+  </td></tr>
+  <tr><td style="background:linear-gradient(90deg,#1e3a8a,#1d4ed8);padding:13px 40px;text-align:center;">
+    <p style="margin:0;font-size:13px;color:#bfdbfe;font-weight:500;">London is open — here is today's forex sentiment picture 📊</p>
+  </td></tr>
+  <tr><td style="padding:0;"><img src="${_insEsc(ogImage)}" width="600" style="display:block;width:100%;max-width:600px;" alt="${_insEsc(headline)}"></td></tr>
+  <tr><td style="padding:36px 40px 20px;">
+    <p style="margin:0 0 20px;font-size:16px;color:#0f172a;line-height:1.6;">Hi {{first_name | fallback: "Trader"}},</p>
+    <p style="margin:0 0 28px;font-size:15px;color:#334155;line-height:1.75;">${_insEsc(summary)}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;"><tr><td style="padding:18px 20px;background:#f8fafc;border-left:4px solid #1d4ed8;border-radius:0 8px 8px 0;">
+      <p style="margin:0 0 5px;font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:.08em;text-transform:uppercase;">What Happened</p>
+      <p style="margin:0;font-size:14px;color:#475569;line-height:1.7;">${_insEsc(sections[0])}</p>
+    </td></tr></table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;"><tr><td style="padding:18px 20px;background:#f8fafc;border-left:4px solid #7c3aed;border-radius:0 8px 8px 0;">
+      <p style="margin:0 0 5px;font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:.08em;text-transform:uppercase;">Key Driver</p>
+      <p style="margin:0;font-size:14px;color:#475569;line-height:1.7;">${_insEsc(sections[1])}</p>
+    </td></tr></table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;"><tr><td style="padding:18px 20px;background:#f8fafc;border-left:4px solid #0891b2;border-radius:0 8px 8px 0;">
+      <p style="margin:0 0 5px;font-size:11px;font-weight:700;color:#0891b2;letter-spacing:.08em;text-transform:uppercase;">What to Watch</p>
+      <p style="margin:0;font-size:14px;color:#475569;line-height:1.7;">${_insEsc(sections[2])}</p>
+    </td></tr></table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;"><tr><td align="center">
+      <a href="${articleUrl}" style="display:inline-block;background:#1e40af;color:#fff;font-size:15px;font-weight:700;padding:15px 40px;border-radius:8px;text-decoration:none;">Read Full London Insight →</a>
+    </td></tr></table>
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0 28px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;background:#fefce8;border:1px solid #fde68a;border-radius:10px;"><tr><td style="padding:18px 22px;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#92400e;letter-spacing:.07em;text-transform:uppercase;">☀️ Also Out Today</p>
+      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#0f172a;">Asia Session Insight is live</p>
+      <p style="margin:0 0 12px;font-size:14px;color:#78350f;line-height:1.6;">Missed the Asian open? Today's Asia insight is already published — covering the overnight sentiment picture from Tokyo, Singapore and Sydney.</p>
+      <a href="https://fxnewsbias.com/insight" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:13px;font-weight:700;padding:10px 22px;border-radius:7px;text-decoration:none;">View Asia Insight →</a>
+    </td></tr></table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;"><tr><td style="padding:18px 22px;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#166534;letter-spacing:.07em;text-transform:uppercase;">🕗 Coming Up at 8:00pm 🇲🇾</p>
+      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#0f172a;">New York Session Insight</p>
+      <p style="margin:0;font-size:14px;color:#15803d;line-height:1.6;">The NY session insight drops at 8pm Malaysia time — covering the US open sentiment picture and what to watch heading into the American session.</p>
+    </td></tr></table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;background:linear-gradient(135deg,#1e40af,#7c3aed);border-radius:10px;"><tr><td style="padding:24px 28px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#c4b5fd;letter-spacing:.1em;text-transform:uppercase;">Want More?</p>
+      <h3 style="margin:0 0 8px;color:#fff;font-size:18px;font-weight:800;">Get the Full Sentiment History</h3>
+      <p style="margin:0 0 16px;font-size:13px;color:#c4b5fd;line-height:1.6;">Upgrade to Pro for full history, advanced filters and the weekly AI intelligence brief.</p>
+      <a href="https://fxnewsbias.com/report" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:14px;font-weight:800;padding:12px 28px;border-radius:7px;text-decoration:none;">⭐ Upgrade to Pro — $9.99/mo</a>
+    </td></tr></table>
+    <p style="margin:0 0 4px;font-size:15px;color:#0f172a;">Happy trading,</p>
+    <p style="margin:0 0 28px;font-size:15px;font-weight:700;color:#0f172a;">The FXNewsBias Team</p>
+  </td></tr>
+  <tr><td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:22px 40px;text-align:center;">
+    <p style="margin:0 0 8px;"><a href="https://fxnewsbias.com" style="color:#1e40af;text-decoration:none;font-weight:700;font-size:13px;">fxnewsbias.com</a></p>
+    <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;">Not financial advice &nbsp;·&nbsp; <a href="https://fxnewsbias.com/disclaimer" style="color:#94a3b8;text-decoration:none;">Disclaimer</a> &nbsp;·&nbsp; <a href="https://fxnewsbias.com/contact" style="color:#94a3b8;text-decoration:none;">Contact</a></p>
+    <p style="margin:0;font-size:11px;color:#cbd5e1;line-height:1.7;">You're receiving this because you signed up at fxnewsbias.com<br><a href="{{{unsubscribe}}}" style="color:#94a3b8;text-decoration:none;">Unsubscribe</a></p>
+  </td></tr>
+</table></td></tr></table>
+</body></html>`;
+
+  const subject = `📊 ${headline}`;
+
+  // 4. Create broadcast in Resend
+  const createRes = await fetch('https://api.resend.com/broadcasts', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      audience_id: '7b690548-4533-43f5-a22f-bf862d1366ff',
+      from: `FXNewsBias <${env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com'}>`,
+      subject,
+      html,
+      name: `London Insight — ${dateLabel || today}`,
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!createRes.ok) {
+    const err = await createRes.text();
+    throw new Error(`Resend create broadcast failed: ${createRes.status} ${err.slice(0, 200)}`);
+  }
+  const { id: broadcastId } = await createRes.json();
+  console.log(`sendDailyBroadcast: created broadcast ${broadcastId}`);
+
+  // 5. Send it
+  const sendRes = await fetch(`https://api.resend.com/broadcasts/${broadcastId}/send`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!sendRes.ok) {
+    const err = await sendRes.text();
+    throw new Error(`Resend send broadcast failed: ${sendRes.status} ${err.slice(0, 200)}`);
+  }
+  console.log(`sendDailyBroadcast: sent broadcast ${broadcastId} — "${subject}"`);
 }
 
 // ============================================
