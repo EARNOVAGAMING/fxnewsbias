@@ -1386,7 +1386,7 @@ async function sendDailyBroadcast(env) {
 
   const london = await _getLatestLondonInsight(env);
   const { headline, dateLabel } = london;
-  const html = await _buildBroadcastHtml(env, '{{first_name | default: "Trader"}}');
+  const html = await _buildBroadcastHtml(env, '{{first_name | fallback: "Trader"}}');
   if (!html) throw new Error('Could not build broadcast HTML');
 
   const subject = `📊 ${headline}`;
