@@ -1177,7 +1177,7 @@ https://fxnewsbias.com`;
 
   // Add user to Resend audience so they receive future broadcasts
   if (env.RESEND_API_KEY && email) {
-    const firstName = name.split(' ')[0] || '';
+    const firstName = name.split(' ')[0] || 'Trader';   // default so {{first_name}} renders correctly
     const lastName  = name.split(' ').slice(1).join(' ') || '';
     fetch('https://api.resend.com/audiences/7b690548-4533-43f5-a22f-bf862d1366ff/contacts', {
       method: 'POST',
@@ -1221,7 +1221,7 @@ async function backfillResendAudience(env) {
 
   // 2. Add each to Resend audience
   for (const { email, username } of allUsers) {
-    const firstName = username.split(' ')[0] || '';
+    const firstName = username.split(' ')[0] || 'Trader';  // default so {{first_name}} renders correctly
     const lastName  = username.split(' ').slice(1).join(' ') || '';
     try {
       const resp = await fetch(`https://api.resend.com/audiences/${AUDIENCE_ID}/contacts`, {
@@ -1386,7 +1386,7 @@ async function sendDailyBroadcast(env) {
 
   const london = await _getLatestLondonInsight(env);
   const { headline, dateLabel } = london;
-  const html = await _buildBroadcastHtml(env, '{{first_name | fallback: "Trader"}}');
+  const html = await _buildBroadcastHtml(env, '{{first_name}}');  // Resend substitutes from contact data; no pipe syntax supported
   if (!html) throw new Error('Could not build broadcast HTML');
 
   const subject = `📊 ${headline}`;
