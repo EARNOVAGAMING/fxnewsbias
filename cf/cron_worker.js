@@ -1375,7 +1375,7 @@ async function _buildBroadcastHtml(env, firstName = 'Trader') {
   <tr><td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:22px 40px;text-align:center;">
     <p style="margin:0 0 8px;"><a href="https://fxnewsbias.com" style="color:#1e40af;text-decoration:none;font-weight:700;font-size:13px;">fxnewsbias.com</a></p>
     <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;">Not financial advice &nbsp;·&nbsp; <a href="https://fxnewsbias.com/disclaimer" style="color:#94a3b8;text-decoration:none;">Disclaimer</a> &nbsp;·&nbsp; <a href="https://fxnewsbias.com/contact" style="color:#94a3b8;text-decoration:none;">Contact</a></p>
-    <p style="margin:0;font-size:11px;color:#cbd5e1;line-height:1.7;">You're receiving this because you signed up at fxnewsbias.com<br><a href="{{unsubscribe_url}}" style="color:#94a3b8;text-decoration:none;">Unsubscribe</a></p>
+    <p style="margin:0;font-size:11px;color:#cbd5e1;line-height:1.7;">You're receiving this because you signed up at fxnewsbias.com<br><a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#94a3b8;text-decoration:none;">Unsubscribe</a></p>
   </td></tr>
 </table></td></tr></table>
 </body></html>`;
