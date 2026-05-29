@@ -17,6 +17,11 @@ export default {
     // All other non-GET/HEAD methods (POST, PUT …) go straight to ASSETS.
     if (request.method !== 'GET' && request.method !== 'HEAD') return env.ASSETS.fetch(request);
 
+    // Sitemap — refresh lastmod to today on dynamic (hourly/daily) pages so
+    // Google re-crawls hub pages and discovers new articles faster. Article
+    // and legal pages (weekly/monthly/yearly) keep their real publish dates.
+    if (url.pathname === '/sitemap.xml') return serveSitemap(request, env);
+
     // .html → clean URL: single 301. _redirects rules exist but the ASSETS
     // binding serves exact file matches before redirect rules are evaluated,
     // so these must fire here in the Worker before any file lookup occurs.
@@ -94,6 +99,34 @@ async function serveCurrencyPage(request, code, env) {
 
   if (!assetResp.ok) return assetResp;
   return injectAndServe(await assetResp.text(), seoHtml, assetResp);
+}
+
+// ── Sitemap lastmod refresh ─────────────────────────────────────────────────
+async function serveSitemap(request, env) {
+  const assetUrl = new URL(request.url);
+  assetUrl.pathname = '/sitemap.xml';
+
+  const resp = await env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+  if (!resp.ok) return resp;
+
+  let xml = await resp.text();
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Per <url> block: only refresh entries that change frequently
+  // (changefreq hourly|daily). Leaves article/legal pages untouched.
+  xml = xml.replace(/<url>[\s\S]*?<\/url>/g, block =>
+    /<changefreq>(hourly|daily)<\/changefreq>/.test(block)
+      ? block.replace(/<lastmod>[^<]*<\/lastmod>/, `<lastmod>${today}</lastmod>`)
+      : block
+  );
+
+  return new Response(xml, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  });
 }
 
 // ── Shared inject logic ───────────────────────────────────────────────────────
