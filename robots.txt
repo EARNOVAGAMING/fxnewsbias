@@ -3,7 +3,6 @@ Allow: /
 Disallow: /admin
 Disallow: /login
 Disallow: /register
-Disallow: /profile
 Disallow: /auth-action
 Disallow: /auth-action.html
 
