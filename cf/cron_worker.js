@@ -3219,7 +3219,7 @@ Hard rules — violating any of these will make the article unusable:
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {'Content-Type':'application/json','x-api-key':env.CLAUDE_API_KEY,'anthropic-version':'2023-06-01'},
-    body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:1500, messages:[{role:'user',content:prompt}]}),
+    body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:3000, messages:[{role:'user',content:prompt}]}),
     signal: AbortSignal.timeout(90000), // 90s — Haiku needs up to ~35s under peak API load; 90s = safe ceiling
   });
   if (!resp.ok) throw new Error(`Anthropic HTTP ${resp.status}`);
