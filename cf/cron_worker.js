@@ -3514,6 +3514,8 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 .art-sky{float:right;margin:0 0 16px 24px;}.art-sky-b{text-align:center;margin:32px auto;}html[data-pro="1"] .art-sky,html[data-pro="1"] .art-sky-b{display:none!important;}@media(max-width:768px){.art-sky,.art-sky-b{display:none!important;}}</style>
 <script type="application/ld+json">${ld}</script>
 <script type="application/ld+json">${breadcrumbLd}</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6X181TFHYY');</script>
 <script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
 <script>(function(){var p=localStorage.getItem("fxnb_is_pro")==="true";if(p)document.documentElement.dataset.pro="1";if(!p){var s=document.createElement("script");s.async=true;s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4857533156344939";s.crossOrigin="anonymous";document.head.appendChild(s);}window.addEventListener("userLoaded",function(e){if(e.detail&&e.detail.isPro){localStorage.setItem("fxnb_is_pro","true");document.documentElement.dataset.pro="1";document.querySelectorAll('ins.adsbygoogle,.adsbygoogle,iframe[id^="google_ads"],iframe[src*="googleads"]').forEach(function(el){el.style.display="none";});}else if(e.detail&&e.detail.isPro===false){localStorage.setItem("fxnb_is_pro","false");}});})();</script>
 </head><body>
@@ -3573,6 +3575,8 @@ function _insRenderIndex(articles){
 footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}.footer-inner{max-width:1280px;margin:0 auto;}.footer-bottom{text-align:center;font-size:12px;padding-top:16px;border-top:1px solid #1e293b;color:#64748b;}.footer-bottom a{color:#94a3b8;}</style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},{"@type":"ListItem","position":2,"name":"Daily Insights","item":"https://fxnewsbias.com/insight/"}]}</script>
 <script type="application/ld+json">${collectionLd}</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6X181TFHYY');</script>
 <script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
 </head><body>
 <div class="topbar"><div class="topbar-inner"><div><span style="color:#94a3b8;">📅 ${dateStr}</span></div><div><a href="/news" style="color:#94a3b8;margin-left:14px;">News</a></div></div></div>
