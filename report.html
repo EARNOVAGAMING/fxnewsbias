@@ -76,6 +76,29 @@ nav.nav{background:#0f172a;border-bottom:1px solid #1e293b;}
 
 /* ── SIDEBAR ── */
 .sidebar{position:sticky;top:12px;}
+@media(max-width:900px){
+  .sidebar{position:static!important;}
+  #archive-list{display:none;}
+  #archive-list.sb-open{display:block;}
+  .sb-mobile-toggle{display:flex!important;}
+}
+.sb-mobile-toggle{
+  display:none;
+  width:100%;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;
+  padding:11px 16px;
+  margin-bottom:8px;
+  cursor:pointer;
+  color:#d3dbe8;
+  font-size:13px;
+  font-weight:600;
+  text-align:left;
+  align-items:center;
+  justify-content:space-between;
+  font-family:inherit;
+}
 .sb-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;box-shadow:var(--shadow-sm);}
 .sb-head{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:12px 14px 8px;}
 .sb-item{display:block;padding:9px 14px;border-top:1px solid #f3f4f6;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;transition:background .2s ease,color .2s ease;}
@@ -319,6 +342,9 @@ footer{background:#080c14;border-top:1px solid rgba(255,255,255,.05);}
 .rpt-layout{gap:18px;}
 @media(max-width:640px){.ccy-grid{grid-template-columns:1fr 1fr!important;}.stats-strip{grid-template-columns:1fr 1fr!important;}.section{padding:18px 16px!important;}.rpt-title{font-size:20px!important;}}
 @media(max-width:400px){.ccy-grid{grid-template-columns:1fr!important;}}
+/* mobile archive toggle dark-theme override */
+.sb-mobile-toggle{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#d3dbe8;}
+.sb-mobile-toggle:hover{background:rgba(255,255,255,.08);}
 /* keep the printed PDF readable (light) */
 @media print{
   body{background:#fff!important;color:#111827!important;}
@@ -377,6 +403,9 @@ footer{background:#080c14;border-top:1px solid rgba(255,255,255,.05);}
 
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
+      <button class="sb-mobile-toggle" id="sb-toggle" onclick="toggleSbArchive()">
+        <span>📋 Past Reports</span><span id="sb-toggle-icon">▾</span>
+      </button>
       <div class="sb-card" id="archive-list">
         <div class="sb-head">Past Reports</div>
         <div style="padding:12px 14px;font-size:12px;color:var(--muted);">Loading…</div>
@@ -951,6 +980,14 @@ function renderReport(r) {
       ⚠️ <strong>Disclaimer:</strong> This report is AI-generated using publicly available news sentiment data and is for informational purposes only. It is not financial advice. Forex trading involves significant risk of loss. Sentiment scores reflect news tone only — not price targets or trading signals. Always apply your own analysis, risk management, and consult a qualified financial adviser before trading. Past sentiment patterns do not predict future price movements. FXNewsBias accepts no liability for trading losses.
     </div>
   `;
+}
+
+// ── MOBILE ARCHIVE TOGGLE ──
+function toggleSbArchive() {
+  const el = document.getElementById('archive-list');
+  const ic = document.getElementById('sb-toggle-icon');
+  el.classList.toggle('sb-open');
+  ic.textContent = el.classList.contains('sb-open') ? '▴' : '▾';
 }
 
 // Date topbar
