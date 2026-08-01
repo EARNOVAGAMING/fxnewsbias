@@ -270,6 +270,8 @@ import('https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js').then(async (
     loadSentiment().catch(()=>$('spark-grid').innerHTML='<div class="muted">Could not load sentiment.</div>');
     loadNews().catch(()=>$('news-list').innerHTML='<div class="muted">Could not load news.</div>');
     $('export-csv').onclick=exportCsv;
+    // Only real paying subscribers (Stripe customer) get the billing button; comped/allowlist users have no billing to manage.
+    $('manage-sub').style.display = st.hasBilling ? '' : 'none';
     $('manage-sub').onclick=async()=>{
       const b=$('manage-sub');b.disabled=true;b.textContent='Opening…';
       try{

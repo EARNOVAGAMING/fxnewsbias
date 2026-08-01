@@ -528,8 +528,24 @@ onAuthStateChanged(auth, async (user) => {
         <a href="/pro" class="btn btn-primary" style="text-decoration:none;">⭐ Pro Dashboard</a>
         <a href="/history" class="btn btn-outline" style="text-decoration:none;">📊 History</a>
         <a href="/report" class="btn btn-outline" style="text-decoration:none;">📄 Weekly Report</a>
-        <button class="btn btn-outline" onclick="window.manageSubscription(this)">💳 Manage subscription</button>
       `;
+      // Only real paying subscribers (with a Stripe customer) get the billing-portal button.
+      // Comped/allowlist accounts have no billing to manage, so it's hidden for them.
+      (async () => {
+        try {
+          const idToken = await user.getIdToken();
+          const st = await fetch('https://fxnewsbias-cron.dineshsanther123gf.workers.dev/pro-status', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken })
+          }).then(r => r.json());
+          if (st && st.hasBilling) {
+            const b = document.createElement('button');
+            b.className = 'btn btn-outline';
+            b.textContent = '💳 Manage subscription';
+            b.onclick = () => window.manageSubscription(b);
+            subActions.appendChild(b);
+          }
+        } catch (e) {}
+      })();
     } else {
       badge.innerHTML = '<span class="free-badge">FREE PLAN</span>';
     }
