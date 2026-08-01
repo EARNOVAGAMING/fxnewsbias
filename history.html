@@ -149,6 +149,54 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},{"@type":"ListItem","position":2,"name":"Sentiment History","item":"https://fxnewsbias.com/history"}]}
 </script>
+<style id="pro-premium">
+/* ── PREMIUM DARK PRO THEME — institutional analytics ── */
+body{background:#0a0e17;color:#e8edf4;}
+.topbar{background:#080c14;border-bottom:1px solid rgba(255,255,255,.05);}
+.content{max-width:1200px;margin:26px auto 8px;}
+.page-head{background:radial-gradient(1200px 300px at 15% -40%,rgba(59,130,246,.14),transparent),linear-gradient(135deg,#0b1120,#131c30);border-bottom:1px solid rgba(255,255,255,.06);padding:36px 0 30px;}
+.page-title{font-size:31px;color:#f8fafc;letter-spacing:-.7px;}
+.page-sub{color:#9aa7bd;font-size:14px;max-width:660px;line-height:1.6;}
+.pro-badge-head{background:linear-gradient(135deg,#f7c85a,#e0912a);color:#241700;font-weight:800;letter-spacing:.09em;box-shadow:0 2px 10px rgba(224,145,42,.3);}
+.breadcrumb{color:#5b6a83;}.breadcrumb a{color:#8ea2c0;}.breadcrumb a:hover{color:#cbd5e1;}
+/* controls */
+.controls{background:#0f1726;border:1px solid rgba(255,255,255,.06);box-shadow:0 2px 14px rgba(0,0,0,.28);border-radius:14px;padding:14px 16px;gap:14px;}
+.curr-tab{background:#0b1220;border:1px solid rgba(255,255,255,.07);color:#c3cddd;padding:8px 13px;border-radius:9px;font-weight:600;}
+.curr-tab:hover{border-color:rgba(59,130,246,.5);color:#93c5fd;background:rgba(59,130,246,.08);}
+.curr-tab.active{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(37,99,235,.4);}
+.range-tab{background:#0b1220;border:1px solid rgba(255,255,255,.07);color:#c3cddd;border-radius:9px;font-weight:600;}
+.range-tab:hover{border-color:rgba(255,255,255,.2);color:#e8edf4;}
+.range-tab.active{background:#eef2f8;color:#0a0e17;border-color:#eef2f8;font-weight:800;}
+/* stat cards */
+.stats-row{gap:14px;}
+.stat-card{background:linear-gradient(165deg,#111b2c,#0d1524);border:1px solid rgba(255,255,255,.06);border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,.3);position:relative;overflow:hidden;}
+.stat-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#3b82f6,rgba(59,130,246,0));opacity:.6;}
+.stat-card:hover{border-color:rgba(59,130,246,.35);box-shadow:0 10px 30px rgba(0,0,0,.45);transform:translateY(-3px);}
+.stat-label{color:#7c8aa3;letter-spacing:.09em;font-weight:700;}
+.stat-value{color:#f1f5f9;font-size:26px;letter-spacing:-.5px;}
+.stat-sub{color:#5f6d84;}
+.bull-color{color:#34d399!important;}.bear-color{color:#fb7185!important;}.neut-color{color:#fbbf24!important;}
+/* charts */
+.chart-card{background:linear-gradient(165deg,#111b2c,#0d1524);border:1px solid rgba(255,255,255,.06);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.34);padding:22px 22px 16px;}
+.chart-title{color:#f1f5f9;font-size:17px;}
+.chart-subtitle{color:#5f6d84;}
+.chart-wrap{height:350px;}
+.chart-loading{color:#64748b;}
+.all-grid{gap:16px;}
+.mini-chart-card{background:linear-gradient(165deg,#111b2c,#0d1524);border:1px solid rgba(255,255,255,.06);border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,.28);}
+.mini-chart-card:hover{border-color:rgba(59,130,246,.35);transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.42);}
+.mini-chart-curr{color:#e8edf4;}
+footer{background:#080c14;border-top:1px solid rgba(255,255,255,.05);margin-top:44px;}
+/* pro gate (non-subscribers) */
+.pro-gate-card{background:linear-gradient(165deg,#111b2c,#0d1524);border:1px solid rgba(255,255,255,.08);box-shadow:0 24px 70px rgba(0,0,0,.55);}
+.pro-gate-title{color:#f8fafc;}
+.pro-gate-desc{color:#9aa7bd;}
+.pro-gate-feature{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);color:#c3cddd;}
+.pro-gate-btn{background:linear-gradient(135deg,#f7c85a,#e0912a);color:#241700;font-weight:800;box-shadow:0 6px 18px rgba(224,145,42,.35);}
+.pro-gate-btn:hover{background:linear-gradient(135deg,#f5cd7a,#e89a30);}
+@media(max-width:768px){.page-title{font-size:24px;}.chart-wrap{height:270px;}.stat-value{font-size:22px;}.controls{flex-direction:column;align-items:stretch;}}
+@media(max-width:420px){.curr-tab{padding:7px 10px;font-size:12px;}.content{padding:0 14px;}.chart-card{padding:18px 16px 12px;}}
+</style>
 </head>
 <body>
 
@@ -483,14 +531,14 @@ async function loadHistory(currency, days) {
         c.save();
         c.beginPath();
         c.setLineDash([6, 4]);
-        c.strokeStyle = 'rgba(245,158,11,0.75)';
+        c.strokeStyle = 'rgba(251,191,36,0.55)';
         c.lineWidth = 1.5;
         c.moveTo(left, y);
         c.lineTo(right, y);
         c.stroke();
         // Label
         c.setLineDash([]);
-        c.fillStyle = '#d97706';
+        c.fillStyle = '#fbbf24';
         c.font = '700 10px Inter,sans-serif';
         c.textAlign = 'left';
         c.fillText('NEUTRAL 50', left + 4, y - 4);
@@ -545,7 +593,7 @@ async function loadHistory(currency, days) {
           y: {
             min: yMin,
             max: yMax,
-            grid: { color: '#f1f5f9' },
+            grid: { color: 'rgba(255,255,255,.055)' },
             ticks: {
               maxTicksLimit: 6,
               color: '#94a3b8',
@@ -589,7 +637,7 @@ async function loadAllCurrencies() {
 
       const latest = currData[currData.length - 1];
       const scores = currData.map(d => d.score);
-      const badgeColor = latest.bias === 'Bullish' ? '#d1fae5;color:#065f46' : latest.bias === 'Bearish' ? '#fee2e2;color:#991b1b' : '#fef3c7;color:#92400e';
+      const badgeColor = latest.bias === 'Bullish' ? 'rgba(52,211,153,.16);color:#6ee7b7' : latest.bias === 'Bearish' ? 'rgba(251,113,133,.16);color:#fda4af' : 'rgba(251,191,36,.16);color:#fcd34d';
 
       const card = document.createElement('div');
       card.className = 'mini-chart-card';
