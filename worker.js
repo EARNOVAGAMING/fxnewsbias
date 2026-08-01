@@ -360,10 +360,17 @@ async function serveCalendarPage(request, env) {
   let html = await assetResp.text();
   const sentMap = {};
   for (const r of sentRows || []) if (!sentMap[r.currency]) sentMap[r.currency] = { bias: r.bias, score: r.score };
+  // Recurring rule-based events show 21 days out; curated central-bank decisions
+  // show up to ~6 weeks out (so the next FOMC/ECB is always visible). A full year
+  // of seeded dates can live in economic_events — only the in-window ones render,
+  // so the calendar rolls itself forward with no maintenance.
+  const now = new Date();
+  const startOfDay = new Date(now); startOfDay.setUTCHours(0, 0, 0, 0);
+  const horizon = new Date(startOfDay.getTime() + 45 * 864e5);
   const curated = (overrides || [])
     .map(o => ({ when: new Date(o.when), currency: String(o.currency || '').toUpperCase(), impact: o.impact || 'High', title: o.title, detail: o.detail || '' }))
-    .filter(o => o.title && !isNaN(o.when));
-  const events = [...buildRecurringEvents(new Date(), 21), ...curated];
+    .filter(o => o.title && !isNaN(o.when) && o.when >= startOfDay && o.when <= horizon);
+  const events = [...buildRecurringEvents(now, 21), ...curated];
   if (html.includes('<!-- CALENDAR_EVENTS -->')) {
     html = html.replace('<!-- CALENDAR_EVENTS -->', renderCalendar(events, sentMap) || '<p class="cal-empty">No major scheduled events in the next three weeks.</p>');
   }
