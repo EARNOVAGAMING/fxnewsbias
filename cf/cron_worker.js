@@ -151,6 +151,12 @@ try {
   return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
 }
 }
+if (url.pathname === '/ingest-gsc') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const days = parseInt(url.searchParams.get('days') || '7', 10);
+const result = await ingestGscPerformance(env, { days: Math.max(1, Math.min(days, 40)) });
+return new Response(JSON.stringify(result, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
+}
 if (url.pathname === '/run-insight') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const result = await generateDailyInsight(env, url.searchParams.get('session') || undefined);
@@ -347,6 +353,8 @@ if (event.cron === '*/15 * * * *') {
     cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns error:', e.message)),
     cleanupStepRuns(env).catch(e => console.log('cleanupStepRuns error:', e.message)),
     pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow error:', e.message)),
+    // Once/day at 03:15 UTC: pull Search Console performance -> gsc_performance (E1).
+    ...(new Date().getUTCHours() === 3 ? [ingestGscPerformance(env).catch(e => console.log('ingestGscPerformance error:', e.message))] : []),
   ]));
 
 } else if (SESSION_BY_CRON[event.cron] && !_isWeekend) {
@@ -760,6 +768,78 @@ return tokenData.access_token || null;
 console.log('Firebase token error:', e.message);
 return null;
 }
+}
+
+// ============================================
+// GOOGLE SERVICE-ACCOUNT TOKEN (generic) + GSC PERFORMANCE INGESTION (E1)
+// Daily Search Console pull -> gsc_performance. Read-only external; folded into
+// the existing 15 */3 cleanup cron (no new trigger). Free (Google quota).
+// ============================================
+async function getGoogleAccessToken(clientEmail, privateKeyPem, scope) {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const payload = { iss: clientEmail, sub: clientEmail, aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600, scope };
+    const b64u = (s) => btoa(s).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const signingInput = `${b64u(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))}.${b64u(JSON.stringify(payload))}`;
+    const keyData = privateKeyPem.replace(/\\n/g, '\n')
+      .replace('-----BEGIN PRIVATE KEY-----', '').replace('-----END PRIVATE KEY-----', '').replace(/\s/g, '');
+    const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
+    const cryptoKey = await crypto.subtle.importKey('pkcs8', binaryKey, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+    const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(signingInput));
+    const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${signingInput}.${sigB64}`,
+      signal: AbortSignal.timeout(25000),
+    });
+    const data = await res.json();
+    if (!data.access_token) console.log('Google token error:', JSON.stringify(data).slice(0, 200));
+    return data.access_token || null;
+  } catch (e) { console.log('getGoogleAccessToken error:', e.message); return null; }
+}
+
+async function ingestGscPerformance(env, opts = {}) {
+  if (!env.GSC_SA_JSON) { console.log('ingestGscPerformance: GSC_SA_JSON not set'); return { ok: false, reason: 'no-credentials' }; }
+  let sa;
+  try { sa = JSON.parse(env.GSC_SA_JSON); } catch (e) { console.log('GSC_SA_JSON parse error:', e.message); return { ok: false, reason: 'bad-json' }; }
+  const token = await getGoogleAccessToken(sa.client_email, sa.private_key, 'https://www.googleapis.com/auth/webmasters.readonly');
+  if (!token) return { ok: false, reason: 'no-token' };
+
+  const site = 'sc-domain:fxnewsbias.com';
+  const days = opts.days || 3;                     // rolling window; upsert makes re-ingest idempotent
+  const end = new Date(Date.now() - 2 * 864e5);    // GSC finalises ~2 days back
+  const start = new Date(end.getTime() - (days - 1) * 864e5);
+  const fmt = (d) => d.toISOString().slice(0, 10);
+  const base = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`;
+
+  let upserted = 0;
+  for (const dim of ['query', 'page']) {
+    const res = await fetch(base, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ startDate: fmt(start), endDate: fmt(end), dimensions: ['date', dim], rowLimit: 5000 }),
+      signal: AbortSignal.timeout(25000),
+    });
+    if (!res.ok) { console.log(`GSC ${dim} ${res.status}:`, (await res.text()).slice(0, 200)); continue; }
+    const rows = ((await res.json()).rows || []).map(r => ({
+      date: r.keys[0], dimension: dim, key: String(r.keys[1] || '').slice(0, 2000),
+      clicks: Math.round(r.clicks || 0), impressions: Math.round(r.impressions || 0),
+      ctr: r.ctr || 0, position: r.position || 0, fetched_at: new Date().toISOString(),
+    })).filter(r => r.key);
+    for (let i = 0; i < rows.length; i += 500) {
+      const chunk = rows.slice(i, i + 500);
+      const up = await fetch(`${env.SUPABASE_URL}/rest/v1/gsc_performance?on_conflict=date,dimension,key`, {
+        method: 'POST',
+        headers: { 'apikey': env.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+          'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(chunk), signal: AbortSignal.timeout(25000),
+      });
+      if (!up.ok) console.log(`GSC upsert ${dim} ${up.status}:`, (await up.text()).slice(0, 200));
+      else upserted += chunk.length;
+    }
+  }
+  console.log(`ingestGscPerformance: upserted ${upserted} rows (${fmt(start)}..${fmt(end)})`);
+  return { ok: true, rows: upserted, window: `${fmt(start)}..${fmt(end)}` };
 }
 
 // ============================================
