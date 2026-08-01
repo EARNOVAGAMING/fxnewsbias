@@ -525,8 +525,10 @@ onAuthStateChanged(auth, async (user) => {
         <div class="sub-feature"><span class="check">✓</span> Priority support</div>
       `;
       subActions.innerHTML = `
-        <a href="/history" class="btn btn-primary" style="text-decoration:none;">📊 View History</a>
+        <a href="/pro" class="btn btn-primary" style="text-decoration:none;">⭐ Pro Dashboard</a>
+        <a href="/history" class="btn btn-outline" style="text-decoration:none;">📊 History</a>
         <a href="/report" class="btn btn-outline" style="text-decoration:none;">📄 Weekly Report</a>
+        <button class="btn btn-outline" onclick="window.manageSubscription(this)">💳 Manage subscription</button>
       `;
     } else {
       badge.innerHTML = '<span class="free-badge">FREE PLAN</span>';
@@ -587,6 +589,23 @@ async function checkProStatus(email) {
   }
   return false;
 }
+
+window.manageSubscription = async function(btn) {
+  const CRON = 'https://fxnewsbias-cron.dineshsanther123gf.workers.dev';
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Opening…'; }
+  try {
+    const u = auth.currentUser;
+    if (!u) { alert('Please log in again.'); return; }
+    const idToken = await u.getIdToken();
+    const res = await fetch(CRON + '/create-portal-session', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken })
+    }).then(r => r.json());
+    if (res.url) { window.location.href = res.url; return; }
+    alert(res.message || 'The billing portal is not available yet. Please contact support.');
+  } catch (e) { alert('Could not open the billing portal.'); }
+  if (btn) { btn.disabled = false; btn.textContent = orig; }
+};
 
 window.toggleEditUsername = function() {
   const display = document.getElementById('username-display');

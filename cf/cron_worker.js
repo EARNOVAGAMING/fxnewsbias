@@ -4067,6 +4067,8 @@ async function pruneStaleInsights(env) {
 // Firebase ID token. Alert delivery runs in the sentiment cron.
 // ============================================================
 const _CCYS = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'NZD'];
+// Emails always treated as Pro (owner / staff / comps), regardless of Stripe status.
+const PRO_ALLOWLIST = ['dineshsanther123gf@gmail.com'];
 const _PRO_CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -4090,13 +4092,14 @@ async function _verifyFirebaseUser(env, idToken) {
 }
 
 async function _getSubscriptionDoc(env, email) {
+  const _allow = PRO_ALLOWLIST.includes(String(email || '').toLowerCase());
   const token = await getFirebaseToken(env);
-  if (!token) return { exists: false, isPro: false, alerts: { enabled: false, email: true, currencies: [] } };
+  if (!token) return { exists: false, isPro: _allow, alerts: { enabled: false, email: true, currencies: [] } };
   const pid = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
   const r = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents/subscriptions/${_fsDocId(email)}`, {
     headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20000),
   });
-  if (!r.ok) return { exists: false, isPro: false, alerts: { enabled: false, email: true, currencies: [] } };
+  if (!r.ok) return { exists: false, isPro: _allow, alerts: { enabled: false, email: true, currencies: [] } };
   const f = (await r.json()).fields || {};
   const af = f.alerts && f.alerts.mapValue && f.alerts.mapValue.fields;
   const alerts = af ? {
@@ -4106,7 +4109,7 @@ async function _getSubscriptionDoc(env, email) {
   } : { enabled: false, email: true, currencies: [] };
   return {
     exists: true,
-    isPro: !!(f.isPro && f.isPro.booleanValue),
+    isPro: _allow || !!(f.isPro && f.isPro.booleanValue),
     plan: (f.plan && f.plan.stringValue) || 'free',
     subStatus: (f.subStatus && f.subStatus.stringValue) || '',
     currentPeriodEnd: (f.currentPeriodEnd && f.currentPeriodEnd.stringValue) || '',
