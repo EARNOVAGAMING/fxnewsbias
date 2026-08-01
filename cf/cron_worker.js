@@ -4068,7 +4068,7 @@ async function pruneStaleInsights(env) {
 // ============================================================
 const _CCYS = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'NZD'];
 // Emails always treated as Pro (owner / staff / comps), regardless of Stripe status.
-const PRO_ALLOWLIST = ['dineshsanther123gf@gmail.com'];
+const PRO_ALLOWLIST = ['dineshsanther123gf@gmail.com', 'pavithrathanabal@gmail.com'];
 const _PRO_CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
