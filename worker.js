@@ -34,6 +34,7 @@ export default {
       '/privacy.html': '/privacy', '/terms.html': '/terms',
       '/login.html': '/login', '/register.html': '/register',
       '/history.html': '/history', '/report.html': '/report',
+      '/pro.html': '/pro', '/profile.html': '/profile',
     };
     const cleanPath = HTML_REDIRECTS[url.pathname];
     if (cleanPath) {

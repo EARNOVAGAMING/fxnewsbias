@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico">
+<title>Pro Dashboard | FXNewsBias</title>
+<meta name="description" content="Your FXNewsBias Pro dashboard — sentiment history charts, custom bias-flip alerts, per-news breakdowns and data export.">
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://fxnewsbias.com/pro">
+<link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;line-height:1.5;-webkit-font-smoothing:antialiased;}
+:root{--bg-soft:#1e293b;--border:#334155;--text:#e2e8f0;--text-soft:#94a3b8;--text-muted:#64748b;--accent:#2563eb;--accent-hover:#1d4ed8;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;--radius:10px;--radius-sm:8px;--radius-lg:14px;}
+a{color:#60a5fa;text-decoration:none;}
+header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.4);}
+.header-inner{max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;}
+.logo{display:inline-flex;align-items:center;gap:10px;}.logo img{height:36px;}
+nav ul{list-style:none;display:flex;gap:24px;}nav a{color:#94a3b8;font-weight:500;font-size:14px;}nav a:hover{color:#60a5fa;}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn{padding:9px 18px;border-radius:var(--radius-sm);font-weight:600;font-size:13px;cursor:pointer;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-outline{background:transparent;color:#f1f5f9;border:1px solid rgba(255,255,255,.2);}
+.btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover{background:var(--accent-hover);}
+.wrap{max-width:1200px;margin:28px auto;padding:0 24px;}
+.hero{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:8px;}
+.hero h1{font-size:26px;font-weight:800;letter-spacing:-.4px;color:#f8fafc;}
+.hero p{color:var(--text-soft);font-size:14px;margin-top:4px;}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;}
+.pill-pro{background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1a1a;}
+.pill-trial{background:#1e40af;color:#dbeafe;}
+.grid{display:grid;gap:16px;}
+.card{background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;}
+.card h2{font-size:15px;font-weight:800;color:#f1f5f9;margin-bottom:14px;display:flex;align-items:center;gap:8px;letter-spacing:-.2px;}
+.card .sub{font-size:12px;color:var(--text-muted);font-weight:500;}
+.spark-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.spark{background:#0f172a;border:1px solid var(--border);border-radius:var(--radius);padding:14px;position:relative;}
+.spark-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+.spark-ccy{font-size:15px;font-weight:800;color:#f1f5f9;}
+.spark-score{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;}
+.spark-bias{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:4px;}
+.b-Bullish{background:rgba(16,185,129,.15);color:#6ee7b7;}.b-Bearish{background:rgba(239,68,68,.15);color:#fca5a5;}.b-Neutral{background:rgba(245,158,11,.15);color:#fcd34d;}
+.spark svg{display:block;width:100%;height:44px;margin-top:6px;}
+.spark-drivers{font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.5;}
+.news-row{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.news-row:last-child{border-bottom:none;}
+.imp{font-size:9px;font-weight:800;text-transform:uppercase;padding:3px 7px;border-radius:4px;height:fit-content;white-space:nowrap;}
+.imp-High{background:rgba(239,68,68,.15);color:#fca5a5;}.imp-Medium{background:rgba(245,158,11,.15);color:#fcd34d;}.imp-Low{background:rgba(148,163,184,.15);color:#cbd5e1;}
+.news-body .t{font-size:14px;font-weight:600;color:#e2e8f0;line-height:1.4;margin-bottom:5px;}
+.news-body .m{font-size:11px;color:var(--text-muted);}
+.affects{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
+.ccy-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:#1e293b;color:#cbd5e1;border:1px solid var(--border);}
+.alert-ccys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;}
+.alert-ccy{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;background:#0f172a;border:1px solid var(--border);border-radius:8px;padding:9px 10px;cursor:pointer;user-select:none;}
+.alert-ccy.on{border-color:var(--accent);background:rgba(37,99,235,.12);color:#93c5fd;}
+.toggle{position:relative;display:inline-block;width:44px;height:24px;}
+.toggle input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;inset:0;background:#475569;border-radius:24px;transition:.2s;}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
+input:checked+.slider{background:var(--accent);}input:checked+.slider:before{transform:translateX(20px);}
+.row-between{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+.muted{color:var(--text-soft);font-size:13px;}
+.gate{max-width:520px;margin:60px auto;text-align:center;background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius-lg);padding:44px 28px;}
+.gate .ico{font-size:44px;margin-bottom:14px;}
+.gate h2{font-size:22px;font-weight:800;color:#f8fafc;margin-bottom:10px;}
+.gate p{color:var(--text-soft);font-size:14px;margin-bottom:22px;max-width:380px;margin-left:auto;margin-right:auto;}
+.gate .feats{text-align:left;display:inline-block;margin:0 auto 22px;}
+.gate .feats div{font-size:13px;color:#cbd5e1;margin-bottom:8px;}
+.hidden{display:none!important;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid var(--border);color:#e2e8f0;padding:12px 20px;border-radius:10px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;}
+.toast.show{opacity:1;}
+footer{background:#080d1a;color:#64748b;padding:28px 0;margin-top:48px;text-align:center;font-size:13px;border-top:1px solid #1a2744;}
+footer a{color:#94a3b8;margin:0 10px;}
+@media(max-width:768px){nav ul{display:none;}.wrap{padding:0 16px;}.alert-ccys{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+<header><div class="header-inner">
+  <a href="/" class="logo"><img src="/logo-fxnb.png?v=2" alt="FX News Bias"></a>
+  <nav><ul>
+    <li><a href="/">Markets</a></li><li><a href="/currencies">Currencies</a></li>
+    <li><a href="/pairs">Pairs</a></li><li><a href="/news">News</a></li>
+    <li><a href="/calendar">Calendar</a></li><li><a href="/insight/">Insights</a></li>
+  </ul></nav>
+  <div class="nav-actions" id="nav-actions">
+    <a href="/profile" class="btn btn-outline">Account</a>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <!-- LOADING -->
+  <div id="state-loading" class="gate"><div class="ico">⏳</div><h2>Loading your dashboard…</h2></div>
+
+  <!-- LOGGED OUT -->
+  <div id="state-guest" class="gate hidden">
+    <div class="ico">🔒</div>
+    <h2>Sign in to your Pro dashboard</h2>
+    <p>Log in to access your sentiment history charts, custom alerts and per-news breakdowns.</p>
+    <div><a href="/login" class="btn btn-primary">Log in</a> &nbsp; <a href="/register" class="btn btn-outline">Create account</a></div>
+  </div>
+
+  <!-- NOT PRO -->
+  <div id="state-free" class="gate hidden">
+    <div class="ico">⭐</div>
+    <h2>Unlock FXNewsBias Pro</h2>
+    <p>You're signed in on the free plan. Upgrade to unlock the full dashboard:</p>
+    <div class="feats">
+      <div>📈 12-month sentiment history charts</div>
+      <div>🔔 Custom bias-flip email alerts</div>
+      <div>📊 Per-news bias breakdowns</div>
+      <div>⭐ Currency watchlist &amp; CSV export</div>
+      <div>🚫 100% ad-free + weekly Pro report</div>
+    </div>
+    <div><a href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" target="_blank" rel="noopener" class="btn btn-primary">Start 7-day free trial — $30/mo →</a></div>
+  </div>
+
+  <!-- PRO DASHBOARD -->
+  <div id="state-pro" class="hidden">
+    <div class="hero">
+      <div>
+        <h1>⭐ Pro Dashboard</h1>
+        <p id="welcome">Welcome back.</p>
+      </div>
+      <div id="status-pill"></div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:1fr;margin-top:16px;">
+      <div class="card">
+        <h2>📈 Sentiment history <span class="sub">— last 30 readings per currency</span></h2>
+        <div class="spark-grid" id="spark-grid"><div class="muted">Loading sentiment…</div></div>
+      </div>
+
+      <div class="grid" style="grid-template-columns:1.2fr 1fr;" id="lower-grid">
+        <div class="card">
+          <h2>🔔 Custom bias-flip alerts</h2>
+          <div class="row-between">
+            <span class="muted">Email me when a watched currency flips bull ↔ bear.</span>
+            <label class="toggle"><input type="checkbox" id="alert-enabled"><span class="slider"></span></label>
+          </div>
+          <div class="alert-ccys" id="alert-ccys"></div>
+          <div class="row-between">
+            <span class="muted" id="alert-hint">Pick the currencies to watch (none = all).</span>
+            <button class="btn btn-primary" id="save-alerts">Save alerts</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>⚡ Quick actions</h2>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <a class="btn btn-outline" href="/report" style="justify-content:flex-start;">📄 Open weekly Pro report</a>
+            <button class="btn btn-outline" id="export-csv" style="justify-content:flex-start;">📥 Export sentiment history (CSV)</button>
+            <button class="btn btn-outline" id="manage-sub" style="justify-content:flex-start;">💳 Manage subscription</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📊 Per-news bias breakdown <span class="sub">— latest market-moving headlines</span></h2>
+        <div id="news-list"><div class="muted">Loading news…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <a href="/">Markets</a><a href="/currencies">Currencies</a><a href="/pairs">Pairs</a><a href="/news">News</a><a href="/profile">Account</a><br><br>
+  © 2026 FXNewsBias · Pro member area · Not financial advice
+</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+const SB = 'https://vtbmtxtgtdprpbilragm.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+const API = 'https://fxnewsbias-cron.dineshsanther123gf.workers.dev';
+const CCYS = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD'];
+const NAMES = {USD:'US Dollar',EUR:'Euro',GBP:'Pound',JPY:'Yen',AUD:'Aussie',CAD:'Loonie',CHF:'Franc',NZD:'Kiwi'};
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $ = id => document.getElementById(id);
+let historyRows = [];
+
+function show(state){['loading','guest','free','pro'].forEach(s=>$('state-'+s).classList.toggle('hidden', s!==state));}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+function sbGet(path){return fetch(SB+'/rest/v1/'+path,{headers:{apikey:SB_ANON,Authorization:'Bearer '+SB_ANON}}).then(r=>r.json());}
+
+function sparkline(scores){
+  if(scores.length<2)return '';
+  const w=210,h=44,min=Math.min(...scores,40),max=Math.max(...scores,60),rng=(max-min)||1;
+  const pts=scores.map((s,i)=>[(i/(scores.length-1))*w, h-4-((s-min)/rng)*(h-8)]);
+  const last=scores[scores.length-1];const col=last>=60?'#10b981':last<=40?'#ef4444':'#f59e0b';
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const area=d+` L${w} ${h} L0 ${h} Z`;
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${area}" fill="${col}" opacity="0.10"/><path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/><line x1="0" y1="${h-4-((50-min)/rng)*(h-8)}" x2="${w}" y2="${h-4-((50-min)/rng)*(h-8)}" stroke="#475569" stroke-width="1" stroke-dasharray="3 3"/></svg>`;
+}
+
+async function loadSentiment(){
+  const rows = await sbGet('sentiment?select=currency,score,bias,drivers,created_at&order=created_at.desc&limit=1200');
+  historyRows = rows;
+  const byC={}; for(const r of rows){(byC[r.currency]=byC[r.currency]||[]).push(r);}
+  const grid=$('spark-grid'); grid.innerHTML='';
+  for(const c of CCYS){
+    const hist=(byC[c]||[]).slice().reverse();      // ascending
+    if(!hist.length)continue;
+    const latest=hist[hist.length-1];
+    const scores=hist.slice(-30).map(x=>x.score);
+    const drivers=Array.isArray(latest.drivers)?latest.drivers.slice(0,2).join(' · '):'';
+    const col=latest.score>=60?'#10b981':latest.score<=40?'#ef4444':'#f59e0b';
+    const el=document.createElement('div');el.className='spark';
+    el.innerHTML=`<div class="spark-top"><div><div class="spark-ccy">${c} <span class="sub">${NAMES[c]}</span></div></div>
+      <div style="text-align:right;"><div class="spark-score" style="color:${col}">${latest.score}</div><span class="spark-bias b-${esc(latest.bias)}">${esc(latest.bias)}</span></div></div>
+      ${sparkline(scores)}<div class="spark-drivers">${esc(drivers)}</div>`;
+    grid.appendChild(el);
+  }
+}
+
+async function loadNews(){
+  const rows = await sbGet('news?select=title,source,url,impact,currencies_affected,created_at&order=id.desc&limit=25');
+  const list=$('news-list'); list.innerHTML='';
+  for(const n of rows){
+    const affs=Array.isArray(n.currencies_affected)?n.currencies_affected:[];
+    const el=document.createElement('div');el.className='news-row';
+    el.innerHTML=`<span class="imp imp-${esc(n.impact||'Low')}">${esc(n.impact||'Low')}</span>
+      <div class="news-body"><div class="t">${esc(n.title)}</div><div class="m">${esc(n.source||'')}</div>
+      ${affs.length?`<div class="affects">${affs.map(a=>`<span class="ccy-tag">${esc(a)}</span>`).join('')}</div>`:''}</div>`;
+    list.appendChild(el);
+  }
+}
+
+function exportCsv(){
+  if(!historyRows.length){toast('No data to export yet');return;}
+  const lines=['date,currency,score,bias'];
+  historyRows.slice().reverse().forEach(r=>lines.push(`${r.created_at},${r.currency},${r.score},${r.bias}`));
+  const blob=new Blob([lines.join('\n')],{type:'text/csv'});const u=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=u;a.download='fxnewsbias-sentiment-history.csv';a.click();URL.revokeObjectURL(u);
+  toast('Downloaded sentiment history CSV');
+}
+
+// alerts UI
+let alertState={enabled:false,currencies:[]};
+function renderAlertCcys(){
+  const box=$('alert-ccys');box.innerHTML='';
+  CCYS.forEach(c=>{
+    const on=alertState.currencies.includes(c);
+    const d=document.createElement('div');d.className='alert-ccy'+(on?' on':'');d.textContent=c;
+    d.onclick=()=>{alertState.currencies=on?alertState.currencies.filter(x=>x!==c):[...alertState.currencies,c];renderAlertCcys();};
+    box.appendChild(d);
+  });
+}
+
+// ---- Firebase auth (self-contained, mirrors admin.html) ----
+import('https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js').then(async ({initializeApp})=>{
+  const {getAuth,onAuthStateChanged}=await import('https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js');
+  const app=initializeApp({apiKey:"AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",authDomain:"fxnewsbias.firebaseapp.com",projectId:"fxnewsbias",storageBucket:"fxnewsbias.firebasestorage.app",messagingSenderId:"414710041736",appId:"1:414710041736:web:00e79ccc58fdb94e98633d"});
+  const auth=getAuth(app);
+  onAuthStateChanged(auth, async user=>{
+    if(!user){show('guest');return;}
+    let idToken; try{idToken=await user.getIdToken();}catch(e){show('guest');return;}
+    let st; try{ st=await fetch(API+'/pro-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken})}).then(r=>r.json()); }catch(e){ st={}; }
+    if(!st.isPro){show('free');return;}
+    // Pro!
+    show('pro');
+    $('welcome').textContent='Signed in as '+(st.email||user.email||'you');
+    const trial=st.subStatus==='trialing';
+    $('status-pill').innerHTML=`<span class="pill ${trial?'pill-trial':'pill-pro'}">${trial?'⭐ Pro · Free trial':'⭐ Pro member'}</span>`;
+    alertState.enabled=!!(st.alerts&&st.alerts.enabled);
+    alertState.currencies=(st.alerts&&st.alerts.currencies)||[];
+    $('alert-enabled').checked=alertState.enabled;
+    renderAlertCcys();
+    loadSentiment().catch(()=>$('spark-grid').innerHTML='<div class="muted">Could not load sentiment.</div>');
+    loadNews().catch(()=>$('news-list').innerHTML='<div class="muted">Could not load news.</div>');
+    $('export-csv').onclick=exportCsv;
+    $('manage-sub').onclick=async()=>{
+      const b=$('manage-sub');b.disabled=true;b.textContent='Opening…';
+      try{
+        const fresh=await auth.currentUser.getIdToken();
+        const res=await fetch(API+'/create-portal-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:fresh})}).then(r=>r.json());
+        if(res.url){location.href=res.url;return;}
+        toast('⚠️ '+(res.message||'Billing portal unavailable'));
+      }catch(e){toast('⚠️ Could not open billing');}
+      b.disabled=false;b.textContent='💳 Manage subscription';
+    };
+    $('save-alerts').onclick=async()=>{
+      const btn=$('save-alerts');btn.disabled=true;btn.textContent='Saving…';
+      try{
+        const fresh=await auth.currentUser.getIdToken();
+        const res=await fetch(API+'/save-alerts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:fresh,enabled:$('alert-enabled').checked,currencies:alertState.currencies,email:true})}).then(r=>r.json());
+        toast(res.ok?'✅ Alerts saved':('⚠️ '+(res.message||res.error||'Could not save')));
+      }catch(e){toast('⚠️ Could not save alerts');}
+      btn.disabled=false;btn.textContent='Save alerts';
+    };
+  });
+}).catch(()=>show('guest'));
+</script>
+</body>
+</html>

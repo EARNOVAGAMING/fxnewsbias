@@ -259,6 +259,10 @@ return new Response(JSON.stringify({ ok: true, message: 'Generating in backgroun
 if (url.pathname === '/admin-data') {
 return handleAdminData(request, env);
 }
+// Pro account endpoints (Firebase-ID-token gated, cross-origin from fxnewsbias.com)
+if (url.pathname === '/pro-status') return handleProStatus(request, env);
+if (url.pathname === '/create-portal-session') return handleCreatePortalSession(request, env);
+if (url.pathname === '/save-alerts') return handleSaveAlerts(request, env);
 if (url.pathname === '/admin-create-post' && request.method === 'POST') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 try {
@@ -900,6 +904,10 @@ await withRetry('sentiment', async () => {
 
   try { await saveSentiment(sentiment, env); console.log('Sentiment saved'); }
   catch(e) { console.log('saveSentiment failed:', e.message); }
+
+  // Pro feature: email subscribers when a watched currency flips bias.
+  try { await checkAndSendProAlerts(env, sentiment); }
+  catch(e) { console.log('checkAndSendProAlerts failed:', e.message); }
 }, env, ct);
 }
 
@@ -4052,6 +4060,185 @@ async function pruneStaleInsights(env) {
 // Read-only. Lists Firebase Auth users + Firestore subscription tiers.
 // Gated by Firebase ID token (caller must be signed in) AND email
 // must match ADMIN_EMAIL allowlist. Does NOT modify any data.
+// ============================================================
+// PRO ACCOUNT ENDPOINTS + ALERTS
+// Stripe billing portal, alert prefs, and subscription status. Called
+// cross-origin from fxnewsbias.com; every write is gated by a verified
+// Firebase ID token. Alert delivery runs in the sentiment cron.
+// ============================================================
+const _CCYS = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'NZD'];
+const _PRO_CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Content-Type': 'application/json',
+};
+const _proJson = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: _PRO_CORS });
+const _fsDocId = (email) => email.replace(/[.#$[\]@]/g, '_');
+
+async function _verifyFirebaseUser(env, idToken) {
+  try {
+    if (!idToken) return null;
+    const key = env.FIREBASE_API_KEY || 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
+    const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }), signal: AbortSignal.timeout(20000),
+    });
+    const d = await r.json();
+    const u = d && d.users && d.users[0];
+    return u && u.email ? { email: u.email, uid: u.localId } : null;
+  } catch (e) { console.log('_verifyFirebaseUser:', e.message); return null; }
+}
+
+async function _getSubscriptionDoc(env, email) {
+  const token = await getFirebaseToken(env);
+  if (!token) return { exists: false, isPro: false, alerts: { enabled: false, email: true, currencies: [] } };
+  const pid = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
+  const r = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents/subscriptions/${_fsDocId(email)}`, {
+    headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20000),
+  });
+  if (!r.ok) return { exists: false, isPro: false, alerts: { enabled: false, email: true, currencies: [] } };
+  const f = (await r.json()).fields || {};
+  const af = f.alerts && f.alerts.mapValue && f.alerts.mapValue.fields;
+  const alerts = af ? {
+    enabled: !!(af.enabled && af.enabled.booleanValue),
+    email: !(af.email && af.email.booleanValue === false),
+    currencies: ((af.currencies && af.currencies.arrayValue && af.currencies.arrayValue.values) || []).map(v => v.stringValue).filter(Boolean),
+  } : { enabled: false, email: true, currencies: [] };
+  return {
+    exists: true,
+    isPro: !!(f.isPro && f.isPro.booleanValue),
+    plan: (f.plan && f.plan.stringValue) || 'free',
+    subStatus: (f.subStatus && f.subStatus.stringValue) || '',
+    currentPeriodEnd: (f.currentPeriodEnd && f.currentPeriodEnd.stringValue) || '',
+    cancelAtPeriodEnd: !!(f.cancelAtPeriodEnd && f.cancelAtPeriodEnd.booleanValue),
+    stripeCustomerId: (f.stripeCustomerId && f.stripeCustomerId.stringValue) || '',
+    alerts,
+  };
+}
+
+// POST /pro-status — caller's real subscription + alert prefs (trusted, server-verified).
+async function handleProStatus(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  try {
+    const { idToken } = await request.json();
+    const user = await _verifyFirebaseUser(env, idToken);
+    if (!user) return _proJson({ error: 'unauthorized' }, 401);
+    const s = await _getSubscriptionDoc(env, user.email);
+    return _proJson({ ok: true, email: user.email, isPro: s.isPro, plan: s.plan, subStatus: s.subStatus, currentPeriodEnd: s.currentPeriodEnd, cancelAtPeriodEnd: s.cancelAtPeriodEnd, hasBilling: !!s.stripeCustomerId, alerts: s.alerts });
+  } catch (e) { return _proJson({ error: e.message }, 500); }
+}
+
+// POST /create-portal-session — Stripe billing portal URL (manage/cancel).
+async function handleCreatePortalSession(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  try {
+    const { idToken } = await request.json();
+    const user = await _verifyFirebaseUser(env, idToken);
+    if (!user) return _proJson({ error: 'unauthorized' }, 401);
+    const s = await _getSubscriptionDoc(env, user.email);
+    if (!s.stripeCustomerId) return _proJson({ error: 'no-billing', message: 'No active subscription found for this account.' }, 400);
+    const body = new URLSearchParams({ customer: s.stripeCustomerId, return_url: 'https://fxnewsbias.com/profile' });
+    const r = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
+      method: 'POST', headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' }, body, signal: AbortSignal.timeout(20000),
+    });
+    const d = await r.json();
+    if (!d.url) return _proJson({ error: 'stripe', message: (d.error && d.error.message) || 'Could not open billing portal.' }, 500);
+    return _proJson({ ok: true, url: d.url });
+  } catch (e) { return _proJson({ error: e.message }, 500); }
+}
+
+// POST /save-alerts — persist bias-flip alert prefs (Pro only).
+async function handleSaveAlerts(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  try {
+    const { idToken, enabled, currencies, email } = await request.json();
+    const user = await _verifyFirebaseUser(env, idToken);
+    if (!user) return _proJson({ error: 'unauthorized' }, 401);
+    const s = await _getSubscriptionDoc(env, user.email);
+    if (!s.isPro) return _proJson({ error: 'pro-only', message: 'Custom alerts are a Pro feature.' }, 403);
+    const valid = (Array.isArray(currencies) ? currencies : []).filter(c => _CCYS.includes(c));
+    const token = await getFirebaseToken(env);
+    const pid = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
+    const fields = { alerts: { mapValue: { fields: {
+      enabled: { booleanValue: enabled === true },
+      email: { booleanValue: email !== false },
+      currencies: { arrayValue: { values: valid.map(c => ({ stringValue: c })) } },
+      updatedAt: { stringValue: new Date().toISOString() },
+    } } } };
+    const r = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents/subscriptions/${_fsDocId(user.email)}?updateMask.fieldPaths=alerts`, {
+      method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ fields }), signal: AbortSignal.timeout(20000),
+    });
+    if (!r.ok) return _proJson({ error: 'save-failed', detail: (await r.text()).slice(0, 200) }, 500);
+    return _proJson({ ok: true, alerts: { enabled: enabled === true, email: email !== false, currencies: valid } });
+  } catch (e) { return _proJson({ error: e.message }, 500); }
+}
+
+// Runs after each sentiment cycle — email Pro users when a watched currency flips bias.
+async function checkAndSendProAlerts(env, newSentiment) {
+  try {
+    const prev = await readSystemState(env, 'alert_last_bias');
+    const prevBias = (prev && prev.bias) || {};
+    const snap = {}, flipped = [];
+    for (const c of _CCYS) {
+      const nb = newSentiment[c] && newSentiment[c].bias;
+      if (!nb) continue;
+      snap[c] = nb;
+      if (prevBias[c] && prevBias[c] !== nb) flipped.push({ currency: c, from: prevBias[c], to: nb, score: newSentiment[c].score });
+    }
+    await writeSystemState(env, 'alert_last_bias', { bias: snap, updated_at: new Date().toISOString() });
+    if (!flipped.length) { console.log('proAlerts: no bias flips'); return; }
+    if (!env.RESEND_API_KEY) { console.log('proAlerts: flips but no RESEND_API_KEY'); return; }
+    const users = await _queryProAlertUsers(env);
+    let sent = 0;
+    for (const u of users) {
+      const rel = flipped.filter(f => !u.currencies.length || u.currencies.includes(f.currency));
+      if (!rel.length) continue;
+      await _sendAlertEmail(env, u.email, rel).catch(e => console.log('alert email', u.email, e.message));
+      sent++;
+    }
+    console.log(`proAlerts: ${flipped.length} flip(s) → notified ${sent}/${users.length} pro user(s)`);
+  } catch (e) { console.log('checkAndSendProAlerts:', e.message); }
+}
+
+async function _queryProAlertUsers(env) {
+  try {
+    const token = await getFirebaseToken(env);
+    const pid = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
+    const body = { structuredQuery: { from: [{ collectionId: 'subscriptions' }], where: { compositeFilter: { op: 'AND', filters: [
+      { fieldFilter: { field: { fieldPath: 'isPro' }, op: 'EQUAL', value: { booleanValue: true } } },
+      { fieldFilter: { field: { fieldPath: 'alerts.enabled' }, op: 'EQUAL', value: { booleanValue: true } } },
+    ] } }, limit: 500 } };
+    const r = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents:runQuery`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(25000),
+    });
+    if (!r.ok) { console.log('_queryProAlertUsers', r.status); return []; }
+    const out = [];
+    for (const row of await r.json()) {
+      const f = row.document && row.document.fields;
+      if (!f || !f.email || !f.email.stringValue) continue;
+      const cf = f.alerts && f.alerts.mapValue && f.alerts.mapValue.fields;
+      const currencies = ((cf && cf.currencies && cf.currencies.arrayValue && cf.currencies.arrayValue.values) || []).map(v => v.stringValue).filter(Boolean);
+      out.push({ email: f.email.stringValue, currencies });
+    }
+    return out;
+  } catch (e) { console.log('_queryProAlertUsers:', e.message); return []; }
+}
+
+async function _sendAlertEmail(env, to, flips) {
+  const icon = (b) => b === 'Bullish' ? '📈' : b === 'Bearish' ? '📉' : '➖';
+  const rows = flips.map(f => `<tr><td style="padding:8px 14px;font-weight:800;font-size:15px;">${f.currency}</td><td style="padding:8px 14px;font-size:14px;color:#334155;">${f.from} → <strong>${f.to}</strong> ${icon(f.to)} &nbsp;<span style="color:#64748b;">(${f.score}/100)</span></td></tr>`).join('');
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;">`
+    + `<div style="background:#0f172a;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;"><div style="font-size:18px;font-weight:800;">⚡ Sentiment bias flip</div><div style="font-size:13px;color:#94a3b8;margin-top:4px;">A currency you follow just changed bias.</div></div>`
+    + `<div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:18px 24px;"><table style="width:100%;border-collapse:collapse;">${rows}</table>`
+    + `<a href="https://fxnewsbias.com/pro" style="display:inline-block;margin-top:18px;background:#2563eb;color:#fff;padding:11px 22px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Open your Pro dashboard →</a>`
+    + `<p style="font-size:12px;color:#94a3b8;margin-top:16px;line-height:1.5;">You enabled bias-flip alerts on FXNewsBias Pro. Manage them on your <a href="https://fxnewsbias.com/pro" style="color:#2563eb;">dashboard</a>. Not financial advice.</p></div></div>`;
+  const fromEmail = env.ALERT_EMAIL_FROM || 'alerts@fxnewsbias.com';
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: [to], subject: `⚡ ${flips.map(f => f.currency + ' ' + f.to).join(', ')} — bias flip`, html }), signal: AbortSignal.timeout(20000),
+  });
+}
+
 async function handleAdminData(request, env) {
   const ADMIN_EMAILS = ['dineshsanther123gf@gmail.com'];
   const FIREBASE_API_KEY = env.FIREBASE_API_KEY || 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
