@@ -157,6 +157,18 @@ const days = parseInt(url.searchParams.get('days') || '7', 10);
 const result = await ingestGscPerformance(env, { days: Math.max(1, Math.min(days, 40)) });
 return new Response(JSON.stringify(result, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
 }
+// Sprint 2 — manually run the weekly SEO Intelligence analysis (also runs Sun 21:00).
+if (url.pathname === '/run-seo-intelligence') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await runSeoIntelligence(env);
+return new Response(JSON.stringify(result, null, 2), { status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
+}
+// Sprint 2 — read the latest stored action plan (+ the raw page/query evidence).
+if (url.pathname === '/seo-intelligence') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const plan = await readSystemState(env, 'seo_intelligence:latest');
+return new Response(JSON.stringify(plan || { note: 'no plan yet — call /run-seo-intelligence?key=...' }, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
+}
 if (url.pathname === '/run-insight') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const result = await generateDailyInsight(env, url.searchParams.get('session') || undefined);
@@ -333,9 +345,10 @@ if (event.cron === '*/15 * * * *') {
 } else if (event.cron === '0 */3 * * *') {
   ctx.waitUntil((async () => {
     await runSentimentAnalysis(env, { cycleTs });
-    // Sunday 21:00 UTC — weekly pro report runs after sentiment in the same invocation
+    // Sunday 21:00 UTC — weekly pro report + SEO intelligence run after sentiment in the same invocation
     if (_dow === 0 && new Date().getUTCHours() === 21) {
       await buildAndSaveWeeklyReport(env).catch(e => console.log('Weekly report error:', e.message));
+      await runSeoIntelligence(env).catch(e => console.log('SEO intelligence error:', e.message));
     }
   })());
 
@@ -4538,4 +4551,111 @@ async function generateAllPairSEO(env, opts = {}) {
 
     console.log('generateAllPairSEO: done');
   }, env, cycleTs);
+}
+
+// ============================================
+// SPRINT 2 — SEO INTELLIGENCE (weekly analysis → prioritised action plan)
+// Reads gsc_performance (page + query dims, 28d), classifies opportunities, and
+// makes ONE Haiku call to synthesise a ranked weekly action plan. ADVISORY only —
+// nothing auto-applies; the executors land in later sprints. Runs inside the
+// existing Sunday-21:00 slot (no new cron trigger). Plan stored in system_state
+// (keys seo_intelligence:latest + seo_intelligence:<weekEnd>); read it via the
+// authed GET /seo-intelligence, or trigger manually via GET /run-seo-intelligence.
+// ============================================
+async function _seoAggGsc(env, dim, days) {
+  const cutoff = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+  let all = [], from = 0;
+  while (true) {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/gsc_performance?select=key,clicks,impressions,position&dimension=eq.${dim}&date=gte.${cutoff}`, {
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, Range: `${from}-${from + 999}` },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!r.ok) { console.log(`_seoAggGsc ${dim} non-ok:`, r.status); break; }
+    const rows = await r.json();
+    all.push(...rows);
+    if (rows.length < 1000) break;
+    from += 1000;
+  }
+  const agg = {};
+  for (const r of all) {
+    const k = r.key || '';
+    const a = agg[k] || (agg[k] = { clicks: 0, impr: 0, posW: 0 });
+    a.clicks += r.clicks || 0; a.impr += r.impressions || 0; a.posW += (r.position || 0) * (r.impressions || 0);
+  }
+  return Object.entries(agg).map(([k, a]) => ({ k, clicks: a.clicks, impr: a.impr, ctr: a.impr ? a.clicks / a.impr : 0, pos: a.impr ? a.posW / a.impr : 0 }));
+}
+
+function _seoClassifyPage(p) {
+  if (p.impr < 3) return 'low';
+  if (p.pos <= 3 && p.ctr >= _expectedCtr(p.pos) * 0.7) return 'protect';
+  if (p.pos <= 15 && p.impr >= 10 && p.ctr < _expectedCtr(p.pos) * 0.5) return 'ctr_gap';
+  if (p.pos >= 5 && p.pos <= 15) return 'near_winner';
+  if (p.pos > 20) return 'expand';
+  return 'watch';
+}
+
+async function runSeoIntelligence(env) {
+  try {
+    if (!env.CLAUDE_API_KEY) { console.log('runSeoIntelligence: CLAUDE_API_KEY missing'); return { ok: false, reason: 'no-api-key' }; }
+    const [pagesRaw, queriesRaw] = await Promise.all([_seoAggGsc(env, 'page', 28), _seoAggGsc(env, 'query', 28)]);
+    const pages = pagesRaw.map(p => ({ ...p, url: p.k.replace('https://fxnewsbias.com', '') || '/', bucket: _seoClassifyPage(p) }))
+      .filter(p => p.bucket !== 'low').sort((a, b) => b.impr - a.impr);
+    const queries = queriesRaw.filter(q => q.impr >= 2 && q.pos > 10).sort((a, b) => b.impr - a.impr).slice(0, 25);
+    if (!pages.length && !queries.length) { console.log('runSeoIntelligence: no GSC data yet'); return { ok: false, reason: 'no-data' }; }
+
+    const pageLines = pages.slice(0, 20).map(p => `${p.url} | impr=${p.impr} ctr=${(p.ctr * 100).toFixed(0)}% pos=${p.pos.toFixed(1)} | ${p.bucket}`).join('\n');
+    const qLines = queries.map(q => `"${q.k}" | impr=${q.impr} pos=${q.pos.toFixed(0)}`).join('\n');
+    const prompt = `You are the SEO Intelligence analyst for FXNewsBias.com (a live forex sentiment site). Below is the last 28 days of Google Search Console data. Produce a PRIORITISED weekly action plan.
+
+PAGE PERFORMANCE (site-relative url | impressions, CTR, avg position | bucket):
+${pageLines}
+
+UNDER-RANKED DEMAND (queries we get impressions for but rank below position 10):
+${qLines}
+
+Buckets: protect=leave alone (ranking well); ctr_gap=good position weak CTR -> rewrite title; near_winner=pos 5-15, a small push reaches page 1; expand=has demand but ranks deep -> needs more/better content.
+
+Return ONLY a JSON array (max 10 items), highest ROI first. Each item:
+{"target":"<url or query>","kind":"page|query","action":"rewrite_title|expand_content|add_faq|internal_link_boost|build_section|consolidate","priority":1-10,"effort":"low|med|high","why":"<one specific sentence tied to the data>"}
+Rules: prefer actions that turn near_winners and high-impression under-ranked queries into page-1 clicks. Do not recommend touching 'protect' pages. Be specific (name the page/query). No prose outside the JSON.`;
+
+    let actions = [];
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] }),
+        signal: AbortSignal.timeout(60000),
+      });
+      if (!resp.ok) throw new Error(`Anthropic HTTP ${resp.status}`);
+      const data = await resp.json();
+      const m = (data.content?.[0]?.text || '').match(/\[[\s\S]*\]/);
+      if (m) actions = JSON.parse(m[0]);
+    } catch (e) { console.log('runSeoIntelligence LLM error:', e.message); }
+
+    const plan = {
+      generated_at: new Date().toISOString(),
+      window_days: 28,
+      summary: {
+        pages_analyzed: pages.length,
+        near_winners: pages.filter(p => p.bucket === 'near_winner').length,
+        ctr_gaps: pages.filter(p => p.bucket === 'ctr_gap').length,
+        expand: pages.filter(p => p.bucket === 'expand').length,
+        protect: pages.filter(p => p.bucket === 'protect').length,
+        under_ranked_queries: queries.length,
+      },
+      actions,
+      // Keep the raw evidence alongside the plan so the view is useful even if the LLM call failed.
+      top_pages: pages.slice(0, 20).map(p => ({ url: p.url, impr: p.impr, ctr: +(p.ctr * 100).toFixed(1), pos: +p.pos.toFixed(1), bucket: p.bucket })),
+      top_queries: queries.map(q => ({ query: q.k, impr: q.impr, pos: +q.pos.toFixed(1) })),
+    };
+    const weekEnd = new Date().toISOString().slice(0, 10);
+    await writeSystemState(env, 'seo_intelligence:latest', plan);
+    await writeSystemState(env, `seo_intelligence:${weekEnd}`, plan);
+    console.log(`runSeoIntelligence: ${actions.length} actions from ${pages.length} pages / ${queries.length} queries`);
+    return { ok: true, actions: actions.length, pages: pages.length, queries: queries.length, generated_at: plan.generated_at };
+  } catch (e) {
+    console.log('runSeoIntelligence failed:', e.message);
+    return { ok: false, error: e.message };
+  }
 }
