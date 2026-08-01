@@ -224,6 +224,8 @@ nav a:hover{color:#60a5fa;}
 
 .ad-slot{background:var(--bg-soft);border:1px dashed var(--border-strong);border-radius:var(--radius);padding:24px;text-align:center;color:var(--text-muted);font-size:12px;margin-bottom:24px;min-height:280px;display:flex;align-items:center;justify-content:center;contain:layout size;}
 html[data-pro="1"] .ad-slot{display:none!important;}
+html[data-pro="1"] .sponsor-slot{display:none!important;}
+ins.adsbygoogle[data-ad-status="unfilled"]{display:none!important;}
 .sky-inline{text-align:center;margin:24px auto;max-width:160px;}
 html[data-pro="1"] .sky-inline{display:none!important;}
 @media(max-width:900px){.sky-inline{display:none!important;}}
@@ -370,6 +372,81 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   .hero-stat{min-width:calc(50% - 5px);}
   }
 </style>
+<style id="terminal-theme">
+/* ═══ TERMINAL DARK THEME — Bloomberg/TradingView-grade surface ═══ */
+:root{
+  --bg:#0a0e17;--bg-soft:#0f1726;--bg-card:#111b2c;
+  --border:rgba(255,255,255,.07);--border-strong:rgba(255,255,255,.16);
+  --text:#e8edf4;--text-soft:#9aa7bd;--text-muted:#64748b;
+  --accent:#3b82f6;--accent-hover:#60a5fa;
+  --bull:#34d399;--bear:#fb7185;--neutral:#fbbf24;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.35);
+  --shadow-md:0 6px 22px rgba(0,0,0,.4);
+}
+body{background:#0a0e17;color:#e8edf4;}
+.topbar{background:#070b12;}
+header{background:#0b1120;border-bottom:1px solid rgba(255,255,255,.06);}
+.ticker{background:#0d1524;border-bottom:1px solid rgba(255,255,255,.06);}
+.hero{background:linear-gradient(160deg,#0b1120 0%,#131f36 55%,#0a0e17 100%);padding:22px 0 26px;}
+.hero-brand{display:none;}
+/* nav user menu (injected by firebase.js with light-theme inline colors) */
+#user-menu span:first-child{color:#e8edf4!important;}
+#user-menu button{color:#e8edf4!important;border-color:rgba(255,255,255,.22)!important;}
+/* sentiment cards */
+.sent-card{background:var(--bg-card);border:1px solid var(--border);}
+.sent-card:hover{border-color:rgba(96,165,250,.45);}
+.bull-bg{background:rgba(52,211,153,.14);color:#6ee7b7;}
+.bear-bg{background:rgba(251,113,133,.14);color:#fda4af;}
+.neut-bg{background:rgba(251,191,36,.14);color:#fcd34d;}
+.sent-bar{background:rgba(255,255,255,.08);}
+.sent-streak.bull{background:rgba(52,211,153,.13);color:#6ee7b7;}
+.sent-streak.bear{background:rgba(251,113,133,.13);color:#fda4af;}
+.sent-streak.neut{background:rgba(251,191,36,.13);color:#fcd34d;}
+/* news */
+.news-item{background:var(--bg-card);border:1px solid var(--border);}
+.news-item:hover{border-color:rgba(96,165,250,.45);}
+.imp-high{background:rgba(251,113,133,.15);color:#fda4af;}
+.imp-med{background:rgba(251,191,36,.15);color:#fcd34d;}
+.imp-low{background:rgba(96,165,250,.15);color:#93c5fd;}
+/* sidebar */
+.sidebar-card{background:var(--bg-card);border:1px solid var(--border);}
+.session-row{border-bottom:1px solid rgba(255,255,255,.05);}
+.open-status{background:rgba(52,211,153,.15);color:#6ee7b7;}
+.closed-status{background:rgba(255,255,255,.07);color:#8b98ad;}
+.ad-slot{background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.12);}
+/* market pulse */
+.pulse-grid{background:var(--bg-card);border:1px solid var(--border);}
+.pulse-col + .pulse-col{border-left:1px solid rgba(255,255,255,.06);}
+@media(max-width:680px){.pulse-col + .pulse-col{border-left:none;border-top:1px solid rgba(255,255,255,.06);}}
+.pulse-mover-row{background:rgba(255,255,255,.04);}
+.pulse-mover-row.up .mover-delta{color:#34d399;}
+.pulse-mover-row.down .mover-delta{color:#fb7185;}
+/* divergence */
+.divg-section-inner{background:var(--bg-card);border:1px solid var(--border);}
+.divg-section-header{border-bottom:1px solid rgba(255,255,255,.06);}
+.divg-badge-active{background:rgba(251,191,36,.15);color:#fcd34d;}
+.divg-badge-clear{background:rgba(52,211,153,.15);color:#6ee7b7;}
+.divg-badge-loading{background:rgba(255,255,255,.06);color:#8b98ad;}
+.divg-card.bull-divg{background:rgba(52,211,153,.07);}
+.divg-card.bear-divg{background:rgba(251,113,133,.07);}
+.bull-divg .divg-card-tag{background:rgba(52,211,153,.2);color:#6ee7b7;}
+.bear-divg .divg-card-tag{background:rgba(251,113,133,.2);color:#fda4af;}
+.divg-meter{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);}
+.divg-meter-val.up{color:#34d399;}
+.divg-meter-val.down{color:#fb7185;}
+.divg-card-desc{color:#9aa7bd;}
+.divg-clear{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.18);}
+.divg-clear-title{color:#6ee7b7;}
+.divg-clear-desc{color:#7fd9b3;}
+.divg-scanning{background:rgba(255,255,255,.03);}
+/* pricing */
+.plan-card{background:var(--bg-card);border:1px solid var(--border);}
+.plan-card .plan-features li{color:#c7d2e0;}
+.plan-cta-free{background:rgba(255,255,255,.05);color:#e8edf4;border:1px solid rgba(255,255,255,.16);}
+.plan-cta-free:hover{background:rgba(255,255,255,.1);}
+.plan-card.plan-pro{border:1px solid rgba(96,165,250,.3);}
+footer{background:#080c14;}
+</style>
 <style>nav>ul{display:none}.burger{display:flex!important;align-items:center;justify-content:center}</style>
 <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
@@ -505,12 +582,12 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
               <stop offset="100%" stop-color="#10b981"/>
             </linearGradient>
           </defs>
-          <path d="M 30 140 A 110 110 0 0 1 250 140" stroke="#e5e7eb" stroke-width="22" fill="none" stroke-linecap="round"/>
+          <path d="M 30 140 A 110 110 0 0 1 250 140" stroke="#1e293b" stroke-width="22" fill="none" stroke-linecap="round"/>
           <path id="gauge-fill" d="M 30 140 A 110 110 0 0 1 250 140" stroke="url(#riskGrad)" stroke-width="22" fill="none" stroke-linecap="round" stroke-dasharray="0 999"/>
-          <text x="30" y="158" font-size="10" fill="#9ca3af" font-family="Inter, sans-serif">Risk-Off</text>
-          <text x="220" y="158" font-size="10" fill="#9ca3af" font-family="Inter, sans-serif">Risk-On</text>
-          <line id="gauge-needle" x1="140" y1="140" x2="140" y2="50" stroke="#0f172a" stroke-width="3" stroke-linecap="round" transform="rotate(-90 140 140)"/>
-          <circle cx="140" cy="140" r="6" fill="#0f172a"/>
+          <text x="30" y="158" font-size="10" fill="#64748b" font-family="Inter, sans-serif">Risk-Off</text>
+          <text x="220" y="158" font-size="10" fill="#64748b" font-family="Inter, sans-serif">Risk-On</text>
+          <line id="gauge-needle" x1="140" y1="140" x2="140" y2="50" stroke="#e8edf4" stroke-width="3" stroke-linecap="round" transform="rotate(-90 140 140)"/>
+          <circle cx="140" cy="140" r="6" fill="#e8edf4"/>
         </svg>
       </div>
       <div id="pulse-score" class="pulse-score">--</div>
@@ -683,10 +760,21 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div></a>
 
     </div>
-<div style="text-align:center;margin:28px auto 24px;max-width:750px;padding:0 20px;overflow:hidden;">
+<div class="sponsor-slot" id="lb-sponsor" style="text-align:center;margin:28px auto 24px;max-width:750px;padding:0 20px;overflow:hidden;">
   <div style="font-size:11px;color:#64748b;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:6px;">Sponsored</div>
   <ins class='dcmads' style='display:inline-block;width:728px;height:90px;max-width:100%;' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381910820' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5519" data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js' async></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5519" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
 </div>
+<script>
+// Collapse sponsor/ad slots whose creative never rendered — no dead whitespace.
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    document.querySelectorAll('.sponsor-slot, .ad-slot, .sky-inline').forEach(function(slot){
+      var ins=slot.querySelector('ins.dcmads');
+      if(ins&&!ins.querySelector('iframe'))slot.style.display='none';
+    });
+  },4000);
+});
+</script>
 <div id="pro-banner">
   <div class="section-title" style="margin-bottom:14px;">
     <span>Free vs Pro</span>
@@ -700,12 +788,12 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       <div class="plan-price"><span class="amount">$0</span><span class="per">forever</span></div>
       <div class="plan-sub">Everything you need to read the market at a glance.</div>
       <ul class="plan-features">
-        <li><span class="tick">✓</span> Live 8-currency sentiment dashboard</li>
-        <li><span class="tick">✓</span> Currency strength meter</li>
-        <li><span class="tick">✓</span> 28-pair bias matrix</li>
-        <li><span class="tick">✓</span> Live news feed</li>
-        <li><span class="tick">✓</span> Economic calendar</li>
-        <li><span class="tick">✓</span> Community</li>
+        <li><span class="tick">✓</span> <span><strong>Live sentiment dashboard</strong> — all 8 majors, refreshed every 3h</span></li>
+        <li><span class="tick">✓</span> <span><strong>Currency strength meter</strong> + risk gauge</span></li>
+        <li><span class="tick">✓</span> <span><strong>28-pair bias matrix</strong> with divergence scanner</span></li>
+        <li><span class="tick">✓</span> <span><strong>Pair watchlist</strong> — star the pairs you trade</span></li>
+        <li><span class="tick">✓</span> <span><strong>Live news feed</strong> with impact tags</span></li>
+        <li><span class="tick">✓</span> <span><strong>Economic calendar</strong> + community</span></li>
       </ul>
       <a href="/register" class="plan-cta plan-cta-free">Start free →</a>
       <div class="plan-note">No credit card required</div>
@@ -719,13 +807,12 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       <div class="plan-trial">✨ 7-day free trial — cancel anytime</div>
       <div class="plan-sub" style="color:#93c5fd;">Everything in Free, plus the tools serious traders ask for.</div>
       <ul class="plan-features">
-        <li><span class="tick star">★</span> <span><strong>100% ad-free</strong> — clean, distraction-free dashboard</span></li>
-        <li><span class="tick star">★</span> <span><strong>Pro Dashboard</strong> with <strong>12-month sentiment history charts</strong> — see how each currency's bias shifted over time (nobody else shows this)</span></li>
-        <li><span class="tick star">★</span> <span><strong>Custom bias-flip email alerts</strong> — pick your currencies, get emailed the moment sentiment flips bull ↔ bear</span></li>
-        <li><span class="tick star">★</span> <span><strong>Per-news bias breakdown</strong> — the detailed per-currency impact of every headline</span></li>
-        <li><span class="tick star">★</span> <span><strong>Currency watchlist</strong> — track only the pairs you trade</span></li>
-        <li><span class="tick star">★</span> <span><strong>CSV data export</strong> of your sentiment history</span></li>
-        <li><span class="tick star">★</span> <span><strong>Weekly Pro report</strong> — a deep-dive market wrap</span></li>
+        <li><span class="tick star">★</span> <span><strong>100% ad-free</strong> — pure data, zero banners</span></li>
+        <li><span class="tick star">★</span> <span><strong>Sentiment history charts</strong> — 7 / 30 / 90-day views, all 8 currencies</span></li>
+        <li><span class="tick star">★</span> <span><strong>Bias-flip email alerts</strong> — emailed the moment your currency flips</span></li>
+        <li><span class="tick star">★</span> <span><strong>Weekly Intelligence Brief</strong> — scorecards, pair setups, risk radar</span></li>
+        <li><span class="tick star">★</span> <span><strong>Pro Dashboard</strong> — per-news currency impact feed</span></li>
+        <li><span class="tick star">★</span> <span><strong>CSV export</strong> of your sentiment history</span></li>
       </ul>
       <a href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" target="_blank" rel="noopener noreferrer" class="plan-cta plan-cta-pro">Start 7-day free trial — $30/mo →</a>
       <div class="plan-note">Then $30/month · cancel anytime · <a href="/pro" style="color:#bfdbfe;text-decoration:underline;">Pro Dashboard</a></div>
@@ -827,12 +914,12 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
     <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">FXNewsBias is built for swing traders, day traders, and position traders who already trade the majors and want a fast read on the fundamental backdrop before placing a trade. It is not a signal service and it does not tell you when to buy or sell. Instead, it answers the question: what is the news flow currently saying about EUR, USD, JPY and the rest, and how does that line up with the technical setup I am already looking at? Pairs trading the strongest bullish currency against the weakest bearish currency is a common strategy our users build around the dashboard.</p>
 
     <h2 style="color:#fff;font-size:22px;margin:24px 0 14px;font-weight:700;">What's Inside</h2>
-    <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">The dashboard includes a live currency strength gauge, an 8-currency sentiment grid updated every three hours, a 28-pair bias matrix covering all major and cross pairs, a high-impact economic calendar focused on rate decisions and inflation prints, a curated news feed with sentiment scoring, a community space where traders share analysis, and a historical archive so you can study how sentiment shifted around past Fed meetings, NFP releases and ECB decisions. Pro members ($30/month, with a 7-day free trial) get a fully ad-free experience plus the Pro Dashboard: 12-month sentiment history charts that show how each currency's bias shifted over time, custom bias-flip email alerts that email you the moment sentiment flips bull to bear on the currencies you pick, a detailed per-news bias breakdown of every headline's per-currency impact, a currency watchlist, CSV export of your sentiment history, and a weekly Pro deep-dive market report.</p>
+    <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">The dashboard includes a live currency strength gauge, an 8-currency sentiment grid updated every three hours, a 28-pair bias matrix covering all major and cross pairs, a high-impact economic calendar focused on rate decisions and inflation prints, a curated news feed with sentiment scoring, a community space where traders share analysis, and a historical archive so you can study how sentiment shifted around past Fed meetings, NFP releases and ECB decisions. Pro members ($30/month, with a 7-day free trial) get a fully ad-free experience plus the Pro Dashboard: interactive sentiment history charts with 7, 30 and 90-day views showing how each currency's bias shifted over time, custom bias-flip email alerts that email you the moment sentiment flips bull to bear on the currencies you pick, a per-news currency impact feed, CSV export of your sentiment history, and a weekly Pro deep-dive market report.</p>
 
     <h2 style="color:#fff;font-size:24px;margin:36px 0 18px;font-weight:700;border-top:1px solid #1e293b;padding-top:32px;">Frequently Asked Questions</h2>
 
     <h3 style="color:#fff;font-size:17px;margin:18px 0 8px;font-weight:600;">Is FXNewsBias really free to use?</h3>
-    <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">Yes. The full sentiment dashboard, currency strength meter, 28-pair bias matrix, news feed, and economic calendar are free to use without signup. For traders who want more, Pro is $30/month with a 7-day free trial and adds a fully ad-free experience plus the Pro Dashboard — 12-month sentiment history charts, custom bias-flip email alerts, a per-news bias breakdown, a currency watchlist, CSV export, and a weekly Pro report — but the core market sentiment data is always free.</p>
+    <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">Yes. The full sentiment dashboard, currency strength meter, 28-pair bias matrix, news feed, and economic calendar are free to use without signup. For traders who want more, Pro is $30/month with a 7-day free trial and adds a fully ad-free experience plus the Pro Dashboard — sentiment history charts with 7, 30 and 90-day views, custom bias-flip email alerts, a per-news currency impact feed, CSV export, and a weekly Pro report — but the core market sentiment data is always free.</p>
 
     <h3 style="color:#fff;font-size:17px;margin:18px 0 8px;font-weight:600;">How is forex market sentiment calculated?</h3>
     <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">We pull live forex news every three hours from FXStreet, ForexLive, Action Forex, Forex Crunch, CNBC, MarketWatch, the Wall Street Journal, BBC News, and Investing.com. Each headline is analysed by an AI model trained to weight hawkish versus dovish central bank language, inflation and employment surprises, risk-on versus risk-off events, and geopolitical shocks. Each of the eight major currencies receives a bias score from strongly bearish to strongly bullish, which becomes the news sentiment signal you see on the dashboard.</p>
@@ -853,7 +940,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
-    {"@type": "Question", "name": "Is FXNewsBias really free to use?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The full sentiment dashboard, currency strength meter, 28-pair bias matrix, news feed, and economic calendar are free to use without signup. For traders who want more, Pro is $30/month with a 7-day free trial and adds a fully ad-free experience plus the Pro Dashboard — 12-month sentiment history charts, custom bias-flip email alerts, a per-news bias breakdown, a currency watchlist, CSV export, and a weekly Pro report — but the core market sentiment data is always free."}},
+    {"@type": "Question", "name": "Is FXNewsBias really free to use?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The full sentiment dashboard, currency strength meter, 28-pair bias matrix, news feed, and economic calendar are free to use without signup. For traders who want more, Pro is $30/month with a 7-day free trial and adds a fully ad-free experience plus the Pro Dashboard — sentiment history charts with 7, 30 and 90-day views, custom bias-flip email alerts, a per-news currency impact feed, CSV export, and a weekly Pro report — but the core market sentiment data is always free."}},
     {"@type": "Question", "name": "How is forex market sentiment calculated?", "acceptedAnswer": {"@type": "Answer", "text": "We pull live forex news every three hours from FXStreet, ForexLive, Action Forex, Forex Crunch, CNBC, MarketWatch, the Wall Street Journal, BBC News, and Investing.com. Each headline is analysed by an AI model trained to weight hawkish versus dovish central bank language, inflation and employment surprises, risk-on versus risk-off events, and geopolitical shocks. Each of the eight major currencies receives a bias score from strongly bearish to strongly bullish."}},
     {"@type": "Question", "name": "Which currency pairs and currencies does FXNewsBias cover?", "acceptedAnswer": {"@type": "Answer", "text": "We track the eight major currencies (USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD) and the 28 currency pairs that can be formed between them, which covers every major and cross pair retail forex traders use."}},
     {"@type": "Question", "name": "How often is the forex news sentiment data updated?", "acceptedAnswer": {"@type": "Answer", "text": "The sentiment grid, currency strength gauge, and pair bias matrix refresh every three hours, around the clock, seven days a week — news breaks on weekends too and we track it. Daily market insight wraps are published Monday to Friday only, covering the Asia, London, and New York sessions."}},
