@@ -169,6 +169,12 @@ if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const plan = await readSystemState(env, 'seo_intelligence:latest');
 return new Response(JSON.stringify(plan || { note: 'no plan yet — call /run-seo-intelligence?key=...' }, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
 }
+// Sprint 4 — manually run the stale-insight auto-prune (also runs daily 03:15).
+if (url.pathname === '/prune-insights') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await pruneStaleInsights(env);
+return new Response(JSON.stringify(result, null, 2), { status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
+}
 if (url.pathname === '/run-insight') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const result = await generateDailyInsight(env, url.searchParams.get('session') || undefined);
@@ -367,7 +373,10 @@ if (event.cron === '*/15 * * * *') {
     cleanupStepRuns(env).catch(e => console.log('cleanupStepRuns error:', e.message)),
     pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow error:', e.message)),
     // Once/day at 03:15 UTC: pull Search Console performance -> gsc_performance (E1).
-    ...(new Date().getUTCHours() === 3 ? [ingestGscPerformance(env).catch(e => console.log('ingestGscPerformance error:', e.message))] : []),
+    ...(new Date().getUTCHours() === 3 ? [(async () => {
+      await ingestGscPerformance(env).catch(e => console.log('ingestGscPerformance error:', e.message));
+      await pruneStaleInsights(env).catch(e => console.log('pruneStaleInsights error:', e.message));
+    })()] : []),
   ]));
 
 } else if (SESSION_BY_CRON[event.cron] && !_isWeekend) {
@@ -3958,6 +3967,86 @@ async function generateDailyInsight(env, session) {
     await _insSendFailureEmail(env, e, 'generateDailyInsight');
     return { ok: false, error: e.message };
   }
+}
+
+// ============================================================
+// SPRINT 4 (ongoing) — AUTO-PRUNE STALE THIN INSIGHTS
+// New dated recaps age into thin content — the exact "thin/duplicate content"
+// that got AdSense rejected. Once/day, noindex insights older than
+// PRUNE_AGE_DAYS with ~zero Search Console demand and drop them from sitemap.xml.
+// Reversible (noindex,follow — files stay live, equity flows). Batched + capped
+// so it never floods the GitHub API. Already-pruned slugs are tracked in
+// system_state['pruned_insights'] so each is processed once. Runs in the existing
+// 03:15 slot (no new cron trigger).
+// ============================================================
+const PRUNE_AGE_DAYS = 45;
+const PRUNE_MAX_PER_RUN = 8;
+
+async function pruneStaleInsights(env) {
+  if (!env.GITHUB_TOKEN) { console.log('pruneStaleInsights: no GITHUB_TOKEN'); return { ok: false, reason: 'no-token' }; }
+  const files = await _insListExistingArticles(env);
+  if (!files.length) { console.log('pruneStaleInsights: no files'); return { ok: false, reason: 'no-files' }; }
+
+  const st = await readSystemState(env, 'pruned_insights');
+  const pruned = new Set(Array.isArray(st && st.slugs) ? st.slugs : []);
+
+  // Per-insight GSC demand (last 90d)
+  const perf = {};
+  try {
+    const since = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/gsc_performance?select=key,clicks,impressions&dimension=eq.page&date=gte.${since}&key=ilike.*insight*`, {
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, Range: '0-9999' }, signal: AbortSignal.timeout(15000),
+    });
+    if (r.ok) for (const row of await r.json()) { const m = String(row.key || '').match(/\/insight\/([\w-]+)/); if (!m) continue; const a = perf[m[1]] || (perf[m[1]] = { clicks: 0, impr: 0 }); a.clicks += row.clicks || 0; a.impr += row.impressions || 0; }
+  } catch (e) { console.log('pruneStaleInsights perf:', e.message); }
+
+  const now = Date.now();
+  const candidates = [];
+  for (const f of files) {
+    const slug = f.replace(/\.html$/, '');
+    if (pruned.has(slug)) continue;
+    const m = slug.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (!m) continue;
+    const age = Math.floor((now - new Date(m[1] + 'T00:00:00Z')) / 864e5);
+    if (age < PRUNE_AGE_DAYS) continue;
+    const p = perf[slug] || { clicks: 0, impr: 0 };
+    if (p.clicks > 0 || p.impr >= 3) continue; // proven demand — keep indexed
+    candidates.push(slug);
+  }
+  if (!candidates.length) { console.log('pruneStaleInsights: nothing to prune'); return { ok: true, pruned: 0 }; }
+
+  const batch = candidates.slice(0, PRUNE_MAX_PER_RUN);
+  const filesToCommit = [];
+  const doneSlugs = [];
+  for (const slug of batch) {
+    const html = await _insGetFile(env, `insight/${slug}.html`);
+    if (!html) continue;
+    doneSlugs.push(slug); // mark regardless so we don't re-fetch it every day
+    if (/content="noindex/.test(html)) continue; // already noindex (e.g. the manual backlog)
+    const out = /<meta name="robots" content="[^"]*">/.test(html)
+      ? html.replace(/<meta name="robots" content="[^"]*">/, '<meta name="robots" content="noindex, follow">')
+      : html.replace(/<\/title>/, '</title>\n<meta name="robots" content="noindex, follow">');
+    filesToCommit.push({ path: `insight/${slug}.html`, content: out });
+  }
+
+  // Drop the freshly-pruned URLs from the sitemap in the same commit.
+  if (doneSlugs.length) {
+    const sm = await _insGetFile(env, 'sitemap.xml');
+    if (sm) {
+      const doneSet = new Set(doneSlugs);
+      const trimmed = sm.replace(/\s*<url>[\s\S]*?<\/url>/g, (block) => { const m = block.match(/\/insight\/([\w-]+)/); return (m && doneSet.has(m[1])) ? '' : block; });
+      if (trimmed !== sm) filesToCommit.push({ path: 'sitemap.xml', content: trimmed });
+    }
+  }
+
+  if (filesToCommit.length) {
+    try { await _insCommitFiles(env, filesToCommit, `seo: auto-prune ${filesToCommit.filter(f => f.path !== 'sitemap.xml').length} stale insight(s)`); }
+    catch (e) { console.log('pruneStaleInsights commit failed:', e.message); return { ok: false, error: e.message }; }
+  }
+  for (const s of doneSlugs) pruned.add(s);
+  await writeSystemState(env, 'pruned_insights', { slugs: [...pruned], updated_at: new Date().toISOString() });
+  console.log(`pruneStaleInsights: pruned ${doneSlugs.length} (candidates ${candidates.length}, committed ${filesToCommit.length} files)`);
+  return { ok: true, pruned: doneSlugs.length, candidates: candidates.length };
 }
 
 // ============================================================
