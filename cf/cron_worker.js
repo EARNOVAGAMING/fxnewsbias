@@ -826,19 +826,28 @@ async function ingestGscPerformance(env, opts = {}) {
   const base = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`;
 
   let upserted = 0;
-  for (const dim of ['query', 'page']) {
+  // Each spec = GSC dimensions to request + how to build the stored composite `key`.
+  // 'pq' (page×query) powers per-page real-query title optimisation (Sprint 3) and
+  // cannibalisation detection; stored in the same table under dimension='pq' with
+  // key = `${page}\t${query}` (no schema change).
+  const DIM_SPECS = [
+    { name: 'query', dims: ['date', 'query'],         keyOf: (r) => String(r.keys[1] || '') },
+    { name: 'page',  dims: ['date', 'page'],          keyOf: (r) => String(r.keys[1] || '') },
+    { name: 'pq',    dims: ['date', 'page', 'query'], keyOf: (r) => `${r.keys[1] || ''}\t${r.keys[2] || ''}` },
+  ];
+  for (const spec of DIM_SPECS) {
     const res = await fetch(base, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ startDate: fmt(start), endDate: fmt(end), dimensions: ['date', dim], rowLimit: 5000 }),
+      body: JSON.stringify({ startDate: fmt(start), endDate: fmt(end), dimensions: spec.dims, rowLimit: spec.name === 'pq' ? 25000 : 5000 }),
       signal: AbortSignal.timeout(25000),
     });
-    if (!res.ok) { console.log(`GSC ${dim} ${res.status}:`, (await res.text()).slice(0, 200)); continue; }
+    if (!res.ok) { console.log(`GSC ${spec.name} ${res.status}:`, (await res.text()).slice(0, 200)); continue; }
     const rows = ((await res.json()).rows || []).map(r => ({
-      date: r.keys[0], dimension: dim, key: String(r.keys[1] || '').slice(0, 2000),
+      date: r.keys[0], dimension: spec.name, key: spec.keyOf(r).slice(0, 2000),
       clicks: Math.round(r.clicks || 0), impressions: Math.round(r.impressions || 0),
       ctr: r.ctr || 0, position: r.position || 0, fetched_at: new Date().toISOString(),
-    })).filter(r => r.key);
+    })).filter(r => r.key && r.key !== '\t');
     for (let i = 0; i < rows.length; i += 500) {
       const chunk = rows.slice(i, i + 500);
       const up = await fetch(`${env.SUPABASE_URL}/rest/v1/gsc_performance?on_conflict=date,dimension,key`, {
@@ -847,7 +856,7 @@ async function ingestGscPerformance(env, opts = {}) {
           'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
         body: JSON.stringify(chunk), signal: AbortSignal.timeout(25000),
       });
-      if (!up.ok) console.log(`GSC upsert ${dim} ${up.status}:`, (await up.text()).slice(0, 200));
+      if (!up.ok) console.log(`GSC upsert ${spec.name} ${up.status}:`, (await up.text()).slice(0, 200));
       else upserted += chunk.length;
     }
   }
@@ -4211,13 +4220,56 @@ async function _recordTitleChange(env, slug, newTitle, reason) {
   });
 }
 
-async function generateCurrencySEO(ccy, sentData, headlines, env) {
+// SPRINT 3 — per-page top real search queries (last N days) from the page×query
+// GSC pull (dimension='pq', key=`${page}\t${query}`). Keyed by trailing-slash-
+// normalised path so /pairs/x and /pairs/x/ merge. Feeds the title prompts so
+// titles are written for actual demand + CTR. Fail-open: {} on error.
+async function _fetchPageQueries(env, days = 28) {
+  const map = {};
+  try {
+    const cutoff = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+    let all = [], from = 0;
+    while (true) {
+      const r = await fetch(`${env.SUPABASE_URL}/rest/v1/gsc_performance?select=key,impressions,clicks,position&dimension=eq.pq&date=gte.${cutoff}`, {
+        headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, Range: `${from}-${from + 999}` },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!r.ok) { console.log('pageQueries non-ok:', r.status); break; }
+      const rows = await r.json();
+      all.push(...rows);
+      if (rows.length < 1000) break;
+      from += 1000;
+    }
+    const agg = {};
+    for (const row of all) {
+      const sep = String(row.key || '').indexOf('\t');
+      if (sep < 0) continue;
+      const page = row.key.slice(0, sep), query = row.key.slice(sep + 1);
+      if (!page || !query) continue;
+      const url = (page.replace('https://fxnewsbias.com', '').replace(/\/+$/, '')) || '/';
+      const b = agg[url] || (agg[url] = {});
+      const q = b[query] || (b[query] = { impr: 0, posW: 0 });
+      q.impr += row.impressions || 0; q.posW += (row.position || 0) * (row.impressions || 0);
+    }
+    for (const [url, qs] of Object.entries(agg)) {
+      map[url] = Object.entries(qs)
+        .map(([query, a]) => ({ query, impr: a.impr, pos: a.impr ? a.posW / a.impr : 0 }))
+        .sort((x, y) => y.impr - x.impr).slice(0, 6);
+    }
+  } catch (e) { console.log('pageQueries error:', e.message); }
+  return map;
+}
+
+async function generateCurrencySEO(ccy, sentData, headlines, env, topQueries = []) {
   const dateStr  = new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   const dateShort = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
   const score   = sentData.score || 50;
   const bias    = sentData.bias  || 'Neutral';
   const drivers = (Array.isArray(sentData.drivers) ? sentData.drivers : []).slice(0,3).join('; ') || 'mixed signals across the board';
   const headlineList = headlines.length ? headlines.slice(0,5).map((h,i)=>`${i+1}. ${h}`).join('\n') : 'No major headlines in this window.';
+  const queryBlock = (topQueries && topQueries.length)
+    ? `\nREAL GOOGLE QUERIES already bringing impressions to THIS page (last 28d) — write the SEO <title> to MATCH this dominant search intent and lift click-through; mirror the searcher's wording where it fits naturally, never keyword-stuff:\n${topQueries.map(q => `- "${q.query}" (${q.impr} impr, avg pos ${Math.round(q.pos)})`).join('\n')}\n`
+    : '';
 
   const prompt = `You are a senior FX analyst at a major bank writing the "What Is Driving the ${ccy.code} Today" section of a live market page on ${dateStr}.
 
@@ -4225,7 +4277,7 @@ Current ${ccy.code} data:
 - Sentiment score: ${score}/100 (${bias})
 - Key drivers: ${drivers}
 - Recent headlines:\n${headlineList}
-
+${queryBlock}
 Write exactly 2 short paragraphs using ONLY <p> and <strong> tags. No headings, no lists, no other tags.
 
 Paragraph 1: What the ${ccy.name} is doing right now — reference the score (${score}/100), the bias (${bias}), specific drivers. Be direct and data-specific.
@@ -4282,6 +4334,7 @@ async function generateAllCurrencySEO(env, opts = {}) {
     const newsRows = newsResp.ok ? await newsResp.json() : [];
     console.log(`generateAllCurrencySEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
 
+    const pageQueries = await _fetchPageQueries(env);
     const titleUpdates = [];
     const CCY_BATCH = 4;
     for (let ci = 0; ci < SEO_CURRENCIES.length; ci += CCY_BATCH) {
@@ -4292,7 +4345,7 @@ async function generateAllCurrencySEO(env, opts = {}) {
           const relevant = newsRows.filter(n => (n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
           const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
           const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
-          const { pageTitle, html } = await generateCurrencySEO(ccy, sentData, headlines, env);
+          const { pageTitle, html } = await generateCurrencySEO(ccy, sentData, headlines, env, pageQueries['/currencies/' + ccy.code.toLowerCase()] || []);
           if (html) {
             try { await saveSEOCache(ccy.slug, html, env); } catch(ce) { console.log(`cache ${ccy.code}:`, ce.message); }
             console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100) — title: ${pageTitle}`);
@@ -4380,18 +4433,21 @@ const SEO_PAIRS = [
   { slug: 'chf-jpy',  name: 'CHF/JPY', base: 'CHF', quote: 'JPY', keywords: 'chfjpy sentiment today, chfjpy bias analysis, franc yen today' },
 ];
 
-async function generatePairSEO(pair, score, headlines, env) {
+async function generatePairSEO(pair, score, headlines, env, topQueries = []) {
   const dateStr   = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const dateShort = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   const biasLabel = score > 10 ? 'Bullish' : score < -10 ? 'Bearish' : 'Neutral';
   const headlineList = headlines.length ? headlines.slice(0, 5).map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No major headlines at this time.';
+  const queryBlock = (topQueries && topQueries.length)
+    ? `\nREAL GOOGLE QUERIES already bringing impressions to THIS page (last 28d) — write the SEO <title> to MATCH this dominant search intent and lift click-through; mirror the searcher's wording where it fits naturally, never keyword-stuff:\n${topQueries.map(q => `- "${q.query}" (${q.impr} impr, avg pos ${Math.round(q.pos)})`).join('\n')}\n`
+    : '';
 
   const prompt = `You are an expert forex analyst writing a concise, SEO-optimised market update for ${pair.name} on ${dateStr}.
 
 Current data:
 - Sentiment bias score: ${score} (${biasLabel} — positive = ${pair.base} strength, negative = ${pair.quote} strength)
 - Key forex headlines (last 3 hours):\n${headlineList}
-
+${queryBlock}
 Write a 3-paragraph HTML article using ONLY these tags: <p>, <strong>, <ul>, <li>. No headings, no other tags.
 
 Paragraph 1: Current ${pair.name} sentiment today — reference the bias score, explain what it means for direction.
@@ -4472,6 +4528,7 @@ async function generateAllPairSEO(env, opts = {}) {
     const newsRows = newsResp.ok ? await newsResp.json() : [];
     console.log(`generateAllPairSEO: ${sentRows.length} sentiment rows, ${newsRows.length} headlines`);
 
+    const pageQueries = await _fetchPageQueries(env);
     const titleUpdates = [];
     const BATCH = 3;
     for (let i = 0; i < SEO_PAIRS.length; i += BATCH) {
@@ -4485,7 +4542,7 @@ async function generateAllPairSEO(env, opts = {}) {
           const relevant = newsRows.filter(n => { const c = n.currencies_affected||[]; return c.includes(pair.base) || c.includes(pair.quote); }).map(n => n.title);
           const others   = newsRows.filter(n => { const c = n.currencies_affected||[]; return !c.includes(pair.base) && !c.includes(pair.quote); }).map(n => n.title);
           const pairHeadlines = [...relevant, ...others].filter(Boolean).slice(0, 6);
-          const { pageTitle, html } = await generatePairSEO(pair, pairScore, pairHeadlines, env);
+          const { pageTitle, html } = await generatePairSEO(pair, pairScore, pairHeadlines, env, pageQueries['/pairs/' + pair.slug] || []);
           if (html) {
             try { await saveSEOCache(pair.slug, html, env); } catch(ce) { console.log(`cache ${pair.slug}:`, ce.message); }
             console.log(`SEO processed: ${pair.slug} — title: ${pageTitle}`);
