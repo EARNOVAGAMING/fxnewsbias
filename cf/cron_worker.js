@@ -3482,6 +3482,10 @@ function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMov
   const shortHeadline = String(headline).split(" — ")[0]; const h = _insEsc(headline), hShort = _insEsc(shortHeadline), s = _insEsc(summary);
   const pageTitle = (narrative && narrative.pageTitle) ? _insEsc(narrative.pageTitle) : h;
   const N = narrative || _insBuildNarrative({sentiment, news, biggestMover});
+  // Internal links: funnel article-body authority into money pages. Shared budget
+  // across the prose sections (one link per target, capped) — glance cells untouched.
+  const _ilState = { used: new Set(), count: 0 };
+  const _il = (h) => _addInternalLinks(h, '', 6, _ilState);
   const sidebarCcys = _INS_CCY_ORDER.slice(0,5).map(c=>{const x=sentiment[c];if(!x)return '';return `<a class="side-link" href="/currencies"><span style="color:${_insBiasColor(x.bias)};font-weight:700;">${_insBiasArrow(x.bias)} ${c}</span> · <span style="color:#6b7280;font-weight:500;">${x.bias} ${x.score}/100</span></a>`;}).join('');
   // ogImageOverride = slug-specific PNG when SVG→PNG conversion succeeded.
   // Falls back to per-currency PNG which is always available.
@@ -3544,10 +3548,10 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <p class="lead">${N.lead}</p>
 <p class="standfirst">${N.standfirst}</p>
 <div class="art-sky"><ins class='dcmads' style='display:inline-block;width:160px;height:600px' data-dcm-placement='N800570.1808597HASOFFERS.COM/B21208975.381909257' data-dcm-rendering-mode='iframe' data-dcm-https-only data-dcm-click-tracker="https://trk.pepperstonepartners.com/aff_c?offer_id=367&aff_id=44603&file_id=5511" data-dcm-api-frameworks='[APIFRAMEWORKS]' data-dcm-omid-partner='[OMIDPARTNER]' data-dcm-gdpr-applies='gdpr=\${GDPR}' data-dcm-gdpr-consent='gdpr_consent=\${GDPR_CONSENT_755}' data-dcm-addtl-consent='addtl_consent=\${ADDTL_CONSENT}' data-dcm-ltd='false' data-dcm-resettable-device-id='' data-dcm-app-id=''><script src='https://www.googletagservices.com/dcm/dcmads.js'></script></ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=367&aff_id=44603&file_id=5511" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" /></div>
-<h2 class="h2">What Happened</h2>${N.whatHappened}
-<h2 class="h2">Market Reaction</h2>${N.reaction}
-<h2 class="h2">What's Driving the Move</h2>${N.driversSection}
-<h2 class="h2">What to Watch Next</h2>${N.scenarios}${N.closing}
+<h2 class="h2">What Happened</h2>${_il(N.whatHappened)}
+<h2 class="h2">Market Reaction</h2>${_il(N.reaction)}
+<h2 class="h2">What's Driving the Move</h2>${_il(N.driversSection)}
+<h2 class="h2">What to Watch Next</h2>${_il(N.scenarios)}${_il(N.closing)}
 <div class="glance"><div class="glance-h">📊 Bias snapshot at the time of writing</div><div class="glance-grid">${N.glance}</div></div>
 <div class="art-sky-b"><a href="https://trk.pepperstonepartners.com/aff_c?offer_id=391&aff_id=44603&file_id=5597"><img src="https://media.go2speed.org/brand/files/pepperstonegroup/391/TradingViewEssentials2401-StaticBanner-Affiliates-120x600-EN-02.png" width="120" height="600" border="0" /></a><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=391&aff_id=44603&file_id=5597" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" /></div>
 <div class="cta"><strong>Catch every session wrap as it drops.</strong> Bookmark <a href="/insight/">/insight/</a> or subscribe to our <a href="/insight/rss.xml">RSS feed</a> for fresh forex sentiment analysis 3 times a day — Asia, London and New York sessions.</div>
@@ -4011,10 +4015,10 @@ const _IL_RULES = (() => {
   for (const [code, re] of _IL_CCY) rules.push({ url: '/currencies/' + code, re });
   return rules;
 })();
-function _addInternalLinks(html, selfUrl = '', maxLinks = 4) {
+function _addInternalLinks(html, selfUrl = '', maxLinks = 4, state = null) {
   if (!html || typeof html !== 'string') return html;
-  const used = new Set();
-  let count = 0;
+  const used = state ? state.used : new Set();
+  let count = state ? state.count : 0;
   const parts = html.split(/(<[^>]+>)/);
   let skip = 0;
   const OPEN = /^<(a|script|style|h[1-6])\b/i;
@@ -4048,6 +4052,7 @@ function _addInternalLinks(html, selfUrl = '', maxLinks = 4) {
     out += tok.slice(pos);
     parts[i] = out;
   }
+  if (state) state.count = count;
   return parts.join('');
 }
 
