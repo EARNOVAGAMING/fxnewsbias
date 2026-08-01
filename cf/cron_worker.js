@@ -4136,6 +4136,68 @@ function _addInternalLinks(html, selfUrl = '', maxLinks = 4, state = null) {
   return parts.join('');
 }
 
+// ============================================
+// SPRINT 1 — PERFORMANCE-GATED TITLE UPDATES (reads live gsc_performance)
+// The 3-hourly cron used to rewrite + commit every money-page <title> 8x/day,
+// which never lets Google settle a title and churns pages already ranking.
+// These helpers gate the *title commit* only — the seo_cache analysis block
+// still refreshes every cycle. Winners (top-3, healthy CTR) are protected;
+// every other title is held on a ~20h cooldown so it survives a full day.
+// Cooldown state lives in system_state (no schema change). A richer audit log
+// (seo_title_history) is optional — see cf/RUN_THESE_SEO_MIGRATIONS.sql.
+// ============================================
+function _expectedCtr(pos) {
+  // Rough blended desktop+mobile CTR-by-position curve (pos1≈30%, 3≈12%, 10≈2%).
+  if (!pos || pos < 1) return 0.30;
+  return Math.max(0.008, 0.30 * Math.pow(pos, -0.95));
+}
+
+// One aggregated snapshot of the last ~12 finalised days of per-page GSC data,
+// keyed by site-relative path (e.g. '/pairs/chf-jpy/'). Position is impression-
+// weighted so one thin day can't skew a page's average. Fail-open: {} on error.
+async function _fetchPagePerf(env) {
+  const map = {};
+  try {
+    const cutoff = new Date(Date.now() - 12 * 864e5).toISOString().slice(0, 10);
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/gsc_performance?select=key,clicks,impressions,position&dimension=eq.page&date=gte.${cutoff}`, {
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, Range: '0-9999' },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) { console.log('pagePerf fetch non-ok:', r.status); return map; }
+    const agg = {};
+    for (const row of await r.json()) {
+      const u = (String(row.key || '').replace('https://fxnewsbias.com', '')) || '/';
+      const a = agg[u] || (agg[u] = { clicks: 0, impr: 0, posW: 0 });
+      a.clicks += row.clicks || 0; a.impr += row.impressions || 0; a.posW += (row.position || 0) * (row.impressions || 0);
+    }
+    for (const [u, a] of Object.entries(agg)) map[u] = { clicks: a.clicks, impr: a.impr, ctr: a.impr ? a.clicks / a.impr : 0, pos: a.impr ? a.posW / a.impr : 0 };
+  } catch (e) { console.log('pagePerf error:', e.message); }
+  return map;
+}
+
+// Decide whether we may commit a NEW <title> for this page right now.
+// Returns { allow, reason }. Never throws (state helpers fail-open to null).
+async function _titleGateAllows(slug, perf, env) {
+  // 1) Protect genuine winners — top-3 with healthy CTR. Never churn these.
+  if (perf && perf.impr >= 5 && perf.pos >= 1 && perf.pos <= 3 && perf.ctr >= _expectedCtr(perf.pos) * 0.7) {
+    return { allow: false, reason: `protect-winner(pos=${perf.pos.toFixed(1)},ctr=${(perf.ctr * 100).toFixed(0)}%)` };
+  }
+  // 2) Cooldown — hold any title ~20h (was overwritten every 3h) so Google can
+  //    actually settle it before we change it again.
+  const st = await readSystemState(env, `seo_title_gate:${slug}`);
+  if (st && st.last_changed_at) {
+    const ageH = (Date.now() - new Date(st.last_changed_at).getTime()) / 3.6e6;
+    if (ageH < 20) return { allow: false, reason: `cooldown(${ageH.toFixed(1)}h)` };
+  }
+  return { allow: true, reason: perf ? `ok(pos=${perf.pos.toFixed(1)})` : 'ok(no-data)' };
+}
+
+async function _recordTitleChange(env, slug, newTitle, reason) {
+  await writeSystemState(env, `seo_title_gate:${slug}`, {
+    last_changed_at: new Date().toISOString(), title: newTitle, reason,
+  });
+}
+
 async function generateCurrencySEO(ccy, sentData, headlines, env) {
   const dateStr  = new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   const dateShort = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
@@ -4230,15 +4292,21 @@ async function generateAllCurrencySEO(env, opts = {}) {
       if (ci + CCY_BATCH < SEO_CURRENCIES.length) await new Promise(r => setTimeout(r, 600));
     }
 
-    // Patch <title>, og:title, twitter:title in each static HTML file and commit as one batch
+    // Patch <title>, og:title, twitter:title in each static HTML file and commit as one batch.
+    // Sprint 1: performance gate — protect winners, ~20h title cooldown. The
+    // seo_cache analysis block already refreshed above regardless of this gate.
     if (titleUpdates.length > 0) {
       try {
+        const pagePerf = await _fetchPagePerf(env);
         const fileContents = await Promise.all(titleUpdates.map(({ path }) => _insGetFile(env, path)));
         const filesToCommit = [];
+        const committed = [];
         for (let i = 0; i < titleUpdates.length; i++) {
           const { path, pageTitle, ccy, sentData } = titleUpdates[i];
           const current = fileContents[i];
           if (!current) { console.log(`Currency title patch: file not found ${path}`); continue; }
+          const gate = await _titleGateAllows(ccy.slug, pagePerf[`/currencies/${ccy.code.toLowerCase()}/`], env);
+          if (!gate.allow) { console.log(`Currency title HELD ${ccy.code}: ${gate.reason}`); continue; }
           const safe = pageTitle.replace(/"/g, '&quot;');
 
           // Extract catalyst from title: "CODE BIAS SCORE/100 | CATALYST — DATE"
@@ -4264,11 +4332,13 @@ async function generateAllCurrencySEO(env, opts = {}) {
             .replace(/<meta name="twitter:description"[^>]*>/, `<meta name="twitter:description" content="${safeDesc}">`)
             .replace(/(<h1[^>]*><span[^>]*>[^<]*<\/span>\s*)[^<]*(<\/h1>)/, `$1${h1Text}$2`);
           filesToCommit.push({ path, content: patched });
+          committed.push({ slug: ccy.slug, pageTitle });
         }
         if (filesToCommit.length > 0) {
           const dateLabel = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
           await _insCommitFiles(env, filesToCommit, `seo: update currency page titles — ${dateLabel}`);
-          console.log(`Currency SEO: committed ${filesToCommit.length} title patches`);
+          for (const c of committed) await _recordTitleChange(env, c.slug, c.pageTitle, 'seo-cycle');
+          console.log(`Currency SEO: committed ${filesToCommit.length}/${titleUpdates.length} title patches (rest held by gate)`);
         }
       } catch(e) {
         console.log('Currency SEO title commit error:', e.message);
@@ -4413,15 +4483,22 @@ async function generateAllPairSEO(env, opts = {}) {
       if (i + BATCH < SEO_PAIRS.length) await new Promise(r => setTimeout(r, 1000));
     }
 
-    // Patch <title>, og:title, twitter:title in each static HTML file and commit as one batch
+    // Patch <title>, og:title, twitter:title in each static HTML file and commit as one batch.
+    // Sprint 1: only commit a NEW title for pages the performance gate allows
+    // (protect top-3 winners; ~20h cooldown so a title survives a full day). The
+    // seo_cache analysis block already refreshed above regardless of this gate.
     if (titleUpdates.length > 0) {
       try {
+        const pagePerf = await _fetchPagePerf(env);
         const fileContents = await Promise.all(titleUpdates.map(({ path }) => _insGetFile(env, path)));
         const filesToCommit = [];
+        const committed = [];
         for (let i = 0; i < titleUpdates.length; i++) {
           const { path, pageTitle, pair, pairScore } = titleUpdates[i];
           const current = fileContents[i];
           if (!current) { console.log(`Pair title patch: file not found ${path}`); continue; }
+          const gate = await _titleGateAllows(pair.slug, pagePerf[`/pairs/${pair.slug}/`], env);
+          if (!gate.allow) { console.log(`Pair title HELD ${pair.slug}: ${gate.reason}`); continue; }
           const safe = pageTitle.replace(/"/g, '&quot;');
 
           // Extract catalyst from title: "PAIR BIAS Today | CATALYST — DATE" or "...: CATALYST — DATE"
@@ -4446,11 +4523,13 @@ async function generateAllPairSEO(env, opts = {}) {
             .replace(/<meta name="twitter:description"[^>]*>/, `<meta name="twitter:description" content="${safeDesc}">`)
             .replace(/(<h1[^>]*><span[^>]*>[^<]*<\/span>\s*)[^<]*(<\/h1>)/, `$1${h1Text}$2`);
           filesToCommit.push({ path, content: patched });
+          committed.push({ slug: pair.slug, pageTitle });
         }
         if (filesToCommit.length > 0) {
           const dateLabel = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
           await _insCommitFiles(env, filesToCommit, `seo: update pair page titles — ${dateLabel}`);
-          console.log(`Pair SEO: committed ${filesToCommit.length} title patches`);
+          for (const c of committed) await _recordTitleChange(env, c.slug, c.pageTitle, 'seo-cycle');
+          console.log(`Pair SEO: committed ${filesToCommit.length}/${titleUpdates.length} title patches (rest held by gate)`);
         }
       } catch(e) {
         console.log('Pair SEO title commit error:', e.message);
