@@ -1064,7 +1064,10 @@ async function handleWelcomeEmail(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
 
   const internalKey = request.headers.get('X-Internal-Key');
-  if (!env.CRON_TRIGGER_KEY || internalKey !== env.CRON_TRIGGER_KEY) {
+  // Client-called endpoint: gated by its OWN low-privilege key, never the admin
+  // CRON_TRIGGER_KEY (which must not appear in client code). Even if this key is
+  // read from page source, it can only trigger a welcome email — not ops/cleanup.
+  if (!env.WELCOME_EMAIL_KEY || internalKey !== env.WELCOME_EMAIL_KEY) {
     return new Response('Unauthorized', { status: 401, headers: cors });
   }
   if (!env.RESEND_API_KEY) {
