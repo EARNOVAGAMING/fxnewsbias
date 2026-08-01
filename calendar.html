@@ -131,7 +131,37 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   .info-section{padding:0 16px;}
   .cal-wrap{padding:0 16px;}
   .footer-inner{padding:0 16px;}
-}</style>
+  .cal-wrap,.seo-content{padding:0 16px;}
+  .cal-time{min-width:64px;}
+}
+/* IN-HOUSE ECONOMIC CALENDAR */
+.cal-wrap{max-width:1000px;margin:16px auto 8px;padding:0 24px;}
+.cal-legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--text-soft);margin-bottom:14px;}
+.cal-day{margin-bottom:18px;}
+.cal-day-head{font-size:13px;font-weight:800;color:#0f172a;background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin-bottom:8px;letter-spacing:-.2px;}
+.cal-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:#fff;box-shadow:var(--shadow-sm);flex-wrap:wrap;}
+.cal-row[data-impact="high"]{border-left:4px solid var(--bear);}
+.cal-row[data-impact="medium"]{border-left:4px solid var(--neutral);}
+.cal-row[data-impact="low"]{border-left:4px solid var(--border-strong);}
+.cal-time{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--text-soft);min-width:82px;}
+.cal-imp{font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:4px;letter-spacing:.4px;}
+.i-high{background:#fef2f2;color:#991b1b;}.i-medium{background:#fffbeb;color:#92400e;}.i-low{background:#f1f5f9;color:#475569;}
+.cal-ccy{font-size:12px;font-weight:700;color:#334155;background:#f1f5f9;padding:2px 8px;border-radius:4px;}
+.cal-bias{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;}
+.cal-bias.b-bullish{background:#ecfdf5;color:#065f46;}.cal-bias.b-bearish{background:#fef2f2;color:#991b1b;}.cal-bias.b-neutral{background:#f1f5f9;color:#475569;}
+.cal-ev{flex:1;min-width:200px;}
+.cal-ev-title{font-size:14px;font-weight:700;color:#0f172a;line-height:1.35;}
+.cal-ev-detail{font-size:12px;color:var(--text-soft);line-height:1.5;margin-top:2px;}
+.cal-empty{color:var(--text-soft);padding:20px;text-align:center;}
+.cal-note{font-size:11px;color:var(--text-muted);margin:4px 0 8px;line-height:1.6;}
+.seo-content{max-width:1000px;margin:8px auto 0;padding:0 24px;}
+.seo-card{background:var(--bg-soft);border:1px solid var(--border);border-radius:14px;padding:22px 26px;}
+.seo-card h2{font-size:18px;font-weight:800;color:#0f172a;margin:18px 0 10px;letter-spacing:-.3px;}
+.seo-card h2:first-child{margin-top:0;}
+.seo-card p{font-size:14px;color:#334155;line-height:1.7;margin-bottom:12px;}
+.faq-item{border-top:1px solid var(--border);padding-top:12px;margin-top:12px;}
+.faq-item h3{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:6px;}
+.faq-item p{margin-bottom:0;}</style>
 <style>nav>ul{display:none}.burger{display:flex!important;align-items:center;justify-content:center}</style>
 <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
@@ -145,6 +175,18 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <script>if(localStorage.getItem('fxnb_logged_in')==='true'){var s=document.createElement('style');s.textContent='a[href="/login"],a[href="/register"]{display:none!important}';document.head.appendChild(s);}</script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},{"@type":"ListItem","position":2,"name":"Economic Calendar","item":"https://fxnewsbias.com/calendar"}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":"Forex Economic Calendar","description":"High-impact forex economic events (NFP, CPI, ISM, central-bank decisions) with live currency sentiment.","url":"https://fxnewsbias.com/calendar","isPartOf":{"@type":"WebSite","name":"FXNewsBias","url":"https://fxnewsbias.com"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"What is a forex economic calendar?","acceptedAnswer":{"@type":"Answer","text":"A forex economic calendar is a schedule of upcoming economic data releases and central-bank events — such as interest-rate decisions, inflation (CPI), jobs (NFP) and GDP — that move currency exchange rates. FXNewsBias also tags each event with the live sentiment of the currency it affects."}},
+{"@type":"Question","name":"Which economic events move forex the most?","acceptedAnswer":{"@type":"Answer","text":"The highest-impact events are central-bank rate decisions (Fed, ECB, BoE, BoJ), US Non-Farm Payrolls (NFP), CPI inflation, GDP and ISM/PMI surveys. These are flagged High impact on the calendar."}},
+{"@type":"Question","name":"What time is Non-Farm Payrolls (NFP) released?","acceptedAnswer":{"@type":"Answer","text":"NFP is released on the first Friday of each month at 8:30 AM US Eastern time (12:30 UTC in summer, 13:30 UTC in winter). It is the single biggest scheduled mover for the US dollar."}},
+{"@type":"Question","name":"How is the FXNewsBias calendar different?","acceptedAnswer":{"@type":"Answer","text":"Unlike a standard calendar, every event here is paired with the current news-based sentiment and bias of the currency it affects, so you can see the market's standing position going into each release."}},
+{"@type":"Question","name":"Is the forex economic calendar free?","acceptedAnswer":{"@type":"Answer","text":"Yes. The FXNewsBias economic calendar and currency sentiment are free to use."}}
+]}
 </script>
 </head>
 <body>
@@ -204,8 +246,8 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 <section class="page-head">
   <div class="page-head-inner">
     <div class="breadcrumb"><a href="/">Home</a> · Economic Calendar</div>
-    <h1 class="page-title">Economic Calendar</h1>
-    <p class="page-sub">Real-time forex economic calendar covering all major economies. Track high-impact events that move currency markets.</p>
+    <h1 class="page-title">Forex Economic Calendar</h1>
+    <p class="page-sub">This week's high-impact forex events — each tagged with the live FXNewsBias sentiment of the currency it moves. Times shown in UTC.</p>
   </div>
 </section>
 
@@ -220,16 +262,30 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 </div>
 
 <div class="cal-wrap">
-  <div class="cal-embed">
-    <iframe title="Economic calendar — high-impact forex events" 
-      src="https://sslecal2.investing.com?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone,timeselector,filters&countries=25,32,6,37,72,22,17,39,14,10,35,43,56,36,110,11,26,12,4,5&calType=day&timeZone=8&lang=1" 
-      allowtransparency="true"
-      scrolling="auto"></iframe>
-    <div class="cal-credit">
-      Real-time Economic Calendar provided by <a href="https://www.investing.com/" rel="nofollow noopener" target="_blank">Investing.com</a>
-    </div>
+  <div class="cal-legend">
+    <span>Impact:</span>
+    <span class="cal-imp i-high">High</span>
+    <span class="cal-imp i-medium">Medium</span>
+    <span class="cal-imp i-low">Low</span>
+    <span style="margin-left:auto;">Times in <strong>UTC</strong> · bias = live FXNewsBias sentiment</span>
   </div>
+  <div id="calendar-events"><!-- CALENDAR_EVENTS --></div>
+  <p class="cal-note">Covers the highest-impact recurring US releases (NFP, ISM, jobless claims) plus any confirmed central-bank decisions, each shown with the live sentiment of the currency it affects. Release times are indicative (standard schedule) — always confirm against the official source before trading.</p>
 </div></main>
+
+<section class="seo-content">
+  <div class="seo-card">
+    <h2>Forex Economic Calendar</h2>
+    <p>The <strong>forex economic calendar</strong> tracks the scheduled data releases and central-bank events that move currency markets — interest-rate decisions, inflation (CPI), jobs reports (NFP), GDP and the ISM/PMI surveys. What makes this calendar different is the <strong>live sentiment</strong> beside every event: each release is tagged with the current news-based bias of the currency it affects, so you can see the market's standing position <em>before</em> the number prints.</p>
+    <p>Use it alongside the <a href="/news">live forex news feed</a>, our <a href="/currencies">currency sentiment</a> and <a href="/pairs">pair analysis</a>, and the <a href="/insight/">daily market insight</a>. High-impact events (flagged red) tend to cause the sharpest volatility — beats versus forecast are typically bullish for that currency, misses bearish.</p>
+    <h2>Economic Calendar FAQ</h2>
+    <div class="faq-item"><h3>What is a forex economic calendar?</h3><p>A forex economic calendar is a schedule of upcoming economic data releases and central-bank events — interest-rate decisions, inflation (CPI), jobs (NFP), GDP and more — that move currency exchange rates. FXNewsBias also tags each event with the live sentiment of the currency it affects.</p></div>
+    <div class="faq-item"><h3>Which economic events move forex the most?</h3><p>The highest-impact events are central-bank rate decisions (Fed, ECB, BoE, BoJ), US Non-Farm Payrolls (NFP), CPI inflation, GDP and the ISM/PMI surveys. These are flagged “High” impact above.</p></div>
+    <div class="faq-item"><h3>What time is Non-Farm Payrolls (NFP) released?</h3><p>NFP is released on the first Friday of each month at 8:30 AM US Eastern time — 12:30 UTC in summer, 13:30 UTC in winter. It is the single biggest scheduled mover for the US dollar.</p></div>
+    <div class="faq-item"><h3>How is the FXNewsBias calendar different?</h3><p>Every event here is paired with the current news-based sentiment and bias of the currency it affects, so you can see the market's standing position going into each release — not just the schedule.</p></div>
+    <div class="faq-item"><h3>Is the forex economic calendar free?</h3><p>Yes. The FXNewsBias economic calendar and real-time currency sentiment are free to use.</p></div>
+  </div>
+</section>
 
 <footer>
   <div class="footer-inner">

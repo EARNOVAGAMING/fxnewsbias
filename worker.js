@@ -65,6 +65,9 @@ export default {
     // News hub — server-render the latest headlines so crawlers see real content.
     if (url.pathname === '/news') return serveNewsPage(request, env);
 
+    // Economic calendar — in-house SSR (replaces the Investing.com iframe).
+    if (url.pathname === '/calendar') return serveCalendarPage(request, env);
+
     // Forecast post pages — /forecast/DOCID/ (Firestore doc IDs are 20-char alphanumeric)
     const fcMatch = url.pathname.match(/^\/forecast\/([A-Za-z0-9]{10,})\/?$/);
     if (fcMatch) {
@@ -239,6 +242,132 @@ function renderNewsCard(item) {
   const pills = affs.slice(0, 6).map(a => `<span class="affect-pill ${pillCls}">${esc(a)} ${arrow}</span>`).join('');
   const affecting = affs.length ? `<div class="news-affecting">Affecting ${esc(affs.join(', '))}</div>` : '';
   return `<div class="news-card" data-source="${esc(String(item.source || '').toLowerCase())}" data-impact="${impact}" data-title="${esc(title.toLowerCase())}" data-currencies="${esc(affs.join(',').toLowerCase())}"><div class="news-content"><div class="news-meta-top"><span class="src">${esc(String(item.source || 'NEWS').toUpperCase())}</span><span class="ts">${esc(newsTimeAgo(item.created_at))}</span></div><h3 class="news-title">${esc(title)}</h3>${affecting}<div class="news-affects">${pills}</div></div></div>`;
+}
+
+// ── Economic calendar (in-house SSR — replaces the Investing.com iframe) ──────
+// Renders the next ~3 weeks of reliably rule-derivable high-impact USD events
+// (NFP, jobless claims, ISM, ADP) — accurate by construction, no data feed —
+// merged with any curated events in system_state['economic_events'] (central-bank
+// decisions etc. added from official schedules). Each event is tagged with the
+// affected currency's live sentiment. Fully server-rendered so it is real,
+// indexable content (the old cross-origin iframe indexed nothing → ranked pos 59).
+const CAL_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const CAL_DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const pad2 = (n) => String(n).padStart(2, '0');
+
+function calNthWeekday(year, month, weekday, n) {
+  const d = new Date(Date.UTC(year, month, 1)); let c = 0;
+  while (d.getUTCMonth() === month) { if (d.getUTCDay() === weekday && ++c === n) return new Date(d); d.setUTCDate(d.getUTCDate() + 1); }
+  return null;
+}
+function calNthBusinessDay(year, month, n) {
+  const d = new Date(Date.UTC(year, month, 1)); let c = 0;
+  while (d.getUTCMonth() === month) { const w = d.getUTCDay(); if (w !== 0 && w !== 6 && ++c === n) return new Date(d); d.setUTCDate(d.getUTCDate() + 1); }
+  return null;
+}
+// Hours to add to US-Eastern to get UTC (EDT=+4 during DST, else EST=+5).
+function usEasternOffset(date) {
+  const y = date.getUTCFullYear();
+  const dstStart = calNthWeekday(y, 2, 0, 2), dstEnd = calNthWeekday(y, 10, 0, 1);
+  return (date >= dstStart && date < dstEnd) ? 4 : 5;
+}
+function calET(baseDate, hhET, mmET) {
+  const d = new Date(baseDate); d.setUTCHours(0, 0, 0, 0);
+  d.setUTCHours(hhET + usEasternOffset(d), mmET, 0, 0);
+  return d;
+}
+
+function buildRecurringEvents(fromDate, days) {
+  const start = new Date(fromDate); start.setUTCHours(0, 0, 0, 0);
+  const end = new Date(start.getTime() + days * 864e5);
+  const events = [];
+  // Weekly — US Initial Jobless Claims, Thursdays 8:30 ET
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    if (d.getUTCDay() === 4) events.push({ when: calET(d, 8, 30), currency: 'USD', impact: 'Medium', title: 'US Initial Jobless Claims', detail: 'Weekly first-time unemployment filings — a fast read on the US labour market.' });
+  }
+  // Monthly — for each month the window touches
+  const months = new Set();
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) months.add(d.getUTCFullYear() + ':' + d.getUTCMonth());
+  for (const key of months) {
+    const [y, m] = key.split(':').map(Number);
+    const ff = calNthWeekday(y, m, 5, 1); // first Friday
+    if (ff) {
+      events.push({ when: calET(ff, 8, 30), currency: 'USD', impact: 'High', title: 'US Non-Farm Payrolls (NFP)', detail: 'The month’s marquee US jobs report — the single biggest scheduled mover for the dollar.' });
+      events.push({ when: calET(ff, 8, 30), currency: 'USD', impact: 'High', title: 'US Unemployment Rate & Avg Hourly Earnings', detail: 'Released with NFP; wage growth drives Fed rate expectations.' });
+      const adp = new Date(ff); adp.setUTCDate(adp.getUTCDate() - 2); // Wed before NFP
+      events.push({ when: calET(adp, 8, 15), currency: 'USD', impact: 'Medium', title: 'ADP Non-Farm Employment Change', detail: 'Private-payrolls preview two days before NFP.' });
+    }
+    const im = calNthBusinessDay(y, m, 1);
+    if (im) events.push({ when: calET(im, 10, 0), currency: 'USD', impact: 'High', title: 'ISM Manufacturing PMI', detail: 'Factory-sector health; a reading below 50 signals contraction.' });
+    const is = calNthBusinessDay(y, m, 3);
+    if (is) events.push({ when: calET(is, 10, 0), currency: 'USD', impact: 'High', title: 'ISM Services PMI', detail: 'Services dominate US output — a key growth and inflation gauge.' });
+  }
+  return events.filter(e => e.when >= start && e.when <= end);
+}
+
+async function fetchCalendarSentiment(env) {
+  try {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment?select=currency,bias,score&order=created_at.desc&limit=16`,
+      { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(8000) });
+    return r.ok ? await r.json() : [];
+  } catch { return []; }
+}
+// Curated date-specific events (central-bank decisions etc.) live in
+// system_state['economic_events'] as an array of {when,currency,impact,title,detail}.
+async function fetchCalendarOverrides(env) {
+  try {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/system_state?key=eq.economic_events&select=value`,
+      { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return [];
+    const v = (await r.json())?.[0]?.value;
+    return Array.isArray(v) ? v : (Array.isArray(v?.events) ? v.events : []);
+  } catch { return []; }
+}
+
+function renderCalendar(events, sentMap) {
+  if (!events.length) return '';
+  const byDay = new Map();
+  for (const e of events.sort((a, b) => a.when - b.when)) {
+    const k = e.when.toISOString().slice(0, 10);
+    if (!byDay.has(k)) byDay.set(k, []);
+    byDay.get(k).push(e);
+  }
+  let html = '';
+  for (const [day, evs] of byDay) {
+    const d = new Date(day + 'T00:00:00Z');
+    html += `<div class="cal-day"><div class="cal-day-head">${CAL_DOW[d.getUTCDay()]}, ${d.getUTCDate()} ${CAL_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}</div>`;
+    for (const e of evs) {
+      const imp = String(e.impact || 'Medium');
+      const s = sentMap[e.currency];
+      const bias = s && s.bias
+        ? `<span class="cal-bias b-${String(s.bias).toLowerCase()}" title="Live FXNewsBias sentiment">${esc(e.currency)} ${esc(s.bias)}${s.score != null ? ' ' + s.score : ''}</span>`
+        : `<span class="cal-ccy">${esc(e.currency)}</span>`;
+      html += `<div class="cal-row" data-impact="${imp.toLowerCase()}"><span class="cal-time">${pad2(e.when.getUTCHours())}:${pad2(e.when.getUTCMinutes())} UTC</span><span class="cal-imp i-${imp.toLowerCase()}">${esc(imp)}</span>${bias}<div class="cal-ev"><div class="cal-ev-title">${esc(e.title)}</div>${e.detail ? `<div class="cal-ev-detail">${esc(e.detail)}</div>` : ''}</div></div>`;
+    }
+    html += `</div>`;
+  }
+  return html;
+}
+
+async function serveCalendarPage(request, env) {
+  const [assetResp, sentRows, overrides] = await Promise.all([
+    env.ASSETS.fetch(request),
+    fetchCalendarSentiment(env),
+    fetchCalendarOverrides(env),
+  ]);
+  if (!assetResp.ok) return assetResp;
+  if (!(assetResp.headers.get('content-type') || '').includes('text/html')) return assetResp;
+  let html = await assetResp.text();
+  const sentMap = {};
+  for (const r of sentRows || []) if (!sentMap[r.currency]) sentMap[r.currency] = { bias: r.bias, score: r.score };
+  const curated = (overrides || [])
+    .map(o => ({ when: new Date(o.when), currency: String(o.currency || '').toUpperCase(), impact: o.impact || 'High', title: o.title, detail: o.detail || '' }))
+    .filter(o => o.title && !isNaN(o.when));
+  const events = [...buildRecurringEvents(new Date(), 21), ...curated];
+  if (html.includes('<!-- CALENDAR_EVENTS -->')) {
+    html = html.replace('<!-- CALENDAR_EVENTS -->', renderCalendar(events, sentMap) || '<p class="cal-empty">No major scheduled events in the next three weeks.</p>');
+  }
+  return new Response(html, { status: 200, headers: buildHeaders(assetResp) });
 }
 
 // ── Forecast post SSR ─────────────────────────────────────────────────────────
