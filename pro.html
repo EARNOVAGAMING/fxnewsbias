@@ -276,8 +276,8 @@ import('https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js').then(async (
         const fresh=await auth.currentUser.getIdToken();
         const res=await fetch(API+'/create-portal-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:fresh})}).then(r=>r.json());
         if(res.url){location.href=res.url;return;}
-        toast('⚠️ '+(res.message||'Billing portal unavailable'));
-      }catch(e){toast('⚠️ Could not open billing');}
+        location.href='https://billing.stripe.com/p/login/00wfZjcoa2LzdDNaIS0RG00';
+      }catch(e){location.href='https://billing.stripe.com/p/login/00wfZjcoa2LzdDNaIS0RG00';}
       b.disabled=false;b.textContent='💳 Manage subscription';
     };
     $('save-alerts').onclick=async()=>{

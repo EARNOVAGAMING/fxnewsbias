@@ -602,8 +602,9 @@ window.manageSubscription = async function(btn) {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken })
     }).then(r => r.json());
     if (res.url) { window.location.href = res.url; return; }
-    alert(res.message || 'The billing portal is not available yet. Please contact support.');
-  } catch (e) { alert('Could not open the billing portal.'); }
+    // Fallback: Stripe hosted portal login (customer enters email → magic link)
+    window.location.href = 'https://billing.stripe.com/p/login/00wfZjcoa2LzdDNaIS0RG00';
+  } catch (e) { window.location.href = 'https://billing.stripe.com/p/login/00wfZjcoa2LzdDNaIS0RG00'; }
   if (btn) { btn.disabled = false; btn.textContent = orig; }
 };
 
