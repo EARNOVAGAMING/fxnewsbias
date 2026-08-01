@@ -583,7 +583,9 @@ case 'customer.subscription.created':
 case 'customer.subscription.updated': {
 const subscription = event.data.object;
 const customerId = subscription.customer;
-const isActive = subscription.status === 'active';
+// A free trial has status 'trialing' (not 'active'); count it as Pro so the
+// 7-day trial grants access immediately and isn't revoked by subscription.created.
+const isActive = subscription.status === 'active' || subscription.status === 'trialing';
 const periodEndIso = subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null;
 const cancelAtPeriodEnd = subscription.cancel_at_period_end === true;
 const customerEmail = await getStripeCustomerEmail(customerId, env);
@@ -1118,7 +1120,7 @@ async function handleWelcomeEmail(request, env) {
         <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#c4b5fd;letter-spacing:0.1em;text-transform:uppercase;">Ready to go Pro?</p>
         <h2 style="margin:0 0 12px;color:#ffffff;font-size:20px;font-weight:800;">Unlock the Full Edge</h2>
         <p style="margin:0 0 20px;font-size:13px;color:#c4b5fd;line-height:1.6;">Full sentiment history · Advanced filters · Weekly AI intelligence brief · Priority updates</p>
-        <a href="https://fxnewsbias.com/report" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:15px;font-weight:800;padding:14px 32px;border-radius:8px;text-decoration:none;">⭐ Upgrade to Pro — $9.99/mo</a>
+        <a href="https://fxnewsbias.com/report" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:15px;font-weight:800;padding:14px 32px;border-radius:8px;text-decoration:none;">⭐ Upgrade to Pro — $30/mo</a>
       </td></tr>
     </table>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.7;">Questions? Reply to this email or visit <a href="https://fxnewsbias.com/contact" style="color:#1e40af;text-decoration:none;font-weight:600;">fxnewsbias.com/contact</a></p>
@@ -1143,7 +1145,7 @@ Here's what you can do right now:
 💬 Join the community — share your analysis
 
 Ready to go Pro?
-Upgrade to FXNewsBias Pro for $9.99/month and unlock full history, advanced filters and priority updates.
+Upgrade to FXNewsBias Pro for $30/month and unlock full history, advanced filters and priority updates.
 → https://fxnewsbias.com/report
 
 Questions? Reply to this email or visit https://fxnewsbias.com/contact
@@ -1367,7 +1369,7 @@ async function _buildBroadcastHtml(env, firstName = 'Trader') {
       <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#c4b5fd;letter-spacing:.1em;text-transform:uppercase;">Want More?</p>
       <h3 style="margin:0 0 8px;color:#fff;font-size:18px;font-weight:800;">Get the Full Sentiment History</h3>
       <p style="margin:0 0 16px;font-size:13px;color:#c4b5fd;line-height:1.6;">Upgrade to Pro for full history, advanced filters and the weekly AI intelligence brief.</p>
-      <a href="https://fxnewsbias.com/report" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:14px;font-weight:800;padding:12px 28px;border-radius:7px;text-decoration:none;">⭐ Upgrade to Pro — $9.99/mo</a>
+      <a href="https://fxnewsbias.com/report" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:14px;font-weight:800;padding:12px 28px;border-radius:7px;text-decoration:none;">⭐ Upgrade to Pro — $30/mo</a>
     </td></tr></table>
     <p style="margin:0 0 4px;font-size:15px;color:#0f172a;">Happy trading,</p>
     <p style="margin:0 0 28px;font-size:15px;font-weight:700;color:#0f172a;">The FXNewsBias Team</p>
