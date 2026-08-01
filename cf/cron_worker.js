@@ -3985,6 +3985,72 @@ const SEO_CURRENCIES = [
   { slug:'ccy-nzd', code:'NZD', name:'New Zealand Dollar',  bank:'Reserve Bank of New Zealand (RBNZ)',    pairs:'NZD/USD, AUD/NZD',           keywords:'nzd sentiment today, kiwi bias today, new zealand dollar forecast, nzd fundamental analysis' },
 ];
 
+// ============================================
+// INTERNAL LINKING (deterministic — currency/pair mentions -> money pages)
+// Zero-cost post-process for generated SEO blocks. Skips <a>/<script>/<style>/<h*>;
+// pair spans protect their component currencies; links first occurrence per target,
+// capped per block; never self-links the page it lives on.
+// ============================================
+const _IL_CCY = [
+  ['usd', /\b(?:US Dollar|U\.S\. Dollar|Greenback|USD)\b/gi],
+  ['eur', /\b(?:Euro|EUR)\b/gi],
+  ['gbp', /\b(?:British Pound|Pound Sterling|Sterling|GBP|Pound)\b/gi],
+  ['jpy', /\b(?:Japanese Yen|Yen|JPY)\b/gi],
+  ['aud', /\b(?:Australian Dollar|Aussie|AUD)\b/gi],
+  ['cad', /\b(?:Canadian Dollar|Loonie|CAD)\b/gi],
+  ['chf', /\b(?:Swiss Franc|Franc|CHF)\b/gi],
+  ['nzd', /\b(?:New Zealand Dollar|Kiwi|NZD)\b/gi],
+];
+const _IL_PAIRS = ['eur-usd','gbp-usd','usd-jpy','aud-usd','usd-chf','usd-cad','nzd-usd','eur-gbp','eur-jpy','eur-chf','gbp-jpy','aud-jpy','chf-jpy','cad-jpy','aud-nzd'];
+const _IL_RULES = (() => {
+  const rules = [];
+  for (const slug of _IL_PAIRS) {
+    const [b, q] = slug.split('-');
+    rules.push({ url: '/pairs/' + slug, re: new RegExp('\\b' + b.toUpperCase() + '\\s*[\\/\\-]?\\s*' + q.toUpperCase() + '\\b', 'gi') });
+  }
+  for (const [code, re] of _IL_CCY) rules.push({ url: '/currencies/' + code, re });
+  return rules;
+})();
+function _addInternalLinks(html, selfUrl = '', maxLinks = 4) {
+  if (!html || typeof html !== 'string') return html;
+  const used = new Set();
+  let count = 0;
+  const parts = html.split(/(<[^>]+>)/);
+  let skip = 0;
+  const OPEN = /^<(a|script|style|h[1-6])\b/i;
+  const CLOSE = /^<\/(a|script|style|h[1-6])\s*>/i;
+  for (let i = 0; i < parts.length; i++) {
+    const tok = parts[i];
+    if (tok.charCodeAt(0) === 60) {
+      if (OPEN.test(tok) && !tok.endsWith('/>')) skip++;
+      else if (CLOSE.test(tok)) skip = Math.max(0, skip - 1);
+      continue;
+    }
+    if (skip > 0 || !tok.trim()) continue;
+    const cands = [];
+    for (const r of _IL_RULES) {
+      for (const m of tok.matchAll(r.re)) cands.push({ start: m.index, end: m.index + m[0].length, text: m[0], url: r.url });
+    }
+    if (!cands.length) continue;
+    cands.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+    let out = '', pos = 0, lastEnd = -1;
+    for (const c of cands) {
+      if (c.start < lastEnd) continue;
+      out += tok.slice(pos, c.start);
+      if (c.url !== selfUrl && !used.has(c.url) && count < maxLinks) {
+        out += '<a href="' + c.url + '">' + c.text + '</a>';
+        used.add(c.url); count++;
+      } else {
+        out += c.text;
+      }
+      pos = c.end; lastEnd = c.end;
+    }
+    out += tok.slice(pos);
+    parts[i] = out;
+  }
+  return parts.join('');
+}
+
 async function generateCurrencySEO(ccy, sentData, headlines, env) {
   const dateStr  = new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   const dateShort = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
@@ -4031,6 +4097,7 @@ Return ONLY valid JSON (no markdown, no code fences):
   }
   if (!pageTitle) pageTitle = `${ccy.code} ${bias} | ${ccy.name} Sentiment — ${dateShort}`;
   pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
+  html = _addInternalLinks(html, '/currencies/' + ccy.code.toLowerCase(), 4);
   return { pageTitle, html };
 }
 
@@ -4193,6 +4260,7 @@ Return ONLY valid JSON (no markdown, no code fences):
   }
   if (!pageTitle) pageTitle = `${pair.name} ${biasLabel} Bias Today | ${pair.name} Sentiment — ${dateShort}`;
   pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
+  html = _addInternalLinks(html, '/pairs/' + pair.slug, 4);
   return { pageTitle, html };
 }
 
