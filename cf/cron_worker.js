@@ -590,7 +590,7 @@ const periodEndIso = subscription.current_period_end ? new Date(subscription.cur
 const cancelAtPeriodEnd = subscription.cancel_at_period_end === true;
 const customerEmail = await getStripeCustomerEmail(customerId, env);
 if (customerEmail) {
-await updateUserProStatus(customerEmail, customerId, isActive, env, periodEndIso, cancelAtPeriodEnd);
+await updateUserProStatus(customerEmail, customerId, isActive, env, periodEndIso, cancelAtPeriodEnd, subscription.status);
 console.log('Subscription', subscription.status, 'for:', customerEmail, 'periodEnd:', periodEndIso, 'cancelAtPeriodEnd:', cancelAtPeriodEnd);
 }
 break;
@@ -601,7 +601,7 @@ const customerId = subscription.customer;
 const customerEmail = await getStripeCustomerEmail(customerId, env);
 if (customerEmail) {
 // Subscription fully ended -- clear period end (no renewal coming).
-await updateUserProStatus(customerEmail, customerId, false, env, null, false);
+await updateUserProStatus(customerEmail, customerId, false, env, null, false, 'canceled');
 console.log('Pro cancelled for:', customerEmail);
 }
 break;
@@ -654,7 +654,7 @@ return null;
 // UPDATE USER PRO STATUS IN FIRESTORE
 // Uses email as document ID — no Firebase Auth lookup needed!
 // ============================================
-async function updateUserProStatus(email, stripeCustomerId, isPro, env, currentPeriodEndIso, cancelAtPeriodEnd) {
+async function updateUserProStatus(email, stripeCustomerId, isPro, env, currentPeriodEndIso, cancelAtPeriodEnd, subStatus) {
 try {
 const token = await getFirebaseToken(env);
 if (!token) {
@@ -664,16 +664,7 @@ return;
 
 // Use email as document ID (replace special chars)
 const docId = email.replace(/[.#$[\]@]/g, '_');
-const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/subscriptions/${docId}`;
-
-const res = await fetch(firestoreUrl, {
-method: 'PATCH',
-headers: {
-'Content-Type': 'application/json',
-'Authorization': `Bearer ${token}`
-},
-body: JSON.stringify({
-fields: {
+const fields = {
 isPro: { booleanValue: isPro },
 email: { stringValue: email },
 stripeCustomerId: { stringValue: stripeCustomerId || '' },
@@ -681,8 +672,24 @@ updatedAt: { stringValue: new Date().toISOString() },
 plan: { stringValue: isPro ? 'pro' : 'free' },
 currentPeriodEnd: { stringValue: currentPeriodEndIso || '' },
 cancelAtPeriodEnd: { booleanValue: cancelAtPeriodEnd === true }
+};
+// Only write subStatus ('trialing'/'active'/'canceled') when we actually know it
+// (the subscription.* events). checkout.session.completed omits it so it can't
+// clobber a 'trialing' status that arrives out of order.
+if (subStatus !== undefined && subStatus !== null) {
+fields.subStatus = { stringValue: String(subStatus) };
 }
-})
+// updateMask: write ONLY the fields we send; leave every other field untouched.
+const mask = Object.keys(fields).map(k => 'updateMask.fieldPaths=' + k).join('&');
+const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/subscriptions/${docId}?${mask}`;
+
+const res = await fetch(firestoreUrl, {
+method: 'PATCH',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': `Bearer ${token}`
+},
+body: JSON.stringify({ fields })
 });
 
 const result = await res.json();
@@ -3915,7 +3922,8 @@ async function handleAdminData(request, env) {
           stripeCustomerId: f.stripeCustomerId?.stringValue || '',
           updatedAt: f.updatedAt?.stringValue || '',
           currentPeriodEnd: f.currentPeriodEnd?.stringValue || '',
-          cancelAtPeriodEnd: f.cancelAtPeriodEnd?.booleanValue === true
+          cancelAtPeriodEnd: f.cancelAtPeriodEnd?.booleanValue === true,
+          subStatus: f.subStatus?.stringValue || ''
         };
       });
     } catch (e) {
@@ -3924,7 +3932,7 @@ async function handleAdminData(request, env) {
     // 5. Merge — return clean rows
     const rows = allUsers.map(u => {
       const email = (u.email || '').toLowerCase();
-      const sub = subsByEmail[email] || { isPro: false, plan: 'free', stripeCustomerId: '', updatedAt: '', currentPeriodEnd: '', cancelAtPeriodEnd: false };
+      const sub = subsByEmail[email] || { isPro: false, plan: 'free', stripeCustomerId: '', updatedAt: '', currentPeriodEnd: '', cancelAtPeriodEnd: false, subStatus: '' };
       const providers = (u.providerUserInfo || []).map(p => p.providerId).join(',') || 'password';
       return {
         uid: u.localId,
@@ -3936,6 +3944,7 @@ async function handleAdminData(request, env) {
         lastLoginAt: u.lastLoginAt ? new Date(parseInt(u.lastLoginAt)).toISOString() : '',
         disabled: u.disabled === true,
         tier: sub.isPro ? 'pro' : 'free',
+        subStatus: sub.subStatus || '',
         stripeCustomerId: sub.stripeCustomerId,
         proUpdatedAt: sub.updatedAt,
         currentPeriodEnd: sub.currentPeriodEnd,
@@ -3946,6 +3955,8 @@ async function handleAdminData(request, env) {
     const stats = {
       total: rows.length,
       pro: rows.filter(r => r.tier === 'pro').length,
+      trialing: rows.filter(r => r.tier === 'pro' && r.subStatus === 'trialing').length,
+      paying: rows.filter(r => r.tier === 'pro' && r.subStatus === 'active').length,
       free: rows.filter(r => r.tier === 'free').length,
       verified: rows.filter(r => r.emailVerified).length,
       googleSignIn: rows.filter(r => r.providers.includes('google.com')).length,

@@ -56,6 +56,19 @@ tr:hover td{background:#283548;}
   th,td{padding:8px 10px;font-size:12px;}
   .stat .val{font-size:22px;}
 }
+/* trial vs paid distinction + interaction polish (matches site design language) */
+.tier.trial{background:#f59e0b;color:#0b1120;}
+.stat.paying .val{color:#10b981;}
+.stat.trial .val{color:#f59e0b;}
+.btn{transition:background .2s ease,border-color .2s ease,transform .2s ease,box-shadow .2s ease;}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(15,23,42,.35);}
+.btn.primary:hover{box-shadow:0 4px 16px rgba(37,99,235,.4);}
+.stat{transition:border-color .2s ease,transform .2s ease;}
+.stat:hover{border-color:#475569;transform:translateY(-1px);}
+tr{transition:background .15s ease;}
+input,select,button{transition:border-color .2s ease,box-shadow .2s ease;}
+input:focus,select:focus{box-shadow:0 0 0 3px rgba(37,99,235,.15);}
+:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
 </style>
 </head>
 <body>
@@ -157,7 +170,9 @@ function renderDash() {
     </div>
     <div class="stats">
       <div class="stat"><div class="label">Total users</div><div class="val">${stats.total||0}</div></div>
-      <div class="stat pro"><div class="label">Pro</div><div class="val">${stats.pro||0}</div><div class="sub">${stats.total ? Math.round((stats.pro/stats.total)*100) : 0}% of users</div></div>
+      <div class="stat pro"><div class="label">Pro (total)</div><div class="val">${stats.pro||0}</div><div class="sub">${stats.total ? Math.round((stats.pro/stats.total)*100) : 0}% of users</div></div>
+      <div class="stat paying"><div class="label">Paying</div><div class="val">${stats.paying||0}</div><div class="sub">active subscriptions</div></div>
+      <div class="stat trial"><div class="label">On trial</div><div class="val">${stats.trialing||0}</div><div class="sub">not yet charged</div></div>
       <div class="stat"><div class="label">Free</div><div class="val">${stats.free||0}</div></div>
       <div class="stat new"><div class="label">New (7 days)</div><div class="val">${stats.last7d||0}</div></div>
       <div class="stat"><div class="label">New (30 days)</div><div class="val">${stats.last30d||0}</div></div>
@@ -206,13 +221,17 @@ function renderRows() {
   tb.innerHTML = list.map(u => {
     const method = u.providers.includes('google.com') ? '<span class="badge g">Google</span>' : '<span class="badge">Email</span>';
     const ver = u.emailVerified ? '<span class="badge v">Yes</span>' : '<span class="badge">No</span>';
-    const tier = `<span class="tier ${u.tier}">${u.tier.toUpperCase()}</span>`;
+    let tier;
+    if (u.tier === 'pro' && u.subStatus === 'trialing') tier = '<span class="tier trial">TRIAL</span>';
+    else if (u.tier === 'pro') tier = '<span class="tier pro">PRO</span>';
+    else tier = '<span class="tier free">FREE</span>';
     let renews = '<span style="color:#64748b;">—</span>';
     if (u.tier === 'pro' && u.currentPeriodEnd) {
       const end = new Date(u.currentPeriodEnd);
       const days = Math.ceil((end.getTime() - Date.now()) / 86400e3);
-      const label = u.cancelAtPeriodEnd ? 'Expires' : 'Renews';
-      const color = u.cancelAtPeriodEnd ? '#f59e0b' : (days <= 3 ? '#ef4444' : '#10b981');
+      const isTrial = u.subStatus === 'trialing';
+      const label = isTrial ? 'Trial ends' : (u.cancelAtPeriodEnd ? 'Expires' : 'Renews');
+      const color = (isTrial || u.cancelAtPeriodEnd) ? '#f59e0b' : (days <= 3 ? '#ef4444' : '#10b981');
       renews = `<div style="color:${color};font-weight:600;">${label} ${fmtDate(u.currentPeriodEnd)}</div><div style="color:#64748b;font-size:11px;">in ${days}d</div>`;
     } else if (u.tier === 'pro') {
       renews = '<span style="color:#64748b;font-size:11px;">(legacy — no period data)</span>';
@@ -231,7 +250,7 @@ function renderRows() {
 
 function downloadCsv() {
   const rows = getFiltered();
-  const head = ['email','displayName','tier','currentPeriodEnd','cancelAtPeriodEnd','emailVerified','providers','createdAt','lastLoginAt','stripeCustomerId','uid'];
+  const head = ['email','displayName','tier','subStatus','currentPeriodEnd','cancelAtPeriodEnd','emailVerified','providers','createdAt','lastLoginAt','stripeCustomerId','uid'];
   const csv = [head.join(',')].concat(rows.map(r => head.map(k => {
     const v = String(r[k] ?? '');
     return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
