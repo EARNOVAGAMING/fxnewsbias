@@ -361,12 +361,12 @@ async function serveCalendarPage(request, env) {
   const sentMap = {};
   for (const r of sentRows || []) if (!sentMap[r.currency]) sentMap[r.currency] = { bias: r.bias, score: r.score };
   // Recurring rule-based events show 21 days out; curated central-bank decisions
-  // show up to ~6 weeks out (so the next FOMC/ECB is always visible). A full year
-  // of seeded dates can live in economic_events — only the in-window ones render,
-  // so the calendar rolls itself forward with no maintenance.
+  // show up to ~8 weeks out (so the next FOMC/ECB/BoE/BoJ is always visible). A
+  // full year of seeded dates can live in economic_events — only the in-window
+  // ones render, so the calendar rolls itself forward with no maintenance.
   const now = new Date();
   const startOfDay = new Date(now); startOfDay.setUTCHours(0, 0, 0, 0);
-  const horizon = new Date(startOfDay.getTime() + 45 * 864e5);
+  const horizon = new Date(startOfDay.getTime() + 60 * 864e5);
   const curated = (overrides || [])
     .map(o => ({ when: new Date(o.when), currency: String(o.currency || '').toUpperCase(), impact: o.impact || 'High', title: o.title, detail: o.detail || '' }))
     .filter(o => o.title && !isNaN(o.when) && o.when >= startOfDay && o.when <= horizon);
