@@ -62,6 +62,9 @@ export default {
       return serveCurrencyPage(request, ccyMatch[1].toLowerCase(), env);
     }
 
+    // News hub — server-render the latest headlines so crawlers see real content.
+    if (url.pathname === '/news') return serveNewsPage(request, env);
+
     // Forecast post pages — /forecast/DOCID/ (Firestore doc IDs are 20-char alphanumeric)
     const fcMatch = url.pathname.match(/^\/forecast\/([A-Za-z0-9]{10,})\/?$/);
     if (fcMatch) {
@@ -175,6 +178,67 @@ function buildHeaders(assetResp) {
   // 3-minute CDN cache — fresh after every cron cycle
   headers.set('Cache-Control', 'public, max-age=180, stale-while-revalidate=60');
   return headers;
+}
+
+// ── News hub SSR ──────────────────────────────────────────────────────────────
+// /news is otherwise client-rendered, so crawlers saw a near-empty page (it
+// ranked ~pos 52 for a large "forex news" query cluster). Inject the latest
+// headlines server-side for real, indexable content. The client news-page.js
+// removes these .news-card nodes and re-renders them on hydration (no dupes).
+async function serveNewsPage(request, env) {
+  const [assetResp, news] = await Promise.all([
+    env.ASSETS.fetch(request),
+    fetchLatestNews(env),
+  ]);
+  if (!assetResp.ok) return assetResp;
+  if (!(assetResp.headers.get('content-type') || '').includes('text/html')) return assetResp;
+
+  let html = await assetResp.text();
+  if (news && news.length && html.includes('<!-- News Cards -->')) {
+    html = html.replace('<!-- News Cards -->', news.map(renderNewsCard).join('\n'));
+    const top = news[0];
+    if (top && top.title) {
+      html = html.replace(
+        /<h2 class="featured-title"[^>]*>[\s\S]*?<\/h2>/,
+        `<h2 class="featured-title">${esc(decodeNewsEntities(top.title))}</h2>`
+      );
+    }
+  }
+  return new Response(html, { status: 200, headers: buildHeaders(assetResp) });
+}
+
+async function fetchLatestNews(env) {
+  try {
+    const r = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/news?select=title,source,url,impact,currencies_affected,created_at&order=id.desc&limit=40`,
+      { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(8000) }
+    );
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+function decodeNewsEntities(s) {
+  return String(s || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+}
+
+function newsTimeAgo(iso) {
+  const m = Math.floor((Date.now() - new Date(iso)) / 6e4);
+  if (!isFinite(m) || m < 0) return '';
+  return m < 60 ? `${m}m ago` : m < 1440 ? `${Math.floor(m / 60)}h ago` : `${Math.floor(m / 1440)}d ago`;
+}
+
+// Mirrors the card markup produced by news-page.js so hydration is seamless.
+function renderNewsCard(item) {
+  const impact = String(item.impact || 'medium').toLowerCase();
+  const affs = Array.isArray(item.currencies_affected) ? item.currencies_affected : [];
+  const title = decodeNewsEntities(item.title || '');
+  const high = impact === 'high';
+  const pillCls = high ? 'affect-bear' : 'affect-bull';
+  const arrow = high ? '⬇' : '⬆';
+  const pills = affs.slice(0, 6).map(a => `<span class="affect-pill ${pillCls}">${esc(a)} ${arrow}</span>`).join('');
+  const affecting = affs.length ? `<div class="news-affecting">Affecting ${esc(affs.join(', '))}</div>` : '';
+  return `<div class="news-card" data-source="${esc(String(item.source || '').toLowerCase())}" data-impact="${impact}" data-title="${esc(title.toLowerCase())}" data-currencies="${esc(affs.join(',').toLowerCase())}"><div class="news-content"><div class="news-meta-top"><span class="src">${esc(String(item.source || 'NEWS').toUpperCase())}</span><span class="ts">${esc(newsTimeAgo(item.created_at))}</span></div><h3 class="news-title">${esc(title)}</h3>${affecting}<div class="news-affects">${pills}</div></div></div>`;
 }
 
 // ── Forecast post SSR ─────────────────────────────────────────────────────────
