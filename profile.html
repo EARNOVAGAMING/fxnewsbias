@@ -108,7 +108,7 @@ nav a:hover,nav a.active{color:#60a5fa;}
 
 .profile-info h2{font-size:24px;font-weight:800;margin-bottom:4px;}
 .profile-info .email{font-size:13px;color:var(--text-soft);font-family:'JetBrains Mono',monospace;}
-.pro-badge{display:inline-block;background:#f59e0b;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;margin-top:6px;}
+.pro-badge{display:inline-block;background:linear-gradient(135deg,#f7c85a,#e0912a);color:#241700;font-size:11px;font-weight:800;letter-spacing:.02em;padding:3px 10px;border-radius:10px;margin-top:6px;box-shadow:0 1px 3px rgba(224,145,42,.35);}
 .free-badge{display:inline-block;background:var(--bg-soft);color:var(--text-soft);font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;margin-top:6px;border:1px solid var(--border);}
 
 .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:14px;}
@@ -129,7 +129,15 @@ nav a:hover,nav a.active{color:#60a5fa;}
 .btn-small-outline:hover{border-color:var(--accent);color:var(--accent);}
 
 .sub-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;margin-bottom:20px;box-shadow:var(--shadow-sm);}
-.sub-card.pro{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;}
+.sub-card.pro{background:linear-gradient(150deg,#0f1729 0%,#141d33 100%);border:1px solid rgba(245,181,68,.35);box-shadow:0 10px 34px rgba(10,14,23,.28),inset 0 1px 0 rgba(255,255,255,.05);position:relative;overflow:hidden;}
+.sub-card.pro::before{content:"";position:absolute;top:-45%;right:-8%;width:280px;height:280px;background:radial-gradient(circle,rgba(245,181,68,.16),transparent 70%);pointer-events:none;}
+.sub-card.pro>*{position:relative;z-index:1;}
+.sub-card.pro .sub-plan-name{color:#f8fafc;}
+.sub-card.pro .sub-plan-price{color:#f5cd7a;font-weight:600;}
+.sub-card.pro .sub-feature{color:#d3dbe8;}
+.sub-card.pro .sub-feature .check{color:#34d399;}
+.sub-card.pro .btn-outline{color:#e8edf4;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.04);}
+.sub-card.pro .btn-outline:hover{border-color:rgba(245,181,68,.5);color:#f5cd7a;background:rgba(245,181,68,.08);}
 .sub-status{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
 .sub-plan-name{font-size:18px;font-weight:800;letter-spacing:-.3px;}
 .sub-plan-price{font-size:13px;color:var(--text-soft);}
