@@ -361,6 +361,7 @@ footer a{color:#94a3b8;margin:0 10px;}footer a:hover{color:#fff;}
   © 2026 FXNewsBias · <a href="/disclaimer">Disclaimer</a> · Not financial advice
 </footer>
 <script src="/nav.js" defer></script>
+<script src="/promo-popup.js" defer></script>
 <script src="/cookie.js" defer></script>
 <script src="/analytics.js" defer></script>
 <script>(function(){var el=document.getElementById('post-ts');if(!el)return;var d=new Date(el.dataset.ts);var s=Math.floor((Date.now()-d)/1000);var rel=s<60?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';el.setAttribute('title',el.textContent);el.textContent='Posted '+rel+' · '+el.textContent;})()</script>

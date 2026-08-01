@@ -177,88 +177,20 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
     <div class="register-right">
       <div id="paid-banner" style="display:none;background:linear-gradient(135deg,#065f46,#047857);color:#fff;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;line-height:1.6;">
         <div style="font-weight:800;font-size:15px;margin-bottom:4px;">✅ Payment Successful!</div>
-        Create your account below to unlock your <strong>Pro access</strong> instantly. Use the same email you paid with.
+        Sign in with <strong>Google</strong> using the same email you paid with to unlock your <strong>Pro access</strong> instantly.
       </div>
       <h1 id="register-heading">Create Free Account 🚀</h1>
       <p id="register-sub">No credit card required. Free forever.</p>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">First Name</label>
-          <input type="text" class="form-input" placeholder="Ahmad">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Last Name</label>
-          <input type="text" class="form-input" placeholder="Rahman">
-        </div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin:6px 0 20px;">
+        <div style="display:flex;align-items:center;gap:10px;color:var(--text-soft);font-size:13px;"><span>✅</span> Free forever — no credit card required</div>
+        <div style="display:flex;align-items:center;gap:10px;color:var(--text-soft);font-size:13px;"><span>📧</span> Daily forex sentiment digest, straight to your inbox</div>
+        <div style="display:flex;align-items:center;gap:10px;color:var(--text-soft);font-size:13px;"><span>⚡</span> One tap to join — no password to remember</div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input type="text" class="form-input" placeholder="TraderAhmad">
-        <div class="form-hint">This is your public name shown on posts and comments</div>
-      </div>
+      <button class="google-btn" onclick="loginWithGoogle()" style="padding:14px;font-size:15px;font-weight:700;">🔵 Continue with Google</button>
 
-      <div class="form-group">
-        <label class="form-label">Email Address</label>
-        <input type="email" class="form-input" placeholder="you@email.com">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input type="password" class="form-input" placeholder="Min 8 characters">
-        <div class="form-hint">At least 8 characters with a number or symbol</div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Country</label>
-          <select class="form-select">
-            <option value="">Select country</option>
-            <option>Malaysia</option>
-            <option>Singapore</option>
-            <option>Indonesia</option>
-            <option>United States</option>
-            <option>United Kingdom</option>
-            <option>Australia</option>
-            <option>Canada</option>
-            <option>India</option>
-            <option>Philippines</option>
-            <option>Other</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Experience</label>
-          <select class="form-select">
-            <option value="">Select level</option>
-            <option>Beginner (under 1yr)</option>
-            <option>Intermediate (1-3yr)</option>
-            <option>Experienced (3-5yr)</option>
-            <option>Professional (5yr+)</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="checkbox-group">
-        <input type="checkbox" id="terms">
-        <label for="terms">I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a></label>
-      </div>
-
-      <div class="checkbox-group">
-        <input type="checkbox" id="disclaimer">
-        <label for="disclaimer">I understand FXNewsBias is NOT financial advice and I trade at my own risk. <a href="/disclaimer">Read Disclaimer</a></label>
-      </div>
-
-      <div class="checkbox-group">
-        <input type="checkbox" id="newsletter">
-        <label for="newsletter">Send me the daily forex sentiment digest (optional)</label>
-      </div>
-
-      <button class="register-btn" onclick="handleRegister()">Create Free Account →</button>
-
-      <div class="divider">or register with</div>
-
-      <button class="google-btn" onclick="loginWithGoogle()">🔵 Continue with Google</button>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:12px;text-align:center;line-height:1.6;">New accounts use Google sign-in only — safer, with no password to manage. By continuing you agree to our <a href="/terms" style="color:var(--accent);text-decoration:none;">Terms</a> &amp; <a href="/disclaimer" style="color:var(--accent);text-decoration:none;">Disclaimer</a>.</p>
 
       <div class="register-footer">
         Already have an account? <a href="/login">Login →</a>
@@ -279,7 +211,7 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
   <div class="footer-bottom">© 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.</div>
 </footer>
 
-<script src="/nav.js" defer></script>
+<script src="/nav.js" defer></script><script src="/promo-popup.js" defer></script>
 <script src="/cookie.js" defer></script>
 <script src="/analytics.js" defer></script>
 <script type="module" src="/firebase.js"></script>
@@ -303,48 +235,11 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
     'Already have an account? <a href="/login?paid=1" style="color:#2563eb;font-weight:700;">Log in instead</a>.';
 })();
 
-window.handleRegister = async function() {
-  const username = document.querySelectorAll('input[type="text"]')[2].value;
-  const email = document.querySelector('input[type="email"]').value;
-  const password = document.querySelector('input[type="password"]').value;
-  const termsChecked = document.getElementById('terms').checked;
-  const disclaimerChecked = document.getElementById('disclaimer').checked;
-  const isPaidFlow = new URLSearchParams(window.location.search).get('paid') === '1';
-
-  if (!username || !email || !password) {
-    alert('Please fill in all required fields!');
-    return;
-  }
-  if (!termsChecked || !disclaimerChecked) {
-    alert('Please agree to Terms and Disclaimer!');
-    return;
-  }
-  if (password.length < 6) {
-    alert('Password must be at least 6 characters!');
-    return;
-  }
-
-  let attempts = 0;
-  const waitForFirebase = setInterval(async () => {
-    attempts++;
-    if (window.registerUser) {
-      clearInterval(waitForFirebase);
-      // Override redirect to /report for paid users
-      if (isPaidFlow) {
-        const origRegister = window.registerUser;
-        window.registerUser = async function(e, p, u) {
-          const result = await origRegister(e, p, u);
-          setTimeout(() => window.location.href = '/report', 1500);
-          return result;
-        };
-      }
-      await window.registerUser(email, password, username);
-    } else if (attempts > 50) {
-      clearInterval(waitForFirebase);
-      alert('Failed to load. Please refresh the page.');
-    }
-  }, 100);
-}
+// Manual email/password registration has been removed — new accounts are
+// Google-only (safer, no stored passwords). Sign-up is handled by
+// loginWithGoogle() in firebase.js, which also fires the welcome email +
+// daily-sentiment audience subscription for brand-new users. Existing
+// email/password users continue to sign in at /login.
 </script>
 </body>
 </html>
