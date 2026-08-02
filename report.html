@@ -481,24 +481,30 @@ const LIST  = 'https://fxnewsbias-cron.dineshsanther123gf.workers.dev/api/weekly
 const FLAGS = {USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',AUD:'🇦🇺',CAD:'🇨🇦',CHF:'🇨🇭',NZD:'🇳🇿'};
 const CCYS  = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD'];
 
-// Start fetching immediately if localStorage says user is Pro.
-// Firebase confirmation still controls the pro-gate visibility —
-// this just avoids wasting 2-4s waiting for auth before the first fetch.
-let _preloaded = false;
+// The report API is Pro-gated server-side (verifies a Firebase ID token), so
+// the data fetch must run AFTER auth resolves — that's initProPage, called by
+// firebase.js once Pro is confirmed. The localStorage flag only drives instant
+// visual state (ad-hide/countdown), never the authenticated data fetch.
+let _reportLoaded = false;
 if (localStorage.getItem('fxnb_is_pro') === 'true') {
-  _preloaded = true;
+  startCountdown();
+}
+window.initProPage = function() {
+  if (_reportLoaded) return;
+  _reportLoaded = true;
   loadArchive();
   loadReport(null);
   startCountdown();
-}
-
-window.initProPage = function() {
-  if (!_preloaded) {
-    loadArchive();
-    loadReport(null);
-    startCountdown();
-  }
 };
+
+// Fetch the caller's Firebase ID token for the Pro-gated report API.
+async function _reportAuth() {
+  try {
+    const u = window.getCurrentUser && window.getCurrentUser();
+    const tk = u ? await u.getIdToken() : null;
+    return tk ? { Authorization: 'Bearer ' + tk } : {};
+  } catch (_) { return {}; }
+}
 
 // ── DATE HELPERS ──
 function fmt(iso) {
@@ -549,8 +555,9 @@ function startCountdown() {
 async function loadArchive() {
   const el = document.getElementById('archive-list');
   let rows = [];
+  const _h = await _reportAuth();
   try {
-    const res = await fetch(LIST);
+    const res = await fetch(LIST, { headers: _h });
     if (res.ok) {
       // Some deployments of the worker don't expose the archive route yet —
       // they fall through to the plain-text "FXNewsBias Cron Worker Running"
@@ -567,7 +574,7 @@ async function loadArchive() {
   // so the sidebar at minimum shows the latest week instead of an error.
   if (!rows.length) {
     try {
-      const r = await fetch(API);
+      const r = await fetch(API, { headers: _h });
       if (r.ok) {
         const j = await r.json();
         if (j && j.week_end) rows = [{ week_end: j.week_end, week_start: j.week_start, generated_at: j.generated_at }];
@@ -609,7 +616,7 @@ async function loadReport(weekEnd) {
   root.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-title">Loading brief…</div></div>';
   try {
     const url = weekEnd ? `${API}?week=${weekEnd}` : API;
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: await _reportAuth() });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const r = await res.json();
     if (r.error) throw new Error(r.error);
