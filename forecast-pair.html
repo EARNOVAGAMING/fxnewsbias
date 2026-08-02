@@ -48,18 +48,8 @@
 </header>
 
 <!-- PRO GATE -->
-<div class="pro-gate" id="pro-gate">
-  <div class="pro-gate-card">
-    <div class="pro-gate-icon">🔍</div>
-    <h1 class="pro-gate-title">Pair Forecast Analysis</h1>
-    <p class="pro-gate-desc">The full evidence behind each forecast — sentiment breakdown, frozen drivers, live price tracking, lifecycle and the pair's complete forecast history.</p>
-    <a href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" class="pro-gate-btn">⭐ Upgrade to Pro — $30/mo</a>
-    <p style="margin-top:14px;font-size:12px;color:var(--muted);">Already Pro? <a href="/login">Login here →</a></p>
-  </div>
-</div>
-
-<!-- PRO CONTENT -->
-<div class="pro-content" id="pro-content">
+<!-- PUBLIC — track record public; today's live call gated inline -->
+<div id="fc-content">
 
   <div class="fc-head">
     <div class="fc-head-inner">
@@ -128,7 +118,12 @@ function render(latest,pairRows,prices,news,baseHist,quoteHist){
   var last10=pairRows.filter(function(r){return r.status==='settled'&&r.direction!=='Stand Aside';}).slice(0,10);
 
   var html='';
-  // hero panel
+  // Freemium: an OPEN call (today's live actionable forecast) is Pro-gated;
+  // settled calls and the pair's full track record stay public.
+  var callLocked=!FC.isPro()&&latest.status==='open';
+  if(callLocked){
+    html+='<div class="panel">'+FC.lockCard("Today’s "+PAIR+" call is Pro","Direction, entry, conviction and the market narrative unlock with Pro the moment the call publishes. The full "+PAIR+" track record stays public below.")+'</div>';
+  } else {
   html+='<div class="panel"><div class="pa-hero">'
     +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Current Call</div>'
     +'<div class="pa-dir '+cls+'">'+FC.dirLabel(latest.direction)+'</div>'
@@ -142,6 +137,7 @@ function render(latest,pairRows,prices,news,baseHist,quoteHist){
     +'</div></div>'
     +lifecycle(latest)
     +'</div>';
+  }
 
   html+='<div class="pa-grid">';
   // left column
@@ -155,14 +151,16 @@ function render(latest,pairRows,prices,news,baseHist,quoteHist){
     +'</div>'
     +'<p style="font-size:11px;color:var(--muted);margin-top:10px;">Sparklines show each currency\'s last ~30 sentiment readings (3-hourly).</p></div>';
 
-  var dr=latest.drivers||{};
-  var dItems=[].concat((dr.base||[]).map(function(x){return {c:BASE,t:x};}),(dr.quote||[]).map(function(x){return {c:QUOTE,t:x};}));
-  html+='<div class="panel"><h3>Drivers Behind the Call</h3>'
-    +(dItems.length?dItems.map(function(d){return '<div class="driver-li"><span><strong class="mono" style="color:#93c5fd;">'+d.c+'</strong> — '+FC.esc(d.t)+'</span></div>';}).join(''):'<p style="font-size:12.5px;color:var(--muted);">No driver detail recorded for this forecast.</p>')
-    +'</div>';
-
-  if(latest.narrative){
-    html+='<div class="panel"><h3>Market Narrative</h3><p style="font-size:13.5px;color:#cbd5e1;line-height:1.7;">'+FC.esc(latest.narrative)+'</p></div>';
+  // Drivers + narrative reveal the call's reasoning → gated with the call.
+  if(!callLocked){
+    var dr=latest.drivers||{};
+    var dItems=[].concat((dr.base||[]).map(function(x){return {c:BASE,t:x};}),(dr.quote||[]).map(function(x){return {c:QUOTE,t:x};}));
+    html+='<div class="panel"><h3>Drivers Behind the Call</h3>'
+      +(dItems.length?dItems.map(function(d){return '<div class="driver-li"><span><strong class="mono" style="color:#93c5fd;">'+d.c+'</strong> — '+FC.esc(d.t)+'</span></div>';}).join(''):'<p style="font-size:12.5px;color:var(--muted);">No driver detail recorded for this forecast.</p>')
+      +'</div>';
+    if(latest.narrative){
+      html+='<div class="panel"><h3>Market Narrative</h3><p style="font-size:13.5px;color:#cbd5e1;line-height:1.7;">'+FC.esc(latest.narrative)+'</p></div>';
+    }
   }
 
   html+='<div class="panel"><h3>'+PAIR+' Forecast History</h3><div class="ledger-scroll"><table class="ledger" style="min-width:600px;">'
@@ -228,12 +226,10 @@ function load(){
 var d=new Date(),el=document.getElementById('topbar-date');
 if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 
-if(localStorage.getItem('fxnb_is_pro')==='true'){
-  document.getElementById('pro-gate').style.display='none';
-  document.getElementById('pro-content').style.display='block';
-  load();
-}
-window.addEventListener('userLoaded',function(e){if(e.detail&&e.detail.isPro)load();});
+// Public page — load for all; the current call re-renders unlocked if Pro resolves.
+// Public page — load for all; re-render (unlock the current call) if Pro resolves.
+FC.onProChange(function(){ if(loaded){ loaded=false; load(); } });
+load();
 })();
 </script>
 <script src="/nav.js" defer></script>

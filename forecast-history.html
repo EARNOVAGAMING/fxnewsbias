@@ -48,24 +48,8 @@
 </header>
 
 <!-- PRO GATE -->
-<div class="pro-gate" id="pro-gate">
-  <div class="pro-gate-card">
-    <div class="pro-gate-icon">📜</div>
-    <h1 class="pro-gate-title">The Forecast Ledger</h1>
-    <p class="pro-gate-desc">Every forecast FXNB has ever published, with its result — wins, losses and flats alike. Immutable by design: written once at publish, settled once, never touched again.</p>
-    <div class="pro-gate-features">
-      <div class="pro-gate-feature">📜 Complete history — no deletions ever</div>
-      <div class="pro-gate-feature">✅ Hits and ❌ misses shown equally</div>
-      <div class="pro-gate-feature">🔎 Filter by pair, outcome and status</div>
-      <div class="pro-gate-feature">📊 Entry, result, move % and pips per call</div>
-    </div>
-    <a href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" class="pro-gate-btn">⭐ Upgrade to Pro — $30/mo</a>
-    <p style="margin-top:14px;font-size:12px;color:var(--muted);">Already Pro? <a href="/login">Login here →</a></p>
-  </div>
-</div>
-
-<!-- PRO CONTENT -->
-<div class="pro-content" id="pro-content">
+<!-- PUBLIC — the ledger is the public track record (SEO + proof of performance) -->
+<div id="fc-content">
 
   <div class="fc-head">
     <div class="fc-head-inner">
@@ -82,6 +66,7 @@
   </div>
 
   <div class="fc-wrap">
+    <div id="fc-upstrip-host"></div>
     <div class="fc-controls">
       <select class="fc-select" id="f-pair" aria-label="Filter by pair"><option value="">All pairs</option></select>
       <select class="fc-select" id="f-outcome" aria-label="Filter by outcome">
@@ -217,12 +202,12 @@ function load(){
 var d=new Date(),el=document.getElementById('topbar-date');
 if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 
-if(localStorage.getItem('fxnb_is_pro')==='true'){
-  document.getElementById('pro-gate').style.display='none';
-  document.getElementById('pro-content').style.display='block';
-  load();
-}
-window.addEventListener('userLoaded',function(e){if(e.detail&&e.detail.isPro)load();});
+// Public page — always render the track record. Show an upgrade strip to
+// free visitors (removed once Pro resolves true).
+load();
+function _upToggle(p){var h=document.getElementById('fc-upstrip-host');if(h)h.innerHTML=p?'':FC.upgradeStrip();}
+_upToggle(FC.isPro());
+FC.onProChange(_upToggle);
 })();
 </script>
 <script src="/nav.js" defer></script>
