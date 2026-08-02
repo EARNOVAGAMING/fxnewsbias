@@ -35,6 +35,8 @@ export default {
       '/login.html': '/login', '/register.html': '/register',
       '/history.html': '/history', '/report.html': '/report',
       '/pro.html': '/pro', '/profile.html': '/profile',
+      '/forecast.html': '/forecast', '/forecast-history.html': '/forecast-history',
+      '/forecast-performance.html': '/forecast-performance', '/forecast-pair.html': '/forecast-pair',
     };
     const cleanPath = HTML_REDIRECTS[url.pathname];
     if (cleanPath) {

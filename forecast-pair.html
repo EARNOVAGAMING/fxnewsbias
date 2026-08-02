@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>try{if(localStorage.getItem("fxnb_is_pro")==="true")document.documentElement.dataset.pro="1";}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico">
+<title>Pair Forecast Analysis | FXNewsBias Pro</title>
+<meta name="description" content="Deep forecast analysis for a currency pair: direction, conviction, sentiment evidence, live price tracking, lifecycle and the pair's complete forecast history.">
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="/forecast.css">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6X181TFHYY');</script>
+<script>if(localStorage.getItem('fxnb_logged_in')==='true'){var s=document.createElement('style');s.textContent='a[href="/login"],a[href="/register"]{display:none!important}';document.head.appendChild(s);}</script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left"><span id="topbar-date">📅 Loading...</span><span>⭐ Pro Feature</span></div>
+    <div class="topbar-right"><a href="/about">About</a><a href="/contact">Contact</a></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo"><img src="/logo-fxnb.png?v=2" alt="FX News Bias"><span class="logo-word">FX<em>News</em>Bias</span></a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies">Currencies</a></li>
+        <li><a href="/pairs">Pairs</a></li>
+        <li><a href="/calendar">Calendar</a></li>
+        <li><a href="/news">News</a></li>
+        <li><a href="/insight/">Insights</a></li>
+        <li><a href="/forecast">Forecast</a></li>
+        <li><a href="/community">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login" class="btn btn-outline">Login</a>
+      <a href="/register" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- PRO GATE -->
+<div class="pro-gate" id="pro-gate">
+  <div class="pro-gate-card">
+    <div class="pro-gate-icon">🔍</div>
+    <h1 class="pro-gate-title">Pair Forecast Analysis</h1>
+    <p class="pro-gate-desc">The full evidence behind each forecast — sentiment breakdown, frozen drivers, live price tracking, lifecycle and the pair's complete forecast history.</p>
+    <a href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" class="pro-gate-btn">⭐ Upgrade to Pro — $30/mo</a>
+    <p style="margin-top:14px;font-size:12px;color:var(--muted);">Already Pro? <a href="/login">Login here →</a></p>
+  </div>
+</div>
+
+<!-- PRO CONTENT -->
+<div class="pro-content" id="pro-content">
+
+  <div class="fc-head">
+    <div class="fc-head-inner">
+      <span class="fc-eyebrow">⭐ Pro · Forecast Intelligence</span>
+      <h1 class="fc-title" id="pa-title">Pair Analysis</h1>
+      <p class="fc-sub" id="pa-sub">Loading…</p>
+      <nav class="fc-tabs" aria-label="Forecast module">
+        <a class="fc-tab" href="/forecast">Today's Forecasts</a>
+        <a class="fc-tab" href="/forecast-history">Forecast Ledger</a>
+        <a class="fc-tab" href="/forecast-performance">Performance</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="fc-wrap" id="pa-wrap">
+    <div class="empty-state"><div class="ico">⏳</div><div class="t">Loading analysis…</div></div>
+  </div>
+</div>
+
+<footer>
+  <a href="/">Markets</a><a href="/pro">Pro Dashboard</a><a href="/history">Sentiment History</a><a href="/report">Weekly Report</a><a href="/disclaimer">Disclaimer</a>
+  <div style="margin-top:10px;">© 2026 FXNewsBias · Not financial advice.</div>
+</footer>
+
+<script src="/forecast-core.js"></script>
+<script>
+(function(){
+'use strict';
+var loaded=false;
+var slug=(new URLSearchParams(location.search).get('pair')||'eur-usd').toLowerCase();
+var PAIR=slug.toUpperCase().replace('-','/');
+if(!/^[A-Z]{3}\/[A-Z]{3}$/.test(PAIR))PAIR='EUR/USD';
+var BASE=PAIR.slice(0,3),QUOTE=PAIR.slice(4);
+
+function lifecycle(r){
+  var openDone=true;
+  var settledDone=r.status==='settled';
+  var settleLabel=settledDone?'Settled '+FC.fmtTime(r.result_time):'Settles ~24h after publish';
+  var resultStep=settledDone?FC.outcomePill(r):'<span class="lc-step"><span class="lc-dot"></span>Result</span>';
+  return '<div class="lifecycle">'
+    +'<span class="lc-step '+(openDone?'done':'')+'"><span class="lc-dot"></span>Published '+FC.fmtTime(r.entry_time)+'</span>'
+    +'<span class="lc-line"></span>'
+    +'<span class="lc-step '+(settledDone?'done':'now')+'"><span class="lc-dot"></span>'+settleLabel+'</span>'
+    +'<span class="lc-line"></span>'
+    +(settledDone?'<span class="lc-step done" style="gap:6px;">'+resultStep+'</span>':'<span class="lc-step"><span class="lc-dot"></span>Result</span>')
+    +'</div>';
+}
+
+function render(latest,pairRows,prices,news,baseHist,quoteHist){
+  var wrap=document.getElementById('pa-wrap');
+  document.getElementById('pa-title').textContent=FC.pairFlags(PAIR)+' '+PAIR+' — Forecast Analysis';
+  if(!latest){
+    document.getElementById('pa-sub').textContent='No forecasts published for '+PAIR+' yet.';
+    wrap.innerHTML='<div class="empty-state"><div class="ico">📭</div><div class="t">No forecast for '+PAIR+' yet</div><div class="s">Forecasts publish weekdays at 06:13 UTC. Check <a href="/forecast">Today\'s Forecasts</a> for covered pairs.</div></div>';
+    return;
+  }
+  document.getElementById('pa-sub').textContent='Latest forecast published '+FC.fmtTime(latest.entry_time)+' · settles on a 24h horizon.';
+
+  var cls=FC.dirClass(latest.direction);
+  var live=prices[PAIR]?parseFloat(prices[PAIR].price):null;
+  var entry=latest.entry_price?parseFloat(latest.entry_price):null;
+  var liveMove=(live&&entry)?((live-entry)/entry*100):null;
+  var bs=latest.base_score==null?50:latest.base_score, qs=latest.quote_score==null?50:latest.quote_score;
+
+  var stats=FC.computeStats(pairRows);
+  var last10=pairRows.filter(function(r){return r.status==='settled'&&r.direction!=='Stand Aside';}).slice(0,10);
+
+  var html='';
+  // hero panel
+  html+='<div class="panel"><div class="pa-hero">'
+    +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Current Call</div>'
+    +'<div class="pa-dir '+cls+'">'+FC.dirLabel(latest.direction)+'</div>'
+    +'<div style="margin-top:10px;max-width:280px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Conviction</span><span class="mono">'+latest.conviction+'/5</span></div>'
+    +'<div class="conv-meter"><div class="fill" style="width:'+(latest.conviction/5*100)+'%"></div></div></div></div>'
+    +'<div class="fcard-nums" style="grid-template-columns:repeat(2,minmax(120px,1fr));gap:10px;">'
+    +'<div class="fnum"><div class="fnum-lab">Entry Price</div><div class="fnum-val">'+FC.fmtPrice(PAIR,entry)+'</div></div>'
+    +'<div class="fnum"><div class="fnum-lab">'+(latest.status==='settled'?'Result Price':'Current Price')+'</div><div class="fnum-val">'+FC.fmtPrice(PAIR,latest.status==='settled'?latest.result_price:live)+'</div></div>'
+    +'<div class="fnum"><div class="fnum-lab">Move</div><div class="fnum-val" style="color:'+((latest.status==='settled'?latest.move_pct:liveMove)>0?'#34d399':'#fb7185')+'">'+FC.fmtPct(latest.status==='settled'?latest.move_pct:liveMove,true)+'</div></div>'
+    +'<div class="fnum"><div class="fnum-lab">Sentiment Gap</div><div class="fnum-val" style="color:'+(latest.gap>0?'#34d399':latest.gap<0?'#fb7185':'#aab6c8')+'">'+(latest.gap>0?'+':'')+latest.gap+'</div></div>'
+    +'</div></div>'
+    +lifecycle(latest)
+    +'</div>';
+
+  html+='<div class="pa-grid">';
+  // left column
+  html+='<div style="min-width:0;">';
+  html+='<div class="panel"><h3>Sentiment Evidence — frozen at publish</h3>'
+    +'<div class="gapbars" style="gap:12px;">'
+    +'<div><div class="gapbar" style="margin-bottom:4px;"><span class="cc">'+BASE+'</span><span class="track" style="height:8px;"><span class="fill" style="width:'+bs+'%;background:'+FC.scoreColor(bs)+'"></span></span><span class="sc" style="color:'+FC.scoreColor(bs)+'">'+bs+'</span></div>'
+    +(baseHist?'<div style="margin:6px 0 0 42px;">'+FC.spark(baseHist,FC.scoreColor(bs))+'</div>':'')+'</div>'
+    +'<div><div class="gapbar" style="margin-bottom:4px;"><span class="cc">'+QUOTE+'</span><span class="track" style="height:8px;"><span class="fill" style="width:'+qs+'%;background:'+FC.scoreColor(qs)+'"></span></span><span class="sc" style="color:'+FC.scoreColor(qs)+'">'+qs+'</span></div>'
+    +(quoteHist?'<div style="margin:6px 0 0 42px;">'+FC.spark(quoteHist,FC.scoreColor(qs))+'</div>':'')+'</div>'
+    +'</div>'
+    +'<p style="font-size:11px;color:var(--muted);margin-top:10px;">Sparklines show each currency\'s last ~30 sentiment readings (3-hourly).</p></div>';
+
+  var dr=latest.drivers||{};
+  var dItems=[].concat((dr.base||[]).map(function(x){return {c:BASE,t:x};}),(dr.quote||[]).map(function(x){return {c:QUOTE,t:x};}));
+  html+='<div class="panel"><h3>Drivers Behind the Call</h3>'
+    +(dItems.length?dItems.map(function(d){return '<div class="driver-li"><span><strong class="mono" style="color:#93c5fd;">'+d.c+'</strong> — '+FC.esc(d.t)+'</span></div>';}).join(''):'<p style="font-size:12.5px;color:var(--muted);">No driver detail recorded for this forecast.</p>')
+    +'</div>';
+
+  if(latest.narrative){
+    html+='<div class="panel"><h3>Market Narrative</h3><p style="font-size:13.5px;color:#cbd5e1;line-height:1.7;">'+FC.esc(latest.narrative)+'</p></div>';
+  }
+
+  html+='<div class="panel"><h3>'+PAIR+' Forecast History</h3><div class="ledger-scroll"><table class="ledger" style="min-width:600px;">'
+    +'<thead><tr><th>Date</th><th>Direction</th><th>Entry</th><th>Result</th><th>Move %</th><th>Outcome</th></tr></thead><tbody>'
+    +(pairRows.length?pairRows.slice(0,20).map(function(r){
+      var mv=parseFloat(r.move_pct);
+      var dCls=FC.dirClass(r.direction);
+      return '<tr><td>'+FC.fmtDate(r.forecast_date)+'</td>'
+        +'<td><span class="dir-chip '+(dCls==='long'?'dir-long':dCls==='short'?'dir-short':'dir-aside')+'">'+FC.dirLabel(r.direction)+'</span></td>'
+        +'<td class="num">'+FC.fmtPrice(PAIR,r.entry_price)+'</td>'
+        +'<td class="num">'+(r.result_price?FC.fmtPrice(PAIR,r.result_price):'—')+'</td>'
+        +'<td class="num '+(mv>0?'up':mv<0?'down':'')+'">'+(r.move_pct==null?'—':FC.fmtPct(r.move_pct,true))+'</td>'
+        +'<td>'+FC.outcomePill(r)+'</td></tr>';
+    }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px;">First forecast for this pair.</td></tr>')
+    +'</tbody></table></div></div>';
+  html+='</div>';
+
+  // right column
+  html+='<div style="min-width:0;">';
+  html+='<div class="panel"><h3>'+PAIR+' Track Record</h3>'
+    +'<div class="stat-strip" style="grid-template-columns:1fr 1fr;">'
+    +'<div class="stat" style="padding:12px;"><div class="stat-lab">Win Rate</div><div class="stat-val '+(stats.winRate===null?'':stats.winRate>=50?'up':'down')+'" style="font-size:20px;">'+(stats.winRate===null?'—':stats.winRate.toFixed(0)+'%')+'</div></div>'
+    +'<div class="stat" style="padding:12px;"><div class="stat-lab">Forecasts</div><div class="stat-val" style="font-size:20px;">'+pairRows.length+'</div></div>'
+    +'</div>'
+    +(last10.length?'<div style="margin-top:14px;"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Last '+last10.length+' results (newest first)</div><div class="resq">'
+      +last10.map(function(r){return '<i class="'+(r.outcome==='hit'?'h':r.outcome==='miss'?'m':'f')+'" title="'+FC.fmtDate(r.forecast_date)+' — '+r.outcome+'"></i>';}).join('')
+      +'</div></div>':'')
+    +'</div>';
+
+  html+='<div class="panel"><h3>Supporting News — '+BASE+' &amp; '+QUOTE+'</h3>'
+    +(news.length?news.map(function(n){
+      return '<div class="news-li"><div class="t">'+(n.url?'<a href="'+FC.esc(n.url)+'" target="_blank" rel="noopener" style="color:inherit;">'+FC.esc(n.title)+'</a>':FC.esc(n.title))+'</div>'
+        +'<div class="m">'+FC.esc(n.source||'')+' · '+(n.impact||'Medium')+' impact · '+((n.currencies_affected||[]).join(', '))+'</div></div>';
+    }).join(''):'<p style="font-size:12.5px;color:var(--muted);">No recent tagged news for these currencies.</p>')
+    +'</div>';
+
+  html+='<div class="panel"><h3>Method, briefly</h3><p style="font-size:12.5px;color:var(--soft);line-height:1.65;">Direction comes from the '+BASE+'−'+QUOTE+' sentiment gap ('+(latest.gap>0?'+':'')+latest.gap+' at publish). Gaps under 15 points publish as Stand Aside. Entry froze at '+FC.fmtPrice(PAIR,entry)+'; settlement at the next trading day\'s price, ±0.15% grades Flat.</p></div>';
+  html+='</div></div>';
+
+  html+='<div class="disclaimer"><strong>Disclaimer:</strong> AI-generated sentiment-based analysis, not financial advice or a trade signal. Past performance is not indicative of future results.</div>';
+  wrap.innerHTML=html;
+}
+
+function load(){
+  if(loaded)return; loaded=true;
+  Promise.all([
+    FC.fetchLedger(),
+    FC.fetchPrices().catch(function(){return [];}),
+    FC.fetchNewsFor([BASE,QUOTE],6).catch(function(){return [];}),
+    FC.fetchSentimentHistory(BASE,30).catch(function(){return [];}),
+    FC.fetchSentimentHistory(QUOTE,30).catch(function(){return [];})
+  ]).then(function(res){
+    var rows=(res[0]||[]).filter(function(r){return r.pair===PAIR;});
+    var prices={};(res[1]||[]).forEach(function(p){prices[p.pair]=p;});
+    var baseHist=(res[3]||[]).map(function(r){return r.score;}).reverse();
+    var quoteHist=(res[4]||[]).map(function(r){return r.score;}).reverse();
+    render(rows[0]||null,rows,prices,res[2]||[],baseHist,quoteHist);
+  }).catch(function(){
+    document.getElementById('pa-wrap').innerHTML='<div class="empty-state"><div class="ico">⚠️</div><div class="t">Could not load analysis</div><div class="s">Please refresh in a moment.</div></div>';
+  });
+}
+
+var d=new Date(),el=document.getElementById('topbar-date');
+if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+
+if(localStorage.getItem('fxnb_is_pro')==='true'){
+  document.getElementById('pro-gate').style.display='none';
+  document.getElementById('pro-content').style.display='block';
+  load();
+}
+window.addEventListener('userLoaded',function(e){if(e.detail&&e.detail.isPro)load();});
+})();
+</script>
+<script src="/nav.js" defer></script>
+<script src="/cookie.js" defer></script>
+<script src="/analytics.js" defer></script>
+<script type="module" src="/firebase.js"></script>
+</body>
+</html>

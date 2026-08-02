@@ -1,160 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>try{if(localStorage.getItem("fxnb_is_pro")==="true")document.documentElement.dataset.pro="1";}catch(e){}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://fxnewsbias.com/forecast/">
-<title>Daily Forex Forecast — FXNewsBias</title>
-<meta name="description" content="Daily forex forecast and analysis. Bullish or bearish outlook for major currency pairs, updated every trading day.">
-<meta property="og:title" content="Daily Forex Forecast — FXNewsBias">
-<meta property="og:description" content="Daily forex forecast and bias analysis for major currency pairs. Updated every trading day.">
-<meta property="og:url" content="https://fxnewsbias.com/forecast/">
-<meta property="og:type" content="website">
-<meta property="og:image" content="https://fxnewsbias.com/og/forecast.webp">
-<meta property="og:image:type" content="image/webp">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:site_name" content="FXNewsBias">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Daily Forex Forecast — FXNewsBias">
-<meta name="twitter:description" content="Daily forex forecast and bias analysis for major currency pairs. Updated every trading day.">
-<meta name="twitter:image" content="https://fxnewsbias.com/og/forecast.webp">
 <link rel="icon" href="/favicon.ico">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<title>Forex Forecast Intelligence — Daily AI Forecasts with a Public Track Record | FXNewsBias Pro</title>
+<meta name="description" content="Daily AI-generated forex forecasts for the 7 majors with an immutable public track record. Every forecast settles as Hit, Miss or Flat — nothing deleted, nothing edited.">
+<link rel="canonical" href="https://fxnewsbias.com/forecast">
+<link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="/forecast.css">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6X181TFHYY');</script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
-:root{
-  --bg:#ffffff;--bg-soft:#f8fafc;--bg-card:#ffffff;
-  --border:#e5e7eb;--border-strong:#d1d5db;
-  --text:#0f172a;--text-soft:#64748b;--text-muted:#64748b;
-  --primary:#0f172a;--accent:#2563eb;--accent-hover:#1d4ed8;
-  --bull:#047857;--bear:#dc2626;--neutral:#b45309;
-  --shadow-sm:0 1px 2px rgba(15,23,42,.06);
-  --shadow-md:0 4px 16px rgba(15,23,42,.08);
-  --radius:10px;--radius-sm:8px;--radius-lg:14px;
-}
-a{text-decoration:none;color:inherit;}
-::selection{background:rgba(37,99,235,.16);}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
-.btn:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid #60a5fa;outline-offset:2px;}
-@media(prefers-reduced-motion:reduce){.loading-shimmer{animation:none;}*{transition:none!important;}}
-
-/* HEADER */
-header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 1px 12px rgba(0,0,0,.22);}
-.header-inner{max-width:1280px;margin:0 auto;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;}
-.logo{display:inline-flex;align-items:center;gap:10px;text-decoration:none;line-height:1;}
-.logo img{height:38px;width:auto;display:block;flex:0 0 auto;}
-nav ul{list-style:none;display:flex;gap:26px;}
-nav a{text-decoration:none;color:#cbd5e1;font-weight:500;font-size:14px;transition:color .2s ease;padding:4px 0;}
-nav a:hover,nav a.active{color:#60a5fa;}
-.nav-actions{display:flex;gap:10px;align-items:center;}
-.btn{padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;line-height:1.2;transition:background .2s ease,border-color .2s ease,color .2s ease,transform .2s ease,box-shadow .2s ease;}
-.btn-outline{border:1px solid rgba(255,255,255,.22);color:#f1f5f9;background:none;}
-.btn-outline:hover{border-color:#60a5fa;color:#60a5fa;background:rgba(96,165,250,.08);}
-.btn-primary{background:var(--accent);color:#fff;border:none;box-shadow:0 1px 3px rgba(37,99,235,.3);}
-.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.35);}
-.btn-primary:active{transform:translateY(0);}
-.burger{background:none;border:none;cursor:pointer;width:40px;height:40px;display:none;color:#f1f5f9;font-size:24px;}
-
-/* HERO */
-.hero{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#fff;padding:52px 0 44px;}
-.hero-inner{max-width:900px;margin:0 auto;padding:0 24px;}
-.hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(37,99,235,.25);border:1px solid rgba(96,165,250,.3);color:#93c5fd;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:4px 12px;border-radius:20px;margin-bottom:16px;}
-.hero h1{font-size:clamp(24px,4vw,32px);font-weight:800;line-height:1.15;margin-bottom:10px;letter-spacing:-0.6px;}
-.hero h1 span{color:#60a5fa;}
-.hero p{color:#94a3b8;font-size:15px;max-width:560px;line-height:1.6;}
-.hero-meta{margin-top:20px;display:flex;gap:20px;flex-wrap:wrap;}
-.hero-meta-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;}
-
-/* MAIN LAYOUT */
-.page{max-width:900px;margin:0 auto;padding:32px 24px;}
-
-/* TODAY'S FORECAST CARD */
-.today-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:16px;}
-.today-label::after{content:'';flex:1;height:1px;background:var(--border);}
-
-.forecast-main{background:var(--bg-card);border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:var(--radius-lg);padding:28px 32px;margin-bottom:40px;box-shadow:var(--shadow-md);}
-.forecast-main-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
-.forecast-date{font-size:12px;font-weight:600;color:var(--text-soft);font-family:'JetBrains Mono',monospace;}
-.bias-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
-.bias-bull{background:#d1fae5;color:#065f46;}
-.bias-bear{background:#fee2e2;color:#991b1b;}
-.bias-neut{background:#fef3c7;color:#92400e;}
-.forecast-main h2{font-size:clamp(19px,2.8vw,22px);font-weight:800;line-height:1.3;color:var(--text);margin-bottom:14px;letter-spacing:-.3px;}
-.pairs-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
-.pair-tag{background:var(--bg-soft);border:1px solid var(--border);color:#475569;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;}
-.forecast-body{font-size:15px;color:#334155;line-height:1.8;white-space:pre-wrap;word-wrap:break-word;}
-.forecast-body p{margin-bottom:12px;}
-.forecast-img{width:100%;max-height:360px;object-fit:cover;border-radius:var(--radius);margin-bottom:18px;display:block;}
-.forecast-footer{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
-.forecast-author{font-size:12px;color:#94a3b8;}
-.share-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg-card);color:#334155;transition:border-color .2s ease,color .2s ease,box-shadow .2s ease;}
-.share-btn:hover{border-color:var(--accent);color:var(--accent-hover);box-shadow:var(--shadow-sm);}
-.share-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e293b;color:#e2e8f0;font-size:13px;font-weight:600;padding:10px 22px;border-radius:var(--radius-sm);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:999;box-shadow:0 8px 24px rgba(15,23,42,.35);}
-.share-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-
-/* ARCHIVE */
-.archive-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:14px;}
-.archive-label::after{content:'';flex:1;height:1px;background:var(--border);}
-
-/* FILTER CHIPS */
-.filter-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
-.filter-chip{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid var(--border);background:var(--bg-card);color:var(--text-soft);cursor:pointer;transition:border-color .2s ease,color .2s ease,background .2s ease;font-family:'JetBrains Mono',monospace;white-space:nowrap;}
-.filter-chip:hover{border-color:var(--accent);color:var(--accent);}
-.filter-chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-.filter-chip.all-chip{font-family:'Inter',-apple-system,sans-serif;letter-spacing:0;}
-.no-results{text-align:center;padding:32px 20px;color:#94a3b8;font-size:13px;display:none;}
-.no-results.show{display:block;}
-
-.archive-date{font-size:11px;font-weight:600;color:var(--text-soft);font-family:'JetBrains Mono',monospace;}
-.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
-.blog-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:block;color:inherit;box-shadow:var(--shadow-sm);transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease;}
-.blog-card:hover{border-color:var(--accent);box-shadow:var(--shadow-md);transform:translateY(-2px);}
-.blog-thumb{width:100%;height:160px;object-fit:cover;display:block;}
-.blog-thumb-ph{width:100%;height:160px;background:linear-gradient(135deg,#1e293b 0%,#1e3a5f 100%);display:flex;align-items:center;justify-content:center;font-size:32px;}
-.blog-card-body{padding:14px 16px 16px;}
-.blog-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
-.blog-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.blog-read{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--accent);}
-
-/* EMPTY */
-.empty{text-align:center;padding:60px 20px;color:#94a3b8;}
-.empty h3{font-size:18px;font-weight:700;color:#475569;margin-bottom:8px;}
-
-/* LOADING */
-.loading-shimmer{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--radius-sm);}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-/* FOOTER */
-footer{background:#0f172a;color:#94a3b8;padding:28px 0;margin-top:48px;text-align:center;font-size:13px;}
-footer a{color:#94a3b8;margin:0 10px;transition:color .2s ease;}
-footer a:hover{color:#fff;}
-
-@media(max-width:640px){
-  .hero h1{font-size:24px;}
-  .forecast-main{padding:20px;}
-  .forecast-main h2{font-size:18px;}
-  .blog-grid{grid-template-columns:1fr;}
-}
-@media(max-width:768px){
-  .header-inner{padding:12px 16px;}
-  .hero-inner{padding:0 16px;}
-  .page{padding:28px 16px;}
-}
-</style>
-<script>(function(){var p=localStorage.getItem("fxnb_is_pro")==="true";if(p)document.documentElement.dataset.pro="1";if(!p){var s=document.createElement("script");s.async=true;s.src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4857533156344939";s.crossOrigin="anonymous";document.head.appendChild(s);}window.addEventListener("userLoaded",function(e){if(e.detail&&e.detail.isPro){localStorage.setItem("fxnb_is_pro","true");document.documentElement.dataset.pro="1";document.querySelectorAll("ins.adsbygoogle,.adsbygoogle,iframe[id^=\"google_ads\"],iframe[src*=\"googleads\"]").forEach(function(el){el.style.display="none";});}else if(e.detail&&e.detail.isPro===false){localStorage.setItem("fxnb_is_pro","false");}});})();</script>
+<script>if(localStorage.getItem('fxnb_logged_in')==='true'){var s=document.createElement('style');s.textContent='a[href="/login"],a[href="/register"]{display:none!important}';document.head.appendChild(s);}</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},{"@type":"ListItem","position":2,"name":"Forecast Intelligence","item":"https://fxnewsbias.com/forecast"}]}
+</script>
 </head>
 <body>
 
-<style>nav>ul{display:none}.burger{display:flex!important;align-items:center;justify-content:center}</style>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left"><span id="topbar-date">📅 Loading...</span><span>⭐ Pro Feature</span></div>
+    <div class="topbar-right"><a href="/about">About</a><a href="/contact">Contact</a></div>
+  </div>
+</div>
+
 <header>
   <div class="header-inner">
-    <a href="/" class="logo"><img src="/logo-fxnb.png?v=2" alt="FX News Bias"></a>
+    <a href="/" class="logo"><img src="/logo-fxnb.png?v=2" alt="FX News Bias"><span class="logo-word">FX<em>News</em>Bias</span></a>
     <nav>
       <ul>
         <li><a href="/">Markets</a></li>
@@ -163,7 +38,7 @@ footer a:hover{color:#fff;}
         <li><a href="/calendar">Calendar</a></li>
         <li><a href="/news">News</a></li>
         <li><a href="/insight/">Insights</a></li>
-        <li><a href="/forecast/" class="active">Forecast</a></li>
+        <li><a href="/forecast">Forecast</a></li>
         <li><a href="/community">Community</a></li>
       </ul>
     </nav>
@@ -175,245 +50,205 @@ footer a:hover{color:#fff;}
   </div>
 </header>
 
-<section class="hero">
-  <div class="hero-inner">
-    <div class="hero-tag">📈 Daily Analysis</div>
-    <h1>Forex <span>Forecast</span></h1>
-    <p>Daily outlook for major currency pairs — bias, key levels, and what to watch today.</p>
-    <div class="hero-meta">
-      <span class="hero-meta-item">🕐 Published every trading day</span>
-      <span class="hero-meta-item">📊 Based on live sentiment data</span>
-      <span class="hero-meta-item">🗓️ Full history below</span>
+<!-- PRO GATE -->
+<div class="pro-gate" id="pro-gate">
+  <div class="pro-gate-card">
+    <div class="pro-gate-icon">🎯</div>
+    <h1 class="pro-gate-title">Forecast Intelligence</h1>
+    <p class="pro-gate-desc">Daily AI forecasts for the 7 major pairs, generated from live news sentiment — with a fully public, immutable track record. Every forecast settles as Hit, Miss or Flat. Nothing is ever deleted or edited. The transparency is the product.</p>
+    <div class="pro-gate-features">
+      <div class="pro-gate-feature">🎯 Daily BUY / SELL / STAND ASIDE calls</div>
+      <div class="pro-gate-feature">📜 Immutable forecast ledger — every result public</div>
+      <div class="pro-gate-feature">📊 Win rate, streaks &amp; per-pair accuracy</div>
+      <div class="pro-gate-feature">🔍 Deep pair analysis with sentiment evidence</div>
+      <div class="pro-gate-feature">⏱ Published weekdays 06:13 UTC, settled in 24h</div>
+      <div class="pro-gate-feature">🚫 No deletions. No edits. No cherry-picking.</div>
+    </div>
+    <a href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" class="pro-gate-btn">⭐ Upgrade to Pro — $30/mo</a>
+    <p style="margin-top:14px;font-size:12px;color:var(--muted);">Already Pro? <a href="/login">Login here →</a></p>
+  </div>
+</div>
+
+<!-- PRO CONTENT -->
+<div class="pro-content" id="pro-content">
+
+  <div class="fc-head">
+    <div class="fc-head-inner">
+      <span class="fc-eyebrow">⭐ Pro · Forecast Intelligence</span>
+      <h1 class="fc-title">Today's Forecasts</h1>
+      <p class="fc-sub">AI-generated directional calls from live sentiment, published weekdays at 06:13 UTC and settled 24 hours later. Every forecast stays on the record forever.</p>
+      <div class="fc-immutable">🛡 Published once. Never edited. Every result recorded.</div>
+      <nav class="fc-tabs" aria-label="Forecast module">
+        <a class="fc-tab active" href="/forecast" aria-current="page">Today's Forecasts</a>
+        <a class="fc-tab" href="/forecast-history">Forecast Ledger</a>
+        <a class="fc-tab" href="/forecast-performance">Performance</a>
+      </nav>
     </div>
   </div>
-</section>
 
-<div class="page">
+  <div class="fc-wrap">
+    <div class="sec-label">Performance Overview <a href="/forecast-performance">Full analytics →</a></div>
+    <div class="stat-strip" id="stat-strip">
+      <div class="stat"><div class="stat-lab">Win Rate (All)</div><div class="stat-val" id="s-wr">—</div><div class="stat-sub" id="s-wr-sub">settled forecasts</div></div>
+      <div class="stat"><div class="stat-lab">Last 30 Days</div><div class="stat-val" id="s-wr30">—</div><div class="stat-sub">rolling window</div></div>
+      <div class="stat"><div class="stat-lab">Current Streak</div><div class="stat-val" id="s-streak">—</div><div class="stat-sub" id="s-streak-sub">&nbsp;</div></div>
+      <div class="stat"><div class="stat-lab">Published Today</div><div class="stat-val" id="s-today">—</div><div class="stat-sub">forecasts</div></div>
+      <div class="stat"><div class="stat-lab">Settled Today</div><div class="stat-val" id="s-settled">—</div><div class="stat-sub">results in</div></div>
+      <div class="stat"><div class="stat-lab">Stand-Aside Rate</div><div class="stat-val" id="s-aside">—</div><div class="stat-sub">honesty metric</div></div>
+    </div>
 
-  <div class="today-label">📅 Today's Forecast</div>
+    <div class="sec-label"><span id="today-label">Today's Forecasts</span></div>
+    <div class="fc-controls">
+      <select class="fc-select" id="sort-sel" aria-label="Sort forecasts">
+        <option value="conviction">Sort: Highest conviction</option>
+        <option value="gap">Sort: Largest sentiment gap</option>
+        <option value="newest">Sort: Newest</option>
+        <option value="status">Sort: Open first</option>
+      </select>
+      <span class="fc-count" id="fc-count"></span>
+    </div>
+    <div class="fc-grid" id="fc-grid">
+      <div class="empty-state" style="grid-column:1/-1;"><div class="ico">⏳</div><div class="t">Loading forecasts…</div></div>
+    </div>
 
-  <div id="today-container">
-    <div class="forecast-main">
-      <div style="height:24px;width:140px;margin-bottom:18px;" class="loading-shimmer"></div>
-      <div style="height:28px;width:80%;margin-bottom:14px;" class="loading-shimmer"></div>
-      <div style="height:16px;width:100%;margin-bottom:8px;" class="loading-shimmer"></div>
-      <div style="height:16px;width:90%;margin-bottom:8px;" class="loading-shimmer"></div>
-      <div style="height:16px;width:95%;" class="loading-shimmer"></div>
+    <div class="sec-label">Latest Settled Results <a href="/forecast-history">Full ledger →</a></div>
+    <div class="ledger-card">
+      <div class="ledger-scroll">
+        <table class="ledger" id="recent-table">
+          <thead><tr><th>Date</th><th>Pair</th><th>Direction</th><th>Entry</th><th>Result</th><th>Move %</th><th>Pips</th><th>Outcome</th></tr></thead>
+          <tbody><tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="ledger-note">🛡 Immutable record — results are written once at settlement and never modified. All times UTC.</div>
+    </div>
+
+    <div class="disclaimer"><strong>Disclaimer:</strong> Forecasts are AI-generated sentiment-based analysis, not financial advice or trade signals. Direction reflects news-sentiment divergence only — not price targets. Forex trading involves significant risk of loss. Past performance is not indicative of future results. Always apply your own analysis and risk management.</div>
+
+    <div class="trust-strip">
+      <span>✅ 100% Transparent</span><span>📜 All Results Public</span><span>🔒 Immutable Records</span><span>🚫 No Deletions. No Edits.</span><span>📈 Trust by Performance</span>
     </div>
   </div>
-
-  <div class="archive-label">🗂️ Archive</div>
-  <div class="filter-row" id="filter-row"></div>
-  <div class="no-results" id="no-results">No forecasts found for this pair.</div>
-  <div id="archive-container">
-    <div style="height:72px;border-radius:12px;margin-bottom:12px;" class="loading-shimmer"></div>
-    <div style="height:72px;border-radius:12px;margin-bottom:12px;" class="loading-shimmer"></div>
-    <div style="height:72px;border-radius:12px;" class="loading-shimmer"></div>
-  </div>
-
 </div>
 
 <footer>
-  <a href="/">Markets</a>
-  <a href="/currencies">Currencies</a>
-  <a href="/pairs">Pairs</a>
-  <a href="/news">News</a>
-  <a href="/community">Community</a>
-  <br><br>
-  © 2026 FXNewsBias · <a href="/disclaimer">Disclaimer</a> · Not financial advice
+  <a href="/">Markets</a><a href="/pro">Pro Dashboard</a><a href="/history">Sentiment History</a><a href="/report">Weekly Report</a><a href="/disclaimer">Disclaimer</a>
+  <div style="margin-top:10px;">© 2026 FXNewsBias · Not financial advice.</div>
 </footer>
 
-<script type="module">
-const FS_URL = 'https://firestore.googleapis.com/v1/projects/fxnewsbias/databases/(default)/documents';
-const FS_KEY = 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
+<script src="/forecast-core.js"></script>
+<script>
+(function(){
+'use strict';
+var grid=document.getElementById('fc-grid');
+var todayRows=[], allRows=[], loaded=false;
 
-function parseVal(v) {
-  if (!v) return null;
-  if ('stringValue' in v) return v.stringValue;
-  if ('integerValue' in v) return Number(v.integerValue);
-  if ('doubleValue' in v) return v.doubleValue;
-  if ('booleanValue' in v) return v.booleanValue;
-  if ('timestampValue' in v) return new Date(v.timestampValue.replace(/(\.\d{3})\d+(Z)$/, '$1$2'));
-  if ('arrayValue' in v) return (v.arrayValue.values || []).map(parseVal);
-  if ('mapValue' in v) { const o={}; for (const [k,w] of Object.entries(v.mapValue.fields||{})) o[k]=parseVal(w); return o; }
-  return null;
+function fmtWr(v){return v===null?'—':v.toFixed(1)+'%';}
+
+function renderStats(st,today){
+  var wr=document.getElementById('s-wr');
+  wr.textContent=fmtWr(st.winRate);
+  if(st.winRate!==null) wr.className='stat-val '+(st.winRate>=50?'up':'down');
+  document.getElementById('s-wr-sub').textContent=st.hits+'W / '+(st.hits+st.misses)+' graded';
+  var w30=document.getElementById('s-wr30');
+  w30.textContent=fmtWr(st.winRate30);
+  if(st.winRate30!==null) w30.className='stat-val '+(st.winRate30>=50?'up':'down');
+  var stk=document.getElementById('s-streak');
+  if(st.streak&&st.streakType){stk.textContent=st.streak;stk.className='stat-val '+(st.streakType==='hit'?'up':'down');
+    document.getElementById('s-streak-sub').textContent=st.streakType==='hit'?'consecutive wins':'consecutive losses';}
+  document.getElementById('s-today').textContent=today.length||'0';
+  document.getElementById('s-settled').textContent=allRows.filter(function(r){return r.result_time&&r.result_time.slice(0,10)===new Date().toISOString().slice(0,10);}).length;
+  var sa=document.getElementById('s-aside');
+  sa.textContent=st.standAsidePct===null?'—':st.standAsidePct.toFixed(0)+'%';
+  sa.className='stat-val gold';
 }
-function parseDoc(doc) {
-  const id = doc.name.split('/').pop();
-  const data = {};
-  for (const [k,v] of Object.entries(doc.fields||{})) data[k] = parseVal(v);
-  data._createTime = new Date((doc.createTime||'').replace(/(\.\d{3})\d+(Z)$/, '$1$2'));
-  return { id, ...data };
+
+function card(r){
+  var cls=FC.dirClass(r.direction);
+  var chip=cls==='long'?'dir-long':cls==='short'?'dir-short':'dir-aside';
+  var bs=r.base_score==null?50:r.base_score, qs=r.quote_score==null?50:r.quote_score;
+  var base=r.pair.slice(0,3), quote=r.pair.slice(4);
+  return '<article class="fcard '+cls+'">'
+    +'<div class="fcard-top"><span class="fcard-pair">'+FC.pairFlags(r.pair)+' '+FC.esc(r.pair)+'</span>'
+    +'<span class="dir-chip '+chip+'">'+FC.dirLabel(r.direction)+'</span></div>'
+    +'<div class="conv-row">'+FC.convDots(r.conviction)+'<span class="conv-lab">Conviction '+r.conviction+'/5</span>'+FC.outcomePill(r)+'</div>'
+    +'<div class="fcard-nums">'
+    +'<div class="fnum"><div class="fnum-lab">Entry</div><div class="fnum-val">'+FC.fmtPrice(r.pair,r.entry_price)+'</div></div>'
+    +'<div class="fnum"><div class="fnum-lab">Gap</div><div class="fnum-val" style="color:'+(r.gap>0?'#34d399':r.gap<0?'#fb7185':'#aab6c8')+'">'+(r.gap>0?'+':'')+r.gap+'</div></div>'
+    +'<div class="fnum"><div class="fnum-lab">Horizon</div><div class="fnum-val">'+FC.esc(r.horizon)+'</div></div>'
+    +'</div>'
+    +'<div class="gapbars">'
+    +'<div class="gapbar"><span class="cc">'+base+'</span><span class="track"><span class="fill" style="width:'+bs+'%;background:'+FC.scoreColor(bs)+'"></span></span><span class="sc" style="color:'+FC.scoreColor(bs)+'">'+bs+'</span></div>'
+    +'<div class="gapbar"><span class="cc">'+quote+'</span><span class="track"><span class="fill" style="width:'+qs+'%;background:'+FC.scoreColor(qs)+'"></span></span><span class="sc" style="color:'+FC.scoreColor(qs)+'">'+qs+'</span></div>'
+    +'</div>'
+    +(r.narrative?'<p class="fcard-narr">'+FC.esc(r.narrative)+'</p>':'')
+    +'<div class="fcard-foot"><span class="fcard-time">'+FC.fmtTime(r.entry_time)+'</span>'
+    +'<a class="fcard-link" href="/forecast-pair?pair='+FC.pairSlug(r.pair)+'">View Analysis →</a></div>'
+    +'</article>';
 }
-async function queryForecasts() {
-  const res = await fetch(`${FS_URL}:runQuery?key=${FS_KEY}`, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ structuredQuery: {
-      from: [{collectionId:'forecasts'}],
-      orderBy: [{field:{fieldPath:'publishedAt'},direction:'DESCENDING'}],
-      limit: 50
-    }})
+
+function renderCards(){
+  var sort=document.getElementById('sort-sel').value;
+  var rows=todayRows.slice();
+  if(sort==='conviction') rows.sort(function(a,b){return b.conviction-a.conviction||Math.abs(b.gap)-Math.abs(a.gap);});
+  else if(sort==='gap') rows.sort(function(a,b){return Math.abs(b.gap)-Math.abs(a.gap);});
+  else if(sort==='newest') rows.sort(function(a,b){return a.entry_time<b.entry_time?1:-1;});
+  else if(sort==='status') rows.sort(function(a,b){return (a.status==='open'?0:1)-(b.status==='open'?0:1)||b.conviction-a.conviction;});
+  document.getElementById('fc-count').textContent=rows.length?rows.length+' forecasts':'';
+  if(!rows.length){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">📭</div><div class="t">No forecasts published yet</div><div class="s">Forecasts publish every weekday at 06:13 UTC, right after the morning sentiment refresh. The first batch will appear here automatically.</div></div>';
+    return;
+  }
+  grid.innerHTML=rows.map(card).join('');
+}
+
+function renderRecent(){
+  var tb=document.querySelector('#recent-table tbody');
+  var settled=allRows.filter(function(r){return r.status==='settled'&&r.direction!=='Stand Aside';}).slice(0,8);
+  if(!settled.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">No settled results yet — first settlements land 24h after the first publish.</td></tr>';return;}
+  tb.innerHTML=settled.map(function(r){
+    var mv=parseFloat(r.move_pct);
+    return '<tr><td>'+FC.fmtDate(r.forecast_date)+'</td>'
+      +'<td class="num">'+FC.pairFlags(r.pair)+' '+r.pair+'</td>'
+      +'<td><span class="dir-chip '+(FC.dirClass(r.direction)==='long'?'dir-long':'dir-short')+'">'+FC.dirLabel(r.direction)+'</span></td>'
+      +'<td class="num">'+FC.fmtPrice(r.pair,r.entry_price)+'</td>'
+      +'<td class="num">'+FC.fmtPrice(r.pair,r.result_price)+'</td>'
+      +'<td class="num '+(mv>0?'up':mv<0?'down':'')+'">'+FC.fmtPct(r.move_pct,true)+'</td>'
+      +'<td class="num">'+(r.move_pips==null?'—':(r.move_pips>0?'+':'')+r.move_pips)+'</td>'
+      +'<td>'+FC.outcomePill(r)+'</td></tr>';
+  }).join('');
+}
+
+function load(){
+  if(loaded)return; loaded=true;
+  FC.fetchLedger().then(function(rows){
+    allRows=rows||[];
+    var latestDate=allRows.length?allRows[0].forecast_date:null;
+    todayRows=latestDate?allRows.filter(function(r){return r.forecast_date===latestDate;}):[];
+    if(latestDate){document.getElementById('today-label').textContent='Forecasts — '+FC.fmtDate(latestDate);}
+    renderStats(FC.computeStats(allRows),todayRows);
+    renderCards();
+    renderRecent();
+  }).catch(function(){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">⚠️</div><div class="t">Could not load forecasts</div><div class="s">Please refresh in a moment.</div></div>';
   });
-  const arr = await res.json();
-  return arr.filter(r => r.document).map(r => parseDoc(r.document));
 }
+document.getElementById('sort-sel').addEventListener('change',renderCards);
 
-const toast = document.getElementById('share-toast');
-let toastTimer;
-function showToast(msg) {
-  clearTimeout(toastTimer);
-  toast.textContent = msg;
-  toast.classList.add('show');
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+var d=new Date(),el=document.getElementById('topbar-date');
+if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+
+// Instant render for known-Pro users; firebase.js still governs the gate.
+if(localStorage.getItem('fxnb_is_pro')==='true'){
+  document.getElementById('pro-gate').style.display='none';
+  document.getElementById('pro-content').style.display='block';
+  load();
 }
-function sharePost(title, url) {
-  const shareUrl = url || location.href;
-  if (navigator.share) {
-    navigator.share({ title, url: shareUrl }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(shareUrl)
-      .then(() => showToast('Link copied!'))
-      .catch(() => showToast('Copy: ' + shareUrl));
-  }
-}
-
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function biasClass(b) {
-  if (!b) return '';
-  return b === 'Bullish' ? 'bias-bull' : b === 'Bearish' ? 'bias-bear' : 'bias-neut';
-}
-function biasIcon(b) {
-  return b === 'Bullish' ? '🟢' : b === 'Bearish' ? '🔴' : b === 'Neutral' ? '🟡' : '';
-}
-function fmtDate(d) {
-  return d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-}
-function fmtPosted(d) {
-  const date = d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
-  const time = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', timeZone:'UTC' });
-  return `${date} · ${time} UTC`;
-}
-function timeAgo(d) {
-  const s = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return Math.floor(s / 60) + 'm ago';
-  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
-  return Math.floor(s / 86400) + 'd ago';
-}
-function bestDate(f) {
-  return (f.publishedAt instanceof Date && !isNaN(f.publishedAt)) ? f.publishedAt : f._createTime;
-}
-function pairsHtml(pairs) {
-  if (!pairs || !pairs.length) return '';
-  return `<div class="pairs-row">${pairs.map(p=>`<span class="pair-tag">${escHtml(p)}</span>`).join('')}</div>`;
-}
-
-async function loadForecasts() {
-  try {
-    const all = await queryForecasts();
-
-    const todayBox = document.getElementById('today-container');
-    const archiveBox = document.getElementById('archive-container');
-
-    if (!all.length) {
-      todayBox.innerHTML = `<div class="empty"><h3>No forecasts yet</h3><p>Check back tomorrow for the first daily forecast.</p></div>`;
-      archiveBox.innerHTML = '';
-      return;
-    }
-
-    const top = all[0];
-    todayBox.innerHTML = `
-      <div class="forecast-main">
-        <div class="forecast-main-header">
-          <div>
-            <div class="forecast-date" title="${fmtPosted(bestDate(top))}">Posted ${timeAgo(bestDate(top))} · ${fmtPosted(bestDate(top))}</div>
-          </div>
-          ${top.bias ? `<span class="bias-pill ${biasClass(top.bias)}">${biasIcon(top.bias)} ${escHtml(top.bias)}</span>` : ''}
-        </div>
-        <h2>${escHtml(top.title)}</h2>
-        ${top.imageUrl ? `<img class="forecast-img" src="${top.imageUrl}" alt="${escHtml(top.title)}">` : ''}
-        ${pairsHtml(top.pairs)}
-        <div class="forecast-body">${escHtml(top.content)}</div>
-        <div class="forecast-footer">
-          <span class="forecast-author">by FXNewsBias Team</span>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <a href="/forecast/${top.id}/" style="font-size:12px;font-weight:700;color:#2563eb;">View post →</a>
-            <button class="share-btn" id="today-share-btn">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-              Share
-            </button>
-          </div>
-        </div>
-      </div>`;
-
-    document.getElementById('today-share-btn').addEventListener('click', () => {
-      sharePost(top.title, `/forecast/${top.id}/`);
-    });
-
-    const archive = all.slice(1);
-    if (!archive.length) {
-      archiveBox.innerHTML = `<div class="empty"><p>More forecasts coming soon — check back daily.</p></div>`;
-      return;
-    }
-
-    archiveBox.innerHTML = `<div class="blog-grid">${archive.map(f => `
-      <a class="blog-card" href="/forecast/${f.id}/" data-pairs="${escHtml((f.pairs||[]).join(','))}">
-        ${f.imageUrl
-          ? `<img class="blog-thumb" src="${f.imageUrl}" alt="${escHtml(f.title)}" loading="lazy">`
-          : `<div class="blog-thumb-ph">📈</div>`}
-        <div class="blog-card-body">
-          <div class="blog-meta">
-            <span class="archive-date" title="${fmtPosted(bestDate(f))}">${timeAgo(bestDate(f))} · ${fmtPosted(bestDate(f))}</span>
-            ${f.bias ? `<span class="bias-pill ${biasClass(f.bias)}" style="font-size:10px;">${biasIcon(f.bias)} ${escHtml(f.bias)}</span>` : ''}
-          </div>
-          <div class="blog-title">${escHtml(f.title)}</div>
-          ${pairsHtml(f.pairs)}
-          <span class="blog-read">Read forecast →</span>
-        </div>
-      </a>`).join('')}</div>`;
-
-    const allPairs = [...new Set(archive.flatMap(f => f.pairs || []))].sort();
-    const filterRow = document.getElementById('filter-row');
-    const noResults = document.getElementById('no-results');
-
-    if (allPairs.length) {
-      filterRow.innerHTML =
-        `<button class="filter-chip all-chip active" data-pair="ALL">All Forecasts</button>` +
-        allPairs.map(p => `<button class="filter-chip" data-pair="${escHtml(p)}">${escHtml(p)}</button>`).join('');
-
-      filterRow.addEventListener('click', e => {
-        const chip = e.target.closest('.filter-chip');
-        if (!chip) return;
-        filterRow.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-
-        const selected = chip.dataset.pair;
-        let visible = 0;
-        archiveBox.querySelectorAll('.blog-card').forEach(card => {
-          const pairs = card.dataset.pairs ? card.dataset.pairs.split(',') : [];
-          const show = selected === 'ALL' || pairs.includes(selected);
-          card.style.display = show ? '' : 'none';
-          if (show) visible++;
-        });
-        noResults.classList.toggle('show', visible === 0);
-      });
-    }
-
-  } catch(e) {
-    console.error(e);
-    document.getElementById('today-container').innerHTML = `<div class="empty"><h3>Failed to load</h3><p>${e.message}</p></div>`;
-  }
-}
-
-loadForecasts();
+window.addEventListener('userLoaded',function(e){if(e.detail&&e.detail.isPro)load();});
+})();
 </script>
-
-<div class="share-toast" id="share-toast">Link copied!</div>
-<script src="/nav.js" defer></script><script src="/promo-popup.js" defer></script>
+<script src="/nav.js" defer></script>
 <script src="/cookie.js" defer></script>
 <script src="/analytics.js" defer></script>
+<script type="module" src="/firebase.js"></script>
 </body>
 </html>
