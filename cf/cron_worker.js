@@ -170,6 +170,12 @@ try {
   return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
 }
 }
+// Sprint 5 — manually execute the stored SEO plan's safe actions.
+if (url.pathname === '/run-seo-actions') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await executeSeoActions(env);
+return new Response(JSON.stringify(result, null, 2), { status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
+}
 // Sprint 2 — manually run the weekly SEO Intelligence analysis (also runs Sun 21:00).
 if (url.pathname === '/run-seo-intelligence') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
@@ -372,6 +378,9 @@ if (event.cron === '*/15 * * * *') {
     if (_dow === 0 && new Date().getUTCHours() === 21) {
       await buildAndSaveWeeklyReport(env).catch(e => console.log('Weekly report error:', e.message));
       await runSeoIntelligence(env).catch(e => console.log('SEO intelligence error:', e.message));
+      // Sprint 5 — execute the plan's safe actions (ctr_gap/near_winner title
+      // refreshes) immediately after the plan is produced.
+      await executeSeoActions(env).catch(e => console.log('executeSeoActions error:', e.message));
     }
   })());
 
@@ -5168,4 +5177,146 @@ async function settlePairForecasts(env) {
     settled++;
   }
   console.log(`settlePairForecasts: settled ${settled}/${open.length}`);
+}
+
+// ============================================================
+// SPRINT 5 — SEO ACTION EXECUTOR
+// Turns the weekly SEO Intelligence plan's SAFE actions into
+// real commits, closing the loop that previously ended at a
+// recommendation list.
+//
+// Scope (deliberately narrow):
+//   • rewrite_title actions and near_winner-bucket pages get an
+//     AI title+meta refresh written around that page's REAL top
+//     GSC queries — same play the pair/currency cycles already
+//     run 3-hourly, extended to insight articles + a small
+//     allowlist of evergreen pages the cycles don't cover.
+//   • expand_content / add_faq / build_section stay human
+//     recommendations — auto-writing body content into arbitrary
+//     pages is not a safe unattended operation.
+//
+// Guardrails (mirrors the Sprint-1 gate philosophy):
+//   • never touches winners (top-3 position with healthy CTR)
+//   • 6-day per-page cooldown (weekly cadence, no churn)
+//   • max 5 page edits per run
+//   • pages already handled by the 3h cycles are excluded
+//   • fails soft at every step; skipped pages are logged
+// ============================================================
+
+const _SEO_EXEC_MAX = 5;
+const _SEO_EXEC_COOLDOWN_D = 6;
+// Evergreen root pages eligible for auto title refresh. Money pages
+// (/pairs/*, /currencies/*) are excluded — the 3h cycles own those.
+// SSR-injected hubs (/news, /calendar), auth, legal, Pro and app pages
+// are excluded on purpose.
+const _SEO_EXEC_ROOT_OK = new Set(['/about', '/how', '/community']);
+
+function _seoExecFilePath(u) {
+  const path = String(u || '').replace(/\/+$/, '') || '/';
+  if (path === '/') return null;
+  if (/^\/insight\/[\w-]+$/.test(path)) return `insight/${path.split('/')[2]}.html`;
+  if (_SEO_EXEC_ROOT_OK.has(path)) return `${path.slice(1)}.html`;
+  return null;
+}
+
+async function executeSeoActions(env) {
+  const plan = await readSystemState(env, 'seo_intelligence:latest');
+  if (!plan) return { ok: false, reason: 'no-plan' };
+  if (!env.CLAUDE_API_KEY) return { ok: false, reason: 'no-api-key' };
+
+  // Candidate pages: explicit rewrite_title actions + near_winner bucket pages.
+  const targets = [];
+  const seen = new Set();
+  for (const a of (plan.actions || [])) {
+    if (a && a.kind === 'page' && a.action === 'rewrite_title' && a.target) {
+      const p = String(a.target).replace(/\/+$/, '') || '/';
+      if (!seen.has(p)) { seen.add(p); targets.push({ url: p, why: a.why || 'ctr_gap title rewrite' }); }
+    }
+  }
+  for (const p of (plan.top_pages || [])) {
+    if (p && p.bucket === 'near_winner' && p.url) {
+      const u = String(p.url).replace(/\/+$/, '') || '/';
+      if (!seen.has(u)) { seen.add(u); targets.push({ url: u, why: `near_winner at pos ${p.pos} — push toward page 1` }); }
+    }
+  }
+  if (!targets.length) return { ok: true, executed: 0, reason: 'no-eligible-actions' };
+
+  const [pagePerf, pageQueries] = await Promise.all([_fetchPagePerf(env), _fetchPageQueries(env)]);
+  const executed = [], skipped = [];
+  const filesToCommit = [];
+
+  for (const t of targets) {
+    if (filesToCommit.length >= _SEO_EXEC_MAX) { skipped.push({ url: t.url, reason: 'max-per-run' }); continue; }
+    const filePath = _seoExecFilePath(t.url);
+    if (!filePath) { skipped.push({ url: t.url, reason: 'not-eligible-page-type' }); continue; }
+
+    // Guard 1 — protect winners (same rule as the Sprint-1 gate).
+    const perf = pagePerf[t.url] || pagePerf[t.url + '/'];
+    if (perf && perf.impr >= 5 && perf.pos >= 1 && perf.pos <= 3 && perf.ctr >= _expectedCtr(perf.pos) * 0.7) {
+      skipped.push({ url: t.url, reason: 'protect-winner' }); continue;
+    }
+    // Guard 2 — 6-day cooldown.
+    const gateKey = `seo_title_gate:pg:${t.url}`;
+    const gate = await readSystemState(env, gateKey);
+    if (gate && gate.last_changed_at && (Date.now() - new Date(gate.last_changed_at).getTime()) < _SEO_EXEC_COOLDOWN_D * 864e5) {
+      skipped.push({ url: t.url, reason: 'cooldown' }); continue;
+    }
+
+    const current = await _insGetFile(env, filePath);
+    if (!current) { skipped.push({ url: t.url, reason: 'file-not-found' }); continue; }
+    const curTitle = (current.match(/<title>([^<]*)<\/title>/) || [])[1] || '';
+    const queries = pageQueries[t.url] || [];
+
+    // AI rewrite grounded in the page's real search demand.
+    let next = null;
+    try {
+      const qLines = queries.map(q => `"${q.query}" (impressions ${q.impr}, avg position ${q.pos.toFixed(1)})`).join('\n') || 'none recorded';
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001', max_tokens: 400,
+          messages: [{ role: 'user', content: `You optimise page titles for CTR on a forex sentiment site (fxnewsbias.com). Page: ${t.url}\nCurrent title: ${curTitle}\nWhy it was flagged: ${t.why}\nReal Google queries this page appears for (last 28 days):\n${qLines}\n\nWrite ONE better title (max 60 chars, front-load the highest-demand query naturally, no clickbait, no ALL CAPS, keep any factual claims generic since you cannot verify page specifics) and ONE meta description (max 155 chars). Return ONLY JSON: {"title":"...","description":"..."}` }],
+        }),
+        signal: AbortSignal.timeout(45000),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const m = (data.content?.[0]?.text || '').match(/\{[\s\S]*\}/);
+        if (m) next = JSON.parse(m[0]);
+      }
+    } catch (e) { console.log(`seoExec LLM error ${t.url}:`, e.message); }
+    if (!next || !next.title || next.title.length < 15 || next.title === curTitle) {
+      skipped.push({ url: t.url, reason: 'no-usable-rewrite' }); continue;
+    }
+
+    const safeT = String(next.title).slice(0, 70).replace(/"/g, '&quot;');
+    const safeD = String(next.description || '').slice(0, 155).replace(/"/g, '&quot;');
+    let patched = current.replace(/<title>[^<]*<\/title>/, `<title>${safeT}</title>`)
+      .replace(/<meta property="og:title"[^>]*>/, `<meta property="og:title" content="${safeT}">`)
+      .replace(/<meta name="twitter:title"[^>]*>/, `<meta name="twitter:title" content="${safeT}">`);
+    if (safeD) {
+      patched = patched.replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${safeD}">`)
+        .replace(/<meta property="og:description"[^>]*>/, `<meta property="og:description" content="${safeD}">`)
+        .replace(/<meta name="twitter:description"[^>]*>/, `<meta name="twitter:description" content="${safeD}">`);
+    }
+    if (patched === current) { skipped.push({ url: t.url, reason: 'no-patchable-tags' }); continue; }
+
+    filesToCommit.push({ path: filePath, content: patched });
+    executed.push({ url: t.url, title: next.title, why: t.why });
+  }
+
+  if (filesToCommit.length) {
+    const dateLabel = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    await _insCommitFiles(env, filesToCommit, `seo: execute weekly intelligence actions — ${dateLabel}`);
+    for (const e of executed) {
+      await writeSystemState(env, `seo_title_gate:pg:${e.url}`, { last_changed_at: new Date().toISOString(), title: e.title, reason: 'weekly-exec' });
+    }
+    // Nudge re-crawl of the changed pages.
+    await pingIndexNow(executed.map(e => `https://fxnewsbias.com${e.url}`)).catch(() => {});
+  }
+  const summary = { ok: true, executed: executed.length, skipped: skipped.length, detail: { executed, skipped }, at: new Date().toISOString() };
+  await writeSystemState(env, 'seo_actions:last_run', summary).catch(() => {});
+  console.log(`executeSeoActions: ${executed.length} committed, ${skipped.length} skipped`);
+  return summary;
 }
