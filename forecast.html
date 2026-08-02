@@ -140,48 +140,58 @@
 (function(){
 'use strict';
 var grid=document.getElementById('fc-grid');
-var todayRows=[], allRows=[], loaded=false;
+var todayRows=[], allRows=[], livePx={}, loaded=false;
 
 function fmtWr(v){return v===null?'—':v.toFixed(1)+'%';}
 
 function renderStats(st,today){
   var wr=document.getElementById('s-wr');
-  wr.textContent=fmtWr(st.winRate);
-  if(st.winRate!==null) wr.className='stat-val '+(st.winRate>=50?'up':'down');
+  if(st.winRate!==null){wr.className='stat-val '+(st.winRate>=50?'up':'down');FC.countUp(wr,st.winRate,'%',1);}else wr.textContent='—';
   document.getElementById('s-wr-sub').textContent=st.hits+'W / '+(st.hits+st.misses)+' graded';
   var w30=document.getElementById('s-wr30');
-  w30.textContent=fmtWr(st.winRate30);
-  if(st.winRate30!==null) w30.className='stat-val '+(st.winRate30>=50?'up':'down');
+  if(st.winRate30!==null){w30.className='stat-val '+(st.winRate30>=50?'up':'down');FC.countUp(w30,st.winRate30,'%',1);}else w30.textContent='—';
   var stk=document.getElementById('s-streak');
-  if(st.streak&&st.streakType){stk.textContent=st.streak;stk.className='stat-val '+(st.streakType==='hit'?'up':'down');
+  if(st.streak&&st.streakType){stk.className='stat-val '+(st.streakType==='hit'?'up':'down');FC.countUp(stk,st.streak,'',0);
     document.getElementById('s-streak-sub').textContent=st.streakType==='hit'?'consecutive wins':'consecutive losses';}
   document.getElementById('s-today').textContent=today.length||'0';
   document.getElementById('s-settled').textContent=allRows.filter(function(r){return r.result_time&&r.result_time.slice(0,10)===new Date().toISOString().slice(0,10);}).length;
   var sa=document.getElementById('s-aside');
-  sa.textContent=st.standAsidePct===null?'—':st.standAsidePct.toFixed(0)+'%';
   sa.className='stat-val gold';
+  if(st.standAsidePct!==null)FC.countUp(sa,st.standAsidePct,'%',0);else sa.textContent='—';
 }
 
-function card(r){
+function card(r,i){
   var cls=FC.dirClass(r.direction);
   var chip=cls==='long'?'dir-long':cls==='short'?'dir-short':'dir-aside';
   var bs=r.base_score==null?50:r.base_score, qs=r.quote_score==null?50:r.quote_score;
   var base=r.pair.slice(0,3), quote=r.pair.slice(4);
-  return '<article class="fcard '+cls+'">'
+  var ps=FC.pairStats(allRows,r.pair);
+  // live move vs frozen entry — only when we have both real numbers and the forecast is open
+  var live=livePx[r.pair], entry=r.entry_price?parseFloat(r.entry_price):null;
+  var liveHtml='';
+  if(r.status==='open'&&live&&entry){
+    var lm=((live-entry)/entry*100);
+    liveHtml='<div class="fnum"><div class="fnum-lab">Live Move</div><div class="fnum-val '+(lm>0?'live-up':lm<0?'live-down':'')+'">'+(lm>0?'+':'')+lm.toFixed(2)+'%</div></div>';
+  }
+  var cd=r.status==='open'?FC.countdown(r.entry_time):null;
+  return '<article class="fcard '+cls+' anim" style="animation-delay:'+Math.min(i*70,420)+'ms" data-idx="'+i+'" tabindex="0" role="button" aria-label="Open '+FC.esc(r.pair)+' forecast detail">'
     +'<div class="fcard-top"><span class="fcard-pair">'+FC.pairFlags(r.pair)+' '+FC.esc(r.pair)+'</span>'
     +'<span class="dir-chip '+chip+'">'+FC.dirLabel(r.direction)+'</span></div>'
-    +'<div class="conv-row">'+FC.convDots(r.conviction)+'<span class="conv-lab">Conviction '+r.conviction+'/5</span>'+FC.outcomePill(r)+'</div>'
+    +'<div class="conv-row">'+FC.convMeter(r.conviction)+FC.outcomePill(r)+'</div>'
     +'<div class="fcard-nums">'
     +'<div class="fnum"><div class="fnum-lab">Entry</div><div class="fnum-val">'+FC.fmtPrice(r.pair,r.entry_price)+'</div></div>'
     +'<div class="fnum"><div class="fnum-lab">Gap</div><div class="fnum-val" style="color:'+(r.gap>0?'#34d399':r.gap<0?'#fb7185':'#aab6c8')+'">'+(r.gap>0?'+':'')+r.gap+'</div></div>'
-    +'<div class="fnum"><div class="fnum-lab">Horizon</div><div class="fnum-val">'+FC.esc(r.horizon)+'</div></div>'
+    +(liveHtml||'<div class="fnum"><div class="fnum-lab">Horizon</div><div class="fnum-val">'+FC.esc(r.horizon)+'</div></div>')
     +'</div>'
     +'<div class="gapbars">'
     +'<div class="gapbar"><span class="cc">'+base+'</span><span class="track"><span class="fill" style="width:'+bs+'%;background:'+FC.scoreColor(bs)+'"></span></span><span class="sc" style="color:'+FC.scoreColor(bs)+'">'+bs+'</span></div>'
     +'<div class="gapbar"><span class="cc">'+quote+'</span><span class="track"><span class="fill" style="width:'+qs+'%;background:'+FC.scoreColor(qs)+'"></span></span><span class="sc" style="color:'+FC.scoreColor(qs)+'">'+qs+'</span></div>'
     +'</div>'
+    +FC.driverChips(r.drivers,base,quote)
     +(r.narrative?'<p class="fcard-narr">'+FC.esc(r.narrative)+'</p>':'')
-    +'<div class="fcard-foot"><span class="fcard-time">'+FC.fmtTime(r.entry_time)+'</span>'
+    +'<div class="fcard-foot">'
+    +(cd?'<span class="fc-countdown">⏱ '+FC.esc(cd)+'</span>':'<span class="fcard-time">'+FC.fmtTime(r.entry_time)+'</span>')
+    +(ps.graded>=3?'<span class="fc-acc">This pair <b style="color:'+(ps.winRate>=50?'#34d399':'#fb7185')+'">'+ps.winRate.toFixed(0)+'%</b> ('+ps.graded+')</span>':'')
     +'<a class="fcard-link" href="/forecast-pair?pair='+FC.pairSlug(r.pair)+'">View Analysis →</a></div>'
     +'</article>';
 }
@@ -199,6 +209,13 @@ function renderCards(){
     return;
   }
   grid.innerHTML=rows.map(card).join('');
+  // card click / Enter opens the detail modal (links inside still navigate)
+  grid.querySelectorAll('.fcard').forEach(function(el){
+    var row=rows[parseInt(el.getAttribute('data-idx'),10)];
+    function open(e){if(e.target.closest('a'))return;FC.openModal(row,allRows);}
+    el.addEventListener('click',open);
+    el.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.target.closest('a')){FC.openModal(row,allRows);}});
+  });
 }
 
 function renderRecent(){
@@ -220,8 +237,12 @@ function renderRecent(){
 
 function load(){
   if(loaded)return; loaded=true;
-  FC.fetchLedger().then(function(rows){
-    allRows=rows||[];
+  Promise.all([
+    FC.fetchLedger(),
+    FC.fetchPrices().catch(function(){return [];})
+  ]).then(function(res){
+    allRows=res[0]||[];
+    (res[1]||[]).forEach(function(p){livePx[p.pair]=parseFloat(p.price);});
     var latestDate=allRows.length?allRows[0].forecast_date:null;
     todayRows=latestDate?allRows.filter(function(r){return r.forecast_date===latestDate;}):[];
     if(latestDate){document.getElementById('today-label').textContent='Forecasts — '+FC.fmtDate(latestDate);}

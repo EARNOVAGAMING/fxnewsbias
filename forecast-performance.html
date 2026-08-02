@@ -108,17 +108,22 @@
           <div class="chart-box" id="monthly-chart"><div class="empty-state" style="padding:26px;"><div class="s">Waiting for settled forecasts…</div></div></div>
           <div class="legend"><span><i style="background:#34d399"></i>Hit</span><span><i style="background:#fb7185"></i>Miss</span><span><i style="background:rgba(255,255,255,.25)"></i>Flat</span></div>
         </div>
+        <div class="panel" id="rolling-panel">
+          <h3>Rolling Win Rate — last 10 graded, per forecast</h3>
+          <div class="chart-box" id="rolling-chart"><div class="waiting">Waiting for sufficient settled forecasts (10+ graded needed).</div></div>
+        </div>
         <div class="panel">
-          <h3>Per-Pair Accuracy</h3>
-          <div class="ledger-scroll">
-            <table class="ledger" style="min-width:520px;" id="pair-table">
-              <thead><tr><th>Pair</th><th>Forecasts</th><th>Win Rate</th><th>Avg |Move|</th></tr></thead>
-              <tbody><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px;">Loading…</td></tr></tbody>
-            </table>
-          </div>
+          <h3>Pair Leaderboard — settled forecasts only</h3>
+          <div class="bw-grid" id="bw-grid" hidden style="margin-bottom:14px;"></div>
+          <div class="lb-list" id="lb-list"><div class="waiting">Waiting for settled forecasts.</div></div>
         </div>
       </div>
       <div style="min-width:0;">
+        <div class="panel" id="timeline-panel" hidden>
+          <h3>Settlement Timeline — most recent first</h3>
+          <div class="tl-strip" id="tl-strip"></div>
+          <div class="legend" style="margin-top:12px;"><span><i style="background:#34d399"></i>Hit</span><span><i style="background:#fb7185"></i>Miss</span><span><i style="background:rgba(255,255,255,.25)"></i>Flat</span><span><i style="background:rgba(245,181,68,.5)"></i>Stand Aside</span></div>
+        </div>
         <div class="panel">
           <h3>Forecast Distribution</h3>
           <div class="chart-box" id="dist-chart" style="max-width:230px;margin:0 auto;"></div>
@@ -199,7 +204,7 @@ function load(){
   FC.fetchLedger().then(function(rows){
     rows=rows||[];
     var st=FC.computeStats(rows);
-    function setWr(id,v){var e=document.getElementById(id);e.textContent=fmtWr(v);if(v!==null)e.className='stat-val '+(v>=50?'up':'down');}
+    function setWr(id,v){var e=document.getElementById(id);if(v===null){e.textContent='—';return;}e.className='stat-val '+(v>=50?'up':'down');FC.countUp(e,v,'%',1);}
     setWr('p-wr',st.winRate);setWr('p-wr30',st.winRate30);setWr('p-wr90',st.winRate90);
     document.getElementById('p-wr-sub').textContent=st.hits+'W / '+st.misses+'L'+(st.flats?' / '+st.flats+'F':'');
     document.getElementById('p-avgw').textContent=st.avgWin===null?'—':'+'+fmtMv(st.avgWin);
@@ -235,17 +240,60 @@ function load(){
     var mc=monthlyChart(rows);
     if(mc)document.getElementById('monthly-chart').innerHTML=mc;
 
-    // per-pair table
-    var tb=document.querySelector('#pair-table tbody');
-    if(st.perPair.length){
-      tb.innerHTML=st.perPair.map(function(p){
-        return '<tr><td class="num">'+FC.pairFlags(p.pair)+' '+p.pair+'</td>'
-          +'<td class="num">'+p.n+'</td>'
-          +'<td class="num '+(p.winRate===null?'':p.winRate>=50?'up':'down')+'">'+(p.winRate===null?'—':p.winRate.toFixed(0)+'%')+'</td>'
-          +'<td class="num">'+(p.avgMove===null?'—':p.avgMove.toFixed(2)+'%')+'</td></tr>';
+    // rolling win rate — needs 10+ graded results to mean anything
+    var graded=rows.filter(function(r){return r.status==='settled'&&(r.outcome==='hit'||r.outcome==='miss');})
+      .sort(function(a,b){return a.forecast_date<b.forecast_date?-1:1;});
+    if(graded.length>=10){
+      var W=520,H=170,pad=34,win=10,pts=[];
+      for(var i=win-1;i<graded.length;i++){
+        var seg=graded.slice(i-win+1,i+1);
+        pts.push(seg.filter(function(r){return r.outcome==='hit';}).length/win*100);
+      }
+      var step=(W-pad-14)/Math.max(1,pts.length-1);
+      var y=function(v){return H-24-(H-48)*v/100;};
+      var d=pts.map(function(v,i){return (i?'L':'M')+(pad+i*step).toFixed(1)+' '+y(v).toFixed(1);}).join(' ');
+      var svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Rolling 10-forecast win rate">';
+      [0,50,100].forEach(function(g){svg+='<line x1="'+pad+'" x2="'+(W-10)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke="rgba(255,255,255,'+(g===50?'.12':'.05')+'" '+(g===50?'stroke-dasharray="4 4"':'')+'/><text x="'+(pad-7)+'" y="'+(y(g)+3)+'" text-anchor="end" font-size="9" fill="#64748b" font-family="JetBrains Mono,monospace">'+g+'</text>';});
+      svg+='<path d="'+d+' L'+(pad+(pts.length-1)*step)+' '+y(0)+' L'+pad+' '+y(0)+' Z" fill="rgba(59,130,246,.12)"/>';
+      svg+='<path d="'+d+'" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>';
+      var lx=pad+(pts.length-1)*step,ly=y(pts[pts.length-1]);
+      svg+='<circle cx="'+lx+'" cy="'+ly+'" r="4" fill="#0a0e17" stroke="#3b82f6" stroke-width="2"/></svg>';
+      document.getElementById('rolling-chart').innerHTML=svg;
+    }
+
+    // leaderboard — ranked cards, settled data only
+    var lb=st.perPair.filter(function(p){return p.winRate!==null;});
+    var lbEl=document.getElementById('lb-list');
+    if(lb.length){
+      lbEl.innerHTML=lb.map(function(p,i){
+        var col=p.winRate>=50?'#34d399':'#fb7185';
+        return '<div class="lb-card'+(i===0?' top':'')+'">'
+          +'<span class="lb-rank">#'+(i+1)+'</span>'
+          +'<span class="lb-pair">'+FC.pairFlags(p.pair)+' '+p.pair+'</span>'
+          +'<span class="lb-bar"><i style="width:'+p.winRate.toFixed(0)+'%;background:'+col+'"></i></span>'
+          +'<span class="lb-wr" style="color:'+col+'">'+p.winRate.toFixed(0)+'%</span>'
+          +'<span class="lb-meta">'+p.n+' forecasts'+(p.avgMove!==null?' · avg '+p.avgMove.toFixed(2)+'%':'')+'</span>'
+          +'</div>';
       }).join('');
-    }else{
-      tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px;">No settled forecasts yet — accuracy appears after the first settlements.</td></tr>';
+      // best / worst callouts — only with a meaningful sample on both ends
+      var qual=lb.filter(function(p){var g=rows.filter(function(r){return r.pair===p.pair&&(r.outcome==='hit'||r.outcome==='miss');}).length;return g>=3;});
+      if(qual.length>=2){
+        var best=qual[0],worst=qual[qual.length-1];
+        var bw=document.getElementById('bw-grid');
+        bw.innerHTML='<div class="stat" style="padding:13px;"><div class="stat-lab">Most Accurate</div><div class="stat-val up" style="font-size:17px;">'+FC.pairFlags(best.pair)+' '+best.pair+'</div><div class="stat-sub">'+best.winRate.toFixed(0)+'% win rate</div></div>'
+          +'<div class="stat" style="padding:13px;"><div class="stat-lab">Least Accurate</div><div class="stat-val down" style="font-size:17px;">'+FC.pairFlags(worst.pair)+' '+worst.pair+'</div><div class="stat-sub">'+worst.winRate.toFixed(0)+'% win rate</div></div>';
+        bw.hidden=false;
+      }
+    }
+
+    // settlement timeline — last 24 settled of any kind
+    var settledAll=rows.filter(function(r){return r.status==='settled';}).slice(0,24);
+    if(settledAll.length){
+      document.getElementById('tl-strip').innerHTML=settledAll.map(function(r){
+        var c=r.direction==='Stand Aside'?'a':r.outcome==='hit'?'h':r.outcome==='miss'?'m':'f';
+        return '<i class="'+c+'" title="'+FC.fmtDate(r.forecast_date)+' '+r.pair+' — '+(r.direction==='Stand Aside'?'stand aside':r.outcome)+'"></i>';
+      }).join('');
+      document.getElementById('timeline-panel').hidden=false;
     }
   }).catch(function(){
     document.getElementById('perf-wrap').insertAdjacentHTML('afterbegin','<div class="empty-state"><div class="ico">⚠️</div><div class="t">Could not load analytics</div></div>');
