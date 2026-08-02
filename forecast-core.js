@@ -301,7 +301,45 @@
     });
   }
 
+  // ── shared Pro-access state (freemium split) ──
+  // localStorage gives an instant best-guess; firebase.js's userLoaded event
+  // delivers the authoritative value. Gated sections render a teaser first and
+  // upgrade to the real content if/when Pro resolves true.
+  var _proState = false;
+  try { _proState = localStorage.getItem('fxnb_is_pro') === 'true'; } catch (_) {}
+  var _proCbs = [];
+  window.addEventListener('userLoaded', function (e) {
+    var p = !!(e.detail && e.detail.isPro);
+    _proState = p;
+    try { localStorage.setItem('fxnb_is_pro', p ? 'true' : 'false'); } catch (_) {}
+    _proCbs.forEach(function (cb) { try { cb(p); } catch (_) {} });
+  });
+  function isPro() { return _proState === true; }
+  function onProChange(cb) { _proCbs.push(cb); }
+
+  var STRIPE_BUY = 'https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01';
+
+  // Locked teaser shown to free users in place of a Pro-only section.
+  function lockCard(title, sub) {
+    return '<div class="fc-lock">'
+      + '<div class="fc-lock-ico">🔒</div>'
+      + '<div class="fc-lock-title">' + esc(title) + '</div>'
+      + (sub ? '<div class="fc-lock-sub">' + esc(sub) + '</div>' : '')
+      + '<a class="fc-lock-btn" href="' + STRIPE_BUY + '">⭐ Unlock with Pro — $30/mo</a>'
+      + '<div class="fc-lock-note">7-day free trial · Already Pro? <a href="/login">Log in →</a></div>'
+      + '</div>';
+  }
+
+  // Slim upgrade strip for the public proof pages (ledger/performance).
+  function upgradeStrip(msg) {
+    return '<a class="fc-upstrip" href="' + STRIPE_BUY + '">'
+      + '<span class="fc-upstrip-txt">' + esc(msg || "This is the public track record. Pro members get today's live calls the moment they publish.") + '</span>'
+      + '<span class="fc-upstrip-cta">Go Pro — $30/mo →</span>'
+      + '</a>';
+  }
+
   window.FC = {
+    isPro: isPro, onProChange: onProChange, lockCard: lockCard, upgradeStrip: upgradeStrip,
     fetchLedger: fetchLedger, fetchPrices: fetchPrices, fetchNewsFor: fetchNewsFor,
     fetchSentimentHistory: fetchSentimentHistory, computeStats: computeStats,
     fmtPct: fmtPct, fmtPrice: fmtPrice, fmtDate: fmtDate, fmtTime: fmtTime,

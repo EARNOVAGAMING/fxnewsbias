@@ -48,24 +48,8 @@
 </header>
 
 <!-- PRO GATE -->
-<div class="pro-gate" id="pro-gate">
-  <div class="pro-gate-card">
-    <div class="pro-gate-icon">📊</div>
-    <h1 class="pro-gate-title">Performance Analytics</h1>
-    <p class="pro-gate-desc">The full statistical picture behind every FXNB forecast — win rates, streaks, per-pair accuracy and outcome distribution, computed live from the immutable ledger.</p>
-    <div class="pro-gate-features">
-      <div class="pro-gate-feature">📈 Overall, 30-day &amp; 90-day win rates</div>
-      <div class="pro-gate-feature">🎯 Per-pair accuracy ranking</div>
-      <div class="pro-gate-feature">📅 Monthly performance breakdown</div>
-      <div class="pro-gate-feature">⚖️ Average win vs average loss</div>
-    </div>
-    <a href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" class="pro-gate-btn">⭐ Upgrade to Pro — $30/mo</a>
-    <p style="margin-top:14px;font-size:12px;color:var(--muted);">Already Pro? <a href="/login">Login here →</a></p>
-  </div>
-</div>
-
-<!-- PRO CONTENT -->
-<div class="pro-content" id="pro-content">
+<!-- PUBLIC — performance analytics are the public proof of the track record -->
+<div id="fc-content">
 
   <div class="fc-head">
     <div class="fc-head-inner">
@@ -82,6 +66,7 @@
   </div>
 
   <div class="fc-wrap" id="perf-wrap">
+    <div id="fc-upstrip-host"></div>
     <div class="sec-label">Headline Performance</div>
     <div class="stat-strip">
       <div class="stat"><div class="stat-lab">Win Rate (All)</div><div class="stat-val" id="p-wr">—</div><div class="stat-sub" id="p-wr-sub">graded forecasts</div></div>
@@ -303,12 +288,11 @@ function load(){
 var d=new Date(),el=document.getElementById('topbar-date');
 if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 
-if(localStorage.getItem('fxnb_is_pro')==='true'){
-  document.getElementById('pro-gate').style.display='none';
-  document.getElementById('pro-content').style.display='block';
-  load();
-}
-window.addEventListener('userLoaded',function(e){if(e.detail&&e.detail.isPro)load();});
+// Public page — always render analytics. Upgrade strip for free visitors.
+load();
+function _upToggle(p){var h=document.getElementById('fc-upstrip-host');if(h)h.innerHTML=p?'':FC.upgradeStrip();}
+_upToggle(FC.isPro());
+FC.onProChange(_upToggle);
 })();
 </script>
 <script src="/nav.js" defer></script>

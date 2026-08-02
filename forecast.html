@@ -51,26 +51,8 @@
 </header>
 
 <!-- PRO GATE -->
-<div class="pro-gate" id="pro-gate">
-  <div class="pro-gate-card">
-    <div class="pro-gate-icon">🎯</div>
-    <h1 class="pro-gate-title">Forecast Intelligence</h1>
-    <p class="pro-gate-desc">Daily AI forecasts for the 7 major pairs, generated from live news sentiment — with a fully public, immutable track record. Every forecast settles as Hit, Miss or Flat. Nothing is ever deleted or edited. The transparency is the product.</p>
-    <div class="pro-gate-features">
-      <div class="pro-gate-feature">🎯 Daily BUY / SELL / STAND ASIDE calls</div>
-      <div class="pro-gate-feature">📜 Immutable forecast ledger — every result public</div>
-      <div class="pro-gate-feature">📊 Win rate, streaks &amp; per-pair accuracy</div>
-      <div class="pro-gate-feature">🔍 Deep pair analysis with sentiment evidence</div>
-      <div class="pro-gate-feature">⏱ Published weekdays 06:13 UTC, settled in 24h</div>
-      <div class="pro-gate-feature">🚫 No deletions. No edits. No cherry-picking.</div>
-    </div>
-    <a href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" class="pro-gate-btn">⭐ Upgrade to Pro — $30/mo</a>
-    <p style="margin-top:14px;font-size:12px;color:var(--muted);">Already Pro? <a href="/login">Login here →</a></p>
-  </div>
-</div>
-
-<!-- PRO CONTENT -->
-<div class="pro-content" id="pro-content">
+<!-- PUBLIC page: track record is public (proof + SEO); today's live calls are Pro-gated inline -->
+<div id="fc-content">
 
   <div class="fc-head">
     <div class="fc-head-inner">
@@ -208,6 +190,22 @@ function renderCards(){
     grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">📭</div><div class="t">No forecasts published yet</div><div class="s">Forecasts publish every weekday at 06:13 UTC, right after the morning sentiment refresh. The first batch will appear here automatically.</div></div>';
     return;
   }
+  // Freemium gate: free users see the count + a locked teaser; the track
+  // record (stats + settled results below) stays fully public as proof.
+  if(!FC.isPro()){
+    var n=rows.length, tiles='';
+    for(var i=0;i<Math.min(n,6);i++) tiles+='<div class="fc-lock-tile"><div class="a"></div><div class="b"></div></div>';
+    grid.innerHTML='<div class="fc-lock">'
+      +'<div class="fc-lock-preview">'+tiles+'</div>'
+      +'<div class="fc-lock-ico">🔒</div>'
+      +'<div class="fc-lock-title">'+n+' live forecast'+(n===1?'':'s')+' published today</div>'
+      +'<div class="fc-lock-sub">The full track record is public below — every past call and result. Pro members unlock today’s live BUY / SELL calls (direction, entry, conviction, sentiment evidence) the moment they publish, plus instant alerts.</div>'
+      +'<a class="fc-lock-btn" href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01">⭐ Unlock today’s calls — $30/mo</a>'
+      +'<div class="fc-lock-note">7-day free trial · Already Pro? <a href="/login">Log in →</a></div>'
+      +'</div>';
+    document.getElementById('fc-count').textContent=n+' forecasts · locked';
+    return;
+  }
   grid.innerHTML=rows.map(card).join('');
   // card click / Enter opens the detail modal (links inside still navigate)
   grid.querySelectorAll('.fcard').forEach(function(el){
@@ -258,13 +256,10 @@ document.getElementById('sort-sel').addEventListener('change',renderCards);
 var d=new Date(),el=document.getElementById('topbar-date');
 if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 
-// Instant render for known-Pro users; firebase.js still governs the gate.
-if(localStorage.getItem('fxnb_is_pro')==='true'){
-  document.getElementById('pro-gate').style.display='none';
-  document.getElementById('pro-content').style.display='block';
-  load();
-}
-window.addEventListener('userLoaded',function(e){if(e.detail&&e.detail.isPro)load();});
+// Public page — load for everyone. Track record shows to all; today's cards
+// render locked for free users and re-render unlocked when Pro resolves.
+load();
+FC.onProChange(function(){ if(loaded) renderCards(); });
 })();
 </script>
 <script src="/nav.js" defer></script>

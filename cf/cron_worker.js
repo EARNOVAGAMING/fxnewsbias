@@ -4280,6 +4280,45 @@ async function _sendAlertEmail(env, to, flips) {
   });
 }
 
+// New-forecast alerts (Pro): email opted-in subscribers the day's directional
+// calls right after publish. Reuses the same alert opt-in list as bias-flip
+// alerts; a call is relevant if the user watches its base or quote currency
+// (or watches none = all). Stand-aside calls are omitted.
+async function checkAndSendForecastAlerts(env, rows) {
+  try {
+    const calls = (rows || []).filter(r => r.direction === 'Bullish' || r.direction === 'Bearish');
+    if (!calls.length) { console.log('forecastAlerts: no directional calls today'); return; }
+    if (!env.RESEND_API_KEY) { console.log('forecastAlerts: no RESEND_API_KEY'); return; }
+    const users = await _queryProAlertUsers(env);
+    let sent = 0;
+    for (const u of users) {
+      const rel = calls.filter(c => !u.currencies.length || u.currencies.includes(c.pair.slice(0, 3)) || u.currencies.includes(c.pair.slice(4)));
+      if (!rel.length) continue;
+      await _sendForecastAlertEmail(env, u.email, rel).catch(e => console.log('forecast alert', u.email, e.message));
+      sent++;
+    }
+    console.log(`forecastAlerts: ${calls.length} call(s) → notified ${sent}/${users.length} pro user(s)`);
+  } catch (e) { console.log('checkAndSendForecastAlerts:', e.message); }
+}
+
+async function _sendForecastAlertEmail(env, to, calls) {
+  const row = (c) => {
+    const dir = c.direction === 'Bullish' ? 'BUY' : 'SELL';
+    const col = c.direction === 'Bullish' ? '#059669' : '#dc2626';
+    return `<tr><td style="padding:8px 14px;font-weight:800;font-size:15px;">${c.pair}</td><td style="padding:8px 14px;"><span style="color:${col};font-weight:800;">${dir}</span> <span style="color:#64748b;font-size:13px;">· conviction ${c.conviction}/5 · entry ${c.entry_price}</span></td></tr>`;
+  };
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;">`
+    + `<div style="background:#0f172a;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;"><div style="font-size:18px;font-weight:800;">🎯 Today's forecasts are live</div><div style="font-size:13px;color:#94a3b8;margin-top:4px;">Fresh directional calls just published.</div></div>`
+    + `<div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:18px 24px;"><table style="width:100%;border-collapse:collapse;">${calls.map(row).join('')}</table>`
+    + `<a href="https://fxnewsbias.com/forecast" style="display:inline-block;margin-top:18px;background:#2563eb;color:#fff;padding:11px 22px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">See today's forecasts →</a>`
+    + `<p style="font-size:12px;color:#94a3b8;margin-top:16px;line-height:1.5;">Sentiment-based analysis, not financial advice. You enabled alerts on FXNewsBias Pro — manage them on your <a href="https://fxnewsbias.com/pro" style="color:#2563eb;">dashboard</a>.</p></div></div>`;
+  const fromEmail = env.ALERT_EMAIL_FROM || 'alerts@fxnewsbias.com';
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: `FXNewsBias Forecasts <${fromEmail}>`, to: [to], subject: `🎯 ${calls.length} new forecast${calls.length === 1 ? '' : 's'} today`, html }), signal: AbortSignal.timeout(20000),
+  });
+}
+
 async function handleAdminData(request, env) {
   const ADMIN_EMAILS = ['dineshsanther123gf@gmail.com'];
   const FIREBASE_API_KEY = env.FIREBASE_API_KEY || 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
@@ -5158,6 +5197,8 @@ async function generatePairForecasts(env) {
   await _fcSb(env, 'POST', 'pair_forecasts?on_conflict=pair,forecast_date', rows,
     { Prefer: 'resolution=ignore-duplicates,return=minimal' });
   console.log(`generatePairForecasts: published ${rows.length} forecasts for ${today}`);
+  // Pro value: alert opted-in subscribers to today's live directional calls.
+  await checkAndSendForecastAlerts(env, rows).catch(e => console.log('forecast alerts error:', e.message));
 }
 
 async function settlePairForecasts(env) {
