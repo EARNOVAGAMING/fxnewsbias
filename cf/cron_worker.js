@@ -157,6 +157,19 @@ const days = parseInt(url.searchParams.get('days') || '7', 10);
 const result = await ingestGscPerformance(env, { days: Math.max(1, Math.min(days, 40)) });
 return new Response(JSON.stringify(result, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
 }
+// Forecast Intelligence — manual triggers (launch-day seed + ops/testing).
+// Same jobs the weekday 06:13 cron runs; idempotent (one batch per pair per
+// UTC day via the unique index), so re-hitting the URL is always safe.
+if (url.pathname === '/run-forecasts') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+try {
+  await settlePairForecasts(env);
+  await generatePairForecasts(env);
+  return new Response(JSON.stringify({ ok: true, msg: 'settle + generate complete' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+} catch (e) {
+  return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+}
+}
 // Sprint 2 — manually run the weekly SEO Intelligence analysis (also runs Sun 21:00).
 if (url.pathname === '/run-seo-intelligence') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
