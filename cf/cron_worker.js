@@ -388,8 +388,14 @@ if (event.cron === '*/15 * * * *') {
   ctx.waitUntil(Promise.all([
     generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)),
     pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (insight) error:', e.message)),
-    // Midnight (00:05) run also syncs forecast posts into sitemap
-    ...(event.cron === '5 0 * * *' ? [syncForecastSitemap(env).catch(e => console.log('syncForecastSitemap error:', e.message))] : []),
+    // London run (06:13 UTC): settle yesterday's open forecasts first, then
+    // publish today's — sentiment refreshed at 06:00, prices are 15-min fresh.
+    ...(session === 'london' ? [(async () => {
+      await settlePairForecasts(env).catch(e => console.log('settlePairForecasts error:', e.message));
+      await generatePairForecasts(env).catch(e => console.log('generatePairForecasts error:', e.message));
+    })()] : []),
+    // Midnight (00:13) run also syncs legacy forecast posts into the sitemap
+    ...(session === 'asean' ? [syncForecastSitemap(env).catch(e => console.log('syncForecastSitemap error:', e.message))] : []),
   ]));
 
 } else if (event.cron === '30 6 * * *' && !_isWeekend) {
@@ -4991,4 +4997,162 @@ Rules: prefer actions that turn near_winners and high-impression under-ranked qu
     console.log('runSeoIntelligence failed:', e.message);
     return { ok: false, error: e.message };
   }
+}
+
+// ============================================================
+// FORECAST INTELLIGENCE — daily pair forecasts with an
+// immutable, publicly-readable track record (pair_forecasts).
+//
+// Lifecycle: OPEN -> SETTLED (hit | miss | flat). Rows are
+// inserted once at publish and patched exactly once at
+// settlement. Never edited or deleted after that — the
+// transparency of the ledger is the product.
+//
+// generatePairForecasts: weekdays at 06:13 UTC (London cron).
+//   Deterministic core: direction/conviction from the base-quote
+//   sentiment gap; entry price frozen from the prices table.
+//   Claude (haiku) writes only the narrative prose; if that call
+//   fails we fall back to a template so publishing never blocks.
+// settlePairForecasts: runs before generation in the same cron.
+//   Settles any OPEN row older than ~23h at the current price.
+//   Friday forecasts settle Monday (weekend cron is skipped and
+//   FX prices are frozen anyway).
+// ============================================================
+
+const FC_PAIRS = [
+  { pair: 'EUR/USD', base: 'EUR', quote: 'USD' },
+  { pair: 'GBP/USD', base: 'GBP', quote: 'USD' },
+  { pair: 'USD/JPY', base: 'USD', quote: 'JPY' },
+  { pair: 'USD/CHF', base: 'USD', quote: 'CHF' },
+  { pair: 'AUD/USD', base: 'AUD', quote: 'USD' },
+  { pair: 'USD/CAD', base: 'USD', quote: 'CAD' },
+  { pair: 'NZD/USD', base: 'NZD', quote: 'USD' },
+];
+const FC_GAP_MIN = 15;         // |gap| below this -> Stand Aside
+const FC_FLAT_BAND = 0.15;     // % move inside +/- this band -> flat
+
+function _fcConviction(absGap) {
+  if (absGap < FC_GAP_MIN) return 0;
+  if (absGap < 25) return 2;
+  if (absGap < 35) return 3;
+  if (absGap < 45) return 4;
+  return 5;
+}
+
+function _fcPips(pair, entry, result) {
+  const mult = pair.includes('JPY') ? 100 : 10000;
+  return Math.round((result - entry) * mult * 10) / 10;
+}
+
+async function _fcSb(env, method, path, body, extraHeaders) {
+  const r = await fetch(`${env.SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      apikey: env.SUPABASE_SERVICE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+      'Content-Type': 'application/json',
+      ...(extraHeaders || {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!r.ok) throw new Error(`Supabase ${method} ${path.split('?')[0]}: ${r.status} ${(await r.text()).slice(0, 200)}`);
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
+async function generatePairForecasts(env) {
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Idempotency: the unique (pair, forecast_date) index makes duplicate
+  // inserts no-ops, but skip the whole run cheaply if today already exists.
+  const existing = await _fcSb(env, 'GET', `pair_forecasts?select=id&forecast_date=eq.${today}&limit=1`);
+  if (existing && existing.length) { console.log('generatePairForecasts: already published today'); return; }
+
+  // Latest sentiment per currency + latest prices.
+  const [sentRows, priceRows] = await Promise.all([
+    _fcSb(env, 'GET', 'sentiment?select=currency,score,bias,drivers,created_at&order=id.desc&limit=16'),
+    _fcSb(env, 'GET', 'prices?select=pair,price,updated_at'),
+  ]);
+  const sent = {}; (sentRows || []).forEach(r => { if (!sent[r.currency]) sent[r.currency] = r; });
+  const px = {}; (priceRows || []).forEach(r => { px[r.pair] = parseFloat(r.price); });
+
+  const rows = [];
+  for (const { pair, base, quote } of FC_PAIRS) {
+    const b = sent[base], q = sent[quote], price = px[pair];
+    if (!b || !q || !price) { console.log(`forecast skip ${pair}: missing data`); continue; }
+    const gap = (b.score ?? 50) - (q.score ?? 50);
+    const conviction = _fcConviction(Math.abs(gap));
+    const direction = conviction === 0 ? 'Stand Aside' : (gap > 0 ? 'Bullish' : 'Bearish');
+    rows.push({
+      pair, forecast_date: today, horizon: '24h', direction, conviction,
+      entry_price: price, entry_time: new Date().toISOString(),
+      base_score: b.score ?? null, quote_score: q.score ?? null, gap,
+      drivers: { base: (Array.isArray(b.drivers) ? b.drivers : []).slice(0, 3), quote: (Array.isArray(q.drivers) ? q.drivers : []).slice(0, 3) },
+      narrative: null, status: 'open',
+    });
+  }
+  if (!rows.length) { console.log('generatePairForecasts: no rows to publish'); return; }
+
+  // AI narratives — one batched call; deterministic numbers stay untouched.
+  try {
+    if (env.CLAUDE_API_KEY) {
+      const lines = rows.map(r =>
+        `${r.pair}: ${r.direction}${r.conviction ? ` (conviction ${r.conviction}/5)` : ''} | gap ${r.gap > 0 ? '+' : ''}${r.gap} (base ${r.base_score} vs quote ${r.quote_score}) | base drivers: ${(r.drivers.base || []).join('; ') || 'n/a'} | quote drivers: ${(r.drivers.quote || []).join('; ') || 'n/a'}`).join('\n');
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001', max_tokens: 1200,
+          messages: [{ role: 'user', content: `You write terse institutional forex research notes. For each line below, write a 2-sentence rationale for the stated call using ONLY the given sentiment drivers. No price targets, no advice, no hedging boilerplate. Return ONLY a JSON object mapping pair to rationale, e.g. {"EUR/USD":"..."}.\n\n${lines}` }],
+        }),
+        signal: AbortSignal.timeout(45000),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const m = (data.content?.[0]?.text || '').match(/\{[\s\S]*\}/);
+        if (m) { const map = JSON.parse(m[0]); rows.forEach(r => { if (map[r.pair]) r.narrative = String(map[r.pair]).slice(0, 500); }); }
+      }
+    }
+  } catch (e) { console.log('forecast narrative LLM error (fail-open):', e.message); }
+  rows.forEach(r => {
+    if (!r.narrative) {
+      r.narrative = r.direction === 'Stand Aside'
+        ? `Sentiment gap of ${r.gap > 0 ? '+' : ''}${r.gap} between ${r.pair.slice(0, 3)} and ${r.pair.slice(4)} is inside the neutral band — no directional edge today.`
+        : `${r.pair.slice(0, 3)} sentiment (${r.base_score}) vs ${r.pair.slice(4)} (${r.quote_score}) opens a ${Math.abs(r.gap)}-point gap favouring the ${r.direction.toLowerCase()} side.`;
+    }
+  });
+
+  await _fcSb(env, 'POST', 'pair_forecasts?on_conflict=pair,forecast_date', rows,
+    { Prefer: 'resolution=ignore-duplicates,return=minimal' });
+  console.log(`generatePairForecasts: published ${rows.length} forecasts for ${today}`);
+}
+
+async function settlePairForecasts(env) {
+  // 23h cutoff so a 06:13 forecast settles on the next 06:13 run.
+  const cutoff = new Date(Date.now() - 23 * 3600 * 1000).toISOString();
+  const open = await _fcSb(env, 'GET', `pair_forecasts?select=id,pair,direction,entry_price&status=eq.open&entry_time=lte.${cutoff}`);
+  if (!open || !open.length) { console.log('settlePairForecasts: nothing to settle'); return; }
+
+  const priceRows = await _fcSb(env, 'GET', 'prices?select=pair,price');
+  const px = {}; (priceRows || []).forEach(r => { px[r.pair] = parseFloat(r.price); });
+
+  let settled = 0;
+  for (const f of open) {
+    const cur = px[f.pair];
+    if (!cur || !f.entry_price) { console.log(`settle skip ${f.pair}: no price`); continue; }
+    const entry = parseFloat(f.entry_price);
+    const movePct = ((cur - entry) / entry) * 100;
+    let outcome = 'na';
+    if (f.direction !== 'Stand Aside') {
+      const withMove = f.direction === 'Bullish' ? movePct : -movePct;
+      outcome = withMove >= FC_FLAT_BAND ? 'hit' : withMove <= -FC_FLAT_BAND ? 'miss' : 'flat';
+    }
+    await _fcSb(env, 'PATCH', `pair_forecasts?id=eq.${f.id}&status=eq.open`, {
+      status: 'settled', result_price: cur, result_time: new Date().toISOString(),
+      move_pct: Math.round(movePct * 1000) / 1000, move_pips: _fcPips(f.pair, entry, cur), outcome,
+    }, { Prefer: 'return=minimal' });
+    settled++;
+  }
+  console.log(`settlePairForecasts: settled ${settled}/${open.length}`);
 }

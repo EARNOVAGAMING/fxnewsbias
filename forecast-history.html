@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>try{if(localStorage.getItem("fxnb_is_pro")==="true")document.documentElement.dataset.pro="1";}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/favicon.ico">
+<title>Forecast Ledger — Immutable Track Record | FXNewsBias Pro</title>
+<meta name="description" content="The complete, immutable record of every FXNB forex forecast ever published — entries, results, moves and outcomes. Nothing deleted, nothing edited.">
+<link rel="canonical" href="https://fxnewsbias.com/forecast-history">
+<link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="/forecast.css">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6X181TFHYY');</script>
+<script>if(localStorage.getItem('fxnb_logged_in')==='true'){var s=document.createElement('style');s.textContent='a[href="/login"],a[href="/register"]{display:none!important}';document.head.appendChild(s);}</script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left"><span id="topbar-date">📅 Loading...</span><span>⭐ Pro Feature</span></div>
+    <div class="topbar-right"><a href="/about">About</a><a href="/contact">Contact</a></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo"><img src="/logo-fxnb.png?v=2" alt="FX News Bias"><span class="logo-word">FX<em>News</em>Bias</span></a>
+    <nav>
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies">Currencies</a></li>
+        <li><a href="/pairs">Pairs</a></li>
+        <li><a href="/calendar">Calendar</a></li>
+        <li><a href="/news">News</a></li>
+        <li><a href="/insight/">Insights</a></li>
+        <li><a href="/forecast">Forecast</a></li>
+        <li><a href="/community">Community</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="/login" class="btn btn-outline">Login</a>
+      <a href="/register" class="btn btn-primary">Register</a>
+      <button class="burger">☰</button>
+    </div>
+  </div>
+</header>
+
+<!-- PRO GATE -->
+<div class="pro-gate" id="pro-gate">
+  <div class="pro-gate-card">
+    <div class="pro-gate-icon">📜</div>
+    <h1 class="pro-gate-title">The Forecast Ledger</h1>
+    <p class="pro-gate-desc">Every forecast FXNB has ever published, with its result — wins, losses and flats alike. Immutable by design: written once at publish, settled once, never touched again.</p>
+    <div class="pro-gate-features">
+      <div class="pro-gate-feature">📜 Complete history — no deletions ever</div>
+      <div class="pro-gate-feature">✅ Hits and ❌ misses shown equally</div>
+      <div class="pro-gate-feature">🔎 Filter by pair, outcome and status</div>
+      <div class="pro-gate-feature">📊 Entry, result, move % and pips per call</div>
+    </div>
+    <a href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" class="pro-gate-btn">⭐ Upgrade to Pro — $30/mo</a>
+    <p style="margin-top:14px;font-size:12px;color:var(--muted);">Already Pro? <a href="/login">Login here →</a></p>
+  </div>
+</div>
+
+<!-- PRO CONTENT -->
+<div class="pro-content" id="pro-content">
+
+  <div class="fc-head">
+    <div class="fc-head-inner">
+      <span class="fc-eyebrow">⭐ Pro · Forecast Intelligence</span>
+      <h1 class="fc-title">Forecast Ledger</h1>
+      <p class="fc-sub">The complete immutable record. Every call, every result — including the misses. This is what makes the forecasts worth trusting.</p>
+      <div class="fc-immutable">🛡 Published once. Never edited. Every result recorded.</div>
+      <nav class="fc-tabs" aria-label="Forecast module">
+        <a class="fc-tab" href="/forecast">Today's Forecasts</a>
+        <a class="fc-tab active" href="/forecast-history" aria-current="page">Forecast Ledger</a>
+        <a class="fc-tab" href="/forecast-performance">Performance</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="fc-wrap">
+    <div class="fc-controls">
+      <select class="fc-select" id="f-pair" aria-label="Filter by pair"><option value="">All pairs</option></select>
+      <select class="fc-select" id="f-outcome" aria-label="Filter by outcome">
+        <option value="">All outcomes</option>
+        <option value="hit">✓ Hit</option>
+        <option value="miss">✕ Miss</option>
+        <option value="flat">– Flat</option>
+        <option value="aside">Stand Aside</option>
+      </select>
+      <select class="fc-select" id="f-status" aria-label="Filter by status">
+        <option value="">All statuses</option>
+        <option value="open">Open</option>
+        <option value="settled">Settled</option>
+      </select>
+      <span class="fc-count" id="f-count"></span>
+    </div>
+
+    <div class="ledger-card">
+      <div class="ledger-scroll">
+        <table class="ledger" id="ledger-table">
+          <thead><tr>
+            <th>Date</th><th>Pair</th><th>Direction</th><th>Conv</th><th>Entry</th><th>Result</th><th>Move %</th><th>Pips</th><th>Outcome</th><th>Status</th>
+          </tr></thead>
+          <tbody><tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">Loading ledger…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="ledger-note">🛡 Immutable record — rows are written at publish, settled exactly once, and never modified after. Stand-aside days are shown but excluded from win-rate math. All times UTC.</div>
+    </div>
+
+    <div class="disclaimer"><strong>Disclaimer:</strong> Forecasts are AI-generated sentiment-based analysis, not financial advice or trade signals. Past performance is not indicative of future results.</div>
+
+    <div class="trust-strip">
+      <span>✅ 100% Transparent</span><span>📜 All Results Public</span><span>🔒 Immutable Records</span><span>🚫 No Deletions. No Edits.</span>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <a href="/">Markets</a><a href="/pro">Pro Dashboard</a><a href="/history">Sentiment History</a><a href="/report">Weekly Report</a><a href="/disclaimer">Disclaimer</a>
+  <div style="margin-top:10px;">© 2026 FXNewsBias · Not financial advice.</div>
+</footer>
+
+<script src="/forecast-core.js"></script>
+<script>
+(function(){
+'use strict';
+var allRows=[], loaded=false;
+
+function row(r){
+  var mv=parseFloat(r.move_pct);
+  var dirCls=FC.dirClass(r.direction);
+  var chip=dirCls==='long'?'dir-long':dirCls==='short'?'dir-short':'dir-aside';
+  return '<tr>'
+    +'<td>'+FC.fmtDate(r.forecast_date)+'</td>'
+    +'<td class="num">'+FC.pairFlags(r.pair)+' <a href="/forecast-pair?pair='+FC.pairSlug(r.pair)+'" style="color:inherit;">'+r.pair+'</a></td>'
+    +'<td><span class="dir-chip '+chip+'">'+FC.dirLabel(r.direction)+'</span></td>'
+    +'<td>'+(r.conviction?FC.convDots(r.conviction):'<span style="color:var(--muted)">—</span>')+'</td>'
+    +'<td class="num">'+FC.fmtPrice(r.pair,r.entry_price)+'</td>'
+    +'<td class="num">'+(r.result_price?FC.fmtPrice(r.pair,r.result_price):'—')+'</td>'
+    +'<td class="num '+(mv>0?'up':mv<0?'down':'')+'">'+(r.move_pct==null?'—':FC.fmtPct(r.move_pct,true))+'</td>'
+    +'<td class="num">'+(r.move_pips==null?'—':(r.move_pips>0?'+':'')+r.move_pips)+'</td>'
+    +'<td>'+FC.outcomePill(r)+'</td>'
+    +'<td style="text-transform:uppercase;font-size:10px;font-weight:700;color:'+(r.status==='open'?'#93c5fd':'#7c8aa3')+'">'+r.status+'</td>'
+    +'</tr>';
+}
+
+function render(){
+  var p=document.getElementById('f-pair').value;
+  var o=document.getElementById('f-outcome').value;
+  var s=document.getElementById('f-status').value;
+  var rows=allRows.filter(function(r){
+    if(p&&r.pair!==p)return false;
+    if(o==='aside'){if(r.direction!=='Stand Aside')return false;}
+    else if(o&&r.outcome!==o)return false;
+    if(s&&r.status!==s)return false;
+    return true;
+  });
+  document.getElementById('f-count').textContent=rows.length+' / '+allRows.length+' forecasts';
+  var tb=document.querySelector('#ledger-table tbody');
+  if(!rows.length){
+    tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">'+(allRows.length?'No forecasts match these filters.':'No forecasts yet — the first batch publishes next weekday at 06:13 UTC.')+'</td></tr>';
+    return;
+  }
+  tb.innerHTML=rows.map(row).join('');
+}
+
+function load(){
+  if(loaded)return; loaded=true;
+  FC.fetchLedger().then(function(rows){
+    allRows=rows||[];
+    var pairs={};allRows.forEach(function(r){pairs[r.pair]=1;});
+    var sel=document.getElementById('f-pair');
+    Object.keys(pairs).sort().forEach(function(pp){
+      var op=document.createElement('option');op.value=pp;op.textContent=pp;sel.appendChild(op);
+    });
+    render();
+  }).catch(function(){
+    document.querySelector('#ledger-table tbody').innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">Could not load the ledger. Please refresh.</td></tr>';
+  });
+}
+['f-pair','f-outcome','f-status'].forEach(function(id){document.getElementById(id).addEventListener('change',render);});
+
+var d=new Date(),el=document.getElementById('topbar-date');
+if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+
+if(localStorage.getItem('fxnb_is_pro')==='true'){
+  document.getElementById('pro-gate').style.display='none';
+  document.getElementById('pro-content').style.display='block';
+  load();
+}
+window.addEventListener('userLoaded',function(e){if(e.detail&&e.detail.isPro)load();});
+})();
+</script>
+<script src="/nav.js" defer></script>
+<script src="/cookie.js" defer></script>
+<script src="/analytics.js" defer></script>
+<script type="module" src="/firebase.js"></script>
+</body>
+</html>
