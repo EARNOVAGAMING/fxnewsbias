@@ -1227,29 +1227,29 @@ async function handleWelcomeEmail(request, env) {
   const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-Internal-Key' };
   if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
 
-  const internalKey = request.headers.get('X-Internal-Key');
-  // Client-called endpoint: gated by its OWN low-privilege key, never the admin
-  // CRON_TRIGGER_KEY (which must not appear in client code). Even if this key is
-  // read from page source, it can only trigger a welcome email — not ops/cleanup.
-  if (!env.WELCOME_EMAIL_KEY || internalKey !== env.WELCOME_EMAIL_KEY) {
-    return new Response('Unauthorized', { status: 401, headers: cors });
-  }
   if (!env.RESEND_API_KEY) {
     console.log('send-welcome-email: RESEND_API_KEY not configured');
     return new Response(JSON.stringify({ ok: false }), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
   }
 
-  let email, name;
+  // Auth (H1 fix): verify the caller's Firebase ID token and derive the
+  // recipient from it. The welcome email is ALWAYS sent to the token's own
+  // verified email — a caller can never target an arbitrary address. This
+  // replaces the previous shared-secret gate, whose key was necessarily
+  // exposed in client JS and let anyone send mail via our Resend account.
+  let idToken, name;
   try {
     const body = await request.json();
-    email = String(body.email || '').trim();
-    name  = String(body.name  || '').trim();
+    idToken = String(body.idToken || '');
+    name    = String(body.name || '').trim();
   } catch {
     return new Response('Bad request', { status: 400, headers: cors });
   }
-  if (!email || !email.includes('@')) {
-    return new Response('Bad request', { status: 400, headers: cors });
+  const _wu = await _verifyFirebaseUser(env, idToken);
+  if (!_wu || !_wu.email || !_wu.email.includes('@')) {
+    return new Response('Unauthorized', { status: 401, headers: cors });
   }
+  const email = _wu.email;
 
   const firstName = name.split(' ')[0] || 'there';
   const from = env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com';
