@@ -170,6 +170,13 @@ try {
   return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
 }
 }
+// One-time Stripe config: point the payment link's after-completion
+// redirect at /register?paid=1 (also self-runs from the cleanup cron).
+if (url.pathname === '/setup-stripe-redirect') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await ensureStripeRedirect(env, { force: true });
+return new Response(JSON.stringify(result, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
+}
 // Sprint 5 — manually execute the stored SEO plan's safe actions.
 if (url.pathname === '/run-seo-actions') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
@@ -398,6 +405,9 @@ if (event.cron === '*/15 * * * *') {
     cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns error:', e.message)),
     cleanupStepRuns(env).catch(e => console.log('cleanupStepRuns error:', e.message)),
     pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow error:', e.message)),
+    // One-time self-config: set the Stripe payment link's post-checkout
+    // redirect to /register?paid=1 (no-op once the flag is set).
+    ensureStripeRedirect(env).catch(e => console.log('ensureStripeRedirect error:', e.message)),
     // Once/day at 03:15 UTC: pull Search Console performance -> gsc_performance (E1).
     ...(new Date().getUTCHours() === 3 ? [(async () => {
       await ingestGscPerformance(env).catch(e => console.log('ingestGscPerformance error:', e.message));
@@ -5319,4 +5329,69 @@ async function executeSeoActions(env) {
   await writeSystemState(env, 'seo_actions:last_run', summary).catch(() => {});
   console.log(`executeSeoActions: ${executed.length} committed, ${skipped.length} skipped`);
   return summary;
+}
+
+// ============================================================
+// STRIPE PAYMENT-LINK REDIRECT (one-time self-configuration)
+// After checkout, Stripe's default confirmation screen leaves a
+// pay-before-register user stranded — they don't know they must
+// create an account with the SAME email to unlock Pro. This
+// points the payment link's after-completion redirect at
+// /register?paid=1, which register.html already handles (banner,
+// heading swap, logged-in users bounce straight to /report).
+//
+// Runs from the 3-hourly cleanup cron until it succeeds once
+// (flag in system_state), capped at 5 attempts so a permanent
+// API failure can't poll Stripe forever. Manual re-run:
+// /setup-stripe-redirect?key=... (force ignores the flag).
+// ============================================================
+const _STRIPE_BUY_URL = 'https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01';
+const _STRIPE_REDIRECT_TO = 'https://fxnewsbias.com/register?paid=1';
+
+async function ensureStripeRedirect(env, opts = {}) {
+  if (!env.STRIPE_SECRET_KEY) return { ok: false, reason: 'no-stripe-key' };
+  const state = await readSystemState(env, 'stripe_redirect:state');
+  if (!opts.force) {
+    if (state && state.ok) return state;
+    if (state && (state.attempts || 0) >= 5) return { ...state, reason: 'gave-up-after-5-attempts' };
+  }
+  const attempts = ((state && state.attempts) || 0) + 1;
+  const sk = { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` };
+  try {
+    // The public buy URL isn't the API id — find the link by listing.
+    const list = await fetch('https://api.stripe.com/v1/payment_links?limit=100&active=true', {
+      headers: sk, signal: AbortSignal.timeout(20000),
+    });
+    if (!list.ok) throw new Error(`list ${list.status}: ${(await list.text()).slice(0, 150)}`);
+    const links = (await list.json()).data || [];
+    const link = links.find(l => l.url === _STRIPE_BUY_URL);
+    if (!link) {
+      const out = { ok: false, reason: 'payment-link-not-found', attempts, at: new Date().toISOString() };
+      await writeSystemState(env, 'stripe_redirect:state', out);
+      return out;
+    }
+    // Already configured? (idempotent no-op)
+    const cur = link.after_completion;
+    if (cur && cur.type === 'redirect' && cur.redirect && cur.redirect.url === _STRIPE_REDIRECT_TO) {
+      const out = { ok: true, reason: 'already-configured', link: link.id, at: new Date().toISOString() };
+      await writeSystemState(env, 'stripe_redirect:state', out);
+      return out;
+    }
+    const upd = await fetch(`https://api.stripe.com/v1/payment_links/${link.id}`, {
+      method: 'POST',
+      headers: { ...sk, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'after_completion[type]=redirect&after_completion[redirect][url]=' + encodeURIComponent(_STRIPE_REDIRECT_TO),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!upd.ok) throw new Error(`update ${upd.status}: ${(await upd.text()).slice(0, 200)}`);
+    const out = { ok: true, reason: 'configured', link: link.id, redirect: _STRIPE_REDIRECT_TO, at: new Date().toISOString() };
+    await writeSystemState(env, 'stripe_redirect:state', out);
+    console.log('ensureStripeRedirect: configured', link.id);
+    return out;
+  } catch (e) {
+    const out = { ok: false, reason: e.message, attempts, at: new Date().toISOString() };
+    await writeSystemState(env, 'stripe_redirect:state', out);
+    console.log('ensureStripeRedirect failed:', e.message);
+    return out;
+  }
 }
