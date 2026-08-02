@@ -130,12 +130,12 @@
 'use strict';
 var allRows=[], loaded=false;
 
-function row(r){
+function row(r,i){
   var mv=parseFloat(r.move_pct);
   var dirCls=FC.dirClass(r.direction);
   var chip=dirCls==='long'?'dir-long':dirCls==='short'?'dir-short':'dir-aside';
-  return '<tr>'
-    +'<td>'+FC.fmtDate(r.forecast_date)+'</td>'
+  return '<tr class="expandable" data-idx="'+i+'" tabindex="0" aria-expanded="false" aria-label="Expand '+FC.esc(r.pair)+' '+FC.fmtDate(r.forecast_date)+' forecast detail">'
+    +'<td><span class="exp-chev">▶</span>'+FC.fmtDate(r.forecast_date)+'</td>'
     +'<td class="num">'+FC.pairFlags(r.pair)+' <a href="/forecast-pair?pair='+FC.pairSlug(r.pair)+'" style="color:inherit;">'+r.pair+'</a></td>'
     +'<td><span class="dir-chip '+chip+'">'+FC.dirLabel(r.direction)+'</span></td>'
     +'<td>'+(r.conviction?FC.convDots(r.conviction):'<span style="color:var(--muted)">—</span>')+'</td>'
@@ -146,6 +146,24 @@ function row(r){
     +'<td>'+FC.outcomePill(r)+'</td>'
     +'<td style="text-transform:uppercase;font-size:10px;font-weight:700;color:'+(r.status==='open'?'#93c5fd':'#7c8aa3')+'">'+r.status+'</td>'
     +'</tr>';
+}
+
+function detailRow(r){
+  var base=r.pair.slice(0,3),quote=r.pair.slice(4);
+  var chips=FC.driverChips(r.drivers,base,quote);
+  var html='<tr class="detail-row"><td colspan="10">';
+  html+='<div style="display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;">';
+  html+='<div style="flex:1;min-width:220px;">';
+  if(r.narrative)html+='<p class="fcm-narr" style="margin-bottom:'+(chips?'10px':'0')+';">'+FC.esc(r.narrative)+'</p>';
+  if(chips)html+=chips;
+  if(!r.narrative&&!chips)html+='<span style="color:var(--muted);font-size:12px;">No narrative recorded for this forecast.</span>';
+  html+='</div>';
+  html+='<div style="flex-shrink:0;font-size:11px;color:var(--muted);font-family:var(--mono);line-height:1.9;">'
+    +'Published '+FC.fmtTime(r.entry_time)+'<br>'
+    +(r.result_time?'Settled '+FC.fmtTime(r.result_time):FC.esc(FC.countdown(r.entry_time)||''))
+    +'</div>';
+  html+='</div></td></tr>';
+  return html;
 }
 
 function render(){
@@ -166,6 +184,18 @@ function render(){
     return;
   }
   tb.innerHTML=rows.map(row).join('');
+  tb.querySelectorAll('tr.expandable').forEach(function(tr){
+    var r=rows[parseInt(tr.getAttribute('data-idx'),10)];
+    function toggle(e){
+      if(e&&e.target.closest('a'))return;
+      var open=tr.getAttribute('aria-expanded')==='true';
+      var next=tr.nextElementSibling;
+      if(open){if(next&&next.classList.contains('detail-row'))next.remove();tr.setAttribute('aria-expanded','false');}
+      else{tr.insertAdjacentHTML('afterend',detailRow(r));tr.setAttribute('aria-expanded','true');}
+    }
+    tr.addEventListener('click',toggle);
+    tr.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(e);}});
+  });
 }
 
 function load(){
