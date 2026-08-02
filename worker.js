@@ -78,9 +78,60 @@ export default {
       if (res) return res;
     }
 
+    // Forecast track record — server-render the public win-rate + recent
+    // results into the page so crawlers index real content (the client then
+    // hydrates the interactive version). Fail-open to the plain asset.
+    if (url.pathname === '/forecast' || url.pathname === '/forecast-history') {
+      return serveForecastSSR(request, env);
+    }
+
     return env.ASSETS.fetch(request);
   },
 };
+
+async function serveForecastSSR(request, env) {
+  try {
+    const [assetResp, rows] = await Promise.all([
+      env.ASSETS.fetch(request),
+      fetchForecastLedger(env),
+    ]);
+    if (!assetResp.ok) return assetResp;
+    if (!(assetResp.headers.get('content-type') || '').includes('text/html')) return assetResp;
+    let html = await assetResp.text();
+    if (rows && html.includes('<!-- forecast_ssr -->')) {
+      html = html.replace('<!-- forecast_ssr -->', renderForecastSSR(rows));
+    }
+    return new Response(html, { status: 200, headers: buildHeaders(assetResp) });
+  } catch {
+    return env.ASSETS.fetch(request); // fail-open — never break the page
+  }
+}
+
+async function fetchForecastLedger(env) {
+  try {
+    const r = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/pair_forecasts?select=pair,forecast_date,direction,status,outcome,move_pct&order=forecast_date.desc&limit=300`,
+      { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(8000) }
+    );
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+function renderForecastSSR(rows) {
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const settled = rows.filter((r) => r.status === 'settled' && (r.outcome === 'hit' || r.outcome === 'miss'));
+  const hits = settled.filter((r) => r.outcome === 'hit').length;
+  const wr = settled.length ? Math.round((hits / settled.length) * 100) : null;
+  const recent = rows.filter((r) => r.status === 'settled' && r.direction !== 'Stand Aside').slice(0, 20);
+  const body = recent.map((r) =>
+    `<tr><td style="padding:6px 8px;">${esc(r.forecast_date)}</td><td style="padding:6px 8px;">${esc(r.pair)}</td><td style="padding:6px 8px;">${r.direction === 'Bullish' ? 'BUY' : 'SELL'}</td><td style="padding:6px 8px;">${r.move_pct == null ? '—' : (r.move_pct > 0 ? '+' : '') + Number(r.move_pct).toFixed(2) + '%'}</td><td style="padding:6px 8px;">${esc(r.outcome || '')}</td></tr>`
+  ).join('');
+  return `<section aria-label="Forecast track record" style="max-width:1280px;margin:0 auto;padding:4px 20px 0;color:#9aa7bd;">
+    <p style="font-size:13px;line-height:1.6;margin:0 0 10px;">FXNewsBias publishes AI forex forecasts for the 7 major pairs every weekday, with a fully public, immutable track record${wr !== null ? ` — <strong>${wr}% win rate</strong> across ${settled.length} settled forecasts (${hits} hits)` : ' (results begin settling 24h after the first publish)'}. Every call is recorded and never edited.</p>
+    ${recent.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px;"><caption style="text-align:left;font-size:11px;color:#64748b;padding:4px 8px;">Recent settled forecasts</caption><thead><tr><th style="text-align:left;padding:6px 8px;">Date</th><th style="text-align:left;padding:6px 8px;">Pair</th><th style="text-align:left;padding:6px 8px;">Direction</th><th style="text-align:left;padding:6px 8px;">Move</th><th style="text-align:left;padding:6px 8px;">Outcome</th></tr></thead><tbody>${body}</tbody></table>` : ''}
+  </section>`;
+}
 
 // ── Pair pages ────────────────────────────────────────────────────────────────
 async function servePairPage(request, slug, env) {

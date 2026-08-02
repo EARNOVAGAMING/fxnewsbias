@@ -2283,9 +2283,24 @@ console.log('writeSystemState error:', e.message);
 // =====================================================================
 // WEEKLY PRO REPORT — published every Sunday 22:00 UTC, stored in Supabase
 // =====================================================================
+// Pro gate for the weekly-report endpoints: verify the caller's Firebase ID
+// token (Authorization: Bearer …) and confirm Pro. Returns null when allowed,
+// or a ready Response (401/403) when not. Keeps the paid brief server-side
+// exclusive instead of frontend-only.
+async function _weeklyProGate(request, env, cors) {
+  const idToken = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+  const u = await _verifyFirebaseUser(env, idToken);
+  if (!u) return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...cors } });
+  const sub = await _getSubscriptionDoc(env, u.email);
+  if (!sub.isPro) return new Response(JSON.stringify({ error: 'pro-only', message: 'The Weekly Intelligence Brief is a Pro feature.' }), { status: 403, headers: { 'Content-Type': 'application/json', ...cors } });
+  return null;
+}
+
 async function handleWeeklyReportsList(request, env) {
-const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS' };
+const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' };
 if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+const _gate = await _weeklyProGate(request, env, cors);
+if (_gate) return _gate;
 try {
   const res = await fetch(
     `${env.SUPABASE_URL}/rest/v1/weekly_reports?select=week_end,week_start,generated_at&order=week_end.desc&limit=26`,
@@ -2299,8 +2314,10 @@ try {
 }
 
 async function handleWeeklyReport(request, env, ctx) {
-const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
+const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' };
 if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+const _gate = await _weeklyProGate(request, env, cors);
+if (_gate) return _gate;
 const url = new URL(request.url);
 const weekParam = url.searchParams.get('week'); // YYYY-MM-DD (the Sunday date)
 try {

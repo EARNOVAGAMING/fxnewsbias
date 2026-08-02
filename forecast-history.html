@@ -66,6 +66,7 @@
   </div>
 
   <div class="fc-wrap">
+    <div id="fc-ssr"><!-- forecast_ssr --></div>
     <div id="fc-upstrip-host"></div>
     <div class="fc-controls">
       <select class="fc-select" id="f-pair" aria-label="Filter by pair"><option value="">All pairs</option></select>
@@ -185,6 +186,7 @@ function render(){
 
 function load(){
   if(loaded)return; loaded=true;
+  var _ssr=document.getElementById('fc-ssr'); if(_ssr) _ssr.remove();  // drop server-rendered fallback; JS renders the interactive version
   FC.fetchLedger().then(function(rows){
     allRows=rows||[];
     var pairs={};allRows.forEach(function(r){pairs[r.pair]=1;});
