@@ -274,6 +274,18 @@ return handleWeeklyReport(request, env, ctx);
 if (url.pathname === '/api/weekly-reports') {
 return handleWeeklyReportsList(request, env);
 }
+// Live forecast ledger (Pro-gated) — full ledger incl. open/live calls.
+// Anon RLS on pair_forecasts only exposes SETTLED rows (public track record);
+// open calls are the paid product and must come through this token gate.
+if (url.pathname === '/api/forecasts') {
+return handleForecastLedger(request, env);
+}
+// Public counts-only summary for the latest forecast day — powers the free
+// "N live calls locked today" teaser. Returns ONLY a date + counts; never any
+// direction/entry/conviction/narrative (those stay behind /api/forecasts).
+if (url.pathname === '/api/forecasts/summary') {
+return handleForecastSummary(request, env);
+}
 // Manual trigger — returns 202 immediately, runs generation in background
 if (url.pathname === '/api/generate-weekly-report') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
@@ -2287,6 +2299,53 @@ console.log('writeSystemState error:', e.message);
 // token (Authorization: Bearer …) and confirm Pro. Returns null when allowed,
 // or a ready Response (401/403) when not. Keeps the paid brief server-side
 // exclusive instead of frontend-only.
+// GET /api/forecasts — full forecast ledger (incl. open/live calls). Pro-gated.
+// Free/anon users can only read SETTLED rows directly from Supabase (RLS); the
+// live calls are the paid product, so they are served here only after the
+// caller's Firebase ID token proves an active Pro subscription. Read-only.
+async function handleForecastLedger(request, env) {
+const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' };
+if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+const _gate = await _weeklyProGate(request, env, cors);
+if (_gate) return _gate;
+try {
+  const url = new URL(request.url);
+  const limit = Math.min(parseInt(url.searchParams.get('limit'), 10) || 2000, 5000);
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/pair_forecasts?select=*&order=forecast_date.desc,pair.asc&limit=${limit}`,
+    { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(20000) }
+  );
+  const rows = res.ok ? await res.json() : [];
+  return new Response(JSON.stringify(rows), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...cors } });
+} catch (e) {
+  return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', ...cors } });
+}
+}
+
+// GET /api/forecasts/summary — public. Counts only for the latest forecast
+// day so free users see an honest "N live calls locked today" teaser without
+// receiving any actionable content. No auth (nothing sensitive is returned).
+async function handleForecastSummary(request, env) {
+const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
+if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+try {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/pair_forecasts?select=forecast_date,status,direction&order=forecast_date.desc&limit=60`,
+    { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(15000) }
+  );
+  const rows = res.ok ? await res.json() : [];
+  const latest = rows.length ? rows[0].forecast_date : null;
+  const today = rows.filter(r => r.forecast_date === latest);
+  const open = today.filter(r => r.status === 'open').length;
+  const calls = today.filter(r => r.direction !== 'Stand Aside').length;
+  return new Response(JSON.stringify({ latest_date: latest, published: today.length, open, calls }), {
+    status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=120', ...cors },
+  });
+} catch (e) {
+  return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', ...cors } });
+}
+}
+
 async function _weeklyProGate(request, env, cors) {
   const idToken = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
   const u = await _verifyFirebaseUser(env, idToken);

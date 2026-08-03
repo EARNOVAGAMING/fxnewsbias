@@ -7,6 +7,7 @@
   const SB = 'https://vtbmtxtgtdprpbilragm.supabase.co';
   const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
   const HEADERS = { apikey: KEY, Authorization: 'Bearer ' + KEY };
+  const CRON = 'https://fxnewsbias-cron.dineshsanther123gf.workers.dev';
 
   const FLAGS = { USD:'🇺🇸', EUR:'🇪🇺', GBP:'🇬🇧', JPY:'🇯🇵', AUD:'🇦🇺', CAD:'🇨🇦', CHF:'🇨🇭', NZD:'🇳🇿' };
 
@@ -16,9 +17,46 @@
     return r.json();
   }
 
-  // Full ledger (newest first). ~7 rows/weekday -> years of headroom at 2000.
+  // Public track record only. RLS on pair_forecasts exposes SETTLED rows to
+  // anon; today's OPEN live calls (the paid product) are NOT returned here —
+  // they come from the Pro-gated worker endpoint via fetchLiveForecasts().
   function fetchLedger(limit) {
     return sb('pair_forecasts?select=*&order=forecast_date.desc,pair.asc&limit=' + (limit || 2000));
+  }
+  // Current Firebase ID token (or null). firebase.js exposes getCurrentUser().
+  function getIdToken() {
+    try {
+      var u = window.getCurrentUser && window.getCurrentUser();
+      if (u && u.getIdToken) return u.getIdToken();
+    } catch (_) {}
+    return Promise.resolve(null);
+  }
+  // Full ledger incl. OPEN live calls — Pro only. Verified server-side by the
+  // worker (Firebase token -> active Pro). Returns null if not signed-in/Pro or
+  // on any failure, so callers fall back to the public settled-only ledger.
+  function fetchLiveForecasts(limit) {
+    return getIdToken().then(function (tk) {
+      if (!tk) return null;
+      return fetch(CRON + '/api/forecasts?limit=' + (limit || 2000), { headers: { Authorization: 'Bearer ' + tk } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { return Array.isArray(j) ? j : null; });
+    }).catch(function () { return null; });
+  }
+  // Best ledger for the current user: Pro -> full (incl. open) via the gated
+  // endpoint; everyone else -> public settled-only via anon. Falls back to the
+  // public ledger if the gated fetch is unavailable, so the page never breaks.
+  function loadLedger(limit) {
+    if (!isPro()) return fetchLedger(limit);
+    return fetchLiveForecasts(limit).then(function (full) {
+      return full && full.length != null ? full : fetchLedger(limit);
+    });
+  }
+  // Public counts-only summary of the latest forecast day (date + counts, no
+  // content) — lets free users see an honest "N live calls locked today".
+  function fetchTodaySummary() {
+    return fetch(CRON + '/api/forecasts/summary')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
   }
   function fetchPrices() { return sb('prices?select=pair,price,change_pct,updated_at'); }
   function fetchNewsFor(ccys, limit) {
@@ -218,10 +256,14 @@
   let _eventsCache;
   function fetchKeyEvents() {
     if (_eventsCache !== undefined) return Promise.resolve(_eventsCache);
-    return fetch('https://fxnewsbias-cron.dineshsanther123gf.workers.dev/api/weekly-report')
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { _eventsCache = (j && Array.isArray(j.key_events)) ? j.key_events : null; return _eventsCache; })
-      .catch(function () { _eventsCache = null; return null; });
+    // /api/weekly-report is Pro-gated; send the ID token so Pro members get the
+    // key-events feed. Free users get 403 -> null and the section stays hidden.
+    return getIdToken().then(function (tk) {
+      return fetch(CRON + '/api/weekly-report', tk ? { headers: { Authorization: 'Bearer ' + tk } } : {})
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { _eventsCache = (j && Array.isArray(j.key_events)) ? j.key_events : null; return _eventsCache; })
+        .catch(function () { _eventsCache = null; return null; });
+    });
   }
 
   // ── forecast detail modal (institutional trade-report style) ──
@@ -340,7 +382,9 @@
 
   window.FC = {
     isPro: isPro, onProChange: onProChange, lockCard: lockCard, upgradeStrip: upgradeStrip,
-    fetchLedger: fetchLedger, fetchPrices: fetchPrices, fetchNewsFor: fetchNewsFor,
+    fetchLedger: fetchLedger, loadLedger: loadLedger, fetchLiveForecasts: fetchLiveForecasts, getIdToken: getIdToken,
+    fetchTodaySummary: fetchTodaySummary,
+    fetchPrices: fetchPrices, fetchNewsFor: fetchNewsFor,
     fetchSentimentHistory: fetchSentimentHistory, computeStats: computeStats,
     fmtPct: fmtPct, fmtPrice: fmtPrice, fmtDate: fmtDate, fmtTime: fmtTime,
     dirLabel: dirLabel, dirClass: dirClass, outcomePill: outcomePill, convDots: convDots,

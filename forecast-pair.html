@@ -74,7 +74,7 @@
   <div style="margin-top:10px;">© 2026 FXNewsBias · Not financial advice.</div>
 </footer>
 
-<script src="/forecast-core.js?v=2"></script>
+<script src="/forecast-core.js?v=3"></script>
 <script>
 (function(){
 'use strict';
@@ -207,7 +207,7 @@ function render(latest,pairRows,prices,news,baseHist,quoteHist){
 function load(){
   if(loaded)return; loaded=true;
   Promise.all([
-    FC.fetchLedger(),
+    FC.loadLedger(),
     FC.fetchPrices().catch(function(){return [];}),
     FC.fetchNewsFor([BASE,QUOTE],6).catch(function(){return [];}),
     FC.fetchSentimentHistory(BASE,30).catch(function(){return [];}),

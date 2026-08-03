@@ -110,7 +110,7 @@
   <div style="margin-top:10px;">© 2026 FXNewsBias · Not financial advice.</div>
 </footer>
 
-<script src="/forecast-core.js?v=2"></script>
+<script src="/forecast-core.js?v=3"></script>
 <script>
 (function(){
 'use strict';
@@ -187,10 +187,11 @@ function render(){
 function load(){
   if(loaded)return; loaded=true;
   var _ssr=document.getElementById('fc-ssr'); if(_ssr) _ssr.remove();  // drop server-rendered fallback; JS renders the interactive version
-  FC.fetchLedger().then(function(rows){
+  FC.loadLedger().then(function(rows){
     allRows=rows||[];
     var pairs={};allRows.forEach(function(r){pairs[r.pair]=1;});
     var sel=document.getElementById('f-pair');
+    while(sel.options.length>1) sel.remove(1);  // reset (keeps the "All" option) so re-fetch never duplicates
     Object.keys(pairs).sort().forEach(function(pp){
       var op=document.createElement('option');op.value=pp;op.textContent=pp;sel.appendChild(op);
     });
@@ -209,7 +210,8 @@ if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDa
 load();
 function _upToggle(p){var h=document.getElementById('fc-upstrip-host');if(h)h.innerHTML=p?'':FC.upgradeStrip();}
 _upToggle(FC.isPro());
-FC.onProChange(_upToggle);
+// Re-fetch when Pro resolves so members' ledger includes today's open calls.
+FC.onProChange(function(p){ _upToggle(p); loaded=false; load(); });
 })();
 </script>
 <script src="/nav.js" defer></script>

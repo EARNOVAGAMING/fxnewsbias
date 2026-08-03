@@ -118,12 +118,12 @@
   <div style="margin-top:10px;">© 2026 FXNewsBias · Not financial advice.</div>
 </footer>
 
-<script src="/forecast-core.js?v=2"></script>
+<script src="/forecast-core.js?v=3"></script>
 <script>
 (function(){
 'use strict';
 var grid=document.getElementById('fc-grid');
-var todayRows=[], allRows=[], livePx={}, loaded=false;
+var todayRows=[], allRows=[], livePx={}, todaySummary=null, loaded=false;
 
 function fmtWr(v){return v===null?'—':v.toFixed(1)+'%';}
 
@@ -136,7 +136,9 @@ function renderStats(st,today){
   var stk=document.getElementById('s-streak');
   if(st.streak&&st.streakType){stk.className='stat-val '+(st.streakType==='hit'?'up':'down');FC.countUp(stk,st.streak,'',0);
     document.getElementById('s-streak-sub').textContent=st.streakType==='hit'?'consecutive wins':'consecutive losses';}
-  document.getElementById('s-today').textContent=today.length||'0';
+  // "Published Today": for Pro, today's real rows; for free (settled-only
+  // ledger), the public counts-only summary keeps this honest.
+  document.getElementById('s-today').textContent=(todaySummary&&todaySummary.published!=null?todaySummary.published:(today.length||0));
   document.getElementById('s-settled').textContent=allRows.filter(function(r){return r.result_time&&r.result_time.slice(0,10)===new Date().toISOString().slice(0,10);}).length;
   var sa=document.getElementById('s-aside');
   sa.className='stat-val gold';
@@ -186,15 +188,17 @@ function renderCards(){
   else if(sort==='gap') rows.sort(function(a,b){return Math.abs(b.gap)-Math.abs(a.gap);});
   else if(sort==='newest') rows.sort(function(a,b){return a.entry_time<b.entry_time?1:-1;});
   else if(sort==='status') rows.sort(function(a,b){return (a.status==='open'?0:1)-(b.status==='open'?0:1)||b.conviction-a.conviction;});
-  document.getElementById('fc-count').textContent=rows.length?rows.length+' forecasts':'';
-  if(!rows.length){
-    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">📭</div><div class="t">No forecasts published yet</div><div class="s">Forecasts publish every weekday at 06:13 UTC, right after the morning sentiment refresh. The first batch will appear here automatically.</div></div>';
-    return;
-  }
-  // Freemium gate: free users see the count + a locked teaser; the track
-  // record (stats + settled results below) stays fully public as proof.
+  // Freemium gate: free users NEVER receive today's open calls (RLS blocks the
+  // anon read), so we show a locked teaser sized by the public counts-only
+  // summary. The track record (stats + settled results below) stays public.
   if(!FC.isPro()){
-    var n=rows.length, tiles='';
+    var n=todaySummary&&todaySummary.open!=null?todaySummary.open:0;
+    if(!n){
+      grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">📭</div><div class="t">No live forecasts published yet today</div><div class="s">Forecasts publish every weekday at 06:13 UTC, right after the morning sentiment refresh. The full public track record is below.</div></div>';
+      document.getElementById('fc-count').textContent='';
+      return;
+    }
+    var tiles='';
     for(var i=0;i<Math.min(n,6);i++) tiles+='<div class="fc-lock-tile"><div class="a"></div><div class="b"></div></div>';
     grid.innerHTML='<div class="fc-lock">'
       +'<div class="fc-lock-preview">'+tiles+'</div>'
@@ -205,6 +209,11 @@ function renderCards(){
       +'<div class="fc-lock-note">7-day free trial · Already Pro? <a href="/login">Log in →</a></div>'
       +'</div>';
     document.getElementById('fc-count').textContent=n+' forecasts · locked';
+    return;
+  }
+  document.getElementById('fc-count').textContent=rows.length?rows.length+' forecasts':'';
+  if(!rows.length){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">📭</div><div class="t">No forecasts published yet</div><div class="s">Forecasts publish every weekday at 06:13 UTC, right after the morning sentiment refresh. The first batch will appear here automatically.</div></div>';
     return;
   }
   grid.innerHTML=rows.map(card).join('');
@@ -238,13 +247,17 @@ function load(){
   if(loaded)return; loaded=true;
   var _ssr=document.getElementById('fc-ssr'); if(_ssr) _ssr.remove();  // drop server-rendered fallback; JS renders the interactive version
   Promise.all([
-    FC.fetchLedger(),
-    FC.fetchPrices().catch(function(){return [];})
+    FC.loadLedger(),
+    FC.fetchPrices().catch(function(){return [];}),
+    FC.fetchTodaySummary().catch(function(){return null;})
   ]).then(function(res){
     allRows=res[0]||[];
     (res[1]||[]).forEach(function(p){livePx[p.pair]=parseFloat(p.price);});
-    var latestDate=allRows.length?allRows[0].forecast_date:null;
-    todayRows=latestDate?allRows.filter(function(r){return r.forecast_date===latestDate;}):[];
+    todaySummary=res[2]||null;
+    // Pro ledger includes today's OPEN rows; the free ledger is settled-only,
+    // so use the public summary's date for the section label when needed.
+    var latestDate=allRows.length?allRows[0].forecast_date:(todaySummary?todaySummary.latest_date:null);
+    todayRows=(latestDate&&FC.isPro())?allRows.filter(function(r){return r.forecast_date===latestDate;}):[];
     if(latestDate){document.getElementById('today-label').textContent='Forecasts — '+FC.fmtDate(latestDate);}
     renderStats(FC.computeStats(allRows),todayRows);
     renderCards();
@@ -261,7 +274,9 @@ if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDa
 // Public page — load for everyone. Track record shows to all; today's cards
 // render locked for free users and re-render unlocked when Pro resolves.
 load();
-FC.onProChange(function(){ if(loaded) renderCards(); });
+// When Pro resolves (or flips), re-fetch: Pro pulls today's live calls from the
+// gated endpoint, free falls back to the public settled-only ledger + teaser.
+FC.onProChange(function(){ loaded=false; load(); });
 })();
 </script>
 <script src="/nav.js" defer></script>

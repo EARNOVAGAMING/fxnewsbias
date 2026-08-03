@@ -136,7 +136,7 @@
   <div style="margin-top:10px;">© 2026 FXNewsBias · Not financial advice.</div>
 </footer>
 
-<script src="/forecast-core.js?v=2"></script>
+<script src="/forecast-core.js?v=3"></script>
 <script>
 (function(){
 'use strict';
@@ -186,7 +186,7 @@ function monthlyChart(rows){
 
 function load(){
   if(loaded)return; loaded=true;
-  FC.fetchLedger().then(function(rows){
+  FC.loadLedger().then(function(rows){
     rows=rows||[];
     var st=FC.computeStats(rows);
     function setWr(id,v){var e=document.getElementById(id);if(v===null){e.textContent='—';return;}e.className='stat-val '+(v>=50?'up':'down');FC.countUp(e,v,'%',1);}
@@ -292,7 +292,8 @@ if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDa
 load();
 function _upToggle(p){var h=document.getElementById('fc-upstrip-host');if(h)h.innerHTML=p?'':FC.upgradeStrip();}
 _upToggle(FC.isPro());
-FC.onProChange(_upToggle);
+// Re-render when Pro resolves so members' analytics include today's open calls.
+FC.onProChange(function(p){ _upToggle(p); loaded=false; load(); });
 })();
 </script>
 <script src="/nav.js" defer></script>
