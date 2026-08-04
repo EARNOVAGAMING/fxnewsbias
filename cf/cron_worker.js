@@ -3078,6 +3078,27 @@ console.log(`Failed to update ${pair}:`, error.message);
 if (i < pairs.length - 1) await new Promise(r => setTimeout(r, THROTTLE_MS));
 }
 
+// Derive USD-free CROSS rates from the majors we already fetched — no extra
+// TwelveData credits. These feed the diversified cross-pair forecasts so the
+// daily book isn't 100% USD-correlated. Cross = product/quotient of two majors.
+const _pxm = {}; collected.forEach(c => { _pxm[c.pair] = c.price; });
+const FC_CROSS_DERIV = [
+  { pair: 'EUR/JPY', needs: ['EUR/USD', 'USD/JPY'], calc: m => m['EUR/USD'] * m['USD/JPY'], dp: 3 },
+  { pair: 'GBP/JPY', needs: ['GBP/USD', 'USD/JPY'], calc: m => m['GBP/USD'] * m['USD/JPY'], dp: 3 },
+  { pair: 'EUR/GBP', needs: ['EUR/USD', 'GBP/USD'], calc: m => m['EUR/USD'] / m['GBP/USD'], dp: 5 },
+  { pair: 'AUD/NZD', needs: ['AUD/USD', 'NZD/USD'], calc: m => m['AUD/USD'] / m['NZD/USD'], dp: 5 },
+];
+let _crossN = 0;
+for (const x of FC_CROSS_DERIV) {
+  if (!x.needs.every(p => isFinite(_pxm[p]) && _pxm[p] > 0)) continue;
+  const f = Math.pow(10, x.dp);
+  const price = Math.round(x.calc(_pxm) * f) / f;
+  if (isFinite(price) && price > 0) {
+    collected.push({ pair: x.pair, price, change_pct: 0, updated_at: new Date().toISOString() });
+    _crossN++;
+  }
+}
+
 // prices.pair has a UNIQUE constraint (added in RUN_THESE_3_MIGRATIONS.sql),
 // so a single UPSERT (merge-duplicates) is all we need — 1 subrequest,
 // no gap window, no duplicate rows.
@@ -3098,7 +3119,7 @@ const body = await upsertResp.text().catch(() => '');
 console.log(`updatePrices UPSERT HTTP ${upsertResp.status}: ${body.slice(0, 300)}`);
 return;
 }
-console.log(`updatePrices: upserted ${collected.length}/${pairs.length} pairs`);
+console.log(`updatePrices: upserted ${collected.length} rows (${pairs.length} majors + ${_crossN} derived crosses)`);
 }
 // ============================================
 // CONTACT FORM HANDLER
@@ -5167,6 +5188,7 @@ Rules: prefer actions that turn near_winners and high-impression under-ranked qu
 // ============================================================
 
 const FC_PAIRS = [
+  // 7 USD majors
   { pair: 'EUR/USD', base: 'EUR', quote: 'USD' },
   { pair: 'GBP/USD', base: 'GBP', quote: 'USD' },
   { pair: 'USD/JPY', base: 'USD', quote: 'JPY' },
@@ -5174,6 +5196,13 @@ const FC_PAIRS = [
   { pair: 'AUD/USD', base: 'AUD', quote: 'USD' },
   { pair: 'USD/CAD', base: 'USD', quote: 'CAD' },
   { pair: 'NZD/USD', base: 'NZD', quote: 'USD' },
+  // USD-free crosses (diversification — de-correlate the daily book from USD).
+  // Prices are derived from the majors in updatePrices; sentiment scores for
+  // all 8 currencies already exist, so gap = base − quote works unchanged.
+  { pair: 'EUR/JPY', base: 'EUR', quote: 'JPY' },
+  { pair: 'GBP/JPY', base: 'GBP', quote: 'JPY' },
+  { pair: 'EUR/GBP', base: 'EUR', quote: 'GBP' },
+  { pair: 'AUD/NZD', base: 'AUD', quote: 'NZD' },
 ];
 const FC_GAP_MIN = 15;         // |gap| below this -> Stand Aside
 const FC_FLAT_BAND = 0.15;     // % move inside +/- this band -> flat
