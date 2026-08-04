@@ -118,7 +118,7 @@
   <div style="margin-top:10px;">© 2026 FXNewsBias · Not financial advice.</div>
 </footer>
 
-<script src="/forecast-core.js?v=3"></script>
+<script src="/forecast-core.js?v=4"></script>
 <script>
 (function(){
 'use strict';
@@ -181,7 +181,19 @@ function card(r,i){
     +'</article>';
 }
 
+function renderExposureBanner(){
+  var host=document.getElementById('fc-exposure');
+  if(!host){ host=document.createElement('div'); host.id='fc-exposure'; grid.parentNode.insertBefore(host,grid); }
+  var ex=FC.exposure(todayRows);
+  if(FC.isPro() && ex.concentrated){
+    host.innerHTML='<div style="background:linear-gradient(90deg,rgba(245,181,68,.13),rgba(245,181,68,.04));border:1px solid rgba(245,181,68,.38);border-radius:12px;padding:13px 16px;margin:0 0 16px;color:#f3d08a;font-size:13.5px;line-height:1.55;">'
+      +'⚠ <b>Concentration risk:</b> today’s '+ex.total+' live calls are effectively <b>'+FC.esc(ex.label)+'</b> — they all share the '+FC.esc(ex.dominant.ccy)+' leg, so they move together. Treat this as <b>one macro view</b>, not '+ex.total+' independent trades — size accordingly.'
+      +'</div>';
+    host.style.display='block';
+  } else { host.style.display='none'; host.innerHTML=''; }
+}
 function renderCards(){
+  renderExposureBanner();
   var sort=document.getElementById('sort-sel').value;
   var rows=todayRows.slice();
   if(sort==='conviction') rows.sort(function(a,b){return b.conviction-a.conviction||Math.abs(b.gap)-Math.abs(a.gap);});

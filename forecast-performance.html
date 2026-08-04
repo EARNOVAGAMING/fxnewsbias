@@ -136,7 +136,7 @@
   <div style="margin-top:10px;">© 2026 FXNewsBias · Not financial advice.</div>
 </footer>
 
-<script src="/forecast-core.js?v=3"></script>
+<script src="/forecast-core.js?v=4"></script>
 <script>
 (function(){
 'use strict';
@@ -203,6 +203,25 @@ function load(){
     document.getElementById('p-total').textContent=st.total||'0';
     document.getElementById('p-total-sub').textContent=st.directional+' directional · '+st.asides+' stand-aside';
     document.getElementById('p-settled').textContent=st.settled||'0';
+
+    // Correlation-adjusted daily win rate — the honest, de-correlated read.
+    (function(){
+      var host=document.getElementById('macro-wr');
+      if(!host){ host=document.createElement('div'); host.id='macro-wr';
+        var anchor=document.querySelector('#perf-wrap .pa-grid');
+        if(anchor && anchor.parentNode) anchor.parentNode.insertBefore(host,anchor); }
+      if(host){
+        if(st.macroDayWinRate!==null){
+          var c=st.macroDayWinRate>=50?'#34d399':'#fb7185';
+          host.innerHTML='<div style="background:linear-gradient(90deg,rgba(59,130,246,.10),rgba(59,130,246,.03));border:1px solid rgba(59,130,246,.30);border-radius:14px;padding:16px 20px;margin:20px 0 4px;display:flex;flex-wrap:wrap;align-items:center;gap:14px;">'
+            +'<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;">Correlation-adjusted</div>'
+            +'<div style="font-size:26px;font-weight:800;color:'+c+';font-family:JetBrains Mono,monospace;">'+st.macroDayWinRate.toFixed(0)+'%</div>'
+            +'<div style="font-size:13px;color:var(--muted);flex:1;min-width:240px;line-height:1.5;">daily win rate over <b style="color:#cbd5e1;">'+st.settledDays+' trading day'+(st.settledDays===1?'':'s')+'</b> ('+st.winDays+'W / '+st.lossDays+'L). Same-day USD-major calls share the USD leg, so we collapse each day into a single win/loss — this is the honest de-correlated track record. The headline rate above counts each correlated call separately.</div>'
+            +'</div>';
+          host.style.display='block';
+        } else { host.style.display='none'; }
+      }
+    })();
 
     // distribution donut
     var total=st.hits+st.misses+st.flats+st.asides;

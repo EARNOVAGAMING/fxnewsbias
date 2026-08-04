@@ -113,6 +113,22 @@
     const wins = hits.map(function (r) { return parseFloat(r.move_pct) || 0; });
     const losses = misses.map(function (r) { return Math.abs(parseFloat(r.move_pct) || 0); });
 
+    // Correlation-adjusted "macro day" win rate. Because every USD-major call on
+    // a given day shares the USD leg, N same-day calls are ~1 independent bet.
+    // Collapse each day's graded calls to ONE outcome (majority hit vs miss) so
+    // a 0/6 correlated day counts as one loss, not six. This is the honest read.
+    const byDay = {};
+    graded.forEach(function (r) {
+      const d = byDay[r.forecast_date] || (byDay[r.forecast_date] = { h: 0, m: 0 });
+      if (r.outcome === 'hit') d.h++; else if (r.outcome === 'miss') d.m++;
+    });
+    let winDays = 0, lossDays = 0;
+    Object.keys(byDay).forEach(function (k) {
+      const o = byDay[k];
+      if (o.h > o.m) winDays++; else if (o.m > o.h) lossDays++;
+    });
+    const macroDayWinRate = (winDays + lossDays) ? winDays / (winDays + lossDays) * 100 : null;
+
     return {
       total: rows.length, directional: dir.length, settled: settled.length,
       open: dir.filter(function (r) { return r.status === 'open'; }).length,
@@ -122,10 +138,41 @@
       largestWin: wins.length ? Math.max.apply(null, wins.map(Math.abs)) : null,
       largestLoss: losses.length ? Math.max.apply(null, losses) : null,
       streak: streak, streakType: streakType, bestStreak: best,
+      macroDayWinRate: macroDayWinRate, winDays: winDays, lossDays: lossDays, settledDays: winDays + lossDays,
       standAsidePct: rows.length ? asides.length / rows.length * 100 : null,
       perPair: Object.values(perPair).map(function (p) {
         return { pair: p.pair, n: p.n, winRate: p.graded ? p.hits / p.graded * 100 : null, avgMove: p.n ? p.sumMove / p.n : null };
       }).sort(function (a, b) { return (b.winRate || 0) - (a.winRate || 0); }),
+    };
+  }
+
+  // ── concentration / net-exposure across a set of directional calls ──
+  // Every USD major shares the USD leg, so a book of them is really one macro
+  // bet. This tallies net long/short per currency and flags when the day's
+  // calls collapse onto a single dominant currency view.
+  function exposure(rows) {
+    const by = {};
+    let n = 0;
+    (rows || []).forEach(function (r) {
+      if (!r || r.direction === 'Stand Aside') return;
+      const base = r.pair.slice(0, 3), quote = r.pair.slice(4);
+      const longC = r.direction === 'Bullish' ? base : quote;   // Bearish = short base, long quote
+      const shortC = r.direction === 'Bullish' ? quote : base;
+      n++;
+      (by[longC] = by[longC] || { long: 0, short: 0 }).long++;
+      (by[shortC] = by[shortC] || { long: 0, short: 0 }).short++;
+    });
+    let dom = null;
+    Object.keys(by).forEach(function (c) {
+      const o = by[c], count = Math.max(o.long, o.short);
+      const dir = o.long === o.short ? null : (o.long > o.short ? 'long' : 'short');
+      if (dir && (!dom || count > dom.count)) dom = { ccy: c, dir: dir, count: count };
+    });
+    // concentrated: a single currency drives ≥60% of the calls (min 3)
+    const concentrated = !!(dom && n >= 3 && dom.count >= Math.max(3, Math.ceil(n * 0.6)));
+    return {
+      byCcy: by, total: n, dominant: dom, concentrated: concentrated,
+      label: dom ? (dom.dir === 'long' ? 'Long ' : 'Short ') + dom.ccy + ' ×' + dom.count : '',
     };
   }
 
@@ -388,7 +435,7 @@
     fetchSentimentHistory: fetchSentimentHistory, computeStats: computeStats,
     fmtPct: fmtPct, fmtPrice: fmtPrice, fmtDate: fmtDate, fmtTime: fmtTime,
     dirLabel: dirLabel, dirClass: dirClass, outcomePill: outcomePill, convDots: convDots,
-    scoreColor: scoreColor, pairFlags: pairFlags, pairSlug: pairSlug, esc: esc, spark: spark,
+    scoreColor: scoreColor, pairFlags: pairFlags, pairSlug: pairSlug, esc: esc, spark: spark, exposure: exposure,
     countdown: countdown, pairStats: pairStats, driverChips: driverChips, convMeter: convMeter,
     resultSquares: resultSquares, countUp: countUp, openModal: openModal, closeModal: closeModal,
     fetchKeyEvents: fetchKeyEvents,
