@@ -605,9 +605,9 @@ async function syncForecastSitemap(env) {
 
   for (const id of docIds) {
     if (!newSitemap.includes(id)) {
-      const entry = `  <url><loc>${SITE}/forecast/${id}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
+      const entry = `  <url><loc>${SITE}/forecast/${id}</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`;
       newSitemap = newSitemap.replace('</urlset>', entry + '\n</urlset>');
-      newUrls.push(`${SITE}/forecast/${id}/`);
+      newUrls.push(`${SITE}/forecast/${id}`);
     }
   }
 
