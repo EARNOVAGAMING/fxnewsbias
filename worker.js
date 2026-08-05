@@ -58,10 +58,23 @@ export default {
     }
 
     const pairMatch = url.pathname.match(/^\/pairs\/([\w-]+)\/?$/);
-    if (pairMatch) return servePairPage(request, pairMatch[1], env);
+    if (pairMatch) {
+      // Canonical: /pairs/aud-jpy (no trailing slash). 301 the slash variant so
+      // Google consolidates equity onto one URL instead of splitting it.
+      if (url.pathname.endsWith('/')) {
+        url.pathname = `/pairs/${pairMatch[1]}`;
+        return Response.redirect(url.toString(), 301);
+      }
+      return servePairPage(request, pairMatch[1], env);
+    }
 
     const ccyMatch = url.pathname.match(/^\/currencies\/([\w]+)\/?$/);
     if (ccyMatch && CURRENCY_CODES.has(ccyMatch[1].toLowerCase())) {
+      // Canonical: /currencies/usd (no trailing slash).
+      if (url.pathname.endsWith('/')) {
+        url.pathname = `/currencies/${ccyMatch[1].toLowerCase()}`;
+        return Response.redirect(url.toString(), 301);
+      }
       return serveCurrencyPage(request, ccyMatch[1].toLowerCase(), env);
     }
 
@@ -74,6 +87,11 @@ export default {
     // Forecast post pages — /forecast/DOCID/ (Firestore doc IDs are 20-char alphanumeric)
     const fcMatch = url.pathname.match(/^\/forecast\/([A-Za-z0-9]{10,})\/?$/);
     if (fcMatch) {
+      // Canonical: /forecast/DOCID (no trailing slash).
+      if (url.pathname.endsWith('/')) {
+        url.pathname = `/forecast/${fcMatch[1]}`;
+        return Response.redirect(url.toString(), 301);
+      }
       const res = await serveForecastPost(fcMatch[1]);
       if (res) return res;
     }
