@@ -122,7 +122,7 @@ footer a:hover{color:#fff;}
         <li><a href="/calendar">Calendar</a></li>
         <li><a href="/news">News</a></li>
         <li><a href="/insight/">Insights</a></li>
-        <li><a href="/forecast/" class="active">Forecast</a></li>
+        <li><a href="/forecast" class="active">Forecast</a></li>
         <li><a href="/community">Community</a></li>
       </ul>
     </nav>
@@ -156,7 +156,7 @@ footer a:hover{color:#fff;}
     <div class="more-label">📚 More Forecasts</div>
     <div class="more-grid" id="more-grid"></div>
     <div style="text-align:center;margin-top:16px;">
-      <a href="/forecast/" style="font-size:13px;font-weight:700;color:#2563eb;">View all forecasts →</a>
+      <a href="/forecast" style="font-size:13px;font-weight:700;color:#2563eb;">View all forecasts →</a>
     </div>
   </div>
 </div>
@@ -165,7 +165,7 @@ footer a:hover{color:#fff;}
   <a href="/">Markets</a>
   <a href="/currencies">Currencies</a>
   <a href="/pairs">Pairs</a>
-  <a href="/forecast/">Forecast</a>
+  <a href="/forecast">Forecast</a>
   <a href="/news">News</a>
   <br><br>
   © 2026 FXNewsBias · <a href="/disclaimer">Disclaimer</a> · Not financial advice
@@ -258,13 +258,13 @@ const container = document.getElementById('post-container');
 if (postId) { location.replace(`/forecast/${postId}/`); }
 
 if (!postId) {
-  container.innerHTML = `<div class="error-box"><h3>No forecast selected</h3><p><a href="/forecast/" style="color:#2563eb;">← Go back to all forecasts</a></p></div>`;
+  container.innerHTML = `<div class="error-box"><h3>No forecast selected</h3><p><a href="/forecast" style="color:#2563eb;">← Go back to all forecasts</a></p></div>`;
 } else {
   (async () => {
     try {
       const f = await getPost(postId);
       if (!f) {
-        container.innerHTML = `<div class="error-box"><h3>Forecast not found</h3><p><a href="/forecast/" style="color:#2563eb;">← Go back to all forecasts</a></p></div>`;
+        container.innerHTML = `<div class="error-box"><h3>Forecast not found</h3><p><a href="/forecast" style="color:#2563eb;">← Go back to all forecasts</a></p></div>`;
         return;
       }
 
@@ -282,7 +282,7 @@ if (!postId) {
             <div class="post-breadcrumb">
               <a href="/">Home</a>
               <span class="post-breadcrumb-sep">›</span>
-              <a href="/forecast/">Forecast</a>
+              <a href="/forecast">Forecast</a>
               <span class="post-breadcrumb-sep">›</span>
               <span class="post-breadcrumb-cur">${escHtml(f.title)}</span>
             </div>

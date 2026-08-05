@@ -501,7 +501,7 @@ async function serveForecastPost(postId) {
   const title      = f.title || 'Forex Forecast';
   const desc       = buildDesc(f.content, 155);
   const ogImg      = f.imageUrl || 'https://fxnewsbias.com/og/forecast.webp';
-  const postUrl    = `https://fxnewsbias.com/forecast/${postId}/`;
+  const postUrl    = `https://fxnewsbias.com/forecast/${postId}`;
   const createTime = postedAt;
   const pairs      = f.pairs || [];
 
@@ -520,7 +520,7 @@ async function serveForecastPost(postId) {
     '@context':'https://schema.org','@type':'BreadcrumbList',
     itemListElement:[
       {'@type':'ListItem','position':1,'name':'Home','item':'https://fxnewsbias.com/'},
-      {'@type':'ListItem','position':2,'name':'Forecast','item':'https://fxnewsbias.com/forecast/'},
+      {'@type':'ListItem','position':2,'name':'Forecast','item':'https://fxnewsbias.com/forecast'},
       {'@type':'ListItem','position':3,'name':title,'item':postUrl}
     ]
   });
@@ -592,7 +592,7 @@ footer a{color:#94a3b8;margin:0 10px;}footer a:hover{color:#fff;}
   <nav><ul>
     <li><a href="/">Markets</a></li><li><a href="/currencies">Currencies</a></li>
     <li><a href="/pairs">Pairs</a></li><li><a href="/insight/">Insights</a></li>
-    <li><a href="/forecast/">Forecast</a></li>
+    <li><a href="/forecast">Forecast</a></li>
   </ul></nav>
   <div class="nav-actions">
     <a href="/login" class="btn btn-outline">Login</a>
@@ -606,7 +606,7 @@ footer a{color:#94a3b8;margin:0 10px;}footer a:hover{color:#fff;}
       <div class="post-breadcrumb">
         <a href="/">Home</a>
         <span class="post-breadcrumb-sep">›</span>
-        <a href="/forecast/">Forecast</a>
+        <a href="/forecast">Forecast</a>
         <span class="post-breadcrumb-sep">›</span>
         <span class="post-breadcrumb-cur">${esc(title)}</span>
       </div>
@@ -622,14 +622,14 @@ footer a{color:#94a3b8;margin:0 10px;}footer a:hover{color:#fff;}
       <div class="post-content">${esc(f.content||'')}</div>
       <div class="post-footer">
         <span class="post-author">by FXNewsBias Team</span>
-        <a href="/forecast/" class="back-btn">← All Forecasts</a>
+        <a href="/forecast" class="back-btn">← All Forecasts</a>
       </div>
     </div>
   </div>
 </div>
 <footer>
   <a href="/">Markets</a><a href="/currencies">Currencies</a><a href="/pairs">Pairs</a>
-  <a href="/forecast/">Forecast</a><a href="/news">News</a><br><br>
+  <a href="/forecast">Forecast</a><a href="/news">News</a><br><br>
   © 2026 FXNewsBias · <a href="/disclaimer">Disclaimer</a> · Not financial advice
 </footer>
 <script src="/nav.js" defer></script>
