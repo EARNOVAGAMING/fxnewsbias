@@ -170,6 +170,39 @@ try {
   return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
 }
 }
+// Forecast Lab Phase 1 — one-shot Twelve Data hourly backfill into
+// price_history. Idempotent (unique pair+ts index); safe to re-run if any
+// pair errors. Run RUN_PRICE_HISTORY_MIGRATION.sql first.
+if (url.pathname === '/backfill-prices') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+try {
+  const days = Math.max(7, Math.min(parseInt(url.searchParams.get('days') || '90', 10) || 90, 200));
+  const result = await backfillPriceHistory(env, { days });
+  return new Response(JSON.stringify(result, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
+} catch (e) {
+  return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+}
+}
+// Forecast Lab Phase 1 — replay historical sentiment cycles against
+// price_history and score the three signal arms (level / momentum /
+// inverted) at a session horizon with a vol-scaled band. Read-only.
+// Params: horizon (h, default 6), gapmin (15), mommin (8), days (90), bandk (0.25).
+if (url.pathname === '/backtest-forecasts') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+try {
+  const num = (k, d) => { const v = parseFloat(url.searchParams.get(k)); return isFinite(v) ? v : d; };
+  const result = await runForecastBacktest(env, {
+    horizonH: Math.max(1, Math.min(num('horizon', 6), 48)),
+    gapMin: Math.max(0, num('gapmin', 15)),
+    momMin: Math.max(0, num('mommin', 8)),
+    days: Math.max(7, Math.min(num('days', 90), 200)),
+    bandK: Math.max(0, Math.min(num('bandk', 0.25), 2)),
+  });
+  return new Response(JSON.stringify(result, null, 2), { status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
+} catch (e) {
+  return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+}
+}
 // One-time Stripe config: point the payment link's after-completion
 // redirect at /register?paid=1 (also self-runs from the cleanup cron).
 if (url.pathname === '/setup-stripe-redirect') {
@@ -3120,6 +3153,27 @@ console.log(`updatePrices UPSERT HTTP ${upsertResp.status}: ${body.slice(0, 300)
 return;
 }
 console.log(`updatePrices: upserted ${collected.length} rows (${pairs.length} majors + ${_crossN} derived crosses)`);
+
+// Phase 0 — append the same snapshot to price_history (append-only) so we
+// accumulate real price series for backtests + vol-band calibration. The
+// prices table stays current-only. Fail-open: history is analytics, never
+// worth blocking the live price update over (and 404s harmlessly until
+// RUN_PRICE_HISTORY_MIGRATION.sql is applied).
+try {
+  const histRows = collected.map(c => ({ pair: c.pair, price: c.price, ts: c.updated_at, src: 'snapshot' }));
+  const histResp = await fetch(`${env.SUPABASE_URL}/rest/v1/price_history?on_conflict=pair,ts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': env.SUPABASE_SERVICE_KEY,
+      'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+      'Prefer': 'resolution=ignore-duplicates,return=minimal'
+    },
+    body: JSON.stringify(histRows),
+    signal: AbortSignal.timeout(10000)
+  });
+  if (!histResp.ok) console.log(`price_history append HTTP ${histResp.status}: ${(await histResp.text()).slice(0, 200)}`);
+} catch (e) { console.log('price_history append error (fail-open):', e.message); }
 }
 // ============================================
 // CONTACT FORM HANDLER
@@ -5333,6 +5387,246 @@ async function settlePairForecasts(env) {
     settled++;
   }
   console.log(`settlePairForecasts: settled ${settled}/${open.length}`);
+}
+
+// ============================================================
+// FORECAST LAB — Phase 1: price backfill + signal backtest
+//
+// The live engine's flaws (24h horizon on a 06:13 read, flat
+// 0.15% band ≈ 67% of the average daily move) can be fixed on
+// principle, but WHICH signal to publish — raw sentiment level,
+// sentiment momentum, or inverted level — is an empirical
+// question the 4-day live ledger (n=11) cannot answer.
+//
+// backfillPriceHistory: pulls months of hourly closes for the 7
+//   majors from Twelve Data time_series (same key as updatePrices),
+//   derives the 4 crosses, and fills price_history. Idempotent
+//   via the (pair, ts) unique index.
+// runForecastBacktest: replays every historical sentiment cycle
+//   against price_history at a session horizon and scores all
+//   three signal arms with a per-pair vol-scaled band. This
+//   produces the number that decides the live signal — months of
+//   cycles instead of 4 days.
+// ============================================================
+
+const FC_BT_MAJORS = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'AUD/USD', 'USD/CAD', 'NZD/USD'];
+const FC_BT_CROSSES = [
+  { pair: 'EUR/JPY', needs: ['EUR/USD', 'USD/JPY'], calc: m => m['EUR/USD'] * m['USD/JPY'], dp: 3 },
+  { pair: 'GBP/JPY', needs: ['GBP/USD', 'USD/JPY'], calc: m => m['GBP/USD'] * m['USD/JPY'], dp: 3 },
+  { pair: 'EUR/GBP', needs: ['EUR/USD', 'GBP/USD'], calc: m => m['EUR/USD'] / m['GBP/USD'], dp: 5 },
+  { pair: 'AUD/NZD', needs: ['AUD/USD', 'NZD/USD'], calc: m => m['AUD/USD'] / m['NZD/USD'], dp: 5 },
+];
+
+async function backfillPriceHistory(env, { days = 90 } = {}) {
+  const outputsize = Math.min(5000, Math.max(24, days * 24));
+  const summary = { days, perPair: {}, errors: [] };
+
+  // Fetch hourly closes per major, sequentially. Twelve Data free tier is
+  // 8 credits/min — 7 calls at 2s gaps fits, but a collision with the */15
+  // updatePrices cron can 429; wait once and retry, else record and move on
+  // (the endpoint is idempotent — just re-run it).
+  const majorBars = {}; // pair -> Map(tsISO -> close)
+  for (const pair of FC_BT_MAJORS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const r = await fetch(
+          `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(pair)}&interval=1h&outputsize=${outputsize}&timezone=UTC&apikey=${env.TWELVE_DATA_KEY}`,
+          { signal: AbortSignal.timeout(20000) }
+        );
+        const data = await r.json();
+        if (data.code === 429) {
+          if (attempt === 0) { await new Promise(s => setTimeout(s, 30000)); continue; }
+          throw new Error('rate limited twice');
+        }
+        if (!Array.isArray(data.values)) throw new Error(`no values: ${JSON.stringify(data).slice(0, 150)}`);
+        const m = new Map();
+        for (const v of data.values) {
+          const close = parseFloat(v.close);
+          if (!isFinite(close)) continue;
+          // "2026-08-05 14:00:00" (UTC per &timezone=UTC) -> "2026-08-05T14:00:00Z"
+          let iso = v.datetime.replace(' ', 'T');
+          if (iso.length === 16) iso += ':00';
+          m.set(iso + 'Z', close);
+        }
+        majorBars[pair] = m;
+        summary.perPair[pair] = m.size;
+        break;
+      } catch (e) {
+        if (attempt === 1) summary.errors.push(`${pair}: ${e.message}`);
+      }
+    }
+    await new Promise(s => setTimeout(s, 2000));
+  }
+
+  // Derive crosses at every timestamp where all needed majors have a bar.
+  for (const x of FC_BT_CROSSES) {
+    if (!x.needs.every(p => majorBars[p])) continue;
+    const m = new Map();
+    const f = Math.pow(10, x.dp);
+    for (const ts of majorBars[x.needs[0]].keys()) {
+      const px = {};
+      if (!x.needs.every(p => { px[p] = majorBars[p].get(ts); return isFinite(px[p]) && px[p] > 0; })) continue;
+      const price = Math.round(x.calc(px) * f) / f;
+      if (isFinite(price) && price > 0) m.set(ts, price);
+    }
+    majorBars[x.pair] = m;
+    summary.perPair[x.pair] = m.size;
+  }
+
+  // Insert in chunks; (pair, ts) unique index makes re-runs no-ops.
+  const rows = [];
+  for (const [pair, m] of Object.entries(majorBars)) {
+    for (const [ts, price] of m) rows.push({ pair, price, ts, src: 'backfill' });
+  }
+  let inserted = 0;
+  for (let i = 0; i < rows.length; i += 500) {
+    await _fcSb(env, 'POST', 'price_history?on_conflict=pair,ts', rows.slice(i, i + 500),
+      { Prefer: 'resolution=ignore-duplicates,return=minimal' });
+    inserted += Math.min(500, rows.length - i);
+  }
+  summary.rowsSent = inserted;
+  return summary;
+}
+
+// Paginated GET — PostgREST caps responses at 1000 rows.
+async function _fcSbAll(env, basePath, pageSize = 1000, maxPages = 40) {
+  const all = [];
+  for (let page = 0; page < maxPages; page++) {
+    const sep = basePath.includes('?') ? '&' : '?';
+    const rows = await _fcSb(env, 'GET', `${basePath}${sep}limit=${pageSize}&offset=${page * pageSize}`);
+    if (!rows || !rows.length) break;
+    all.push(...rows);
+    if (rows.length < pageSize) break;
+  }
+  return all;
+}
+
+function _btNearestPrice(series, targetMs, tolMs) {
+  // series: sorted [{t: ms, price}]. Binary search nearest within tolerance.
+  let lo = 0, hi = series.length - 1;
+  if (hi < 0) return null;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (series[mid].t < targetMs) lo = mid + 1; else hi = mid;
+  }
+  let best = series[lo];
+  if (lo > 0 && Math.abs(series[lo - 1].t - targetMs) < Math.abs(best.t - targetMs)) best = series[lo - 1];
+  return Math.abs(best.t - targetMs) <= tolMs ? best.price : null;
+}
+
+async function runForecastBacktest(env, { horizonH = 6, gapMin = 15, momMin = 8, days = 90, bandK = 0.25 } = {}) {
+  const sinceISO = new Date(Date.now() - days * 864e5).toISOString();
+
+  const [sentRows, priceRows] = await Promise.all([
+    _fcSbAll(env, `sentiment?select=currency,score,created_at&created_at=gte.${sinceISO}&order=created_at.asc`),
+    _fcSbAll(env, `price_history?select=pair,price,ts&ts=gte.${sinceISO}&order=ts.asc`),
+  ]);
+  if (!priceRows.length) return { ok: false, error: 'price_history is empty — run /backfill-prices first (and apply RUN_PRICE_HISTORY_MIGRATION.sql)' };
+
+  // Sentiment rows -> cycles: rows written by one 3h run share a timestamp
+  // to within seconds; bucket to 15 min.
+  const cycleMap = new Map();
+  for (const r of sentRows) {
+    const t = Date.parse(r.created_at);
+    if (!isFinite(t) || r.score == null) continue;
+    const key = Math.round(t / 9e5);
+    if (!cycleMap.has(key)) cycleMap.set(key, { t, scores: {} });
+    cycleMap.get(key).scores[r.currency] = r.score;
+  }
+  const cycles = [...cycleMap.values()].sort((a, b) => a.t - b.t);
+
+  // Price series per pair.
+  const series = {};
+  for (const r of priceRows) {
+    const t = Date.parse(r.ts);
+    if (!isFinite(t)) continue;
+    (series[r.pair] = series[r.pair] || []).push({ t, price: parseFloat(r.price) });
+  }
+  for (const arr of Object.values(series)) arr.sort((a, b) => a.t - b.t);
+
+  const TOL = 90 * 60 * 1000, HOR = horizonH * 3600 * 1000;
+
+  // Per-pair horizon vol (stdev of pct moves over the horizon) -> band.
+  const vol = {};
+  for (const [pair, arr] of Object.entries(series)) {
+    const rets = [];
+    for (let i = 0; i < arr.length; i += 3) {
+      const exit = _btNearestPrice(arr, arr[i].t + HOR, TOL);
+      if (exit != null) rets.push(((exit - arr[i].price) / arr[i].price) * 100);
+    }
+    if (rets.length >= 20) {
+      const mean = rets.reduce((s, x) => s + x, 0) / rets.length;
+      vol[pair] = Math.sqrt(rets.reduce((s, x) => s + (x - mean) ** 2, 0) / rets.length);
+    }
+  }
+
+  const mkArm = () => ({ n: 0, wins: 0, losses: 0, flats: 0, sumSigned: 0, byConviction: {}, byPair: {} });
+  const arms = { level: mkArm(), momentum: mkArm(), inverted: mkArm() };
+  const record = (arm, pair, conviction, signed, band) => {
+    const a = arms[arm];
+    a.n++; a.sumSigned += signed;
+    const bucket = signed >= band ? 'wins' : signed <= -band ? 'losses' : 'flats';
+    a[bucket]++;
+    const c = (a.byConviction[conviction] = a.byConviction[conviction] || { n: 0, wins: 0, losses: 0, sum: 0 });
+    c.n++; c.sum += signed; if (bucket === 'wins') c.wins++; if (bucket === 'losses') c.losses++;
+    const p = (a.byPair[pair] = a.byPair[pair] || { n: 0, sum: 0 });
+    p.n++; p.sum += signed;
+  };
+
+  for (let i = 0; i < cycles.length; i++) {
+    const cyc = cycles[i];
+    // Previous cycle ~3h back for the momentum arm.
+    let prev = null;
+    for (let j = i - 1; j >= 0; j--) {
+      const dt = cyc.t - cycles[j].t;
+      if (dt > 4.5 * 3600 * 1000) break;
+      if (dt >= 2 * 3600 * 1000) { prev = cycles[j]; break; }
+    }
+    for (const { pair, base, quote } of FC_PAIRS) {
+      const arr = series[pair];
+      if (!arr || cyc.scores[base] == null || cyc.scores[quote] == null) continue;
+      const entry = _btNearestPrice(arr, cyc.t, TOL);
+      const exit = _btNearestPrice(arr, cyc.t + HOR, TOL);
+      if (entry == null || exit == null) continue;
+      const movePct = ((exit - entry) / entry) * 100;
+      const band = (vol[pair] || 0.1) * bandK;
+      const gap = cyc.scores[base] - cyc.scores[quote];
+
+      if (Math.abs(gap) >= gapMin) {
+        const dir = gap > 0 ? 1 : -1;
+        record('level', pair, _fcConviction(Math.abs(gap)), dir * movePct, band);
+        record('inverted', pair, _fcConviction(Math.abs(gap)), -dir * movePct, band);
+      }
+      if (prev && prev.scores[base] != null && prev.scores[quote] != null) {
+        const dGap = gap - (prev.scores[base] - prev.scores[quote]);
+        if (Math.abs(dGap) >= momMin) {
+          const dir = dGap > 0 ? 1 : -1;
+          record('momentum', pair, _fcConviction(Math.abs(dGap)), dir * movePct, band);
+        }
+      }
+    }
+  }
+
+  const fmt = (a) => ({
+    n: a.n, wins: a.wins, losses: a.losses, flats: a.flats,
+    winRatePct: a.wins + a.losses ? Math.round(1000 * a.wins / (a.wins + a.losses)) / 10 : null,
+    avgSignedMovePct: a.n ? Math.round(1e4 * a.sumSigned / a.n) / 1e4 : null,
+    byConviction: Object.fromEntries(Object.entries(a.byConviction).map(([k, c]) => [k, {
+      n: c.n, winRatePct: c.wins + c.losses ? Math.round(1000 * c.wins / (c.wins + c.losses)) / 10 : null,
+      avgSigned: Math.round(1e4 * c.sum / c.n) / 1e4,
+    }])),
+    byPair: Object.fromEntries(Object.entries(a.byPair).map(([k, p]) => [k, {
+      n: p.n, avgSigned: Math.round(1e4 * p.sum / p.n) / 1e4,
+    }])),
+  });
+
+  return {
+    ok: true,
+    params: { horizonH, gapMin, momMin, days, bandK },
+    data: { sentimentCycles: cycles.length, priceRows: priceRows.length, sinceISO },
+    volPctPerPair: Object.fromEntries(Object.entries(vol).map(([k, v]) => [k, Math.round(v * 1e4) / 1e4])),
+    arms: { level: fmt(arms.level), momentum: fmt(arms.momentum), inverted: fmt(arms.inverted) },
+  };
 }
 
 // ============================================================
