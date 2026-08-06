@@ -197,6 +197,7 @@ try {
     momMin: Math.max(0, num('mommin', 8)),
     days: Math.max(7, Math.min(num('days', 90), 200)),
     bandK: Math.max(0, Math.min(num('bandk', 0.25), 2)),
+    nonOverlap: url.searchParams.get('nonoverlap') === '1',
   });
   return new Response(JSON.stringify(result, null, 2), { status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
 } catch (e) {
@@ -5514,7 +5515,7 @@ function _btNearestPrice(series, targetMs, tolMs) {
   return Math.abs(best.t - targetMs) <= tolMs ? best.price : null;
 }
 
-async function runForecastBacktest(env, { horizonH = 6, gapMin = 15, momMin = 8, days = 90, bandK = 0.25 } = {}) {
+async function runForecastBacktest(env, { horizonH = 6, gapMin = 15, momMin = 8, days = 90, bandK = 0.25, nonOverlap = false } = {}) {
   const sinceISO = new Date(Date.now() - days * 864e5).toISOString();
 
   const [sentRows, priceRows] = await Promise.all([
@@ -5562,7 +5563,16 @@ async function runForecastBacktest(env, { horizonH = 6, gapMin = 15, momMin = 8,
 
   const mkArm = () => ({ n: 0, wins: 0, losses: 0, flats: 0, sumSigned: 0, byConviction: {}, byPair: {} });
   const arms = { level: mkArm(), momentum: mkArm(), inverted: mkArm() };
-  const record = (arm, pair, conviction, signed, band) => {
+  // nonOverlap mode: a 6h horizon on a 3h sentiment cadence double-counts —
+  // consecutive observations share most of their price path. When enabled,
+  // skip any cycle that starts inside the previous recorded observation's
+  // horizon window (per arm, per pair). Smaller n, but independent events.
+  const lastObsT = { level: {}, momentum: {}, inverted: {} };
+  const record = (arm, pair, conviction, signed, band, t) => {
+    if (nonOverlap) {
+      if (t - (lastObsT[arm][pair] || 0) < HOR) return;
+      lastObsT[arm][pair] = t;
+    }
     const a = arms[arm];
     a.n++; a.sumSigned += signed;
     const bucket = signed >= band ? 'wins' : signed <= -band ? 'losses' : 'flats';
@@ -5594,14 +5604,14 @@ async function runForecastBacktest(env, { horizonH = 6, gapMin = 15, momMin = 8,
 
       if (Math.abs(gap) >= gapMin) {
         const dir = gap > 0 ? 1 : -1;
-        record('level', pair, _fcConviction(Math.abs(gap)), dir * movePct, band);
-        record('inverted', pair, _fcConviction(Math.abs(gap)), -dir * movePct, band);
+        record('level', pair, _fcConviction(Math.abs(gap)), dir * movePct, band, cyc.t);
+        record('inverted', pair, _fcConviction(Math.abs(gap)), -dir * movePct, band, cyc.t);
       }
       if (prev && prev.scores[base] != null && prev.scores[quote] != null) {
         const dGap = gap - (prev.scores[base] - prev.scores[quote]);
         if (Math.abs(dGap) >= momMin) {
           const dir = dGap > 0 ? 1 : -1;
-          record('momentum', pair, _fcConviction(Math.abs(dGap)), dir * movePct, band);
+          record('momentum', pair, _fcConviction(Math.abs(dGap)), dir * movePct, band, cyc.t);
         }
       }
     }
@@ -5622,7 +5632,7 @@ async function runForecastBacktest(env, { horizonH = 6, gapMin = 15, momMin = 8,
 
   return {
     ok: true,
-    params: { horizonH, gapMin, momMin, days, bandK },
+    params: { horizonH, gapMin, momMin, days, bandK, nonOverlap },
     data: { sentimentCycles: cycles.length, priceRows: priceRows.length, sinceISO },
     volPctPerPair: Object.fromEntries(Object.entries(vol).map(([k, v]) => [k, Math.round(v * 1e4) / 1e4])),
     arms: { level: fmt(arms.level), momentum: fmt(arms.momentum), inverted: fmt(arms.inverted) },
