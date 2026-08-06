@@ -109,20 +109,35 @@ export default {
 
 async function serveForecastSSR(request, env) {
   try {
-    const [assetResp, rows] = await Promise.all([
+    const [assetResp, scorecard, legacy] = await Promise.all([
       env.ASSETS.fetch(request),
+      fetchScorecardLedger(env),
       fetchForecastLedger(env),
     ]);
     if (!assetResp.ok) return assetResp;
     if (!(assetResp.headers.get('content-type') || '').includes('text/html')) return assetResp;
     let html = await assetResp.text();
-    if (rows && html.includes('<!-- forecast_ssr -->')) {
-      html = html.replace('<!-- forecast_ssr -->', renderForecastSSR(rows));
+    if (html.includes('<!-- forecast_ssr -->')) {
+      const block = (scorecard && scorecard.length)
+        ? renderScorecardSSR(scorecard)
+        : renderLegacySSR(legacy || []);
+      html = html.replace('<!-- forecast_ssr -->', block);
     }
     return new Response(html, { status: 200, headers: buildHeaders(assetResp) });
   } catch {
     return env.ASSETS.fetch(request); // fail-open — never break the page
   }
+}
+
+async function fetchScorecardLedger(env) {
+  try {
+    const r = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/session_bias?select=pair,session_date,session,tone,strength,status,alignment,move_pct&status=eq.settled&order=session_date.desc,entry_time.desc&limit=300`,
+      { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(8000) }
+    );
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
 }
 
 async function fetchForecastLedger(env) {
@@ -136,18 +151,35 @@ async function fetchForecastLedger(env) {
   } catch { return null; }
 }
 
-function renderForecastSSR(rows) {
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const _ssrEsc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function renderScorecardSSR(rows) {
+  const SESSION_LABEL = { asean: 'Asia', london: 'London', newyork: 'New York' };
+  const scored = rows.filter((r) => r.alignment === 'aligned' || r.alignment === 'contra');
+  const aligned = scored.filter((r) => r.alignment === 'aligned').length;
+  const rate = scored.length ? Math.round((aligned / scored.length) * 100) : null;
+  const recent = rows.filter((r) => r.alignment && r.alignment !== 'na').slice(0, 20);
+  const body = recent.map((r) =>
+    `<tr><td style="padding:6px 8px;">${_ssrEsc(r.session_date)} ${_ssrEsc(SESSION_LABEL[r.session] || r.session)}</td><td style="padding:6px 8px;">${_ssrEsc(r.pair)}</td><td style="padding:6px 8px;">${r.tone === 'Bullish' ? '▲ Bullish tone' : '▼ Bearish tone'}</td><td style="padding:6px 8px;">${r.move_pct == null ? '—' : (r.move_pct > 0 ? '+' : '') + Number(r.move_pct).toFixed(2) + '%'}</td><td style="padding:6px 8px;">${_ssrEsc(r.alignment)}</td></tr>`
+  ).join('');
+  return `<section aria-label="Session bias scorecard" style="max-width:1280px;margin:0 auto;padding:4px 20px 0;color:#9aa7bd;">
+    <p style="font-size:13px;line-height:1.6;margin:0 0 10px;">FXNewsBias reads the news tone for 11 forex pairs at every session open (Asia, London, New York — weekdays) and scores each read at the next session: did the market move <strong>with</strong> the news tone, <strong>against</strong> it, or stay <strong>quiet</strong> inside the pair's own volatility band${rate !== null ? ` — so far <strong>${rate}% aligned</strong> across ${scored.length} decisive reads` : ''}. Every read is recorded and never edited. This is a scorecard of news-tone reporting, not trade advice.</p>
+    ${recent.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px;"><caption style="text-align:left;font-size:11px;color:#64748b;padding:4px 8px;">Recent scored session reads</caption><thead><tr><th style="text-align:left;padding:6px 8px;">Session</th><th style="text-align:left;padding:6px 8px;">Pair</th><th style="text-align:left;padding:6px 8px;">News tone</th><th style="text-align:left;padding:6px 8px;">Move</th><th style="text-align:left;padding:6px 8px;">Score</th></tr></thead><tbody>${body}</tbody></table>` : ''}
+  </section>`;
+}
+
+// Legacy frozen ledger — shown only until the first scorecard rows settle.
+function renderLegacySSR(rows) {
   const settled = rows.filter((r) => r.status === 'settled' && (r.outcome === 'hit' || r.outcome === 'miss'));
   const hits = settled.filter((r) => r.outcome === 'hit').length;
   const wr = settled.length ? Math.round((hits / settled.length) * 100) : null;
   const recent = rows.filter((r) => r.status === 'settled' && r.direction !== 'Stand Aside').slice(0, 20);
   const body = recent.map((r) =>
-    `<tr><td style="padding:6px 8px;">${esc(r.forecast_date)}</td><td style="padding:6px 8px;">${esc(r.pair)}</td><td style="padding:6px 8px;">${r.direction === 'Bullish' ? 'BUY' : 'SELL'}</td><td style="padding:6px 8px;">${r.move_pct == null ? '—' : (r.move_pct > 0 ? '+' : '') + Number(r.move_pct).toFixed(2) + '%'}</td><td style="padding:6px 8px;">${esc(r.outcome || '')}</td></tr>`
+    `<tr><td style="padding:6px 8px;">${_ssrEsc(r.forecast_date)}</td><td style="padding:6px 8px;">${_ssrEsc(r.pair)}</td><td style="padding:6px 8px;">${r.direction === 'Bullish' ? '▲ Bullish' : '▼ Bearish'}</td><td style="padding:6px 8px;">${r.move_pct == null ? '—' : (r.move_pct > 0 ? '+' : '') + Number(r.move_pct).toFixed(2) + '%'}</td><td style="padding:6px 8px;">${_ssrEsc(r.outcome || '')}</td></tr>`
   ).join('');
-  return `<section aria-label="Forecast track record" style="max-width:1280px;margin:0 auto;padding:4px 20px 0;color:#9aa7bd;">
-    <p style="font-size:13px;line-height:1.6;margin:0 0 10px;">FXNewsBias publishes AI forex forecasts for the 7 major pairs every weekday, with a fully public, immutable track record${wr !== null ? ` — <strong>${wr}% win rate</strong> across ${settled.length} settled forecasts (${hits} hits)` : ' (results begin settling 24h after the first publish)'}. Every call is recorded and never edited.</p>
-    ${recent.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px;"><caption style="text-align:left;font-size:11px;color:#64748b;padding:4px 8px;">Recent settled forecasts</caption><thead><tr><th style="text-align:left;padding:6px 8px;">Date</th><th style="text-align:left;padding:6px 8px;">Pair</th><th style="text-align:left;padding:6px 8px;">Direction</th><th style="text-align:left;padding:6px 8px;">Move</th><th style="text-align:left;padding:6px 8px;">Outcome</th></tr></thead><tbody>${body}</tbody></table>` : ''}
+  return `<section aria-label="Legacy forecast ledger" style="max-width:1280px;margin:0 auto;padding:4px 20px 0;color:#9aa7bd;">
+    <p style="font-size:13px;line-height:1.6;margin:0 0 10px;">FXNewsBias now publishes a Session Bias Scorecard: news-tone reads for 11 pairs at each session open, scored at the next session. The first scored reads land shortly; below is the frozen archive of the earlier 24h forecast experiment${wr !== null ? ` (${wr}% hit rate across ${settled.length} settled)` : ''} — kept public because nothing here is ever deleted or edited.</p>
+    ${recent.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px;"><caption style="text-align:left;font-size:11px;color:#64748b;padding:4px 8px;">Frozen legacy ledger</caption><thead><tr><th style="text-align:left;padding:6px 8px;">Date</th><th style="text-align:left;padding:6px 8px;">Pair</th><th style="text-align:left;padding:6px 8px;">Tone</th><th style="text-align:left;padding:6px 8px;">Move</th><th style="text-align:left;padding:6px 8px;">Outcome</th></tr></thead><tbody>${body}</tbody></table>` : ''}
   </section>`;
 }
 

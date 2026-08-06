@@ -320,6 +320,31 @@ return handleForecastLedger(request, env);
 if (url.pathname === '/api/forecasts/summary') {
 return handleForecastSummary(request, env);
 }
+// Session Bias Scorecard — full ledger incl. LIVE open session reads.
+// Pro-gated (Firebase token); anon RLS on session_bias exposes settled only.
+if (url.pathname === '/api/session-bias') {
+return handleSessionBiasLedger(request, env);
+}
+// Public scorecard summary — latest session counts + all-time alignment
+// tallies. No live tone/strength/narrative content leaks.
+if (url.pathname === '/api/session-bias/summary') {
+return handleSessionBiasSummary(request, env);
+}
+// Manual session-bias trigger (ops/seed): settle then publish for the given
+// session (?session=asean|london|newyork; defaults by current UTC hour).
+if (url.pathname === '/run-session-bias') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+try {
+  const h = new Date().getUTCHours();
+  const byHour = h < 6 ? 'asean' : h < 12 ? 'london' : 'newyork';
+  const session = url.searchParams.get('session') || byHour;
+  await settleSessionBias(env);
+  await generateSessionBias(env, session);
+  return new Response(JSON.stringify({ ok: true, msg: `settle + generate complete (${session})` }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+} catch (e) {
+  return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+}
+}
 // Manual trigger — returns 202 immediately, runs generation in background
 if (url.pathname === '/api/generate-weekly-report') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
@@ -466,12 +491,19 @@ if (event.cron === '*/15 * * * *') {
   ctx.waitUntil(Promise.all([
     generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)),
     pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (insight) error:', e.message)),
-    // London run (06:13 UTC): settle yesterday's open forecasts first, then
-    // publish today's — sentiment refreshed at 06:00, prices are 15-min fresh.
-    ...(session === 'london' ? [(async () => {
-      await settlePairForecasts(env).catch(e => console.log('settlePairForecasts error:', e.message));
-      await generatePairForecasts(env).catch(e => console.log('generatePairForecasts error:', e.message));
-    })()] : []),
+    // Session Bias Scorecard: settle the prior session's open reads at this
+    // session's open, then publish this session's reads — sentiment is fresh
+    // from the :00 cycle, prices are 15-min fresh.
+    (async () => {
+      await settleSessionBias(env).catch(e => console.log('settleSessionBias error:', e.message));
+      await generateSessionBias(env, session).catch(e => console.log('generateSessionBias error:', e.message));
+    })(),
+    // Legacy pair_forecasts engine is FROZEN after the 91-day backtest showed
+    // no directional edge: no new rows publish, but any still-open rows keep
+    // settling (London run) so the immutable ledger closes out cleanly.
+    ...(session === 'london' ? [
+      settlePairForecasts(env).catch(e => console.log('settlePairForecasts error:', e.message)),
+    ] : []),
     // Midnight (00:13) run also syncs legacy forecast posts into the sitemap
     ...(session === 'asean' ? [syncForecastSitemap(env).catch(e => console.log('syncForecastSitemap error:', e.message))] : []),
   ]));
@@ -5637,6 +5669,229 @@ async function runForecastBacktest(env, { horizonH = 6, gapMin = 15, momMin = 8,
     volPctPerPair: Object.fromEntries(Object.entries(vol).map(([k, v]) => [k, Math.round(v * 1e4) / 1e4])),
     arms: { level: fmt(arms.level), momentum: fmt(arms.momentum), inverted: fmt(arms.inverted) },
   };
+}
+
+// ============================================================
+// SESSION BIAS SCORECARD — the honest successor to pair_forecasts
+//
+// The 91-day backtest (Forecast Lab above) found no tradeable
+// directional edge in sentiment at any horizon: all three signal
+// arms averaged under 1 pip and conviction anti-correlated with
+// outcome. So this product does NOT forecast. It records the news
+// tone per trading session for all 11 pairs, then at the next
+// session scores whether the market moved WITH the tone (aligned),
+// AGAINST it (contra), or stayed inside the pair's own volatility
+// band (quiet). Reporting with a public scorecard — not signals.
+//
+// Lifecycle mirrors pair_forecasts (open -> settled, rows are
+// never edited after settlement). The legacy pair_forecasts table
+// is frozen: its open rows still settle, but no new rows publish.
+//
+// Runs on the three existing session crons (00:13 / 06:13 / 12:13
+// UTC weekdays): settle everything open from the prior session,
+// then publish this session's reads. No new cron triggers.
+// ============================================================
+
+const SB_SESSIONS = { asean: 'Asia', london: 'London', newyork: 'New York' };
+const SB_NEUTRAL_GAP = 15;       // |gap| below this -> Neutral tone (strength 0)
+const SB_FALLBACK_BAND = 0.05;   // % quiet band if pair_vol_bands has no data yet
+
+function _sbStrength(absGap) { return _fcConviction(absGap); }
+
+// Session gaps are 6h (Asia->London, London->NY) but 12h for NY->next-Asia,
+// so each session's quiet band is calibrated at its own scoring horizon.
+const SB_HORIZON_H = { asean: 6, london: 6, newyork: 12 };
+
+async function _sbVolBands(env, horizonH) {
+  try {
+    const rows = await _fcSb(env, 'POST', 'rpc/pair_vol_bands',
+      { horizon_hours: horizonH || 6, lookback_days: 30, k: 0.25 });
+    const map = {};
+    (rows || []).forEach(r => { const b = parseFloat(r.band_pct); if (isFinite(b) && b > 0) map[r.pair] = b; });
+    return map;
+  } catch (e) { console.log('pair_vol_bands rpc (fallback to default band):', e.message); return {}; }
+}
+
+async function generateSessionBias(env, session) {
+  if (!SB_SESSIONS[session]) { console.log(`generateSessionBias: unknown session ${session}`); return; }
+  const today = new Date().toISOString().slice(0, 10);
+
+  const existing = await _fcSb(env, 'GET',
+    `session_bias?select=id&session_date=eq.${today}&session=eq.${session}&limit=1`);
+  if (existing && existing.length) { console.log(`generateSessionBias: ${session} ${today} already published`); return; }
+
+  const [sentRows, priceRows, bands] = await Promise.all([
+    _fcSb(env, 'GET', 'sentiment?select=currency,score,bias,drivers,created_at&order=id.desc&limit=16'),
+    _fcSb(env, 'GET', 'prices?select=pair,price,updated_at'),
+    _sbVolBands(env, SB_HORIZON_H[session]),
+  ]);
+  const sent = {}; (sentRows || []).forEach(r => { if (!sent[r.currency]) sent[r.currency] = r; });
+  const px = {}; (priceRows || []).forEach(r => { px[r.pair] = parseFloat(r.price); });
+
+  const rows = [];
+  for (const { pair, base, quote } of FC_PAIRS) {
+    const b = sent[base], q = sent[quote], price = px[pair];
+    if (!b || !q || !price) { console.log(`session bias skip ${pair}: missing data`); continue; }
+    const gap = (b.score ?? 50) - (q.score ?? 50);
+    const strength = _sbStrength(Math.abs(gap));
+    const tone = strength === 0 ? 'Neutral' : (gap > 0 ? 'Bullish' : 'Bearish');
+    rows.push({
+      pair, session_date: today, session, tone, strength,
+      base_score: b.score ?? null, quote_score: q.score ?? null, gap,
+      drivers: { base: (Array.isArray(b.drivers) ? b.drivers : []).slice(0, 3), quote: (Array.isArray(q.drivers) ? q.drivers : []).slice(0, 3) },
+      narrative: null, entry_price: price, entry_time: new Date().toISOString(),
+      band_pct: bands[pair] ?? SB_FALLBACK_BAND, status: 'open',
+    });
+  }
+  if (!rows.length) { console.log('generateSessionBias: no rows to publish'); return; }
+
+  // AI narratives — one batched Haiku call, scorecard framing (news tone,
+  // never trade advice). Deterministic fields stay untouched; fail-open.
+  try {
+    if (env.CLAUDE_API_KEY) {
+      const lines = rows.map(r =>
+        `${r.pair}: ${r.tone} news tone${r.strength ? ` (strength ${r.strength}/5)` : ''} into the ${SB_SESSIONS[session]} session | sentiment gap ${r.gap > 0 ? '+' : ''}${r.gap} (${r.pair.slice(0, 3)} ${r.base_score} vs ${r.pair.slice(4)} ${r.quote_score}) | ${r.pair.slice(0, 3)} drivers: ${(r.drivers.base || []).join('; ') || 'n/a'} | ${r.pair.slice(4)} drivers: ${(r.drivers.quote || []).join('; ') || 'n/a'}`).join('\n');
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001', max_tokens: 1200,
+          messages: [{ role: 'user', content: `You write terse institutional forex research notes describing the NEWS TONE going into a trading session. For each line below, write a 2-sentence note explaining what the news flow says, using ONLY the given drivers. This is reporting on sentiment, NOT a trade recommendation — never say buy, sell, target, or advise a position. Return ONLY a JSON object mapping pair to note, e.g. {"EUR/USD":"..."}.\n\n${lines}` }],
+        }),
+        signal: AbortSignal.timeout(45000),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const m = (data.content?.[0]?.text || '').match(/\{[\s\S]*\}/);
+        if (m) { const map = JSON.parse(m[0]); rows.forEach(r => { if (map[r.pair]) r.narrative = String(map[r.pair]).slice(0, 500); }); }
+      }
+    }
+  } catch (e) { console.log('session bias narrative LLM error (fail-open):', e.message); }
+  rows.forEach(r => {
+    if (!r.narrative) {
+      r.narrative = r.tone === 'Neutral'
+        ? `News flow is balanced between ${r.pair.slice(0, 3)} and ${r.pair.slice(4)} going into the ${SB_SESSIONS[session]} session — sentiment gap of ${r.gap > 0 ? '+' : ''}${r.gap} is inside the neutral band.`
+        : `News tone favours the ${r.pair.slice(0, 3)} side into the ${SB_SESSIONS[session]} session: sentiment ${r.base_score} vs ${r.quote_score}, a ${Math.abs(r.gap)}-point gap.`;
+    }
+  });
+
+  await _fcSb(env, 'POST', 'session_bias?on_conflict=pair,session_date,session', rows,
+    { Prefer: 'resolution=ignore-duplicates,return=minimal' });
+  console.log(`generateSessionBias: published ${rows.length} ${session} reads for ${today}`);
+  await checkAndSendBiasAlerts(env, session, rows).catch(e => console.log('bias alerts error:', e.message));
+}
+
+async function settleSessionBias(env) {
+  // Settle anything open for >= 4.5h — the next session cron is ~6h later
+  // (Friday NY session settles at Monday's Asia cron; prices are frozen
+  // over the weekend anyway, matching the legacy behaviour).
+  const cutoff = new Date(Date.now() - 4.5 * 3600 * 1000).toISOString();
+  const open = await _fcSb(env, 'GET',
+    `session_bias?select=id,pair,tone,entry_price,band_pct&status=eq.open&entry_time=lte.${cutoff}`);
+  if (!open || !open.length) { console.log('settleSessionBias: nothing to settle'); return; }
+
+  const priceRows = await _fcSb(env, 'GET', 'prices?select=pair,price');
+  const px = {}; (priceRows || []).forEach(r => { px[r.pair] = parseFloat(r.price); });
+
+  let settled = 0;
+  for (const s of open) {
+    const cur = px[s.pair];
+    if (!cur || !s.entry_price) { console.log(`session bias settle skip ${s.pair}: no price`); continue; }
+    const entry = parseFloat(s.entry_price);
+    const movePct = ((cur - entry) / entry) * 100;
+    const band = parseFloat(s.band_pct) || SB_FALLBACK_BAND;
+    let alignment = 'na';
+    if (s.tone !== 'Neutral') {
+      if (Math.abs(movePct) < band) alignment = 'quiet';
+      else alignment = (s.tone === 'Bullish') === (movePct > 0) ? 'aligned' : 'contra';
+    }
+    await _fcSb(env, 'PATCH', `session_bias?id=eq.${s.id}&status=eq.open`, {
+      status: 'settled', result_price: cur, result_time: new Date().toISOString(),
+      move_pct: Math.round(movePct * 1000) / 1000, move_pips: _fcPips(s.pair, entry, cur), alignment,
+    }, { Prefer: 'return=minimal' });
+    settled++;
+  }
+  console.log(`settleSessionBias: settled ${settled}/${open.length}`);
+}
+
+// Strong-read alerts (Pro): only strength >= 4 reads, scorecard wording —
+// news-tone reporting, never BUY/SELL language.
+async function checkAndSendBiasAlerts(env, session, rows) {
+  try {
+    const strong = (rows || []).filter(r => r.strength >= 4);
+    if (!strong.length) { console.log('biasAlerts: no strong reads this session'); return; }
+    if (!env.RESEND_API_KEY) { console.log('biasAlerts: no RESEND_API_KEY'); return; }
+    const users = await _queryProAlertUsers(env);
+    let sent = 0;
+    for (const u of users) {
+      const rel = strong.filter(c => !u.currencies.length || u.currencies.includes(c.pair.slice(0, 3)) || u.currencies.includes(c.pair.slice(4)));
+      if (!rel.length) continue;
+      await _sendBiasAlertEmail(env, u.email, session, rel).catch(e => console.log('bias alert', u.email, e.message));
+      sent++;
+    }
+    console.log(`biasAlerts: ${strong.length} strong read(s) → notified ${sent}/${users.length} pro user(s)`);
+  } catch (e) { console.log('checkAndSendBiasAlerts:', e.message); }
+}
+
+async function _sendBiasAlertEmail(env, to, session, reads) {
+  const row = (r) => {
+    const col = r.tone === 'Bullish' ? '#059669' : '#dc2626';
+    const arrow = r.tone === 'Bullish' ? '▲' : '▼';
+    return `<tr><td style="padding:8px 14px;font-weight:800;font-size:15px;">${r.pair}</td><td style="padding:8px 14px;"><span style="color:${col};font-weight:800;">${arrow} ${r.tone} tone</span> <span style="color:#64748b;font-size:13px;">· strength ${r.strength}/5 · gap ${r.gap > 0 ? '+' : ''}${r.gap}</span></td></tr>`;
+  };
+  const sessionName = SB_SESSIONS[session] || session;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;">`
+    + `<div style="background:#0f172a;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;"><div style="font-size:18px;font-weight:800;">📰 Strong news tone into the ${sessionName} session</div><div style="font-size:13px;color:#94a3b8;margin-top:4px;">The news flow is leaning hard on pairs you follow.</div></div>`
+    + `<div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:18px 24px;"><table style="width:100%;border-collapse:collapse;">${reads.map(row).join('')}</table>`
+    + `<a href="https://fxnewsbias.com/forecast" style="display:inline-block;margin-top:18px;background:#2563eb;color:#fff;padding:11px 22px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Open the session scorecard →</a>`
+    + `<p style="font-size:12px;color:#94a3b8;margin-top:16px;line-height:1.5;">This reports the tone of news sentiment — it is not a forecast or trade advice. You enabled alerts on FXNewsBias Pro — manage them on your <a href="https://fxnewsbias.com/pro" style="color:#2563eb;">dashboard</a>.</p></div></div>`;
+  const fromEmail = env.ALERT_EMAIL_FROM || 'alerts@fxnewsbias.com';
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: [to], subject: `📰 ${reads.map(r => r.pair).join(', ')} — strong ${sessionName} session tone`, html }), signal: AbortSignal.timeout(20000),
+  });
+}
+
+// GET /api/session-bias — full scorecard incl. LIVE open reads. Pro-gated
+// (Firebase token), mirroring /api/forecasts. Anon/free read settled rows
+// directly from Supabase under RLS.
+async function handleSessionBiasLedger(request, env) {
+  const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' };
+  if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+  const _gate = await _weeklyProGate(request, env, cors);
+  if (_gate) return _gate;
+  try {
+    const url = new URL(request.url);
+    const limit = Math.min(parseInt(url.searchParams.get('limit'), 10) || 2000, 5000);
+    const rows = await _fcSb(env, 'GET',
+      `session_bias?select=*&order=session_date.desc,entry_time.desc,pair.asc&limit=${limit}`);
+    return new Response(JSON.stringify(rows || []), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...cors } });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', ...cors } });
+  }
+}
+
+// GET /api/session-bias/summary — public teaser: latest session's counts +
+// all-time alignment tallies. No live content leaks.
+async function handleSessionBiasSummary(request, env) {
+  const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
+  if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+  try {
+    const [latest, tallies] = await Promise.all([
+      _fcSb(env, 'GET', 'session_bias?select=session_date,session,status,tone,strength&order=entry_time.desc&limit=11'),
+      _fcSb(env, 'GET', 'session_bias?select=alignment&status=eq.settled&alignment=neq.na&limit=5000'),
+    ]);
+    const t = { aligned: 0, contra: 0, quiet: 0 };
+    (tallies || []).forEach(r => { if (t[r.alignment] != null) t[r.alignment]++; });
+    const cur = latest && latest.length ? latest[0] : null;
+    return new Response(JSON.stringify({
+      latest_session: cur ? { date: cur.session_date, session: cur.session, open: latest.filter(r => r.status === 'open').length, strong: latest.filter(r => r.strength >= 4).length } : null,
+      scorecard: { ...t, scored: t.aligned + t.contra + t.quiet,
+        aligned_rate_pct: (t.aligned + t.contra) ? Math.round(1000 * t.aligned / (t.aligned + t.contra)) / 10 : null },
+    }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=120', ...cors } });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', ...cors } });
+  }
 }
 
 // ============================================================
