@@ -5,8 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="/favicon.ico">
-<title>Forecast Ledger — Immutable Track Record | FXNewsBias Pro</title>
-<meta name="description" content="The complete, immutable record of every FXNB forex forecast ever published — entries, results, moves and outcomes. Nothing deleted, nothing edited.">
+<title>Scorecard Ledger — Every Session Read, Publicly Scored | FXNewsBias Pro</title>
+<meta name="description" content="The complete, immutable record of every FXNB session bias read — news tone, market move and score (aligned, contra or quiet). Nothing deleted, nothing edited.">
 <link rel="canonical" href="https://fxnewsbias.com/forecast-history">
 <link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
@@ -53,10 +53,10 @@
 
   <div class="fc-head">
     <div class="fc-head-inner">
-      <span class="fc-eyebrow">⭐ Pro · Forecast Intelligence</span>
-      <h1 class="fc-title">Forecast Ledger</h1>
-      <p class="fc-sub">The complete immutable record. Every call, every result — including the misses. This is what makes the forecasts worth trusting.</p>
-      <div class="fc-immutable">🛡 Published once. Never edited. Every result recorded.</div>
+      <span class="fc-eyebrow">⭐ Pro · Session Bias Scorecard</span>
+      <h1 class="fc-title">Scorecard Ledger</h1>
+      <p class="fc-sub">The complete immutable record. Every session read and how it scored — including the contras. Being scored in public is what makes the reads worth trusting.</p>
+      <div class="fc-immutable">🛡 Published once. Never edited. Every score recorded.</div>
       <nav class="fc-tabs" aria-label="Forecast module">
         <a class="fc-tab" href="/forecast">Session Reads</a>
         <a class="fc-tab active" href="/forecast-history" aria-current="page">Scorecard Ledger</a>
@@ -70,17 +70,23 @@
     <div id="fc-upstrip-host"></div>
     <div class="fc-controls">
       <select class="fc-select" id="f-pair" aria-label="Filter by pair"><option value="">All pairs</option></select>
-      <select class="fc-select" id="f-outcome" aria-label="Filter by outcome">
-        <option value="">All outcomes</option>
-        <option value="hit">✓ Hit</option>
-        <option value="miss">✕ Miss</option>
-        <option value="flat">– Flat</option>
-        <option value="aside">Stand Aside</option>
+      <select class="fc-select" id="f-session" aria-label="Filter by session" hidden>
+        <option value="">All sessions</option>
+        <option value="asean">Asia</option>
+        <option value="london">London</option>
+        <option value="newyork">New York</option>
+      </select>
+      <select class="fc-select" id="f-outcome" aria-label="Filter by score">
+        <option value="">All scores</option>
+        <option value="hit">✓ Aligned</option>
+        <option value="miss">✕ Contra</option>
+        <option value="flat">– Quiet</option>
+        <option value="aside">Neutral</option>
       </select>
       <select class="fc-select" id="f-status" aria-label="Filter by status">
         <option value="">All statuses</option>
         <option value="open">Open</option>
-        <option value="settled">Settled</option>
+        <option value="settled">Scored</option>
       </select>
       <span class="fc-count" id="f-count"></span>
     </div>
@@ -89,15 +95,15 @@
       <div class="ledger-scroll">
         <table class="ledger" id="ledger-table">
           <thead><tr>
-            <th>Date</th><th>Pair</th><th>Direction</th><th>Conv</th><th>Entry</th><th>Result</th><th>Move %</th><th>Pips</th><th>Outcome</th><th>Status</th>
+            <th>Session</th><th>Pair</th><th>Tone</th><th>Strength</th><th>Entry</th><th>Result</th><th>Move %</th><th>Pips</th><th>Score</th><th>Status</th>
           </tr></thead>
           <tbody><tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">Loading ledger…</td></tr></tbody>
         </table>
       </div>
-      <div class="ledger-note">🛡 Immutable record — rows are written at publish, settled exactly once, and never modified after. Stand-aside days are shown but excluded from win-rate math. All times UTC.</div>
+      <div class="ledger-note">🛡 Immutable record — rows are written at publish, scored exactly once at the next session, and never modified after. Neutral reads are shown but excluded from alignment math. All times UTC.</div>
     </div>
 
-    <div class="disclaimer"><strong>Disclaimer:</strong> Forecasts are AI-generated sentiment-based analysis, not financial advice or trade signals. Past performance is not indicative of future results.</div>
+    <div class="disclaimer"><strong>Disclaimer:</strong> Session reads report the tone of news sentiment — not forecasts, trade signals or financial advice. The scorecard measures reporting accuracy, not trading performance.</div>
 
     <div class="trust-strip">
       <span>✅ 100% Transparent</span><span>📜 All Results Public</span><span>🔒 Immutable Records</span><span>🚫 No Deletions. No Edits.</span>
@@ -120,8 +126,8 @@ function row(r,i){
   var mv=parseFloat(r.move_pct);
   var dirCls=FC.dirClass(r.direction);
   var chip=dirCls==='long'?'dir-long':dirCls==='short'?'dir-short':'dir-aside';
-  return '<tr class="expandable" data-idx="'+i+'" tabindex="0" aria-expanded="false" aria-label="Expand '+FC.esc(r.pair)+' '+FC.fmtDate(r.forecast_date)+' forecast detail">'
-    +'<td><span class="exp-chev">▶</span>'+FC.fmtDate(r.forecast_date)+'</td>'
+  return '<tr class="expandable" data-idx="'+i+'" tabindex="0" aria-expanded="false" aria-label="Expand '+FC.esc(r.pair)+' '+FC.fmtDate(r.forecast_date)+' read detail">'
+    +'<td><span class="exp-chev">▶</span>'+FC.fmtDate(r.forecast_date)+(r.session?' <span style="font-size:10px;font-weight:700;color:#93c5fd;text-transform:uppercase;letter-spacing:.4px;">'+({asean:'Asia',london:'London',newyork:'NY'}[r.session]||r.session)+'</span>':'')+'</td>'
     +'<td class="num">'+FC.pairFlags(r.pair)+' <a href="/forecast-pair?pair='+FC.pairSlug(r.pair)+'" style="color:inherit;">'+r.pair+'</a></td>'
     +'<td><span class="dir-chip '+chip+'">'+FC.dirLabel(r.direction)+'</span></td>'
     +'<td>'+(r.conviction?FC.convDots(r.conviction):'<span style="color:var(--muted)">—</span>')+'</td>'
@@ -142,11 +148,11 @@ function detailRow(r){
   html+='<div style="flex:1;min-width:220px;">';
   if(r.narrative)html+='<p class="fcm-narr" style="margin-bottom:'+(chips?'10px':'0')+';">'+FC.esc(r.narrative)+'</p>';
   if(chips)html+=chips;
-  if(!r.narrative&&!chips)html+='<span style="color:var(--muted);font-size:12px;">No narrative recorded for this forecast.</span>';
+  if(!r.narrative&&!chips)html+='<span style="color:var(--muted);font-size:12px;">No narrative recorded for this read.</span>';
   html+='</div>';
   html+='<div style="flex-shrink:0;font-size:11px;color:var(--muted);font-family:var(--mono);line-height:1.9;">'
     +'Published '+FC.fmtTime(r.entry_time)+'<br>'
-    +(r.result_time?'Settled '+FC.fmtTime(r.result_time):FC.esc(FC.countdown(r.entry_time)||''))
+    +(r.result_time?'Scored '+FC.fmtTime(r.result_time):FC.esc(FC.countdown(r.entry_time,r._sessionRead)||''))
     +'</div>';
   html+='</div></td></tr>';
   return html;
@@ -154,19 +160,21 @@ function detailRow(r){
 
 function render(){
   var p=document.getElementById('f-pair').value;
+  var sess=document.getElementById('f-session').value;
   var o=document.getElementById('f-outcome').value;
   var s=document.getElementById('f-status').value;
   var rows=allRows.filter(function(r){
     if(p&&r.pair!==p)return false;
+    if(sess&&r.session!==sess)return false;
     if(o==='aside'){if(r.direction!=='Stand Aside')return false;}
     else if(o&&r.outcome!==o)return false;
     if(s&&r.status!==s)return false;
     return true;
   });
-  document.getElementById('f-count').textContent=rows.length+' / '+allRows.length+' forecasts';
+  document.getElementById('f-count').textContent=rows.length+' / '+allRows.length+' reads';
   var tb=document.querySelector('#ledger-table tbody');
   if(!rows.length){
-    tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">'+(allRows.length?'No forecasts match these filters.':'No forecasts yet — the first batch publishes next weekday at 06:13 UTC.')+'</td></tr>';
+    tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">'+(allRows.length?'No reads match these filters.':'No session reads yet — reads publish every weekday at 00:13, 06:13 and 12:13 UTC.')+'</td></tr>';
     return;
   }
   tb.innerHTML=rows.map(row).join('');
@@ -190,6 +198,8 @@ function load(){
   FC.loadLedger().then(function(rows){
     allRows=rows||[];
     var pairs={};allRows.forEach(function(r){pairs[r.pair]=1;});
+    // session filter only makes sense for session reads (legacy rows have none)
+    document.getElementById('f-session').hidden=!allRows.some(function(r){return r.session;});
     var sel=document.getElementById('f-pair');
     while(sel.options.length>1) sel.remove(1);  // reset (keeps the "All" option) so re-fetch never duplicates
     Object.keys(pairs).sort().forEach(function(pp){
@@ -200,7 +210,7 @@ function load(){
     document.querySelector('#ledger-table tbody').innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">Could not load the ledger. Please refresh.</td></tr>';
   });
 }
-['f-pair','f-outcome','f-status'].forEach(function(id){document.getElementById(id).addEventListener('change',render);});
+['f-pair','f-session','f-outcome','f-status'].forEach(function(id){document.getElementById(id).addEventListener('change',render);});
 
 var d=new Date(),el=document.getElementById('topbar-date');
 if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();

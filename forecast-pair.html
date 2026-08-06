@@ -5,8 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="/favicon.ico">
-<title>Pair Forecast Analysis | FXNewsBias Pro</title>
-<meta name="description" content="Deep forecast analysis for a currency pair: direction, conviction, sentiment evidence, live price tracking, lifecycle and the pair's complete forecast history.">
+<title>Pair Session Read Analysis | FXNewsBias Pro</title>
+<meta name="description" content="Deep session-read analysis for a currency pair: news tone, strength, sentiment evidence, live price tracking and the pair's complete scorecard history.">
 <meta name="robots" content="noindex, follow">
 <link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
@@ -53,7 +53,7 @@
 
   <div class="fc-head">
     <div class="fc-head-inner">
-      <span class="fc-eyebrow">⭐ Pro · Forecast Intelligence</span>
+      <span class="fc-eyebrow">⭐ Pro · Session Bias Scorecard</span>
       <h1 class="fc-title" id="pa-title">Pair Analysis</h1>
       <p class="fc-sub" id="pa-sub">Loading…</p>
       <nav class="fc-tabs" aria-label="Forecast module">
@@ -100,13 +100,13 @@ function lifecycle(r){
 
 function render(latest,pairRows,prices,news,baseHist,quoteHist){
   var wrap=document.getElementById('pa-wrap');
-  document.getElementById('pa-title').textContent=FC.pairFlags(PAIR)+' '+PAIR+' — Forecast Analysis';
+  document.getElementById('pa-title').textContent=FC.pairFlags(PAIR)+' '+PAIR+' — Session Read Analysis';
   if(!latest){
-    document.getElementById('pa-sub').textContent='No forecasts published for '+PAIR+' yet.';
+    document.getElementById('pa-sub').textContent='No session reads published for '+PAIR+' yet.';
     wrap.innerHTML='<div class="empty-state"><div class="ico">📭</div><div class="t">No forecast for '+PAIR+' yet</div><div class="s">Forecasts publish weekdays at 06:13 UTC. Check <a href="/forecast">Today\'s Forecasts</a> for covered pairs.</div></div>';
     return;
   }
-  document.getElementById('pa-sub').textContent='Latest forecast published '+FC.fmtTime(latest.entry_time)+' · settles on a 24h horizon.';
+  document.getElementById('pa-sub').textContent='Latest read published '+FC.fmtTime(latest.entry_time)+' · scored at the next session open.';
 
   var cls=FC.dirClass(latest.direction);
   var live=prices[PAIR]?parseFloat(prices[PAIR].price):null;
@@ -122,12 +122,12 @@ function render(latest,pairRows,prices,news,baseHist,quoteHist){
   // settled calls and the pair's full track record stay public.
   var callLocked=!FC.isPro()&&latest.status==='open';
   if(callLocked){
-    html+='<div class="panel">'+FC.lockCard("Today’s "+PAIR+" call is Pro","Direction, entry, conviction and the market narrative unlock with Pro the moment the call publishes. The full "+PAIR+" track record stays public below.")+'</div>';
+    html+='<div class="panel">'+FC.lockCard("The live "+PAIR+" session read is Pro","Tone, strength, sentiment evidence and the AI note unlock with Pro the moment each read publishes. The full "+PAIR+" scorecard stays public below.")+'</div>';
   } else {
   html+='<div class="panel"><div class="pa-hero">'
     +'<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Current Call</div>'
     +'<div class="pa-dir '+cls+'">'+FC.dirLabel(latest.direction)+'</div>'
-    +'<div style="margin-top:10px;max-width:280px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Conviction</span><span class="mono">'+latest.conviction+'/5</span></div>'
+    +'<div style="margin-top:10px;max-width:280px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Strength</span><span class="mono">'+latest.conviction+'/5</span></div>'
     +'<div class="conv-meter"><div class="fill" style="width:'+(latest.conviction/5*100)+'%"></div></div></div></div>'
     +'<div class="fcard-nums" style="grid-template-columns:repeat(2,minmax(120px,1fr));gap:10px;">'
     +'<div class="fnum"><div class="fnum-lab">Entry Price</div><div class="fnum-val">'+FC.fmtPrice(PAIR,entry)+'</div></div>'
@@ -156,14 +156,14 @@ function render(latest,pairRows,prices,news,baseHist,quoteHist){
     var dr=latest.drivers||{};
     var dItems=[].concat((dr.base||[]).map(function(x){return {c:BASE,t:x};}),(dr.quote||[]).map(function(x){return {c:QUOTE,t:x};}));
     html+='<div class="panel"><h3>Drivers Behind the Call</h3>'
-      +(dItems.length?dItems.map(function(d){return '<div class="driver-li"><span><strong class="mono" style="color:#93c5fd;">'+d.c+'</strong> — '+FC.esc(d.t)+'</span></div>';}).join(''):'<p style="font-size:12.5px;color:var(--muted);">No driver detail recorded for this forecast.</p>')
+      +(dItems.length?dItems.map(function(d){return '<div class="driver-li"><span><strong class="mono" style="color:#93c5fd;">'+d.c+'</strong> — '+FC.esc(d.t)+'</span></div>';}).join(''):'<p style="font-size:12.5px;color:var(--muted);">No driver detail recorded for this read.</p>')
       +'</div>';
     if(latest.narrative){
       html+='<div class="panel"><h3>Market Narrative</h3><p style="font-size:13.5px;color:#cbd5e1;line-height:1.7;">'+FC.esc(latest.narrative)+'</p></div>';
     }
   }
 
-  html+='<div class="panel"><h3>'+PAIR+' Forecast History</h3><div class="ledger-scroll"><table class="ledger" style="min-width:600px;">'
+  html+='<div class="panel"><h3>'+PAIR+' Read History</h3><div class="ledger-scroll"><table class="ledger" style="min-width:600px;">'
     +'<thead><tr><th>Date</th><th>Direction</th><th>Entry</th><th>Result</th><th>Move %</th><th>Outcome</th></tr></thead><tbody>'
     +(pairRows.length?pairRows.slice(0,20).map(function(r){
       var mv=parseFloat(r.move_pct);
@@ -174,16 +174,16 @@ function render(latest,pairRows,prices,news,baseHist,quoteHist){
         +'<td class="num">'+(r.result_price?FC.fmtPrice(PAIR,r.result_price):'—')+'</td>'
         +'<td class="num '+(mv>0?'up':mv<0?'down':'')+'">'+(r.move_pct==null?'—':FC.fmtPct(r.move_pct,true))+'</td>'
         +'<td>'+FC.outcomePill(r)+'</td></tr>';
-    }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px;">First forecast for this pair.</td></tr>')
+    }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px;">First read for this pair.</td></tr>')
     +'</tbody></table></div></div>';
   html+='</div>';
 
   // right column
   html+='<div style="min-width:0;">';
-  html+='<div class="panel"><h3>'+PAIR+' Track Record</h3>'
+  html+='<div class="panel"><h3>'+PAIR+' Alignment Record</h3>'
     +'<div class="stat-strip" style="grid-template-columns:1fr 1fr;">'
-    +'<div class="stat" style="padding:12px;"><div class="stat-lab">Win Rate</div><div class="stat-val '+(stats.winRate===null?'':stats.winRate>=50?'up':'down')+'" style="font-size:20px;">'+(stats.winRate===null?'—':stats.winRate.toFixed(0)+'%')+'</div></div>'
-    +'<div class="stat" style="padding:12px;"><div class="stat-lab">Forecasts</div><div class="stat-val" style="font-size:20px;">'+pairRows.length+'</div></div>'
+    +'<div class="stat" style="padding:12px;"><div class="stat-lab">Aligned</div><div class="stat-val '+(stats.winRate===null?'':stats.winRate>=50?'up':'down')+'" style="font-size:20px;">'+(stats.winRate===null?'—':stats.winRate.toFixed(0)+'%')+'</div></div>'
+    +'<div class="stat" style="padding:12px;"><div class="stat-lab">Reads</div><div class="stat-val" style="font-size:20px;">'+pairRows.length+'</div></div>'
     +'</div>'
     +(last10.length?'<div style="margin-top:14px;"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Last '+last10.length+' results (newest first)</div><div class="resq">'
       +last10.map(function(r){return '<i class="'+(r.outcome==='hit'?'h':r.outcome==='miss'?'m':'f')+'" title="'+FC.fmtDate(r.forecast_date)+' — '+r.outcome+'"></i>';}).join('')

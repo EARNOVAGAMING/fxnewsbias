@@ -5,8 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="/favicon.ico">
-<title>Forecast Performance Analytics — Win Rate, Streaks & Accuracy | FXNewsBias Pro</title>
-<meta name="description" content="Full performance analytics for FXNB forecasts: win rate, per-pair accuracy, monthly performance, streaks and outcome distribution — computed from the immutable public ledger.">
+<title>Scorecard Analytics — Alignment Rate, Streaks & Accuracy | FXNewsBias Pro</title>
+<meta name="description" content="Full analytics for the FXNB session bias scorecard: alignment rate, per-pair accuracy, monthly performance, streaks and score distribution — computed from the immutable public ledger.">
 <link rel="canonical" href="https://fxnewsbias.com/forecast-performance">
 <link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
@@ -53,7 +53,7 @@
 
   <div class="fc-head">
     <div class="fc-head-inner">
-      <span class="fc-eyebrow">⭐ Pro · Forecast Intelligence</span>
+      <span class="fc-eyebrow">⭐ Pro · Session Bias Scorecard</span>
       <h1 class="fc-title">Performance Analytics</h1>
       <p class="fc-sub">Every number on this page is computed live from the immutable ledger — the same rows you can inspect call-by-call. No curated highlights.</p>
       <div class="fc-immutable">🛡 Published once. Never edited. Every result recorded.</div>
@@ -69,7 +69,7 @@
     <div id="fc-upstrip-host"></div>
     <div class="sec-label">Headline Performance</div>
     <div class="stat-strip">
-      <div class="stat"><div class="stat-lab">Win Rate (All)</div><div class="stat-val" id="p-wr">—</div><div class="stat-sub" id="p-wr-sub">graded forecasts</div></div>
+      <div class="stat"><div class="stat-lab">Alignment Rate</div><div class="stat-val" id="p-wr">—</div><div class="stat-sub" id="p-wr-sub">scored reads</div></div>
       <div class="stat"><div class="stat-lab">Last 30 Days</div><div class="stat-val" id="p-wr30">—</div><div class="stat-sub">rolling</div></div>
       <div class="stat"><div class="stat-lab">Last 90 Days</div><div class="stat-val" id="p-wr90">—</div><div class="stat-sub">rolling</div></div>
       <div class="stat"><div class="stat-lab">Avg Win</div><div class="stat-val up" id="p-avgw">—</div><div class="stat-sub">mean favourable move</div></div>
@@ -78,52 +78,52 @@
     </div>
 
     <div class="stat-strip" style="margin-top:12px;">
-      <div class="stat"><div class="stat-lab">Largest Win</div><div class="stat-val up" id="p-maxw">—</div><div class="stat-sub">single forecast</div></div>
-      <div class="stat"><div class="stat-lab">Largest Loss</div><div class="stat-val down" id="p-maxl">—</div><div class="stat-sub">single forecast</div></div>
+      <div class="stat"><div class="stat-lab">Largest Aligned Move</div><div class="stat-val up" id="p-maxw">—</div><div class="stat-sub">single read</div></div>
+      <div class="stat"><div class="stat-lab">Largest Contra Move</div><div class="stat-val down" id="p-maxl">—</div><div class="stat-sub">single read</div></div>
       <div class="stat"><div class="stat-lab">Current Streak</div><div class="stat-val" id="p-streak">—</div><div class="stat-sub" id="p-streak-sub">&nbsp;</div></div>
       <div class="stat"><div class="stat-lab">Best Win Streak</div><div class="stat-val up" id="p-best">—</div><div class="stat-sub">consecutive hits</div></div>
-      <div class="stat"><div class="stat-lab">Total Forecasts</div><div class="stat-val" id="p-total">—</div><div class="stat-sub" id="p-total-sub">all time</div></div>
+      <div class="stat"><div class="stat-lab">Total Reads</div><div class="stat-val" id="p-total">—</div><div class="stat-sub" id="p-total-sub">all time</div></div>
       <div class="stat"><div class="stat-lab">Settled</div><div class="stat-val" id="p-settled">—</div><div class="stat-sub">results recorded</div></div>
     </div>
 
     <div class="pa-grid" style="margin-top:26px;">
       <div style="min-width:0;">
         <div class="panel">
-          <h3>Monthly Performance — Hit / Miss / Flat</h3>
-          <div class="chart-box" id="monthly-chart"><div class="empty-state" style="padding:26px;"><div class="s">Waiting for settled forecasts…</div></div></div>
-          <div class="legend"><span><i style="background:#34d399"></i>Hit</span><span><i style="background:#fb7185"></i>Miss</span><span><i style="background:rgba(255,255,255,.25)"></i>Flat</span></div>
+          <h3>Monthly Scores — Aligned / Contra / Quiet</h3>
+          <div class="chart-box" id="monthly-chart"><div class="empty-state" style="padding:26px;"><div class="s">Waiting for scored reads…</div></div></div>
+          <div class="legend"><span><i style="background:#34d399"></i>Aligned</span><span><i style="background:#fb7185"></i>Contra</span><span><i style="background:rgba(255,255,255,.25)"></i>Quiet</span></div>
         </div>
         <div class="panel" id="rolling-panel">
-          <h3>Rolling Win Rate — last 10 graded, per forecast</h3>
-          <div class="chart-box" id="rolling-chart"><div class="waiting">Waiting for sufficient settled forecasts (10+ graded needed).</div></div>
+          <h3>Rolling Alignment Rate — last 10 scored, per read</h3>
+          <div class="chart-box" id="rolling-chart"><div class="waiting">Waiting for sufficient scored reads (10+ needed).</div></div>
         </div>
         <div class="panel">
-          <h3>Pair Leaderboard — settled forecasts only</h3>
+          <h3>Pair Leaderboard — scored reads only</h3>
           <div class="bw-grid" id="bw-grid" hidden style="margin-bottom:14px;"></div>
-          <div class="lb-list" id="lb-list"><div class="waiting">Waiting for settled forecasts.</div></div>
+          <div class="lb-list" id="lb-list"><div class="waiting">Waiting for scored reads.</div></div>
         </div>
       </div>
       <div style="min-width:0;">
         <div class="panel" id="timeline-panel" hidden>
           <h3>Settlement Timeline — most recent first</h3>
           <div class="tl-strip" id="tl-strip"></div>
-          <div class="legend" style="margin-top:12px;"><span><i style="background:#34d399"></i>Hit</span><span><i style="background:#fb7185"></i>Miss</span><span><i style="background:rgba(255,255,255,.25)"></i>Flat</span><span><i style="background:rgba(245,181,68,.5)"></i>Stand Aside</span></div>
+          <div class="legend" style="margin-top:12px;"><span><i style="background:#34d399"></i>Aligned</span><span><i style="background:#fb7185"></i>Contra</span><span><i style="background:rgba(255,255,255,.25)"></i>Quiet</span><span><i style="background:rgba(245,181,68,.5)"></i>Neutral</span></div>
         </div>
         <div class="panel">
-          <h3>Forecast Distribution</h3>
+          <h3>Score Distribution</h3>
           <div class="chart-box" id="dist-chart" style="max-width:230px;margin:0 auto;"></div>
           <div class="legend" id="dist-legend" style="justify-content:center;"></div>
-          <p style="font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.6;">Stand-aside forecasts are published like any other call but excluded from win-rate calculation — declining to call a direction is information, not a result.</p>
+          <p style="font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.6;">Neutral reads are published like any other but excluded from alignment math — reporting that the news is balanced is information, not a score.</p>
         </div>
         <div class="panel">
           <h3>Methodology</h3>
-          <p style="font-size:12.5px;color:var(--soft);line-height:1.65;margin-bottom:10px;">Forecasts are generated every weekday at 06:13 UTC from the sentiment gap between base and quote currencies (AI-scored news flow, refreshed every 3 hours). Gaps under 15 points publish as Stand Aside. Entry price is frozen at publish; settlement occurs at the next trading day's price. Moves within ±0.15% grade as Flat.</p>
+          <p style="font-size:12.5px;color:var(--soft);line-height:1.65;margin-bottom:10px;">Session reads publish every weekday at 00:13, 06:13 and 12:13 UTC from the sentiment gap between base and quote currencies (AI-scored news flow, refreshed every 3 hours). Gaps under 15 points publish as Neutral. The reference price is frozen at publish; scoring occurs at the next session open. Moves inside the pair's own volatility band score as Quiet.</p>
           <p style="font-size:12.5px;color:var(--soft);line-height:1.65;">Rows are written once and never edited — the ledger is append-only by design.</p>
         </div>
       </div>
     </div>
 
-    <div class="disclaimer"><strong>Disclaimer:</strong> Statistics are computed from AI-generated sentiment-based forecasts and are not financial advice. Past performance is not indicative of future results. Forex trading involves significant risk of loss.</div>
+    <div class="disclaimer"><strong>Disclaimer:</strong> Statistics measure how often the news tone aligned with the subsequent market move — reporting accuracy, not trading performance, and not financial advice. Past performance is not indicative of future results. Forex trading involves significant risk of loss.</div>
 
     <div class="trust-strip">
       <span>✅ 100% Transparent</span><span>📜 All Results Public</span><span>🔒 Immutable Records</span><span>📈 Trust by Performance</span>
@@ -232,7 +232,7 @@ function load(){
       ],total);
       var mid=document.getElementById('donut-mid');if(mid)mid.textContent=total;
       document.getElementById('dist-legend').innerHTML=
-        '<span><i style="background:#34d399"></i>Hit '+st.hits+'</span>'
+        '<span><i style="background:#34d399"></i>Aligned '+st.hits+'</span>'
         +'<span><i style="background:#fb7185"></i>Miss '+st.misses+'</span>'
         +'<span><i style="background:rgba(255,255,255,.25)"></i>Flat '+st.flats+'</span>'
         +'<span><i style="background:#f5b544"></i>Aside '+st.asides+'</span>';
