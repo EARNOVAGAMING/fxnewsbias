@@ -5,8 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="/favicon.ico">
-<title>Forex Forecast Intelligence — Daily AI Forecasts with a Public Track Record | FXNewsBias Pro</title>
-<meta name="description" content="Daily AI-generated forex forecasts for the 7 majors with an immutable public track record. Every forecast settles as Hit, Miss or Flat — nothing deleted, nothing edited.">
+<title>Session Bias Scorecard — AI News-Tone Reads for 11 Forex Pairs, Publicly Scored | FXNewsBias Pro</title>
+<meta name="description" content="Three AI news-tone reads per weekday for 11 forex pairs, each scored at the next session as Aligned, Contra or Quiet against a per-pair volatility band. An immutable public scorecard — nothing deleted, nothing edited.">
 <link rel="canonical" href="https://fxnewsbias.com/forecast">
 <link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
@@ -15,7 +15,7 @@
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6X181TFHYY');</script>
 <script>if(localStorage.getItem('fxnb_logged_in')==='true'){var s=document.createElement('style');s.textContent='a[href="/login"],a[href="/register"]{display:none!important}';document.head.appendChild(s);}</script>
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},{"@type":"ListItem","position":2,"name":"Forecast Intelligence","item":"https://fxnewsbias.com/forecast"}]}
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},{"@type":"ListItem","position":2,"name":"Session Bias Scorecard","item":"https://fxnewsbias.com/forecast"}]}
 </script>
 </head>
 <body>
@@ -56,13 +56,13 @@
 
   <div class="fc-head">
     <div class="fc-head-inner">
-      <span class="fc-eyebrow">⭐ Pro · Forecast Intelligence</span>
-      <h1 class="fc-title">Today's Forecasts</h1>
-      <p class="fc-sub">AI-generated directional calls from live sentiment, published weekdays at 06:13 UTC and settled 24 hours later. Every forecast stays on the record forever.</p>
+      <span class="fc-eyebrow">⭐ Pro · Session Bias Scorecard</span>
+      <h1 class="fc-title">Today's Session Reads</h1>
+      <p class="fc-sub">AI reads of the news tone for 11 pairs, published at each session open (00:13, 06:13 and 12:13 UTC weekdays) and scored at the next session: did the market move with the news, against it, or stay quiet? Every read stays on the record forever.</p>
       <div class="fc-immutable">🛡 Published once. Never edited. Every result recorded.</div>
       <nav class="fc-tabs" aria-label="Forecast module">
-        <a class="fc-tab active" href="/forecast" aria-current="page">Today's Forecasts</a>
-        <a class="fc-tab" href="/forecast-history">Forecast Ledger</a>
+        <a class="fc-tab active" href="/forecast" aria-current="page">Session Reads</a>
+        <a class="fc-tab" href="/forecast-history">Scorecard Ledger</a>
         <a class="fc-tab" href="/forecast-performance">Performance</a>
       </nav>
     </div>
@@ -72,18 +72,18 @@
     <div id="fc-ssr"><!-- forecast_ssr --></div>
     <div class="sec-label">Performance Overview <a href="/forecast-performance">Full analytics →</a></div>
     <div class="stat-strip" id="stat-strip">
-      <div class="stat"><div class="stat-lab">Win Rate (All)</div><div class="stat-val" id="s-wr">—</div><div class="stat-sub" id="s-wr-sub">settled forecasts</div></div>
+      <div class="stat"><div class="stat-lab">Alignment Rate</div><div class="stat-val" id="s-wr">—</div><div class="stat-sub" id="s-wr-sub">scored reads</div></div>
       <div class="stat"><div class="stat-lab">Last 30 Days</div><div class="stat-val" id="s-wr30">—</div><div class="stat-sub">rolling window</div></div>
       <div class="stat"><div class="stat-lab">Current Streak</div><div class="stat-val" id="s-streak">—</div><div class="stat-sub" id="s-streak-sub">&nbsp;</div></div>
-      <div class="stat"><div class="stat-lab">Published Today</div><div class="stat-val" id="s-today">—</div><div class="stat-sub">forecasts</div></div>
-      <div class="stat"><div class="stat-lab">Settled Today</div><div class="stat-val" id="s-settled">—</div><div class="stat-sub">results in</div></div>
-      <div class="stat"><div class="stat-lab">Stand-Aside Rate</div><div class="stat-val" id="s-aside">—</div><div class="stat-sub">honesty metric</div></div>
+      <div class="stat"><div class="stat-lab">This Session</div><div class="stat-val" id="s-today">—</div><div class="stat-sub">reads published</div></div>
+      <div class="stat"><div class="stat-lab">Scored Today</div><div class="stat-val" id="s-settled">—</div><div class="stat-sub">results in</div></div>
+      <div class="stat"><div class="stat-lab">Neutral Rate</div><div class="stat-val" id="s-aside">—</div><div class="stat-sub">honesty metric</div></div>
     </div>
 
-    <div class="sec-label"><span id="today-label">Today's Forecasts</span></div>
+    <div class="sec-label"><span id="today-label">Today's Session Reads</span></div>
     <div class="fc-controls">
-      <select class="fc-select" id="sort-sel" aria-label="Sort forecasts">
-        <option value="conviction">Sort: Highest conviction</option>
+      <select class="fc-select" id="sort-sel" aria-label="Sort session reads">
+        <option value="conviction">Sort: Strongest tone</option>
         <option value="gap">Sort: Largest sentiment gap</option>
         <option value="newest">Sort: Newest</option>
         <option value="status">Sort: Open first</option>
@@ -91,21 +91,21 @@
       <span class="fc-count" id="fc-count"></span>
     </div>
     <div class="fc-grid" id="fc-grid">
-      <div class="empty-state" style="grid-column:1/-1;"><div class="ico">⏳</div><div class="t">Loading forecasts…</div></div>
+      <div class="empty-state" style="grid-column:1/-1;"><div class="ico">⏳</div><div class="t">Loading session reads…</div></div>
     </div>
 
-    <div class="sec-label">Latest Settled Results <a href="/forecast-history">Full ledger →</a></div>
+    <div class="sec-label">Latest Scored Reads <a href="/forecast-history">Full scorecard →</a></div>
     <div class="ledger-card">
       <div class="ledger-scroll">
         <table class="ledger" id="recent-table">
-          <thead><tr><th>Date</th><th>Pair</th><th>Direction</th><th>Entry</th><th>Result</th><th>Move %</th><th>Pips</th><th>Outcome</th></tr></thead>
+          <thead><tr><th>Date</th><th>Pair</th><th>Tone</th><th>Entry</th><th>Result</th><th>Move %</th><th>Pips</th><th>Score</th></tr></thead>
           <tbody><tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">Loading…</td></tr></tbody>
         </table>
       </div>
       <div class="ledger-note">🛡 Immutable record — results are written once at settlement and never modified. All times UTC.</div>
     </div>
 
-    <div class="disclaimer"><strong>Disclaimer:</strong> Forecasts are AI-generated sentiment-based analysis, not financial advice or trade signals. Direction reflects news-sentiment divergence only — not price targets. Forex trading involves significant risk of loss. Past performance is not indicative of future results. Always apply your own analysis and risk management.</div>
+    <div class="disclaimer"><strong>Disclaimer:</strong> Session reads report the tone of news sentiment — they are not forecasts, trade signals or financial advice, and the scorecard measures reporting accuracy, not trading performance. Tone reflects news-sentiment divergence only, never price targets. Forex trading involves significant risk of loss. Always apply your own analysis and risk management.</div>
 
     <div class="trust-strip">
       <span>✅ 100% Transparent</span><span>📜 All Results Public</span><span>🔒 Immutable Records</span><span>🚫 No Deletions. No Edits.</span><span>📈 Trust by Performance</span>
@@ -118,7 +118,7 @@
   <div style="margin-top:10px;">© 2026 FXNewsBias · Not financial advice.</div>
 </footer>
 
-<script src="/forecast-core.js?v=4"></script>
+<script src="/forecast-core.js?v=5"></script>
 <script>
 (function(){
 'use strict';
@@ -130,12 +130,12 @@ function fmtWr(v){return v===null?'—':v.toFixed(1)+'%';}
 function renderStats(st,today){
   var wr=document.getElementById('s-wr');
   if(st.winRate!==null){wr.className='stat-val '+(st.winRate>=50?'up':'down');FC.countUp(wr,st.winRate,'%',1);}else wr.textContent='—';
-  document.getElementById('s-wr-sub').textContent=st.hits+'W / '+(st.hits+st.misses)+' graded';
+  document.getElementById('s-wr-sub').textContent=st.hits+' aligned / '+(st.hits+st.misses)+' scored';
   var w30=document.getElementById('s-wr30');
   if(st.winRate30!==null){w30.className='stat-val '+(st.winRate30>=50?'up':'down');FC.countUp(w30,st.winRate30,'%',1);}else w30.textContent='—';
   var stk=document.getElementById('s-streak');
   if(st.streak&&st.streakType){stk.className='stat-val '+(st.streakType==='hit'?'up':'down');FC.countUp(stk,st.streak,'',0);
-    document.getElementById('s-streak-sub').textContent=st.streakType==='hit'?'consecutive wins':'consecutive losses';}
+    document.getElementById('s-streak-sub').textContent=st.streakType==='hit'?'aligned streak':'contra streak';}
   // "Published Today": for Pro, today's real rows; for free (settled-only
   // ledger), the public counts-only summary keeps this honest.
   document.getElementById('s-today').textContent=(todaySummary&&todaySummary.published!=null?todaySummary.published:(today.length||0));
@@ -158,8 +158,8 @@ function card(r,i){
     var lm=((live-entry)/entry*100);
     liveHtml='<div class="fnum"><div class="fnum-lab">Live Move</div><div class="fnum-val '+(lm>0?'live-up':lm<0?'live-down':'')+'">'+(lm>0?'+':'')+lm.toFixed(2)+'%</div></div>';
   }
-  var cd=r.status==='open'?FC.countdown(r.entry_time):null;
-  return '<article class="fcard '+cls+' anim" style="animation-delay:'+Math.min(i*70,420)+'ms" data-idx="'+i+'" tabindex="0" role="button" aria-label="Open '+FC.esc(r.pair)+' forecast detail">'
+  var cd=r.status==='open'?FC.countdown(r.entry_time,r._sessionRead!==undefined?r._sessionRead:false):null;
+  return '<article class="fcard '+cls+' anim" style="animation-delay:'+Math.min(i*70,420)+'ms" data-idx="'+i+'" tabindex="0" role="button" aria-label="Open '+FC.esc(r.pair)+' session read detail">'
     +'<div class="fcard-top"><span class="fcard-pair">'+FC.pairFlags(r.pair)+' '+FC.esc(r.pair)+'</span>'
     +'<span class="dir-chip '+chip+'">'+FC.dirLabel(r.direction)+'</span></div>'
     +'<div class="conv-row">'+FC.convMeter(r.conviction)+FC.outcomePill(r)+'</div>'
@@ -187,7 +187,7 @@ function renderExposureBanner(){
   var ex=FC.exposure(todayRows);
   if(FC.isPro() && ex.concentrated){
     host.innerHTML='<div style="background:linear-gradient(90deg,rgba(245,181,68,.13),rgba(245,181,68,.04));border:1px solid rgba(245,181,68,.38);border-radius:12px;padding:13px 16px;margin:0 0 16px;color:#f3d08a;font-size:13.5px;line-height:1.55;">'
-      +'⚠ <b>Concentration risk:</b> today’s '+ex.total+' live calls are effectively <b>'+FC.esc(ex.label)+'</b> — they all share the '+FC.esc(ex.dominant.ccy)+' leg, so they move together. Treat this as <b>one macro view</b>, not '+ex.total+' independent trades — size accordingly.'
+      +'⚠ <b>Concentration risk:</b> today’s '+ex.total+' live reads are effectively <b>'+FC.esc(ex.label)+'</b> — they all share the '+FC.esc(ex.dominant.ccy)+' leg, so they move together. Read this as <b>one macro story</b>, not '+ex.total+' independent views.'
       +'</div>';
     host.style.display='block';
   } else { host.style.display='none'; host.innerHTML=''; }
@@ -206,7 +206,7 @@ function renderCards(){
   if(!FC.isPro()){
     var n=todaySummary&&todaySummary.open!=null?todaySummary.open:0;
     if(!n){
-      grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">📭</div><div class="t">No live forecasts published yet today</div><div class="s">Forecasts publish every weekday at 06:13 UTC, right after the morning sentiment refresh. The full public track record is below.</div></div>';
+      grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">📭</div><div class="t">No session reads published yet today</div><div class="s">Reads publish every weekday at 00:13, 06:13 and 12:13 UTC, right after each sentiment refresh. The full public scorecard is below.</div></div>';
       document.getElementById('fc-count').textContent='';
       return;
     }
@@ -215,17 +215,17 @@ function renderCards(){
     grid.innerHTML='<div class="fc-lock">'
       +'<div class="fc-lock-preview">'+tiles+'</div>'
       +'<div class="fc-lock-ico">🔒</div>'
-      +'<div class="fc-lock-title">'+n+' live forecast'+(n===1?'':'s')+' published today</div>'
-      +'<div class="fc-lock-sub">The full track record is public below — every past call and result. Pro members unlock today’s live BUY / SELL calls (direction, entry, conviction, sentiment evidence) the moment they publish, plus instant alerts.</div>'
-      +'<a class="fc-lock-btn" href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01">⭐ Unlock today’s calls — $30/mo</a>'
+      +'<div class="fc-lock-title">'+n+' live session read'+(n===1?'':'s')+' published</div>'
+      +'<div class="fc-lock-sub">The full scorecard is public below — every past read and how it scored. Pro members see each session’s live tone reads (tone, strength, sentiment evidence, AI note) the moment they publish, plus strong-read alerts.</div>'
+      +'<a class="fc-lock-btn" href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01">⭐ Unlock live session reads — $30/mo</a>'
       +'<div class="fc-lock-note">7-day free trial · Already Pro? <a href="/login">Log in →</a></div>'
       +'</div>';
-    document.getElementById('fc-count').textContent=n+' forecasts · locked';
+    document.getElementById('fc-count').textContent=n+' reads · locked';
     return;
   }
-  document.getElementById('fc-count').textContent=rows.length?rows.length+' forecasts':'';
+  document.getElementById('fc-count').textContent=rows.length?rows.length+' reads':'';
   if(!rows.length){
-    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">📭</div><div class="t">No forecasts published yet</div><div class="s">Forecasts publish every weekday at 06:13 UTC, right after the morning sentiment refresh. The first batch will appear here automatically.</div></div>';
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">📭</div><div class="t">No session reads published yet</div><div class="s">Reads publish every weekday at 00:13, 06:13 and 12:13 UTC, right after each sentiment refresh. The next batch will appear here automatically.</div></div>';
     return;
   }
   grid.innerHTML=rows.map(card).join('');
@@ -241,7 +241,7 @@ function renderCards(){
 function renderRecent(){
   var tb=document.querySelector('#recent-table tbody');
   var settled=allRows.filter(function(r){return r.status==='settled'&&r.direction!=='Stand Aside';}).slice(0,8);
-  if(!settled.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">No settled results yet — first settlements land 24h after the first publish.</td></tr>';return;}
+  if(!settled.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">No scored reads yet — each read is scored at the next session open, about 6 hours after publish.</td></tr>';return;}
   tb.innerHTML=settled.map(function(r){
     var mv=parseFloat(r.move_pct);
     return '<tr><td>'+FC.fmtDate(r.forecast_date)+'</td>'
@@ -270,12 +270,12 @@ function load(){
     // so use the public summary's date for the section label when needed.
     var latestDate=allRows.length?allRows[0].forecast_date:(todaySummary?todaySummary.latest_date:null);
     todayRows=(latestDate&&FC.isPro())?allRows.filter(function(r){return r.forecast_date===latestDate;}):[];
-    if(latestDate){document.getElementById('today-label').textContent='Forecasts — '+FC.fmtDate(latestDate);}
+    if(latestDate){document.getElementById('today-label').textContent='Session reads — '+FC.fmtDate(latestDate);}
     renderStats(FC.computeStats(allRows),todayRows);
     renderCards();
     renderRecent();
   }).catch(function(){
-    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">⚠️</div><div class="t">Could not load forecasts</div><div class="s">Please refresh in a moment.</div></div>';
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">⚠️</div><div class="t">Could not load session reads</div><div class="s">Please refresh in a moment.</div></div>';
   });
 }
 document.getElementById('sort-sel').addEventListener('change',renderCards);

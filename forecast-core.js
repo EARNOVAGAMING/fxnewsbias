@@ -1,7 +1,9 @@
-/* FXNB Forecast Intelligence — shared data layer + helpers.
-   Every /forecast* page uses this. Reads the public (RLS
-   read-only) pair_forecasts ledger straight from Supabase,
-   exactly like the rest of the site reads sentiment/news. */
+/* FXNB Session Bias Scorecard — shared data layer + helpers.
+   Every /forecast* page uses this. Primary source is the
+   session_bias scorecard (3 session reads per weekday, scored
+   aligned/contra/quiet at the next session). The frozen legacy
+   pair_forecasts ledger is the fallback until scorecard rows
+   accumulate, and remains the public archive. */
 (function () {
   'use strict';
   const SB = 'https://vtbmtxtgtdprpbilragm.supabase.co';
@@ -17,11 +19,41 @@
     return r.json();
   }
 
-  // Public track record only. RLS on pair_forecasts exposes SETTLED rows to
-  // anon; today's OPEN live calls (the paid product) are NOT returned here —
-  // they come from the Pro-gated worker endpoint via fetchLiveForecasts().
+  // Legacy public track record (frozen ledger). RLS exposes settled rows only.
   function fetchLedger(limit) {
     return sb('pair_forecasts?select=*&order=forecast_date.desc,pair.asc&limit=' + (limit || 2000));
+  }
+  // Map a session_bias row onto the row shape every page already renders.
+  // tone->direction, strength->conviction, alignment->outcome. Honest labels
+  // for these fields live in dirLabel()/outcomePill() below.
+  function adaptSessionRow(r) {
+    return {
+      pair: r.pair, forecast_date: r.session_date, session: r.session,
+      horizon: 'session',
+      direction: r.tone === 'Neutral' ? 'Stand Aside' : r.tone,
+      conviction: r.strength, entry_price: r.entry_price, entry_time: r.entry_time,
+      base_score: r.base_score, quote_score: r.quote_score, gap: r.gap,
+      drivers: r.drivers, narrative: r.narrative, status: r.status,
+      result_price: r.result_price, result_time: r.result_time,
+      move_pct: r.move_pct, move_pips: r.move_pips, band_pct: r.band_pct,
+      outcome: r.alignment === 'aligned' ? 'hit' : r.alignment === 'contra' ? 'miss'
+             : r.alignment === 'quiet' ? 'flat' : (r.status === 'settled' ? 'na' : null),
+      _sessionRead: true,
+    };
+  }
+  // Public settled scorecard (anon RLS exposes settled session_bias only).
+  function fetchScorecard(limit) {
+    return sb('session_bias?select=*&order=session_date.desc,entry_time.desc,pair.asc&limit=' + (limit || 2000))
+      .then(function (rows) { return (rows || []).map(adaptSessionRow); });
+  }
+  // Full scorecard incl. LIVE open session reads — Pro only (worker-gated).
+  function fetchLiveScorecard(limit) {
+    return getIdToken().then(function (tk) {
+      if (!tk) return null;
+      return fetch(CRON + '/api/session-bias?limit=' + (limit || 2000), { headers: { Authorization: 'Bearer ' + tk } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { return Array.isArray(j) ? j.map(adaptSessionRow) : null; });
+    }).catch(function () { return null; });
   }
   // Current Firebase ID token (or null). firebase.js exposes getCurrentUser().
   function getIdToken() {
@@ -42,20 +74,41 @@
         .then(function (j) { return Array.isArray(j) ? j : null; });
     }).catch(function () { return null; });
   }
-  // Best ledger for the current user: Pro -> full (incl. open) via the gated
-  // endpoint; everyone else -> public settled-only via anon. Falls back to the
-  // public ledger if the gated fetch is unavailable, so the page never breaks.
+  // Best data for the current user: session scorecard first (Pro gets live
+  // open reads, everyone else settled-only), falling back to the frozen
+  // legacy ledger while the scorecard is still accumulating rows. Sets
+  // FC.sourceIsLegacy so pages can label the archive honestly.
   function loadLedger(limit) {
-    if (!isPro()) return fetchLedger(limit);
-    return fetchLiveForecasts(limit).then(function (full) {
-      return full && full.length != null ? full : fetchLedger(limit);
+    var scorecard = isPro()
+      ? fetchLiveScorecard(limit).then(function (full) { return full && full.length ? full : fetchScorecard(limit); })
+      : fetchScorecard(limit);
+    return scorecard.then(function (rows) {
+      if (rows && rows.length) { window.FC.sourceIsLegacy = false; return rows; }
+      window.FC.sourceIsLegacy = true;
+      if (!isPro()) return fetchLedger(limit);
+      return fetchLiveForecasts(limit).then(function (full) {
+        return full && full.length != null ? full : fetchLedger(limit);
+      });
+    }).catch(function () {
+      window.FC.sourceIsLegacy = true;
+      return fetchLedger(limit);
     });
   }
-  // Public counts-only summary of the latest forecast day (date + counts, no
-  // content) — lets free users see an honest "N live calls locked today".
+  // Public counts-only summary of the latest session (date + counts, no
+  // content) — lets free users see an honest "N session reads locked".
+  // Falls back to the legacy forecast summary while the scorecard is empty.
   function fetchTodaySummary() {
-    return fetch(CRON + '/api/forecasts/summary')
+    return fetch(CRON + '/api/session-bias/summary')
       .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (j && j.latest_session && j.latest_session.open != null) {
+          return { latest_date: j.latest_session.date, session: j.latest_session.session,
+                   published: j.latest_session.open, open: j.latest_session.open,
+                   calls: j.latest_session.strong, scorecard: j.scorecard };
+        }
+        return fetch(CRON + '/api/forecasts/summary')
+          .then(function (r) { return r.ok ? r.json() : null; });
+      })
       .catch(function () { return null; });
   }
   function fetchPrices() { return sb('prices?select=pair,price,change_pct,updated_at'); }
@@ -195,13 +248,13 @@
     if (!ts) return '—';
     return new Date(ts).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' UTC';
   }
-  function dirLabel(d) { return d === 'Bullish' ? 'BUY' : d === 'Bearish' ? 'SELL' : 'STAND ASIDE'; }
+  function dirLabel(d) { return d === 'Bullish' ? '▲ BULLISH TONE' : d === 'Bearish' ? '▼ BEARISH TONE' : '— NEUTRAL'; }
   function dirClass(d) { return d === 'Bullish' ? 'long' : d === 'Bearish' ? 'short' : 'aside'; }
   function outcomePill(r) {
     if (r.status === 'open') return '<span class="st-pill st-open">● Open</span>';
-    if (r.outcome === 'hit') return '<span class="st-pill st-hit">✓ Hit</span>';
-    if (r.outcome === 'miss') return '<span class="st-pill st-miss">✕ Miss</span>';
-    if (r.outcome === 'flat') return '<span class="st-pill st-flat">– Flat</span>';
+    if (r.outcome === 'hit') return '<span class="st-pill st-hit">✓ Aligned</span>';
+    if (r.outcome === 'miss') return '<span class="st-pill st-miss">✕ Contra</span>';
+    if (r.outcome === 'flat') return '<span class="st-pill st-flat">– Quiet</span>';
     return '<span class="st-pill st-na">– N/A</span>';
   }
   function convDots(n) {
@@ -230,14 +283,16 @@
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="width:100%;height:' + h + 'px;display:block;"><path d="' + d + ' L' + w + ' ' + h + ' L0 ' + h + ' Z" fill="' + color + '" opacity="0.1"/><path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="1.8" stroke-linejoin="round"/></svg>';
   }
 
-  // ── settlement countdown (entry + 24h horizon) ──
-  function countdown(entryTime) {
+  // ── scoring countdown (session reads score at the next session, ~6h;
+  //    legacy frozen-ledger rows still settle on the 24h horizon) ──
+  function countdown(entryTime, isSessionRead) {
     if (!entryTime) return null;
-    const due = new Date(entryTime).getTime() + 24 * 3600 * 1000;
+    const horizonMs = (isSessionRead === false ? 24 : 6) * 3600 * 1000;
+    const due = new Date(entryTime).getTime() + horizonMs;
     const ms = due - Date.now();
-    if (ms <= 0) return 'Settling at next run';
+    if (ms <= 0) return 'Scores at next session open';
     const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
-    return 'Settles in ' + (h > 0 ? h + 'h ' : '') + m + 'm';
+    return 'Scores in ' + (h > 0 ? h + 'h ' : '') + m + 'm';
   }
 
   // ── per-pair track record from an already-fetched ledger (no extra query) ──
@@ -339,7 +394,7 @@
     wrap.id = 'fc-modal';
     wrap.innerHTML =
       '<div class="fcm-backdrop"></div>'
-      + '<div class="fcm-panel" role="dialog" aria-modal="true" aria-label="' + esc(r.pair) + ' forecast detail">'
+      + '<div class="fcm-panel" role="dialog" aria-modal="true" aria-label="' + esc(r.pair) + ' session read detail">'
       + '<div class="fcm-head"><div><span class="fcard-pair">' + pairFlags(r.pair) + ' ' + esc(r.pair) + '</span>'
       + ' <span class="dir-chip ' + chip + '">' + dirLabel(r.direction) + '</span></div>'
       + '<button class="fcm-close" aria-label="Close">✕</button></div>'
@@ -360,7 +415,7 @@
       + (r.narrative ? '<div class="fcm-sec"><h4>Narrative</h4><p class="fcm-narr">' + esc(r.narrative) + '</p></div>' : '')
       + '<div class="fcm-sec" id="fcm-events" hidden><h4>High-Impact Events — ' + base + ' &amp; ' + quote + '</h4><div id="fcm-events-list"></div></div>'
       + (ps.graded >= 3
-        ? '<div class="fcm-sec"><h4>' + esc(r.pair) + ' Track Record</h4><div class="fcm-track"><span class="mono" style="color:' + (ps.winRate >= 50 ? '#34d399' : '#fb7185') + ';font-weight:700;">' + ps.winRate.toFixed(0) + '%</span> win rate · ' + ps.graded + ' graded ' + resultSquares(allRows || [], r.pair, 10) + '</div></div>'
+        ? '<div class="fcm-sec"><h4>' + esc(r.pair) + ' Alignment Record</h4><div class="fcm-track"><span class="mono" style="color:' + (ps.winRate >= 50 ? '#34d399' : '#fb7185') + ';font-weight:700;">' + ps.winRate.toFixed(0) + '%</span> aligned · ' + ps.graded + ' scored ' + resultSquares(allRows || [], r.pair, 10) + '</div></div>'
         : '')
       + '<div class="fcm-foot"><a href="/forecast-pair?pair=' + pairSlug(r.pair) + '" class="fcard-link">Full pair analysis →</a></div>'
       + '</div></div>';
@@ -419,10 +474,10 @@
       + '</div>';
   }
 
-  // Slim upgrade strip for the public proof pages (ledger/performance).
+  // Slim upgrade strip for the public proof pages (scorecard/performance).
   function upgradeStrip(msg) {
     return '<a class="fc-upstrip" href="' + STRIPE_BUY + '">'
-      + '<span class="fc-upstrip-txt">' + esc(msg || "This is the public track record. Pro members get today's live calls the moment they publish.") + '</span>'
+      + '<span class="fc-upstrip-txt">' + esc(msg || 'This is the public scorecard. Pro members see each session’s live tone reads the moment they publish, plus strong-read alerts.') + '</span>'
       + '<span class="fc-upstrip-cta">Go Pro — $30/mo →</span>'
       + '</a>';
   }
@@ -430,6 +485,7 @@
   window.FC = {
     isPro: isPro, onProChange: onProChange, lockCard: lockCard, upgradeStrip: upgradeStrip,
     fetchLedger: fetchLedger, loadLedger: loadLedger, fetchLiveForecasts: fetchLiveForecasts, getIdToken: getIdToken,
+    fetchScorecard: fetchScorecard, fetchLiveScorecard: fetchLiveScorecard, adaptSessionRow: adaptSessionRow,
     fetchTodaySummary: fetchTodaySummary,
     fetchPrices: fetchPrices, fetchNewsFor: fetchNewsFor,
     fetchSentimentHistory: fetchSentimentHistory, computeStats: computeStats,
