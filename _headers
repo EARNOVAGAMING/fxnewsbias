@@ -9,8 +9,12 @@
 /*.html
   Cache-Control: no-cache, must-revalidate
 
+# JS is NOT immutable — nav/main/etc change with the product (a stale
+# year-cached nav.js once showed the old $9.99 price for months). 10-min
+# freshness + a day of stale-while-revalidate keeps it fast but current.
+# References also carry ?v=N so a bump can hard-bust old browser caches.
 /*.js
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=600, stale-while-revalidate=86400
 
 /*.webp
   Cache-Control: public, max-age=31536000, immutable

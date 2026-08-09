@@ -3873,7 +3873,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <script type="application/ld+json">${breadcrumbLd}</script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6X181TFHYY');</script>
-<script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
+<script src="/nav.js?v=2" defer></script><script src="/cookie.js?v=2" defer></script><script src="/analytics.js?v=2" defer></script>
 </head><body>
 <div class="topbar"><div class="topbar-inner"><div class="topbar-left"><span>📅 ${dateStr}</span></div><div class="topbar-right"><a href="/insight/">Daily Insights</a><a href="/news">News</a></div></div></div>
 <style>@media(max-width:768px){.nav-menu,.nav-actions{display:none!important;}.nav-toggle{display:flex!important;}}@media(min-width:769px){.nav-toggle{display:flex!important;}.nav-menu,.nav-actions{display:none!important;}}</style>
@@ -3931,7 +3931,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <script type="application/ld+json">${collectionLd}</script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-6X181TFHYY"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6X181TFHYY');</script>
-<script src="/nav.js" defer></script><script src="/cookie.js" defer></script><script src="/analytics.js" defer></script>
+<script src="/nav.js?v=2" defer></script><script src="/cookie.js?v=2" defer></script><script src="/analytics.js?v=2" defer></script>
 </head><body>
 <div class="topbar"><div class="topbar-inner"><div><span style="color:#94a3b8;">📅 ${dateStr}</span></div><div><a href="/news" style="color:#94a3b8;margin-left:14px;">News</a></div></div></div>
 <style>@media(max-width:768px){.nav-menu,.nav-actions{display:none!important;}.nav-toggle{display:flex!important;}}@media(min-width:769px){.nav-toggle{display:flex!important;}.nav-menu,.nav-actions{display:none!important;}}</style>
