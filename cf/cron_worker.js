@@ -204,6 +204,16 @@ try {
   return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
 }
 }
+// Welcome/audience reconciliation — manual trigger (also runs daily 03:15).
+if (url.pathname === '/reconcile-welcome') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+try {
+  const result = await reconcileWelcomeAudience(env);
+  return new Response(JSON.stringify(result, null, 2), { status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
+} catch (e) {
+  return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+}
+}
 // One-time Stripe config: point the payment link's after-completion
 // redirect at /register?paid=1 (also self-runs from the cleanup cron).
 if (url.pathname === '/setup-stripe-redirect') {
@@ -483,6 +493,9 @@ if (event.cron === '*/15 * * * *') {
     ...(new Date().getUTCHours() === 3 ? [(async () => {
       await ingestGscPerformance(env).catch(e => console.log('ingestGscPerformance error:', e.message));
       await pruneStaleInsights(env).catch(e => console.log('pruneStaleInsights error:', e.message));
+      // Self-healing signup net: any registrant whose browser-side welcome
+      // call was aborted gets picked up here within a day.
+      await reconcileWelcomeAudience(env).catch(e => console.log('reconcileWelcomeAudience error:', e.message));
     })()] : []),
   ]));
 
@@ -1422,18 +1435,120 @@ https://fxnewsbias.com`;
     console.log(`Welcome email fetch error for ${email}:`, e.message);
   }
 
-  // Add user to Resend audience so they receive future broadcasts
-  if (env.RESEND_API_KEY && email) {
-    const firstName = name.split(' ')[0] || 'Trader';   // default so {{first_name}} renders correctly
-    const lastName  = name.split(' ').slice(1).join(' ') || '';
-    fetch('https://api.resend.com/audiences/7b690548-4533-43f5-a22f-bf862d1366ff/contacts', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, first_name: firstName, last_name: lastName, unsubscribed: false }),
-    }).catch(e => console.log('Resend audience sync error:', e.message));
-  }
+  // Add user to Resend audience so they receive future broadcasts. AWAITED:
+  // an un-awaited fetch here can be cancelled the moment the handler
+  // returns, which silently dropped audience adds.
+  await _addToAudience(env, email, name).catch(e => console.log('Resend audience sync error:', e.message));
 
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
+}
+
+async function _addToAudience(env, email, name) {
+  const firstName = (name || '').split(' ')[0] || 'Trader';   // default so {{first_name}} renders correctly
+  const lastName  = (name || '').split(' ').slice(1).join(' ') || '';
+  const r = await fetch('https://api.resend.com/audiences/7b690548-4533-43f5-a22f-bf862d1366ff/contacts', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, first_name: firstName, last_name: lastName, unsubscribed: false }),
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!r.ok) console.log(`audience add ${email}: HTTP ${r.status} ${(await r.text()).slice(0, 150)}`);
+  return r.ok;
+}
+
+// ============================================================
+// WELCOME / AUDIENCE RECONCILIATION — self-healing safety net
+//
+// The register flow calls /send-welcome-email from the browser right
+// before a page navigation; that request can be aborted mid-flight, so
+// some signups never got a welcome email or audience membership. This
+// job closes the gap from the server side, where nothing races:
+// every Firestore `users` doc is compared against the Resend audience;
+// missing users are added, and anyone who registered recently also
+// gets the welcome email they missed. Runs daily at 03:15 inside the
+// existing cleanup cron (no new triggers) + /reconcile-welcome (ops).
+// Idempotent: membership is the dedupe, so nobody is added or
+// welcomed twice.
+// ============================================================
+async function reconcileWelcomeAudience(env) {
+  if (!env.RESEND_API_KEY) return { ok: false, error: 'no RESEND_API_KEY' };
+  const AUDIENCE = '7b690548-4533-43f5-a22f-bf862d1366ff';
+
+  // 1. All registered users from Firestore (both email + Google paths write here).
+  const token = await getFirebaseToken(env);
+  const pid = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
+  const q = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents:runQuery`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'users' }], limit: 1000 } }),
+    signal: AbortSignal.timeout(25000),
+  });
+  if (!q.ok) return { ok: false, error: `firestore users query: ${q.status}` };
+  const users = [];
+  for (const row of await q.json()) {
+    const f = row.document && row.document.fields;
+    if (!f || !f.email || !f.email.stringValue || !f.email.stringValue.includes('@')) continue;
+    users.push({
+      email: f.email.stringValue.toLowerCase(),
+      name: (f.username && f.username.stringValue) || '',
+      createdAt: (f.createdAt && f.createdAt.stringValue) || null,
+    });
+  }
+
+  // 2. Current audience membership.
+  const c = await fetch(`https://api.resend.com/audiences/${AUDIENCE}/contacts`, {
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}` }, signal: AbortSignal.timeout(15000),
+  });
+  if (!c.ok) return { ok: false, error: `resend contacts list: ${c.status}` };
+  const have = new Set(((await c.json()).data || []).map(x => String(x.email || '').toLowerCase()));
+
+  // 3. Add the missing; recent registrants also get the welcome they missed.
+  const WELCOME_WINDOW_MS = 14 * 864e5;
+  let added = 0, welcomed = 0;
+  for (const u of users) {
+    if (have.has(u.email)) continue;
+    const ok = await _addToAudience(env, u.email, u.name).catch(() => false);
+    if (ok) added++;
+    const createdMs = u.createdAt ? Date.parse(u.createdAt) : NaN;
+    if (isFinite(createdMs) && Date.now() - createdMs < WELCOME_WINDOW_MS) {
+      await _sendReconcileWelcome(env, u.email, u.name).catch(e => console.log('reconcile welcome', u.email, e.message));
+      welcomed++;
+    }
+    await new Promise(r => setTimeout(r, 600));   // Resend rate limit headroom
+  }
+  const summary = { ok: true, users: users.length, inAudience: have.size, added, welcomed };
+  console.log('reconcileWelcomeAudience:', JSON.stringify(summary));
+  return summary;
+}
+
+// Same welcome email as /send-welcome-email, callable server-side.
+async function _sendReconcileWelcome(env, email, name) {
+  const firstName = (name || '').split(' ')[0] || 'there';
+  const from = env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com';
+  const r = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: `FXNewsBias <${from}>`,
+      to: [email],
+      subject: 'Welcome to FXNewsBias — Your Forex Sentiment Edge Starts Now 🚀',
+      html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
+<div style="background:#1e40af;padding:28px 32px;text-align:center;"><p style="margin:0;font-size:12px;color:#93c5fd;letter-spacing:.08em;text-transform:uppercase;font-weight:600;">FXNewsBias</p><h1 style="margin:10px 0 0;color:#fff;font-size:23px;font-weight:800;">Your Forex Sentiment Edge Starts Now 🚀</h1></div>
+<div style="padding:28px 32px;">
+<p style="margin:0 0 16px;font-size:15px;color:#0f172a;">Hi <strong>${firstName}</strong>,</p>
+<p style="margin:0 0 18px;font-size:14px;color:#334155;line-height:1.7;">Welcome to FXNewsBias. Here's what's waiting for you:</p>
+<p style="margin:0 0 8px;font-size:14px;color:#0f172a;">📊 Live bias scores for all 8 majors, refreshed through the day</p>
+<p style="margin:0 0 8px;font-size:14px;color:#0f172a;">📰 News sentiment across the major pairs</p>
+<p style="margin:0 0 8px;font-size:14px;color:#0f172a;">📅 Economic calendar with the releases that matter</p>
+<p style="margin:0 0 22px;font-size:14px;color:#0f172a;">📬 A daily London-session brief in your inbox each weekday</p>
+<a href="https://fxnewsbias.com/" style="display:inline-block;background:#2563eb;color:#fff;font-size:14px;font-weight:700;padding:12px 26px;border-radius:8px;text-decoration:none;">Open your dashboard →</a>
+<p style="margin:24px 0 0;font-size:14px;color:#0f172a;">Happy trading,<br><strong>The FXNewsBias Team</strong></p>
+</div>
+<div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 32px;text-align:center;"><p style="margin:0;font-size:11.5px;color:#94a3b8;"><a href="https://fxnewsbias.com" style="color:#1e40af;text-decoration:none;">fxnewsbias.com</a> · Not financial advice</p></div></div>`,
+    }),
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!r.ok) console.log(`reconcile welcome ${email}: HTTP ${r.status}`);
 }
 
 // ============================================
