@@ -78,6 +78,19 @@ export default {
       return serveCurrencyPage(request, ccyMatch[1].toLowerCase(), env);
     }
 
+    // Guides — evergreen reference library. Canonical: no trailing slash.
+    // Each guide gets the current 8-currency news-bias strip injected at
+    // request time (same placeholder machinery as the pair pages), so the
+    // "live data it describes" stays genuinely live.
+    const guideMatch = url.pathname.match(/^\/guides(?:\/([\w-]+))?\/?$/);
+    if (guideMatch) {
+      if (url.pathname !== '/guides' && url.pathname.endsWith('/')) {
+        url.pathname = guideMatch[1] ? `/guides/${guideMatch[1]}` : '/guides';
+        return Response.redirect(url.toString(), 301);
+      }
+      return serveGuidePage(request, guideMatch[1] || null, env);
+    }
+
     // News hub — server-render the latest headlines so crawlers see real content.
     if (url.pathname === '/news') return serveNewsPage(request, env);
 
@@ -209,6 +222,42 @@ async function serveCurrencyPage(request, code, env) {
 
   if (!assetResp.ok) return assetResp;
   return injectAndServe(await assetResp.text(), seoHtml, assetResp);
+}
+
+// ── Guides ────────────────────────────────────────────────────────────────────
+async function serveGuidePage(request, slug, env) {
+  const assetUrl = new URL(request.url);
+  assetUrl.pathname = slug ? `/guides/${slug}/` : '/guides/';
+
+  const [assetResp, strip] = await Promise.all([
+    env.ASSETS.fetch(new Request(assetUrl.toString(), request)),
+    slug ? buildLiveBiasStrip(env) : Promise.resolve(null),
+  ]);
+
+  if (!assetResp.ok) return assetResp;
+  return injectAndServe(await assetResp.text(), strip, assetResp);
+}
+
+// Compact current-bias strip for guide pages. Fail-open: null just leaves
+// the placeholder comment in the page.
+async function buildLiveBiasStrip(env) {
+  try {
+    const r = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/sentiment?select=currency,score&order=id.desc&limit=16`,
+      { headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(8000) }
+    );
+    if (!r.ok) return null;
+    const seen = {};
+    for (const row of await r.json()) if (seen[row.currency] == null) seen[row.currency] = row.score;
+    const order = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'NZD'];
+    const parts = order.filter((c) => seen[c] != null).map((c) => {
+      const s = seen[c];
+      const col = s >= 55 ? '#047857' : s <= 45 ? '#dc2626' : '#b45309';
+      return `<span class="ls-ccy"><b>${c}</b> <span style="color:${col};font-weight:700;">${s}</span></span>`;
+    });
+    if (parts.length < 4) return null;
+    return `<div class="live-strip">📡 <b>News bias right now</b> (0–100, refreshed through the day):<br>${parts.join('')}<a href="/" style="font-size:12.5px;">full dashboard →</a></div>`;
+  } catch { return null; }
 }
 
 // ── Sitemap lastmod refresh ─────────────────────────────────────────────────
