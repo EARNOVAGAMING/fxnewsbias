@@ -1,8 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /login
-Disallow: /register
 Disallow: /auth-action
 Disallow: /auth-action.html
 
