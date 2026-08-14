@@ -342,6 +342,19 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
       </div>
     </div>
 
+    <div class="sub-card" id="push-card" style="display:none;">
+      <div class="section-title">Session insights on your device</div>
+      <p style="font-size:14px;color:#475569;line-height:1.6;margin-bottom:14px;">
+        Get notified when a trading session produces a meaningful read — about
+        1–2 times a weekday, never more than 3. Free and Pro members both get
+        these; they link straight to the session insight.
+      </p>
+      <div id="push-state" style="font-size:13px;color:#64748b;margin-bottom:12px;">Checking…</div>
+      <button class="btn btn-primary" id="push-enable" style="display:none;">🔔 Enable notifications</button>
+      <button class="btn btn-outline" id="push-disable" style="display:none;">Turn off notifications</button>
+      <div id="push-note" style="font-size:12.5px;color:#94a3b8;margin-top:10px;line-height:1.6;"></div>
+    </div>
+
     <div class="danger-zone">
       <div class="section-title">Account Actions</div>
       <button class="btn-danger" onclick="window.logoutUser()">Logout</button>
@@ -793,6 +806,85 @@ async function loadTickerPrices() {
 }
 loadTickerPrices();
 setInterval(loadTickerPrices, 300000);
+
+/* ── Web Push opt-in (V1) ───────────────────────────────────────────────
+   Permission is requested ONLY inside the click handler below. Nothing
+   here runs automatically beyond reading current state. */
+(function () {
+  var card = document.getElementById('push-card');
+  var stateEl = document.getElementById('push-state');
+  var noteEl = document.getElementById('push-note');
+  var onBtn = document.getElementById('push-enable');
+  var offBtn = document.getElementById('push-disable');
+  // NOTE: push.js is deferred, so FXNBPush is not defined yet at parse time.
+  // Every use below happens inside an event handler that fires after it loads.
+  if (!card) return;
+
+  function show(msg, note) {
+    stateEl.textContent = msg;
+    noteEl.textContent = note || '';
+  }
+  function render(st) {
+    card.style.display = 'block';
+    if (!FXNBPush.supported()) {
+      show('Not supported in this browser.',
+           'Web Push needs Chrome, Edge, Firefox, or Safari 16.4+.');
+      onBtn.style.display = offBtn.style.display = 'none';
+      return;
+    }
+    if (FXNBPush.iosNeedsInstall()) {
+      show('Add FXNewsBias to your Home Screen first.',
+           'On iPhone and iPad, notifications only work from the installed app: Share → Add to Home Screen, then open it and return here.');
+      onBtn.style.display = offBtn.style.display = 'none';
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      show('Notifications are blocked in your browser settings.',
+           'Re-allow notifications for fxnewsbias.com in your browser’s site settings, then reload this page.');
+      onBtn.style.display = offBtn.style.display = 'none';
+      return;
+    }
+    if (st && st.subscribed) {
+      show('Enabled on this device.' + (st.devices > 1 ? ' (' + st.devices + ' devices total)' : ''),
+           'Maximum 3 notifications per day. Email alerts are unaffected.');
+      onBtn.style.display = 'none'; offBtn.style.display = 'inline-block';
+    } else {
+      show('Not enabled on this device.', '');
+      onBtn.style.display = 'inline-block'; offBtn.style.display = 'none';
+    }
+  }
+
+  onBtn.addEventListener('click', function () {
+    onBtn.disabled = true; show('Enabling…');
+    FXNBPush.enable()
+      .then(function () { return FXNBPush.status(); })
+      .then(render)
+      .catch(function (e) {
+        var m = String(e && e.message || e);
+        show('Could not enable notifications.',
+             m.indexOf('permission') === 0 ? 'You dismissed or blocked the browser prompt.' : m);
+        onBtn.style.display = 'inline-block';
+      })
+      .then(function () { onBtn.disabled = false; });
+  });
+
+  offBtn.addEventListener('click', function () {
+    offBtn.disabled = true; show('Turning off…');
+    FXNBPush.disable()
+      .then(function () { return FXNBPush.status(); })
+      .then(render)
+      .catch(function () { show('Could not turn off notifications.'); })
+      .then(function () { offBtn.disabled = false; });
+  });
+
+  // Render only once Firebase has resolved the signed-in user.
+  window.addEventListener('userLoaded', function () {
+    FXNBPush.status().then(function (st) {
+      if (st.signedIn) render(st);
+    }).catch(function () {});
+  });
+})();
 </script>
+<script src="/push.js?v=1" defer></script>
 </body>
 </html>

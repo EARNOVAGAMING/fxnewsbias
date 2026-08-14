@@ -345,6 +345,17 @@ return handleSessionBiasSummary(request, env);
 if (url.pathname === '/api/ga4-summary') {
 return handleGa4Summary(request, env);
 }
+// Web Push (V1) — session-insight delivery only. Identity is always derived
+// server-side from the Firebase ID token; the VAPID private key never leaves
+// the worker (only the public key is exposed, which is by design).
+if (url.pathname === '/api/push/public-key') {
+return new Response(JSON.stringify({ key: env.VAPID_PUBLIC_KEY || null }), {
+  status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600', 'Access-Control-Allow-Origin': '*' } });
+}
+if (url.pathname === '/api/push/subscribe')   return handlePushSubscribe(request, env);
+if (url.pathname === '/api/push/unsubscribe') return handlePushUnsubscribe(request, env);
+if (url.pathname === '/api/push/status')      return handlePushStatus(request, env);
+if (url.pathname === '/api/push/dry-run')     return handlePushDryRun(request, env);
 // Manual session-bias trigger (ops/seed): settle then publish for the given
 // session (?session=asean|london|newyork; defaults by current UTC hour).
 if (url.pathname === '/run-session-bias') {
@@ -501,30 +512,46 @@ if (event.cron === '*/15 * * * *') {
       // Self-healing signup net: any registrant whose browser-side welcome
       // call was aborted gets picked up here within a day.
       await reconcileWelcomeAudience(env).catch(e => console.log('reconcileWelcomeAudience error:', e.message));
+      // Web Push hygiene: retire subscriptions that keep failing (410/404 are
+      // deactivated inline at send time; this catches soft/repeated failures).
+      await cleanupPushSubscriptions(env).catch(e => console.log('cleanupPushSubscriptions error:', e.message));
     })()] : []),
   ]));
 
 } else if (SESSION_BY_CRON[event.cron] && !_isWeekend) {
   const session = SESSION_BY_CRON[event.cron];
-  ctx.waitUntil(Promise.all([
-    generateDailyInsight(env, session).catch(e => console.log(`Daily insight (${session}) error:`, e.message)),
-    pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (insight) error:', e.message)),
-    // Session Bias Scorecard: settle the prior session's open reads at this
-    // session's open, then publish this session's reads — sentiment is fresh
-    // from the :00 cycle, prices are 15-min fresh.
-    (async () => {
-      await settleSessionBias(env).catch(e => console.log('settleSessionBias error:', e.message));
-      await generateSessionBias(env, session).catch(e => console.log('generateSessionBias error:', e.message));
-    })(),
-    // Legacy pair_forecasts engine is FROZEN after the 91-day backtest showed
-    // no directional edge: no new rows publish, but any still-open rows keep
-    // settling (London run) so the immutable ledger closes out cleanly.
-    ...(session === 'london' ? [
-      settlePairForecasts(env).catch(e => console.log('settlePairForecasts error:', e.message)),
-    ] : []),
-    // Midnight (00:13) run also syncs legacy forecast posts into the sitemap
-    ...(session === 'asean' ? [syncForecastSitemap(env).catch(e => console.log('syncForecastSitemap error:', e.message))] : []),
-  ]));
+  // JOIN POINT (Web Push V1): the core session work below is unchanged —
+  // same calls, same parallelism, same per-task .catch() isolation. The only
+  // difference is that generateDailyInsight's ALREADY-EXISTING return value
+  // ({ok, slug, ...}) is now captured instead of discarded, so the push step
+  // can run AFTER both it and generateSessionBias have completed. Push is
+  // strictly last, self-catching, and can never delay or fail core work.
+  ctx.waitUntil((async () => {
+    const [insight] = await Promise.all([
+      generateDailyInsight(env, session).catch(e => { console.log(`Daily insight (${session}) error:`, e.message); return null; }),
+      pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (insight) error:', e.message)),
+      // Session Bias Scorecard: settle the prior session's open reads at this
+      // session's open, then publish this session's reads — sentiment is fresh
+      // from the :00 cycle, prices are 15-min fresh.
+      (async () => {
+        await settleSessionBias(env).catch(e => console.log('settleSessionBias error:', e.message));
+        await generateSessionBias(env, session).catch(e => console.log('generateSessionBias error:', e.message));
+      })(),
+      // Legacy pair_forecasts engine is FROZEN after the 91-day backtest showed
+      // no directional edge: no new rows publish, but any still-open rows keep
+      // settling (London run) so the immutable ledger closes out cleanly.
+      ...(session === 'london' ? [
+        settlePairForecasts(env).catch(e => console.log('settlePairForecasts error:', e.message)),
+      ] : []),
+      // Midnight (00:13) run also syncs legacy forecast posts into the sitemap
+      ...(session === 'asean' ? [syncForecastSitemap(env).catch(e => console.log('syncForecastSitemap error:', e.message))] : []),
+    ]);
+    // Secondary delivery. Reads the significance decision generateSessionBias
+    // just persisted; sends nothing if the session was not meaningful or the
+    // article has no valid slug.
+    await pushSessionInsight(env, session, insight)
+      .catch(e => console.log('pushSessionInsight error:', e.message));
+  })());
 
 } else if (event.cron === '30 6 * * *' && !_isWeekend) {
   // 06:30 UTC = 2:30pm MYT — send London insight as daily broadcast to all users
@@ -6012,6 +6039,270 @@ async function handleSessionBiasSummary(request, env) {
   } catch (e) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', ...cors } });
   }
+}
+
+// ============================================================
+// WEB PUSH — delivery layer ONLY (V1)
+//
+// This block adds NO intelligence. It does not score sentiment, detect
+// sessions, or decide what is meaningful. It reads decisions the existing
+// FXNB pipeline has already made and persisted:
+//   • significance  -> session_bias.strength >= 4 (written by
+//                      generateSessionBias, unchanged)
+//   • content+link  -> insight/articles.json + the slug returned by
+//                      generateDailyInsight (unchanged)
+// Push is payload-less: we only wake the service worker, which then reads
+// the public article manifest. No secrets leave the worker.
+//
+// Audience is registered users with an active subscription — deliberately
+// NOT _queryProAlertUsers (that is Pro-only, for the Pro email alerts).
+// Session insights are public content, so Free + Pro receive the same
+// notification and no Pro-only data is ever included.
+// ============================================================
+
+const PUSH_DAILY_CAP = 3;
+
+function _b64uFromBytes(bytes) {
+  let s = '';
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+function _bytesFromB64u(str) {
+  const s = String(str).replace(/-/g, '+').replace(/_/g, '/');
+  const padded = s + '='.repeat((4 - (s.length % 4)) % 4);
+  return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+}
+
+// Cached per worker isolate — importKey is the expensive part.
+let _vapidKeyCache = null;
+async function _vapidSigningKey(env) {
+  if (_vapidKeyCache) return _vapidKeyCache;
+  const pub = _bytesFromB64u(env.VAPID_PUBLIC_KEY);   // 65 bytes: 0x04 || x || y
+  if (pub.length !== 65) throw new Error(`bad VAPID_PUBLIC_KEY length ${pub.length}`);
+  _vapidKeyCache = await crypto.subtle.importKey(
+    'jwk',
+    {
+      kty: 'EC', crv: 'P-256',
+      d: env.VAPID_PRIVATE_KEY,
+      x: _b64uFromBytes(pub.slice(1, 33)),
+      y: _b64uFromBytes(pub.slice(33, 65)),
+      ext: true,
+    },
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign']
+  );
+  return _vapidKeyCache;
+}
+
+// VAPID JWT (ES256). aud = origin of the push service endpoint.
+async function _vapidAuthHeader(env, endpoint) {
+  const aud = new URL(endpoint).origin;
+  const now = Math.floor(Date.now() / 1000);
+  const b64uJson = (o) => _b64uFromBytes(new TextEncoder().encode(JSON.stringify(o)));
+  const signingInput = `${b64uJson({ typ: 'JWT', alg: 'ES256' })}.${b64uJson({
+    aud, exp: now + 12 * 3600, sub: `mailto:${env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com'}`,
+  })}`;
+  const key = await _vapidSigningKey(env);
+  const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, new TextEncoder().encode(signingInput));
+  return `vapid t=${signingInput}.${_b64uFromBytes(new Uint8Array(sig))}, k=${env.VAPID_PUBLIC_KEY}`;
+}
+
+// Single payload-less push. Returns {ok, status, gone} — `gone` means the
+// subscription is permanently dead (410/404) and should be deactivated.
+async function _sendWebPush(env, endpoint) {
+  try {
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: { TTL: '86400', Authorization: await _vapidAuthHeader(env, endpoint) },
+      signal: AbortSignal.timeout(10000),
+    });
+    return { ok: r.ok, status: r.status, gone: r.status === 404 || r.status === 410 };
+  } catch (e) {
+    return { ok: false, status: 0, gone: false, error: e.message };
+  }
+}
+
+async function _deactivateSubscription(env, id, reason) {
+  await _fcSb(env, 'PATCH', `push_subscriptions?id=eq.${id}`, {
+    active: false, last_failure: new Date().toISOString(), updated_at: new Date().toISOString(),
+  }, { Prefer: 'return=minimal' }).catch((e) => console.log(`push deactivate ${id} (${reason}):`, e.message));
+}
+
+// Core: attach push to an ALREADY-COMPLETED session insight.
+// dryRun=true resolves audience, gate and cap WITHOUT claiming slots or sending.
+async function pushSessionInsight(env, session, insight, { dryRun = false } = {}) {
+  const out = { ok: true, session, dryRun, slug: null, meaningful: false, users: 0, eligible: 0, capped: 0, alreadySent: 0, devicesSent: 0, devicesFailed: 0, deactivated: 0 };
+  try {
+    if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) { out.ok = false; out.reason = 'vapid-not-configured'; return out; }
+
+    // Never notify toward an article that does not exist.
+    const slug = insight && insight.ok && insight.slug ? insight.slug : null;
+    if (!slug) { out.reason = 'no-valid-slug'; return out; }
+    out.slug = slug;
+
+    // REUSE the existing significance decision. Read-only; nothing recalculated.
+    const today = new Date().toISOString().slice(0, 10);
+    const strong = await _fcSb(env, 'GET',
+      `session_bias?select=id&session_date=eq.${today}&session=eq.${session}&strength=gte.4&limit=1`);
+    if (!strong || !strong.length) { out.reason = 'not-meaningful'; return out; }
+    out.meaningful = true;
+
+    const subs = await _fcSb(env, 'GET',
+      'push_subscriptions?select=id,user_email,endpoint&active=is.true&limit=5000') || [];
+    if (!subs.length) { out.reason = 'no-subscribers'; return out; }
+
+    const byUser = {};
+    for (const s of subs) (byUser[s.user_email] = byUser[s.user_email] || []).push(s);
+    out.users = Object.keys(byUser).length;
+
+    for (const [email, devices] of Object.entries(byUser)) {
+      if (dryRun) {
+        // Report what WOULD happen without consuming a slot.
+        const log = await _fcSb(env, 'GET',
+          `push_log?select=session&user_email=eq.${encodeURIComponent(email)}&sent_date=eq.${today}`) || [];
+        if (log.some((r) => r.session === session)) out.alreadySent++;
+        else if (log.length >= PUSH_DAILY_CAP) out.capped++;
+        else { out.eligible++; out.devicesSent += devices.length; }
+        continue;
+      }
+
+      // ATOMIC: advisory-locked claim. Enforces both the per-session
+      // idempotency and the 3/day per-USER cap inside one transaction, so
+      // concurrent worker invocations cannot exceed either.
+      let claim;
+      try {
+        claim = await _fcSb(env, 'POST', 'rpc/claim_push_slot',
+          { p_email: email, p_session: session, p_slug: slug, p_cap: PUSH_DAILY_CAP });
+      } catch (e) { console.log(`push claim failed ${email}:`, e.message); continue; }
+      const c = Array.isArray(claim) ? claim[0] : claim;
+      if (!c || !c.claimed) {
+        if (c && c.reason === 'daily_cap_reached') out.capped++;
+        else out.alreadySent++;
+        continue;
+      }
+      out.eligible++;
+
+      // Fan out to every active device for this user. One claimed slot,
+      // N deliveries — device failures never consume extra slots.
+      let delivered = 0;
+      for (const d of devices) {
+        const res = await _sendWebPush(env, d.endpoint);
+        if (res.ok) {
+          delivered++; out.devicesSent++;
+          await _fcSb(env, 'PATCH', `push_subscriptions?id=eq.${d.id}`,
+            { last_success: new Date().toISOString(), failure_count: 0, updated_at: new Date().toISOString() },
+            { Prefer: 'return=minimal' }).catch(() => {});
+        } else {
+          out.devicesFailed++;
+          if (res.gone) { await _deactivateSubscription(env, d.id, `http-${res.status}`); out.deactivated++; }
+          else {
+            await _fcSb(env, 'PATCH', `push_subscriptions?id=eq.${d.id}`,
+              { last_failure: new Date().toISOString(), failure_count: (d.failure_count || 0) + 1, updated_at: new Date().toISOString() },
+              { Prefer: 'return=minimal' }).catch(() => {});
+          }
+        }
+      }
+      await _fcSb(env, 'PATCH',
+        `push_log?user_email=eq.${encodeURIComponent(email)}&sent_date=eq.${today}&session=eq.${session}`,
+        { devices_sent: delivered }, { Prefer: 'return=minimal' }).catch(() => {});
+    }
+
+    console.log(`pushSessionInsight(${session}${dryRun ? ' DRY' : ''}): ${JSON.stringify(out)}`);
+    return out;
+  } catch (e) {
+    // Never propagate: push must not affect the session pipeline.
+    console.log('pushSessionInsight error:', e.message);
+    out.ok = false; out.error = e.message;
+    return out;
+  }
+}
+
+// Retire subscriptions with repeated soft failures. Runs inside the existing
+// 03:15 cleanup cron — no new trigger. push_log history is never deleted.
+async function cleanupPushSubscriptions(env) {
+  const stale = await _fcSb(env, 'GET',
+    'push_subscriptions?select=id&active=is.true&failure_count=gte.5&limit=500') || [];
+  for (const s of stale) await _deactivateSubscription(env, s.id, 'failure-sweep');
+  if (stale.length) console.log(`cleanupPushSubscriptions: deactivated ${stale.length}`);
+  return { ok: true, deactivated: stale.length };
+}
+
+// POST /api/push/subscribe — identity is derived server-side from the Firebase
+// ID token; a client-supplied email is never trusted.
+async function handlePushSubscribe(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  try {
+    const { idToken, subscription, userAgent } = await request.json();
+    const user = await _verifyFirebaseUser(env, idToken);
+    if (!user) return _proJson({ error: 'unauthorized' }, 401);
+    const ep = subscription && subscription.endpoint;
+    const keys = (subscription && subscription.keys) || {};
+    if (!ep || !/^https:\/\//.test(ep) || !keys.p256dh || !keys.auth) {
+      return _proJson({ error: 'invalid-subscription' }, 400);
+    }
+    // on_conflict(endpoint): re-subscribing the same browser re-points it at
+    // the current user and reactivates it rather than creating duplicates.
+    await _fcSb(env, 'POST', 'push_subscriptions?on_conflict=endpoint', [{
+      user_email: user.email, endpoint: ep, p256dh: keys.p256dh, auth: keys.auth,
+      user_agent: String(userAgent || '').slice(0, 300),
+      active: true, failure_count: 0, updated_at: new Date().toISOString(),
+    }], { Prefer: 'resolution=merge-duplicates,return=minimal' });
+    return _proJson({ ok: true });
+  } catch (e) { return _proJson({ error: e.message }, 500); }
+}
+
+// POST /api/push/unsubscribe — deactivates (never deletes push_log history).
+async function handlePushUnsubscribe(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  try {
+    const { idToken, endpoint } = await request.json();
+    const user = await _verifyFirebaseUser(env, idToken);
+    if (!user) return _proJson({ error: 'unauthorized' }, 401);
+    if (!endpoint) return _proJson({ error: 'endpoint-required' }, 400);
+    // Scoped to the authenticated user: nobody can deactivate another account's device.
+    await _fcSb(env, 'PATCH',
+      `push_subscriptions?endpoint=eq.${encodeURIComponent(endpoint)}&user_email=eq.${encodeURIComponent(user.email)}`,
+      { active: false, updated_at: new Date().toISOString() }, { Prefer: 'return=minimal' });
+    return _proJson({ ok: true });
+  } catch (e) { return _proJson({ error: e.message }, 500); }
+}
+
+// POST /api/push/status — is this browser subscribed for this user?
+async function handlePushStatus(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  try {
+    const { idToken, endpoint } = await request.json();
+    const user = await _verifyFirebaseUser(env, idToken);
+    if (!user) return _proJson({ error: 'unauthorized' }, 401);
+    const rows = endpoint ? await _fcSb(env, 'GET',
+      `push_subscriptions?select=active&endpoint=eq.${encodeURIComponent(endpoint)}&user_email=eq.${encodeURIComponent(user.email)}&limit=1`) : [];
+    const all = await _fcSb(env, 'GET',
+      `push_subscriptions?select=id&user_email=eq.${encodeURIComponent(user.email)}&active=is.true`) || [];
+    return _proJson({ ok: true, subscribed: !!(rows && rows[0] && rows[0].active), devices: all.length });
+  } catch (e) { return _proJson({ error: e.message }, 500); }
+}
+
+// POST /api/push/dry-run — admin-only. Resolves gate + audience + cap and
+// reports what WOULD be sent. Sends nothing, exposes no secrets, no endpoints.
+async function handlePushDryRun(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  try {
+    const { idToken, session } = await request.json();
+    const user = await _verifyFirebaseUser(env, idToken);
+    if (!user || !['dineshsanther123gf@gmail.com'].includes((user.email || '').toLowerCase())) {
+      return _proJson({ error: 'admin-only' }, 403);
+    }
+    const s = ['asean', 'london', 'newyork'].includes(session) ? session : 'london';
+    const manifest = await _insGetFile(env, 'insight/articles.json').catch(() => null);
+    const latest = manifest ? (JSON.parse(manifest)[0] || null) : null;
+    const result = await pushSessionInsight(env, s, latest ? { ok: true, slug: latest.slug } : null, { dryRun: true });
+    return _proJson({
+      ok: true, vapidConfigured: !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY),
+      latestArticle: latest ? { slug: latest.slug, headline: latest.headline } : null,
+      result,
+    });
+  } catch (e) { return _proJson({ error: e.message }, 500); }
 }
 
 // ============================================================
