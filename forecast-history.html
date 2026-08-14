@@ -192,10 +192,15 @@ function render(){
   });
 }
 
+// CLS: drop the server-rendered block in the same task that renders the
+// interactive ledger, not at load time — removing it early collapsed the
+// page before a replacement existed.
+function dropSsr(){ var s=document.getElementById('fc-ssr'); if(s) s.remove(); }
+
 function load(){
   if(loaded)return; loaded=true;
-  var _ssr=document.getElementById('fc-ssr'); if(_ssr) _ssr.remove();  // drop server-rendered fallback; JS renders the interactive version
   FC.loadLedger().then(function(rows){
+    dropSsr();
     allRows=rows||[];
     var pairs={};allRows.forEach(function(r){pairs[r.pair]=1;});
     // session filter only makes sense for session reads (legacy rows have none)
@@ -207,6 +212,7 @@ function load(){
     });
     render();
   }).catch(function(){
+    dropSsr();
     document.querySelector('#ledger-table tbody').innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">Could not load the ledger. Please refresh.</td></tr>';
   });
 }

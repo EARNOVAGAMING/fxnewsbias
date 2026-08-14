@@ -255,9 +255,14 @@ function renderRecent(){
   }).join('');
 }
 
+// CLS: the server-rendered block is a paragraph plus a 20-row table. Removing
+// it at load time collapsed several hundred px before any replacement existed,
+// shifting the whole page. It is now dropped in the SAME task that renders the
+// interactive content, so the browser paints the swap once.
+function dropSsr(){ var s=document.getElementById('fc-ssr'); if(s) s.remove(); }
+
 function load(){
   if(loaded)return; loaded=true;
-  var _ssr=document.getElementById('fc-ssr'); if(_ssr) _ssr.remove();  // drop server-rendered fallback; JS renders the interactive version
   Promise.all([
     FC.loadLedger(),
     FC.fetchPrices().catch(function(){return [];}),
@@ -271,10 +276,12 @@ function load(){
     var latestDate=allRows.length?allRows[0].forecast_date:(todaySummary?todaySummary.latest_date:null);
     todayRows=(latestDate&&FC.isPro())?allRows.filter(function(r){return r.forecast_date===latestDate;}):[];
     if(latestDate){document.getElementById('today-label').textContent='Session reads — '+FC.fmtDate(latestDate);}
+    dropSsr();
     renderStats(FC.computeStats(allRows),todayRows);
     renderCards();
     renderRecent();
   }).catch(function(){
+    dropSsr();
     grid.innerHTML='<div class="empty-state" style="grid-column:1/-1;"><div class="ico">⚠️</div><div class="t">Could not load session reads</div><div class="s">Please refresh in a moment.</div></div>';
   });
 }

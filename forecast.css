@@ -77,7 +77,15 @@ nav a{color:#cbd5e1;font-weight:500;font-size:14px;}nav a:hover{color:#60a5fa;}
 .stat-val.up{color:var(--bull);}.stat-val.down{color:var(--bear);}.stat-val.gold{color:var(--gold-a);}
 
 /* ── forecast cards ── */
-.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;}
+/* CLS: the grid starts with a one-line loading state and is then filled with
+   full-height cards. Reserving space keeps that swap from shifting everything
+   below it. Sized to roughly one row of cards / the Pro lock card. */
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;min-height:400px;align-content:start;}
+/* Same reasoning: the ledger renders a single "Loading…" row, then 8 rows. */
+.ledger-card{min-height:340px;}
+/* Stat values animate from "—" to a number — pin the row height so the
+   strip cannot reflow mid-count. */
+.stat-val{min-height:30px;}
 .fcard{background:var(--card-grad);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:12px;min-width:0;transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease;}
 .fcard:hover{border-color:rgba(59,130,246,.35);transform:translateY(-2px);box-shadow:var(--shadow-md);}
 .fcard.long{border-left:3px solid var(--bull);}
@@ -298,7 +306,9 @@ footer a{color:#94a3b8;margin:0 10px;}
   .topbar-inner{padding:0 14px;}
   .topbar-left span:nth-child(n+2){display:none;}
   .stat-strip{grid-template-columns:repeat(2,1fr);}
-  .fc-grid{grid-template-columns:1fr;}
+  /* One column on mobile: a single card is taller, so reserve accordingly. */
+  .fc-grid{grid-template-columns:1fr;min-height:440px;}
+  .ledger-card{min-height:300px;}
   .stat-val{font-size:20px;}
   .pro-gate-features{grid-template-columns:1fr;}
 }
