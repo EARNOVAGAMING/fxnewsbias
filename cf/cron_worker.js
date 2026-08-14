@@ -6048,7 +6048,7 @@ async function handleGa4Summary(request, env) {
   const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
   if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
   try {
-    const [realtime, totals, pages] = await Promise.all([
+    const [realtime, totals, pages, channels] = await Promise.all([
       _ga4Fetch(env, 'runRealtimeReport', { metrics: [{ name: 'activeUsers' }] }),
       _ga4Fetch(env, 'runReport', {
         dateRanges: [
@@ -6064,6 +6064,18 @@ async function handleGa4Summary(request, env) {
         metrics: [{ name: 'screenPageViews' }],
         orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
         limit: 8,
+      }),
+      // Non-overlapping windows so this attributes growth correctly: last7d
+      // vs the 21 days immediately before it, broken out by acquisition
+      // channel. Answers "is growth organic (SEO) or something else
+      // (email/direct/social)?" instead of guessing from a single total.
+      _ga4Fetch(env, 'runReport', {
+        dateRanges: [
+          { startDate: '7daysAgo', endDate: 'today', name: 'last7d' },
+          { startDate: '28daysAgo', endDate: '8daysAgo', name: 'prior21d' },
+        ],
+        dimensions: [{ name: 'sessionDefaultChannelGroup' }],
+        metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
       }),
     ]);
 
@@ -6083,12 +6095,29 @@ async function handleGa4Summary(request, env) {
       ? pages.rows.map(r => ({ path: r.dimensionValues[0].value, views: parseInt(r.metricValues[0].value, 10) }))
       : [];
 
+    // channel -> { last7d: {sessions, activeUsers}, prior21d: {...} }. GA4
+    // returns one row per (channel, dateRange) combo; dimensionValues[0] is
+    // the channel, dimensionValues[1] is the dateRange name for a multi-range
+    // request with a dimension.
+    const byChannel = {};
+    if (!channels.error && channels.rows) {
+      for (const row of channels.rows) {
+        const channel = row.dimensionValues[0].value;
+        const range = row.dimensionValues[1].value;
+        const [sessions, activeUsers] = row.metricValues.map(v => parseInt(v.value, 10));
+        (byChannel[channel] = byChannel[channel] || {})[range] = { sessions, activeUsers };
+      }
+    }
+
     return new Response(JSON.stringify({
       ok: true, property: GA4_PROPERTY_ID,
       realtime: { activeUsersNow: activeNow, error: realtime.error || null },
       today: byRange.today || null, last7d: byRange.last7d || null, last28d: byRange.last28d || null,
       totalsError: totals.error || null,
       topPages7d: topPages, topPagesError: pages.error || null,
+      // last7d/prior21d per channel — prior21d is a 3-week window, so divide
+      // by 3 for a fair per-week comparison against last7d.
+      channelsLast7dVsPrior21d: byChannel, channelsError: channels.error || null,
     }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=180', ...cors } });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', ...cors } });
