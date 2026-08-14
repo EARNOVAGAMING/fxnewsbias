@@ -340,6 +340,11 @@ return handleSessionBiasLedger(request, env);
 if (url.pathname === '/api/session-bias/summary') {
 return handleSessionBiasSummary(request, env);
 }
+// Public traffic snapshot from GA4 — realtime active users + today/7d/28d
+// totals + top pages. Faster signal than GSC (which lags ~2 days).
+if (url.pathname === '/api/ga4-summary') {
+return handleGa4Summary(request, env);
+}
 // Manual session-bias trigger (ops/seed): settle then publish for the given
 // session (?session=asean|london|newyork; defaults by current UTC hour).
 if (url.pathname === '/run-session-bias') {
@@ -866,7 +871,11 @@ console.log('Firestore update error:', e.message);
 // ============================================
 // GET FIREBASE ADMIN TOKEN
 // ============================================
-async function getFirebaseToken(env) {
+// scope is optional — defaults to the original Firestore/GSC scope so every
+// existing caller (getFirebaseToken(env)) is unaffected. Pass a different
+// scope string to mint a token for another Google API using the SAME
+// service account (e.g. GA4 Data API — see getGoogleToken below).
+async function getFirebaseToken(env, scope) {
 try {
 const now = Math.floor(Date.now() / 1000);
 const payload = {
@@ -875,7 +884,7 @@ sub: env.FIREBASE_CLIENT_EMAIL,
 aud: 'https://oauth2.googleapis.com/token',
 iat: now,
 exp: now + 3600,
-scope: 'https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/datastore'
+scope: scope || 'https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/datastore'
 };
 
 const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
@@ -6006,6 +6015,84 @@ async function handleSessionBiasSummary(request, env) {
     }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=120', ...cors } });
   } catch (e) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', ...cors } });
+  }
+}
+
+// ============================================================
+// GA4 SUMMARY — real-time-ish traffic, without waiting on GSC's
+// ~2-day lag. Reuses the fxnewsbias-analytics service account
+// (already granted Firestore/GSC access) — GA4 Property Access
+// Management grants it Viewer on GA4 property 536862201
+// (fxnewsbias.com), no new secret needed. Public + cached: these
+// are aggregate counts, not user data.
+// ============================================================
+const GA4_PROPERTY_ID = '536862201';
+
+async function _ga4Fetch(env, path, body) {
+  const token = await getFirebaseToken(env, 'https://www.googleapis.com/auth/analytics.readonly');
+  if (!token) return { error: 'no GA4 token (check service account has Viewer on the GA4 property)' };
+  const r = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${GA4_PROPERTY_ID}:${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(15000),
+  });
+  const json = await r.json();
+  if (!r.ok) return { error: `GA4 ${path}: HTTP ${r.status} ${JSON.stringify(json).slice(0, 200)}` };
+  return json;
+}
+
+// GET /api/ga4-summary — public. Realtime active users + today/7d/28d
+// totals + top pages (7d). Fail-open per section so a partial GA4 outage
+// still returns whatever succeeded.
+async function handleGa4Summary(request, env) {
+  const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };
+  if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+  try {
+    const [realtime, totals, pages] = await Promise.all([
+      _ga4Fetch(env, 'runRealtimeReport', { metrics: [{ name: 'activeUsers' }] }),
+      _ga4Fetch(env, 'runReport', {
+        dateRanges: [
+          { startDate: 'today', endDate: 'today', name: 'today' },
+          { startDate: '7daysAgo', endDate: 'today', name: 'last7d' },
+          { startDate: '28daysAgo', endDate: 'today', name: 'last28d' },
+        ],
+        metrics: [{ name: 'activeUsers' }, { name: 'newUsers' }, { name: 'sessions' }, { name: 'screenPageViews' }],
+      }),
+      _ga4Fetch(env, 'runReport', {
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
+        dimensions: [{ name: 'pagePath' }],
+        metrics: [{ name: 'screenPageViews' }],
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+        limit: 8,
+      }),
+    ]);
+
+    const activeNow = realtime.error ? null
+      : parseInt((realtime.rows && realtime.rows[0] && realtime.rows[0].metricValues[0].value) || '0', 10);
+
+    const byRange = {};
+    if (!totals.error && totals.rows) {
+      for (const row of totals.rows) {
+        const name = row.dimensionValues[0].value; // dateRange name
+        const [activeUsers, newUsers, sessions, pageViews] = row.metricValues.map(v => parseInt(v.value, 10));
+        byRange[name] = { activeUsers, newUsers, sessions, pageViews };
+      }
+    }
+
+    const topPages = (!pages.error && pages.rows)
+      ? pages.rows.map(r => ({ path: r.dimensionValues[0].value, views: parseInt(r.metricValues[0].value, 10) }))
+      : [];
+
+    return new Response(JSON.stringify({
+      ok: true, property: GA4_PROPERTY_ID,
+      realtime: { activeUsersNow: activeNow, error: realtime.error || null },
+      today: byRange.today || null, last7d: byRange.last7d || null, last28d: byRange.last28d || null,
+      totalsError: totals.error || null,
+      topPages7d: topPages, topPagesError: pages.error || null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=180', ...cors } });
+  } catch (e) {
+    return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', ...cors } });
   }
 }
 
