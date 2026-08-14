@@ -871,11 +871,7 @@ console.log('Firestore update error:', e.message);
 // ============================================
 // GET FIREBASE ADMIN TOKEN
 // ============================================
-// scope is optional — defaults to the original Firestore/GSC scope so every
-// existing caller (getFirebaseToken(env)) is unaffected. Pass a different
-// scope string to mint a token for another Google API using the SAME
-// service account (e.g. GA4 Data API — see getGoogleToken below).
-async function getFirebaseToken(env, scope) {
+async function getFirebaseToken(env) {
 try {
 const now = Math.floor(Date.now() / 1000);
 const payload = {
@@ -884,7 +880,7 @@ sub: env.FIREBASE_CLIENT_EMAIL,
 aud: 'https://oauth2.googleapis.com/token',
 iat: now,
 exp: now + 3600,
-scope: scope || 'https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/datastore'
+scope: 'https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/datastore'
 };
 
 const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
@@ -6020,17 +6016,20 @@ async function handleSessionBiasSummary(request, env) {
 
 // ============================================================
 // GA4 SUMMARY — real-time-ish traffic, without waiting on GSC's
-// ~2-day lag. Reuses the fxnewsbias-analytics service account
-// (already granted Firestore/GSC access) — GA4 Property Access
-// Management grants it Viewer on GA4 property 536862201
-// (fxnewsbias.com), no new secret needed. Public + cached: these
-// are aggregate counts, not user data.
+// ~2-day lag. Authenticates with the SAME service account + secret
+// (GSC_SA_JSON, fxnewsbias-analytics) that already does GSC ingest
+// — that account is the one granted Viewer on GA4 property 536862201
+// (fxnewsbias.com) via Property Access Management. No new secret.
+// Public + cached: these are aggregate counts, not user data.
 // ============================================================
 const GA4_PROPERTY_ID = '536862201';
 
 async function _ga4Fetch(env, path, body) {
-  const token = await getFirebaseToken(env, 'https://www.googleapis.com/auth/analytics.readonly');
-  if (!token) return { error: 'no GA4 token (check service account has Viewer on the GA4 property)' };
+  if (!env.GSC_SA_JSON) return { error: 'GSC_SA_JSON not set' };
+  let sa;
+  try { sa = JSON.parse(env.GSC_SA_JSON); } catch (e) { return { error: `GSC_SA_JSON parse error: ${e.message}` }; }
+  const token = await getGoogleAccessToken(sa.client_email, sa.private_key, 'https://www.googleapis.com/auth/analytics.readonly');
+  if (!token) return { error: 'no GA4 token (check fxnewsbias-analytics has Viewer on the GA4 property)' };
   const r = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${GA4_PROPERTY_ID}:${path}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
