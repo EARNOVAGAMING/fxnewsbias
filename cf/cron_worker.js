@@ -944,6 +944,11 @@ body: JSON.stringify({ fields })
 const result = await res.json();
 console.log('Firestore updated:', email, 'isPro:', isPro, 'status:', res.status);
 
+// Move the contact between the free and Pro Resend audiences so the daily
+// digest never pitches "Upgrade to Pro" to someone already paying.
+try { await _syncContactTier(env, email, isPro); }
+catch (e) { console.log('tier sync error:', e.message); }
+
 } catch(e) {
 console.log('Firestore update error:', e.message);
 }
@@ -1542,6 +1547,50 @@ async function _addToAudience(env, email, name) {
   return r.ok;
 }
 
+const _FREE_AUDIENCE = '7b690548-4533-43f5-a22f-bf862d1366ff';
+
+// Lazily find-or-create the Pro audience; the ID is cached in system_state so
+// this costs one Resend lookup ever.
+async function _getProAudienceId(env) {
+  try {
+    const cached = await readSystemState(env, 'resend_pro_audience_id');
+    if (cached && cached.id) return cached.id;
+    const H = { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' };
+    const list = await fetch('https://api.resend.com/audiences', { headers: H, signal: AbortSignal.timeout(10000) });
+    if (list.ok) {
+      const found = (((await list.json()).data) || []).find(a => a.name === 'FXNewsBias Pro Members');
+      if (found) { await writeSystemState(env, 'resend_pro_audience_id', { id: found.id }); return found.id; }
+    }
+    const mk = await fetch('https://api.resend.com/audiences', {
+      method: 'POST', headers: H, body: JSON.stringify({ name: 'FXNewsBias Pro Members' }), signal: AbortSignal.timeout(10000),
+    });
+    if (!mk.ok) { console.log(`pro audience create: HTTP ${mk.status}`); return null; }
+    const id = (await mk.json()).id;
+    if (id) await writeSystemState(env, 'resend_pro_audience_id', { id });
+    return id || null;
+  } catch (e) { console.log('pro audience id error:', e.message); return null; }
+}
+
+// Keep Resend membership in sync with tier: Pro members live in the Pro
+// audience (daily digest without the upgrade pitch), everyone else in the
+// free audience. Idempotent; failures only log — never blocks a webhook.
+async function _syncContactTier(env, email, isPro) {
+  if (!env.RESEND_API_KEY || !email) return;
+  const proId = await _getProAudienceId(env);
+  if (!proId) return;
+  const H = { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' };
+  const addTo = isPro ? proId : _FREE_AUDIENCE;
+  const delFrom = isPro ? _FREE_AUDIENCE : proId;
+  const add = await fetch(`https://api.resend.com/audiences/${addTo}/contacts`, {
+    method: 'POST', headers: H, body: JSON.stringify({ email, first_name: 'Trader', unsubscribed: false }), signal: AbortSignal.timeout(10000),
+  });
+  if (!add.ok) console.log(`tier add ${email} -> ${isPro ? 'pro' : 'free'}: HTTP ${add.status}`);
+  const del = await fetch(`https://api.resend.com/audiences/${delFrom}/contacts/${encodeURIComponent(email)}`, {
+    method: 'DELETE', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}` }, signal: AbortSignal.timeout(10000),
+  });
+  if (!del.ok && del.status !== 404) console.log(`tier del ${email}: HTTP ${del.status}`);
+}
+
 // ============================================================
 // WELCOME / AUDIENCE RECONCILIATION — self-healing safety net
 //
@@ -1588,11 +1637,28 @@ async function reconcileWelcomeAudience(env) {
   if (!c.ok) return { ok: false, error: `resend contacts list: ${c.status}` };
   const have = new Set(((await c.json()).data || []).map(x => String(x.email || '').toLowerCase()));
 
+  // 2b. Pro members live in the Pro audience (moved there by the Stripe
+  // webhook) — never re-add them to the free list here.
+  const proEmails = new Set();
+  try {
+    const fs = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents/subscriptions?pageSize=500`, {
+      headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(25000),
+    });
+    if (fs.ok) {
+      for (const doc of ((await fs.json()).documents) || []) {
+        const f = doc.fields || {};
+        if (f.isPro && f.isPro.booleanValue === true && f.email && f.email.stringValue) {
+          proEmails.add(f.email.stringValue.toLowerCase());
+        }
+      }
+    }
+  } catch (e) { console.log('reconcile pro fetch:', e.message); }
+
   // 3. Add the missing; recent registrants also get the welcome they missed.
   const WELCOME_WINDOW_MS = 14 * 864e5;
   let added = 0, welcomed = 0;
   for (const u of users) {
-    if (have.has(u.email)) continue;
+    if (have.has(u.email) || proEmails.has(u.email)) continue;
     const ok = await _addToAudience(env, u.email, u.name).catch(() => false);
     if (ok) added++;
     const createdMs = u.createdAt ? Date.parse(u.createdAt) : NaN;
@@ -1741,7 +1807,7 @@ async function _getLatestLondonInsight(env) {
   return london;
 }
 
-async function _buildBroadcastHtml(env, firstName = 'Trader') {
+async function _buildBroadcastHtml(env, firstName = 'Trader', tier = 'free') {
   const london = await _getLatestLondonInsight(env);
   const { slug, headline, summary, dateLabel, category } = london;
   const articleUrl = `https://fxnewsbias.com/insight/${slug}`;
@@ -1811,12 +1877,17 @@ async function _buildBroadcastHtml(env, firstName = 'Trader') {
       <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#0f172a;">New York Session Insight</p>
       <p style="margin:0;font-size:14px;color:#15803d;line-height:1.6;">The NY session insight drops at 8pm Malaysia time — covering the US open sentiment picture and what to watch heading into the American session.</p>
     </td></tr></table>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;background:linear-gradient(135deg,#1e40af,#7c3aed);border-radius:10px;"><tr><td style="padding:24px 28px;text-align:center;">
+    ${tier === 'pro' ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;background:linear-gradient(135deg,#065f46,#059669);border-radius:10px;"><tr><td style="padding:24px 28px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#a7f3d0;letter-spacing:.1em;text-transform:uppercase;">Pro Member</p>
+      <h3 style="margin:0 0 8px;color:#fff;font-size:18px;font-weight:800;">Your full toolkit is included</h3>
+      <p style="margin:0 0 16px;font-size:13px;color:#a7f3d0;line-height:1.6;">Full sentiment history, advanced filters and the weekly AI intelligence brief are all part of your plan.</p>
+      <a href="https://fxnewsbias.com/report" style="display:inline-block;background:#ffffff;color:#065f46;font-size:14px;font-weight:800;padding:12px 28px;border-radius:7px;text-decoration:none;">Open Your Pro Dashboard →</a>
+    </td></tr></table>` : `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;background:linear-gradient(135deg,#1e40af,#7c3aed);border-radius:10px;"><tr><td style="padding:24px 28px;text-align:center;">
       <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#c4b5fd;letter-spacing:.1em;text-transform:uppercase;">Want More?</p>
       <h3 style="margin:0 0 8px;color:#fff;font-size:18px;font-weight:800;">Get the Full Sentiment History</h3>
       <p style="margin:0 0 16px;font-size:13px;color:#c4b5fd;line-height:1.6;">Upgrade to Pro for full history, advanced filters and the weekly AI intelligence brief.</p>
       <a href="https://fxnewsbias.com/report" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:14px;font-weight:800;padding:12px 28px;border-radius:7px;text-decoration:none;">⭐ Upgrade to Pro — $30/mo</a>
-    </td></tr></table>
+    </td></tr></table>`}
     <p style="margin:0 0 4px;font-size:15px;color:#0f172a;">Happy trading,</p>
     <p style="margin:0 0 28px;font-size:15px;font-weight:700;color:#0f172a;">The FXNewsBias Team</p>
   </td></tr>
@@ -1840,40 +1911,57 @@ async function sendDailyBroadcast(env) {
   const subject = `📊 ${headline}`;
   const today   = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
 
-  // Create broadcast in Resend
+  // Free-tier copy (with the upgrade pitch) to the main audience.
+  await _sendBroadcastTo(env, _FREE_AUDIENCE, subject, html, `London Insight — ${dateLabel || today}`);
+
+  // Pro copy (upgrade pitch swapped for a member block) to the Pro audience.
+  // Skipped while the Pro audience is empty; never fails the free send.
+  try {
+    const proId = await _getProAudienceId(env);
+    if (proId) {
+      const pc = await fetch(`https://api.resend.com/audiences/${proId}/contacts`, {
+        headers: { Authorization: `Bearer ${env.RESEND_API_KEY}` }, signal: AbortSignal.timeout(15000),
+      });
+      const members = pc.ok ? (((await pc.json()).data) || []).filter(x => !x.unsubscribed).length : 0;
+      if (members > 0) {
+        const proHtml = await _buildBroadcastHtml(env, 'Trader', 'pro');
+        await _sendBroadcastTo(env, proId, subject, proHtml, `London Insight (Pro) — ${dateLabel || today}`);
+      } else {
+        console.log('sendDailyBroadcast: pro audience empty, pro copy skipped');
+      }
+    }
+  } catch (e) { console.log('sendDailyBroadcast pro copy error:', e.message); }
+}
+
+async function _sendBroadcastTo(env, audienceId, subject, html, name) {
   const createRes = await fetch('https://api.resend.com/broadcasts', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      audience_id: '7b690548-4533-43f5-a22f-bf862d1366ff',
+      audience_id: audienceId,
       from: `FXNewsBias <${env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com'}>`,
       subject,
       html,
-      name: `London Insight — ${dateLabel || today}`,
+      name,
     }),
     signal: AbortSignal.timeout(15000),
   });
-
   if (!createRes.ok) {
     const err = await createRes.text();
     throw new Error(`Resend create broadcast failed: ${createRes.status} ${err.slice(0, 200)}`);
   }
   const { id: broadcastId } = await createRes.json();
-  console.log(`sendDailyBroadcast: created broadcast ${broadcastId}`);
-
-  // 5. Send it
   const sendRes = await fetch(`https://api.resend.com/broadcasts/${broadcastId}/send`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
     signal: AbortSignal.timeout(10000),
   });
-
   if (!sendRes.ok) {
     const err = await sendRes.text();
     throw new Error(`Resend send broadcast failed: ${sendRes.status} ${err.slice(0, 200)}`);
   }
-  console.log(`sendDailyBroadcast: sent broadcast ${broadcastId} — "${subject}"`);
+  console.log(`broadcast sent ${broadcastId} -> ${audienceId} — "${subject}"`);
 }
 
 // ============================================
