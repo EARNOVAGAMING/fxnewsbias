@@ -787,6 +787,12 @@ const customerEmail = await getStripeCustomerEmail(customerId, env);
 if (customerEmail) {
 await updateUserProStatus(customerEmail, customerId, isActive, env, periodEndIso, cancelAtPeriodEnd, subscription.status);
 console.log('Subscription', subscription.status, 'for:', customerEmail, 'periodEnd:', periodEndIso, 'cancelAtPeriodEnd:', cancelAtPeriodEnd);
+// Guard: a brand-new live subscription may be a duplicate of one the
+// customer already has. Keep the newest, auto-cancel the rest.
+if (event.type === 'customer.subscription.created' && isActive) {
+try { await dedupeStripeSubscriptions(customerEmail, env); }
+catch (e) { console.log('dedupe error:', e.message); }
+}
 }
 break;
 }
@@ -795,9 +801,21 @@ const subscription = event.data.object;
 const customerId = subscription.customer;
 const customerEmail = await getStripeCustomerEmail(customerId, env);
 if (customerEmail) {
+// Only revoke Pro if this was the LAST live subscription for this email.
+// Duplicate-cleanup cancels fire this event while a newer subscription
+// stays live -- blindly revoking here would kick out a paying customer.
+let remaining = null;
+try { remaining = (await listStripeSubsByEmail(customerEmail, env))[0] || null; }
+catch (e) { console.log('remaining-sub check error:', e.message); }
+if (remaining) {
+const rp = remaining.current_period_end || (remaining.items && remaining.items.data && remaining.items.data[0] && remaining.items.data[0].current_period_end);
+await updateUserProStatus(customerEmail, remaining.customer, true, env, rp ? new Date(rp * 1000).toISOString() : null, remaining.cancel_at_period_end === true, remaining.status);
+console.log('Sub deleted but', customerEmail, 'still has live sub', remaining.id, '- Pro kept');
+} else {
 // Subscription fully ended -- clear period end (no renewal coming).
 await updateUserProStatus(customerEmail, customerId, false, env, null, false, 'canceled');
 console.log('Pro cancelled for:', customerEmail);
+}
 }
 break;
 }
@@ -843,6 +861,42 @@ return customer.email || null;
 console.log('Error getting customer:', e.message);
 return null;
 }
+}
+
+// Every live (active/trialing) subscription for an email, across ALL Stripe
+// customers sharing it — the payment link creates a fresh customer record per
+// checkout, so one person can own several. Newest first.
+async function listStripeSubsByEmail(email, env) {
+const subs = [];
+const cRes = await fetch(`https://api.stripe.com/v1/customers?email=${encodeURIComponent(email)}&limit=100`, {
+headers: { 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}` }, signal: AbortSignal.timeout(20000)
+});
+const customers = (await cRes.json()).data || [];
+for (const c of customers) {
+const sRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${c.id}&status=all&limit=20`, {
+headers: { 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}` }, signal: AbortSignal.timeout(20000)
+});
+for (const s of ((await sRes.json()).data || [])) {
+if (s.status === 'active' || s.status === 'trialing') subs.push(s);
+}
+}
+subs.sort((a, b) => b.created - a.created);
+return subs;
+}
+
+// One person, one subscription. If a checkout slips through while an older
+// subscription is still live (double-click, or retrying because the first
+// attempt "didn't seem to work"), keep the NEWEST and cancel the rest —
+// nothing has been charged on a trial, so cancelling costs the customer $0.
+async function dedupeStripeSubscriptions(email, env) {
+const live = await listStripeSubsByEmail(email, env);
+for (const dup of live.slice(1)) {
+const r = await fetch(`https://api.stripe.com/v1/subscriptions/${dup.id}`, {
+method: 'DELETE', headers: { 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}` }, signal: AbortSignal.timeout(20000)
+});
+console.log('Cancelled duplicate subscription', dup.id, 'for', email, '->', r.status);
+}
+return live.length ? live[0] : null;
 }
 
 // ============================================
