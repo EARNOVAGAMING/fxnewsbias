@@ -841,6 +841,35 @@ console.log('Pro cancelled for:', customerEmail);
 }
 break;
 }
+case 'charge.succeeded': {
+// Card-network fingerprint at the moment money actually moves -- catches
+// trial-abuse cases the created-time check can't see (Stripe Link and
+// other wallets hide the underlying card until a real charge happens).
+// Money has already moved here, so this only RECORDS + FLAGS a repeat for
+// manual review; it never auto-cancels or auto-refunds a paying customer.
+const charge = event.data.object;
+const fp = (charge.payment_method_details && charge.payment_method_details.card && charge.payment_method_details.card.fingerprint) || null;
+if (fp) {
+try {
+const email = charge.billing_details && charge.billing_details.email || await getStripeCustomerEmail(charge.customer, env);
+const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
+const q = await fetch(`${env.SUPABASE_URL}/rest/v1/trial_card_history?select=email,subscription_id&card_fingerprint=eq.${encodeURIComponent(fp)}`, { headers: sb, signal: AbortSignal.timeout(15000) });
+const rows = q.ok ? await q.json() : [];
+const reused = rows.some(r => r.email !== email);
+if (reused) {
+console.log(`⚠️ charge.succeeded: card fingerprint ${fp.slice(0,6)} reused across emails -- new charge ${email}, prior: ${rows.map(r=>r.email).join(',')}`);
+}
+if (!rows.length) {
+await fetch(`${env.SUPABASE_URL}/rest/v1/trial_card_history`, {
+method: 'POST', headers: sb,
+body: JSON.stringify({ card_fingerprint: fp, email, subscription_id: charge.invoice || charge.id }),
+signal: AbortSignal.timeout(15000),
+});
+}
+} catch (e) { console.log('charge.succeeded fingerprint check error:', e.message); }
+}
+break;
+}
 }
 
 return new Response('OK', { status: 200 });
