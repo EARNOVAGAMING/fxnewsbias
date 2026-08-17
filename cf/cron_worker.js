@@ -792,6 +792,22 @@ console.log('Subscription', subscription.status, 'for:', customerEmail, 'periodE
 if (event.type === 'customer.subscription.created' && isActive) {
 try { await dedupeStripeSubscriptions(customerEmail, env); }
 catch (e) { console.log('dedupe error:', e.message); }
+// One free trial per person: repeat email or repeat card converts the
+// new "trial" to paid billing immediately (checkout agreed to $30/mo).
+if (subscription.status === 'trialing') {
+try {
+const used = await _trialAlreadyUsed(env, customerEmail, subscription);
+if (used) {
+const r = await fetch(`https://api.stripe.com/v1/subscriptions/${subscription.id}`, {
+method: 'POST',
+headers: { 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+body: new URLSearchParams({ trial_end: 'now' }),
+signal: AbortSignal.timeout(20000),
+});
+console.log(`trial revoked (${used} reuse) for ${customerEmail}: HTTP ${r.status}`);
+}
+} catch (e) { console.log('trial abuse check error:', e.message); }
+}
 }
 }
 break;
@@ -882,6 +898,49 @@ if (s.status === 'active' || s.status === 'trialing') subs.push(s);
 }
 subs.sort((a, b) => b.created - a.created);
 return subs;
+}
+
+// One free trial per person, ever. Two independent checks:
+//  (a) the email has any subscription older than the 3-day duplicate window
+//      (repeat signup after a previous trial/cancellation), or
+//  (b) the card fingerprint was already used for a trial — catches the same
+//      card returning under a fresh email. Fingerprints live in Supabase
+//      trial_card_history; first-time cards are recorded here.
+// Returns 'email' | 'card' when the trial was already used, null when clean.
+async function _trialAlreadyUsed(env, email, subscription) {
+  const H = { 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}` };
+  try {
+    const cutoff = subscription.created - 3 * 86400;
+    const cRes = await fetch(`https://api.stripe.com/v1/customers?email=${encodeURIComponent(email)}&limit=100`, { headers: H, signal: AbortSignal.timeout(20000) });
+    for (const c of (((await cRes.json()).data) || [])) {
+      const sRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${c.id}&status=all&limit=20`, { headers: H, signal: AbortSignal.timeout(20000) });
+      for (const s of (((await sRes.json()).data) || [])) {
+        if (s.id !== subscription.id && s.created < cutoff) return 'email';
+      }
+    }
+  } catch (e) { console.log('trial email-history check error:', e.message); }
+  try {
+    const pmId = typeof subscription.default_payment_method === 'string'
+      ? subscription.default_payment_method
+      : subscription.default_payment_method && subscription.default_payment_method.id;
+    if (!pmId) return null;
+    const pmRes = await fetch(`https://api.stripe.com/v1/payment_methods/${pmId}`, { headers: H, signal: AbortSignal.timeout(20000) });
+    const fp = (((await pmRes.json()).card) || {}).fingerprint;
+    if (!fp) return null;
+    const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` };
+    const q = await fetch(`${env.SUPABASE_URL}/rest/v1/trial_card_history?select=email,subscription_id&card_fingerprint=eq.${encodeURIComponent(fp)}`, { headers: sb, signal: AbortSignal.timeout(15000) });
+    const rows = q.ok ? await q.json() : [];
+    if (rows.some(r => r.subscription_id !== subscription.id)) return 'card';
+    if (!rows.length) {
+      await fetch(`${env.SUPABASE_URL}/rest/v1/trial_card_history`, {
+        method: 'POST',
+        headers: { ...sb, 'Content-Type': 'application/json', Prefer: 'resolution=ignore-duplicates' },
+        body: JSON.stringify({ card_fingerprint: fp, email, subscription_id: subscription.id }),
+        signal: AbortSignal.timeout(15000),
+      });
+    }
+  } catch (e) { console.log('trial card-fingerprint check error:', e.message); }
+  return null;
 }
 
 // One person, one subscription. If a checkout slips through while an older
