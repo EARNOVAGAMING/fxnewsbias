@@ -936,7 +936,9 @@ async function _recordTrialFingerprint(env, email, subscription) {
 async function backfillTrialFingerprints(env) {
   const H = { 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}` };
   const res = await fetch('https://api.stripe.com/v1/subscriptions?status=all&limit=100', { headers: H, signal: AbortSignal.timeout(25000) });
-  const subs = (((await res.json()).data) || []).filter(s => s.status === 'active' || s.status === 'trialing');
+  const body = await res.json();
+  if (body.error) return { ok: false, http: res.status, stripe_error: body.error.message, error_type: body.error.type };
+  const subs = ((body.data) || []).filter(s => s.status === 'active' || s.status === 'trialing');
   const results = [];
   for (const s of subs) {
     const email = await getStripeCustomerEmail(s.customer, env);
