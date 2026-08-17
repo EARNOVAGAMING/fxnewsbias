@@ -2546,8 +2546,13 @@ return { ok: false, error: e.message, cutoff, retention_days: days };
 // staleness_incidents.summary.sentiment_id) reference sentiment ids
 // that may be days old. Anything currently referenced by an *active*
 // staleness incident is preserved regardless of age.
-const DEFAULT_NEWS_RETENTION_DAYS = 30;
-const DEFAULT_SENTIMENT_RETENTION_DAYS = 90;
+// Raised 2026-08-17: the sentiment time series and headline corpus are the
+// raw material for the Pro history feature and any future data/API product.
+// Rows past these windows are ARCHIVED (sentiment_archive / news_archive via
+// the archive_prune_* RPCs), never destroyed — the windows below only decide
+// what stays in the hot tables the dashboard queries.
+const DEFAULT_NEWS_RETENTION_DAYS = 365;
+const DEFAULT_SENTIMENT_RETENTION_DAYS = 730;
 
 // Returns the set of sentiment row ids that an active staleness
 // incident currently depends on. The source of truth is
@@ -2583,21 +2588,17 @@ async function cleanupNews(env) {
 const days = parseInt(env.NEWS_RETENTION_DAYS, 10) || DEFAULT_NEWS_RETENTION_DAYS;
 const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 try {
-// `news` rows are not referenced by any incident today, but if that
-// ever changes the same active-id guard used for sentiment should be
-// added here. For now: pure time-based sweep on created_at.
-const url = `${env.SUPABASE_URL}/rest/v1/news`
-+ `?created_at=lt.${encodeURIComponent(cutoff)}`;
-// Use return=minimal so a large sweep doesn't ship every deleted
-// row back to the worker; PostgREST still reports the row count
-// in the Content-Range header (e.g. "0-41/42").
-const r = await fetch(url, {
-method: 'DELETE',
+// Archive-then-prune in a single transaction (archive_prune_news RPC):
+// expiring rows are copied to news_archive and only then removed from
+// the hot table. Nothing is destroyed.
+const r = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/archive_prune_news`, {
+method: 'POST',
 headers: {
 apikey: env.SUPABASE_SERVICE_KEY,
 Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-Prefer: 'return=minimal,count=exact'
+'Content-Type': 'application/json'
 },
+body: JSON.stringify({ p_days: days }),
 signal: AbortSignal.timeout(25000)
 });
 if (!r.ok) {
@@ -2608,12 +2609,12 @@ table_name: 'news', ok: false, error: `HTTP ${r.status}: ${errText.slice(0, 500)
 });
 return { ok: false, status: r.status, error: errText, cutoff, retention_days: days };
 }
-const count = parseDeletedCount(r);
-console.log(`cleanupNews: deleted ${count} row(s) older than ${cutoff} (retention=${days}d)`);
+const count = parseInt(await r.text(), 10) || 0;
+console.log(`cleanupNews: archived+pruned ${count} row(s) older than ${cutoff} (retention=${days}d)`);
 await recordCleanupRun(env, {
 table_name: 'news', ok: true, deleted_count: count, cutoff, retention_days: days
 });
-return { ok: true, deleted: count, cutoff, retention_days: days };
+return { ok: true, archived: count, cutoff, retention_days: days };
 } catch (e) {
 console.log('cleanupNews error:', e.message);
 await recordCleanupRun(env, {
@@ -2682,21 +2683,17 @@ const days = parseInt(env.SENTIMENT_RETENTION_DAYS, 10) || DEFAULT_SENTIMENT_RET
 const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 try {
 const protectedIds = await getActiveIncidentSentimentIds(env);
-let url = `${env.SUPABASE_URL}/rest/v1/sentiment`
-+ `?created_at=lt.${encodeURIComponent(cutoff)}`;
-if (protectedIds.length) {
-// PostgREST `not.in.(...)` filter — quote each id defensively in
-// case ids are ever non-numeric.
-const list = protectedIds.map(id => `"${String(id).replace(/"/g, '\\"')}"`).join(',');
-url += `&id=not.in.(${encodeURIComponent(list)})`;
-}
-const r = await fetch(url, {
-method: 'DELETE',
+// Archive-then-prune in a single transaction (archive_prune_sentiment RPC):
+// expiring rows are copied to sentiment_archive and only then removed from
+// the hot table. Rows referenced by an active staleness incident stay put.
+const r = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/archive_prune_sentiment`, {
+method: 'POST',
 headers: {
 apikey: env.SUPABASE_SERVICE_KEY,
 Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-Prefer: 'return=minimal,count=exact'
+'Content-Type': 'application/json'
 },
+body: JSON.stringify({ p_days: days, p_protected: protectedIds.map(id => parseInt(id, 10)).filter(Number.isFinite) }),
 signal: AbortSignal.timeout(25000)
 });
 if (!r.ok) {
@@ -2708,13 +2705,13 @@ cutoff, retention_days: days, extra: { protected_count: protectedIds.length }
 });
 return { ok: false, status: r.status, error: errText, cutoff, retention_days: days, protected_ids: protectedIds };
 }
-const count = parseDeletedCount(r);
-console.log(`cleanupSentiment: deleted ${count} row(s) older than ${cutoff} (retention=${days}d, protected=${protectedIds.length})`);
+const count = parseInt(await r.text(), 10) || 0;
+console.log(`cleanupSentiment: archived+pruned ${count} row(s) older than ${cutoff} (retention=${days}d, protected=${protectedIds.length})`);
 await recordCleanupRun(env, {
 table_name: 'sentiment', ok: true, deleted_count: count, cutoff, retention_days: days,
 extra: { protected_count: protectedIds.length }
 });
-return { ok: true, deleted: count, cutoff, retention_days: days, protected_ids: protectedIds };
+return { ok: true, archived: count, cutoff, retention_days: days, protected_ids: protectedIds };
 } catch (e) {
 console.log('cleanupSentiment error:', e.message);
 await recordCleanupRun(env, {
