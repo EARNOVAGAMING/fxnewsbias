@@ -916,8 +916,10 @@ async function _recordTrialFingerprint(env, email, subscription) {
       : subscription.default_payment_method && subscription.default_payment_method.id;
     if (!pmId) return { error: 'no-payment-method' };
     const pmRes = await fetch(`https://api.stripe.com/v1/payment_methods/${pmId}`, { headers: H, signal: AbortSignal.timeout(20000) });
-    const fp = (((await pmRes.json()).card) || {}).fingerprint;
-    if (!fp) return { error: 'no-card-fingerprint' };
+    const pmBody = await pmRes.json();
+    if (pmBody.error) return { error: 'stripe-error', http: pmRes.status, detail: pmBody.error.message, error_type: pmBody.error.type };
+    const fp = ((pmBody.card) || {}).fingerprint;
+    if (!fp) return { error: 'no-card-fingerprint', http: pmRes.status, pm_type: pmBody.type };
     const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` };
     const q = await fetch(`${env.SUPABASE_URL}/rest/v1/trial_card_history?select=subscription_id&card_fingerprint=eq.${encodeURIComponent(fp)}`, { headers: sb, signal: AbortSignal.timeout(15000) });
     const rows = q.ok ? await q.json() : [];
