@@ -112,7 +112,7 @@ export default {
     // Forecast track record — server-render the public win-rate + recent
     // results into the page so crawlers index real content (the client then
     // hydrates the interactive version). Fail-open to the plain asset.
-    if (url.pathname === '/forecast' || url.pathname === '/forecast-history') {
+    if (url.pathname === '/forecast' || url.pathname === '/forecast-history' || url.pathname === '/forecast-performance') {
       return serveForecastSSR(request, env);
     }
 
@@ -170,13 +170,15 @@ function renderScorecardSSR(rows) {
   const SESSION_LABEL = { asean: 'Asia', london: 'London', newyork: 'New York' };
   const scored = rows.filter((r) => r.alignment === 'aligned' || r.alignment === 'contra');
   const aligned = scored.filter((r) => r.alignment === 'aligned').length;
+  const contra = scored.length - aligned;
+  const quiet = rows.filter((r) => r.alignment === 'quiet').length;
   const rate = scored.length ? Math.round((aligned / scored.length) * 100) : null;
   const recent = rows.filter((r) => r.alignment && r.alignment !== 'na').slice(0, 20);
   const body = recent.map((r) =>
     `<tr><td style="padding:6px 8px;">${_ssrEsc(r.session_date)} ${_ssrEsc(SESSION_LABEL[r.session] || r.session)}</td><td style="padding:6px 8px;">${_ssrEsc(r.pair)}</td><td style="padding:6px 8px;">${r.tone === 'Bullish' ? '▲ Bullish tone' : '▼ Bearish tone'}</td><td style="padding:6px 8px;">${r.move_pct == null ? '—' : (r.move_pct > 0 ? '+' : '') + Number(r.move_pct).toFixed(2) + '%'}</td><td style="padding:6px 8px;">${_ssrEsc(r.alignment)}</td></tr>`
   ).join('');
   return `<section aria-label="Session bias scorecard" style="max-width:1280px;margin:0 auto;padding:4px 20px 0;color:#9aa7bd;">
-    <p style="font-size:13px;line-height:1.6;margin:0 0 10px;">FXNewsBias reads the news tone for 11 forex pairs at every session open (Asia, London, New York — weekdays) and scores each read at the next session: did the market move <strong>with</strong> the news tone, <strong>against</strong> it, or stay <strong>quiet</strong> inside the pair's own volatility band${rate !== null ? ` — so far <strong>${rate}% aligned</strong> across ${scored.length} decisive reads` : ''}. Every read is recorded and never edited. This is a scorecard of news-tone reporting, not trade advice.</p>
+    <p style="font-size:13px;line-height:1.6;margin:0 0 10px;">FXNewsBias reads the news tone for 11 forex pairs at every session open (Asia, London, New York — weekdays) and scores each read at the next session: did the market move <strong>with</strong> the news tone, <strong>against</strong> it, or stay <strong>quiet</strong> inside the pair's own volatility band${rate !== null ? ` — so far <strong>${rate}% aligned</strong> across ${scored.length} decisive reads (${aligned} aligned · ${contra} contra · ${quiet} quiet; ${rows.length} settled reads recorded in total)` : ''}. Every read is recorded and never edited. This is a scorecard of news-tone reporting, not trade advice.</p>
     ${recent.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px;"><caption style="text-align:left;font-size:11px;color:#64748b;padding:4px 8px;">Recent scored session reads</caption><thead><tr><th style="text-align:left;padding:6px 8px;">Session</th><th style="text-align:left;padding:6px 8px;">Pair</th><th style="text-align:left;padding:6px 8px;">News tone</th><th style="text-align:left;padding:6px 8px;">Move</th><th style="text-align:left;padding:6px 8px;">Score</th></tr></thead><tbody>${body}</tbody></table>` : ''}
   </section>`;
 }

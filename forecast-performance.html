@@ -65,6 +65,8 @@
     </div>
   </div>
 
+  <div id="fc-ssr"><!-- forecast_ssr --></div>
+
   <div class="fc-wrap" id="perf-wrap">
     <div id="fc-upstrip-host"></div>
     <div class="sec-label">Headline Performance</div>
@@ -184,10 +186,12 @@ function monthlyChart(rows){
   return svg+'</svg>';
 }
 
+function dropSsr(){ var s=document.getElementById('fc-ssr'); if(s) s.remove(); }
 function load(){
   if(loaded)return; loaded=true;
   FC.loadLedger().then(function(rows){
     rows=rows||[];
+    dropSsr();
     var st=FC.computeStats(rows);
     function setWr(id,v){var e=document.getElementById(id);if(v===null){e.textContent='—';return;}e.className='stat-val '+(v>=50?'up':'down');FC.countUp(e,v,'%',1);}
     setWr('p-wr',st.winRate);setWr('p-wr30',st.winRate30);setWr('p-wr90',st.winRate90);
@@ -300,6 +304,7 @@ function load(){
       document.getElementById('timeline-panel').hidden=false;
     }
   }).catch(function(){
+    dropSsr();
     document.getElementById('perf-wrap').insertAdjacentHTML('afterbegin','<div class="empty-state"><div class="ico">⚠️</div><div class="t">Could not load analytics</div></div>');
   });
 }
