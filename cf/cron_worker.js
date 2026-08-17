@@ -792,12 +792,14 @@ console.log('Subscription', subscription.status, 'for:', customerEmail, 'periodE
 if (event.type === 'customer.subscription.created' && isActive) {
 try { await dedupeStripeSubscriptions(customerEmail, env); }
 catch (e) { console.log('dedupe error:', e.message); }
-// One free trial per person: repeat email or repeat card converts the
-// new "trial" to paid billing immediately (checkout agreed to $30/mo).
+}
+// One free trial per person. The check also RECORDS first-time card
+// fingerprints, so it runs on updated events too (backfills trials that
+// predate this guard); revoking only ever happens on created.
 if (subscription.status === 'trialing') {
 try {
 const used = await _trialAlreadyUsed(env, customerEmail, subscription);
-if (used) {
+if (used && event.type === 'customer.subscription.created') {
 const r = await fetch(`https://api.stripe.com/v1/subscriptions/${subscription.id}`, {
 method: 'POST',
 headers: { 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -807,7 +809,6 @@ signal: AbortSignal.timeout(20000),
 console.log(`trial revoked (${used} reuse) for ${customerEmail}: HTTP ${r.status}`);
 }
 } catch (e) { console.log('trial abuse check error:', e.message); }
-}
 }
 }
 break;
