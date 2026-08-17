@@ -205,6 +205,19 @@ try {
 }
 }
 // Welcome/audience reconciliation — manual trigger (also runs daily 03:15).
+// Public, read-only completeness report for the sentiment/news/ledger
+// series — the "how good is your data" answer, machine-readable.
+if (url.pathname === '/data-quality') {
+return handleDataQuality(env);
+}
+
+// Ops: run the weekly off-site snapshot on demand.
+if (url.pathname === '/export-snapshot') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const out = await exportDataSnapshot(env);
+return new Response(JSON.stringify(out, null, 2), { headers: { 'Content-Type': 'application/json' } });
+}
+
 if (url.pathname === '/backfill-trial-fingerprints') {
 const out = await backfillTrialFingerprints(env);
 return new Response(JSON.stringify(out, null, 2), { headers: { 'Content-Type': 'application/json' } });
@@ -520,6 +533,12 @@ if (event.cron === '*/15 * * * *') {
       // Web Push hygiene: retire subscriptions that keep failing (410/404 are
       // deactivated inline at send time; this catches soft/repeated failures).
       await cleanupPushSubscriptions(env).catch(e => console.log('cleanupPushSubscriptions error:', e.message));
+      // Weekly (Sunday 03:15) off-site data snapshot: full sentiment / news /
+      // scorecard-ledger CSVs committed to the repo — versioned, durable,
+      // independent of the database. Institutional-grade redundancy on $0.
+      if (new Date().getUTCDay() === 0) {
+        await exportDataSnapshot(env).catch(e => console.log('exportDataSnapshot error:', e.message));
+      }
     })()] : []),
   ]));
 
@@ -2582,6 +2601,92 @@ return ids;
 console.log('getActiveIncidentSentimentIds error:', e.message);
 return [];
 }
+}
+
+// ============================================
+// INSTITUTIONAL DATA LAYER — quality report + weekly off-site snapshot
+// ============================================
+
+// GET /data-quality — proxies data_quality_summary() (coverage, gaps,
+// first/last timestamps, archive counts). Read-only, safe to expose.
+async function handleDataQuality(env) {
+  try {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/data_quality_summary`, {
+      method: 'POST',
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' },
+      body: '{}',
+      signal: AbortSignal.timeout(20000)
+    });
+    return new Response(await r.text(), {
+      status: r.status,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300' }
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
+}
+
+function _csvCell(v) {
+  if (v == null) return '';
+  let s = Array.isArray(v) ? v.join('|') : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+  if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+// Full-table pull via PostgREST pagination (1000-row pages).
+async function _fetchAllRows(env, table, cols) {
+  const out = [];
+  for (let offset = 0; offset < 500000; offset += 1000) {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/${table}?select=${cols}&order=id.asc&limit=1000&offset=${offset}`, {
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+      signal: AbortSignal.timeout(30000)
+    });
+    if (!r.ok) throw new Error(`${table} page ${offset}: HTTP ${r.status}`);
+    const page = await r.json();
+    out.push(...page);
+    if (page.length < 1000) break;
+  }
+  return out;
+}
+
+async function _ghPutFile(env, path, content, message) {
+  let sha;
+  try {
+    const cur = await _insGh(env, 'GET', `/repos/{owner}/{repo}/contents/${path}`);
+    sha = cur && cur.sha;
+  } catch { /* file does not exist yet */ }
+  const b64 = btoa(unescape(encodeURIComponent(content)));
+  await _insGh(env, 'PUT', `/repos/{owner}/{repo}/contents/${path}`, {
+    message, content: b64, ...(sha ? { sha } : {})
+  });
+}
+
+// Weekly snapshot: the complete series (hot + archive via the *_full views)
+// as CSVs committed to data/exports/ — git history preserves every weekly
+// version, so the dataset survives even a total database loss.
+async function exportDataSnapshot(env) {
+  if (!env.GITHUB_TOKEN) return { ok: false, reason: 'no-token' };
+  const stamp = new Date().toISOString().slice(0, 10);
+  const jobs = [
+    { file: 'data/exports/sentiment_full.csv',      table: 'sentiment_full', cols: 'id,currency,score,bias,drivers,created_at,archived' },
+    { file: 'data/exports/session_bias_ledger.csv', table: 'session_bias',   cols: '*' },
+    { file: 'data/exports/news_full.csv',           table: 'news_full',      cols: 'id,title,source,url,impact,currencies_affected,created_at,archived' },
+  ];
+  const results = [];
+  for (const j of jobs) {
+    try {
+      const rows = await _fetchAllRows(env, j.table, j.cols);
+      if (!rows.length) { results.push({ file: j.file, rows: 0, skipped: true }); continue; }
+      const headers = Object.keys(rows[0]);
+      const csv = headers.join(',') + '\n' + rows.map(r => headers.map(h => _csvCell(r[h])).join(',')).join('\n') + '\n';
+      await _ghPutFile(env, j.file, csv, `data: weekly snapshot ${stamp} — ${j.table} (${rows.length} rows)`);
+      results.push({ file: j.file, rows: rows.length });
+    } catch (e) {
+      results.push({ file: j.file, error: e.message });
+    }
+  }
+  console.log('exportDataSnapshot:', JSON.stringify(results));
+  return { ok: true, snapshot_date: stamp, results };
 }
 
 async function cleanupNews(env) {
