@@ -4965,7 +4965,33 @@ async function _queryProAlertUsers(env) {
   } catch (e) { console.log('_queryProAlertUsers:', e.message); return []; }
 }
 
+// Max 3 alert emails per user per UTC day, enforced atomically in Postgres
+// (claim_alert_email_slot mirrors the push cap). Counts only alert-class
+// mail — bias flips, session tone, forecast notes; the daily digest and
+// transactional emails never pass through this gate. Fail-open by design:
+// if the cap infrastructure itself errors, an extra alert beats a silent
+// outage of an opt-in paid feature.
+async function claimAlertEmailSlot(env, email, kind) {
+  try {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_alert_email_slot`, {
+      method: 'POST',
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_email: email, p_kind: kind }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) { console.log('claimAlertEmailSlot non-ok:', r.status); return true; }
+    const rows = await r.json();
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if (!row || row.claimed !== true) {
+      console.log(`alert email cap: ${email} at daily limit, ${kind} skipped`);
+      return false;
+    }
+    return true;
+  } catch (e) { console.log('claimAlertEmailSlot error:', e.message); return true; }
+}
+
 async function _sendAlertEmail(env, to, flips) {
+  if (!(await claimAlertEmailSlot(env, to, 'bias-flip'))) return;
   const icon = (b) => b === 'Bullish' ? '📈' : b === 'Bearish' ? '📉' : '➖';
   const rows = flips.map(f => `<tr><td style="padding:8px 14px;font-weight:800;font-size:15px;">${f.currency}</td><td style="padding:8px 14px;font-size:14px;color:#334155;">${f.from} → <strong>${f.to}</strong> ${icon(f.to)} &nbsp;<span style="color:#64748b;">(${f.score}/100)</span></td></tr>`).join('');
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;">`
@@ -5002,6 +5028,7 @@ async function checkAndSendForecastAlerts(env, rows) {
 }
 
 async function _sendForecastAlertEmail(env, to, calls) {
+  if (!(await claimAlertEmailSlot(env, to, 'forecast'))) return;
   const row = (c) => {
     const dir = c.direction === 'Bullish' ? 'BUY' : 'SELL';
     const col = c.direction === 'Bullish' ? '#059669' : '#dc2626';
@@ -6350,6 +6377,7 @@ async function checkAndSendBiasAlerts(env, session, rows) {
 }
 
 async function _sendBiasAlertEmail(env, to, session, reads) {
+  if (!(await claimAlertEmailSlot(env, to, 'session-tone'))) return;
   const row = (r) => {
     const col = r.tone === 'Bullish' ? '#059669' : '#dc2626';
     const arrow = r.tone === 'Bullish' ? '▲' : '▼';
