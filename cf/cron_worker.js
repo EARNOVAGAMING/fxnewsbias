@@ -805,7 +805,12 @@ const customerId = subscription.customer;
 // A free trial has status 'trialing' (not 'active'); count it as Pro so the
 // 7-day trial grants access immediately and isn't revoked by subscription.created.
 const isActive = subscription.status === 'active' || subscription.status === 'trialing';
-const periodEndIso = subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null;
+// Newer Stripe API versions (flexible billing_mode) drop the top-level
+// current_period_end; it lives on the subscription item instead.
+const _pe = subscription.current_period_end
+  || (subscription.items && subscription.items.data && subscription.items.data[0] && subscription.items.data[0].current_period_end)
+  || subscription.trial_end;
+const periodEndIso = _pe ? new Date(_pe * 1000).toISOString() : null;
 const cancelAtPeriodEnd = subscription.cancel_at_period_end === true;
 const customerEmail = await getStripeCustomerEmail(customerId, env);
 if (customerEmail) {
