@@ -251,6 +251,12 @@ if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const result = await runSeoIntelligence(env);
 return new Response(JSON.stringify(result, null, 2), { status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
 }
+// Sprint 6 — manually run the demand-driven guide generator (also runs Sun 21:00).
+if (url.pathname === '/run-guide-gen') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const result = await generateOpportunityGuide(env);
+return new Response(JSON.stringify(result, null, 2), { status: result.ok ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
+}
 // Sprint 2 — read the latest stored action plan (+ the raw page/query evidence).
 if (url.pathname === '/seo-intelligence') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
@@ -503,6 +509,9 @@ if (event.cron === '*/15 * * * *') {
       // Sprint 5 — execute the plan's safe actions (ctr_gap/near_winner title
       // refreshes) immediately after the plan is produced.
       await executeSeoActions(env).catch(e => console.log('executeSeoActions error:', e.message));
+      // Sprint 6 — create at most one new demand-driven evergreen guide from
+      // the same GSC evidence (queries with demand we appear for but never win).
+      await generateOpportunityGuide(env).catch(e => console.log('generateOpportunityGuide error:', e.message));
     }
   })());
 
@@ -5415,6 +5424,9 @@ async function generateCurrencySEO(ccy, sentData, headlines, env, topQueries = [
   const bias    = sentData.bias  || 'Neutral';
   const drivers = (Array.isArray(sentData.drivers) ? sentData.drivers : []).slice(0,3).join('; ') || 'mixed signals across the board';
   const headlineList = headlines.length ? headlines.slice(0,5).map((h,i)=>`${i+1}. ${h}`).join('\n') : 'No major headlines in this window.';
+  // Intent mode — same rule as generatePairSEO: recorded search demand outranks
+  // the bias/score template (which can contradict what the searcher asked for).
+  const intentMode = !!(topQueries && topQueries.length && topQueries[0].impr >= 10);
   const queryBlock = (topQueries && topQueries.length)
     ? `\nREAL GOOGLE QUERIES already bringing impressions to THIS page (last 28d) — write the SEO <title> to MATCH this dominant search intent and lift click-through; mirror the searcher's wording where it fits naturally, never keyword-stuff:\n${topQueries.map(q => `- "${q.query}" (${q.impr} impr, avg pos ${Math.round(q.pos)})`).join('\n')}\n`
     : '';
@@ -5439,7 +5451,9 @@ Hard rules:
 - 120–170 words total.
 
 Return ONLY valid JSON (no markdown, no code fences):
-{"page_title":"<max 65 chars — STRICT format: '${ccy.code} ${bias} ${score}/100 | [CATALYST] — ${dateShort}'. CATALYST must name a specific real-world event from the headlines (e.g. named data print, central bank decision, specific inflation figure, named geopolitical event). BANNED in title (any = failure): 'Rate Expectations', 'Strength', 'Weakness', 'Sentiment Shift', 'Markets Await', 'Rate Divergence', 'Risk Appetite', 'Risk Sentiment', score notation like '72/100' outside the fixed slot. Rules: (1) Em dash — before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (3) No brand suffix.>","html":"<the two paragraphs>"}`;
+{"page_title":"<max 65 chars — ${intentMode
+  ? `INTENT MODE (this page has real recorded search demand; matching it outranks every template): format '${ccy.code} [INTENT PHRASE] — ${dateShort}' where INTENT PHRASE mirrors the dominant query's wording naturally so the searcher sees their own words answered. NEVER assert a direction that contradicts a directional query — if the query asks about weakness while today's bias is bullish, cover both sides instead of stamping the bias. Front-load '${ccy.code}'.`
+  : `STRICT format: '${ccy.code} ${bias} ${score}/100 | [CATALYST] — ${dateShort}'. CATALYST must name a specific real-world event from the headlines (e.g. named data print, central bank decision, specific inflation figure, named geopolitical event).`} BANNED in title (any = failure): 'Rate Expectations', 'Strength', 'Weakness', 'Sentiment Shift', 'Markets Await', 'Rate Divergence', 'Risk Appetite', 'Risk Sentiment', score notation like '72/100' outside the fixed slot. Rules: (1) Em dash — before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (3) No brand suffix.>","meta_description":"<max 150 chars — answers the dominant search intent directly (never boilerplate), includes '${ccy.code}', ends with a reason to click>","html":"<the two paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -5450,15 +5464,15 @@ Return ONLY valid JSON (no markdown, no code fences):
   if (!resp.ok) throw new Error(`Haiku currency SEO ${ccy.code}: ${resp.status}`);
   const data = await resp.json();
   const raw = data.content?.[0]?.text?.trim() || '';
-  let pageTitle = '', html = raw;
+  let pageTitle = '', pageDesc = '', html = raw;
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
+    try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; pageDesc = p.meta_description||''; html = p.html||raw; } catch(_) {}
   }
   if (!pageTitle) pageTitle = `${ccy.code} ${bias} | ${ccy.name} Sentiment — ${dateShort}`;
   pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
   html = _addInternalLinks(html, '/currencies/' + ccy.code.toLowerCase(), 4);
-  return { pageTitle, html };
+  return { pageTitle, pageDesc, html };
 }
 
 async function generateAllCurrencySEO(env, opts = {}) {
@@ -5493,12 +5507,12 @@ async function generateAllCurrencySEO(env, opts = {}) {
           const relevant = newsRows.filter(n => (n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
           const others   = newsRows.filter(n => !(n.currencies_affected||[]).includes(ccy.code)).map(n=>n.title);
           const headlines = [...relevant, ...others].filter(Boolean).slice(0,5);
-          const { pageTitle, html } = await generateCurrencySEO(ccy, sentData, headlines, env, pageQueries['/currencies/' + ccy.code.toLowerCase()] || []);
+          const { pageTitle, pageDesc, html } = await generateCurrencySEO(ccy, sentData, headlines, env, pageQueries['/currencies/' + ccy.code.toLowerCase()] || []);
           if (html) {
             try { await saveSEOCache(ccy.slug, html, env); } catch(ce) { console.log(`cache ${ccy.code}:`, ce.message); }
             console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100) — title: ${pageTitle}`);
           }
-          if (pageTitle) titleUpdates.push({ path: `currencies/${ccy.code.toLowerCase()}/index.html`, pageTitle, ccy, sentData });
+          if (pageTitle) titleUpdates.push({ path: `currencies/${ccy.code.toLowerCase()}/index.html`, pageTitle, pageDesc, ccy, sentData });
         } catch(e) {
           console.log(`Currency SEO error for ${ccy.code}:`, e.message);
         }
@@ -5516,7 +5530,7 @@ async function generateAllCurrencySEO(env, opts = {}) {
         const filesToCommit = [];
         const committed = [];
         for (let i = 0; i < titleUpdates.length; i++) {
-          const { path, pageTitle, ccy, sentData } = titleUpdates[i];
+          const { path, pageTitle, pageDesc, ccy, sentData } = titleUpdates[i];
           const current = fileContents[i];
           if (!current) { console.log(`Currency title patch: file not found ${path}`); continue; }
           const gate = await _titleGateAllows(ccy.slug, pagePerf[`/currencies/${ccy.code.toLowerCase()}/`], env);
@@ -5530,12 +5544,17 @@ async function generateAllCurrencySEO(env, opts = {}) {
           const score = sentData.score || 50;
           const dateShort = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-          // Dynamic meta description (max 155 chars)
-          const descRaw = `${ccy.code} (${ccy.name}) is ${bias} today (${score}/100). ${catalyst}. Live news-based forex sentiment & bias — ${dateShort}.`;
+          // Meta description: prefer the intent-matched one from the generator;
+          // the constructed line is only a fallback (it reads as boilerplate).
+          const descRaw = (pageDesc && pageDesc.length >= 50)
+            ? pageDesc
+            : `${ccy.code} (${ccy.name}) is ${bias} today (${score}/100). ${catalyst}. Live news-based forex sentiment & bias — ${dateShort}.`;
           const safeDesc = descRaw.replace(/"/g, '&quot;').slice(0, 155);
 
-          // H1: keep flag span, replace static "CODE Sentiment & NAME Bias" with bias + score + catalyst
-          const h1Text = `${ccy.code} ${bias} — ${catalyst}`;
+          // H1: keep flag span; mirror the title (minus the date) so heading and
+          // snippet agree — fall back to the constructed bias+catalyst line.
+          const h1Text = pageTitle.replace(/\s*[—–-]\s*\d{1,2} \w{3,} \d{4}\s*$/, '').replace(/\s*\|\s*/g, ' — ')
+            || `${ccy.code} ${bias} — ${catalyst}`;
 
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
@@ -5586,6 +5605,11 @@ async function generatePairSEO(pair, score, headlines, env, topQueries = []) {
   const dateShort = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   const biasLabel = score > 10 ? 'Bullish' : score < -10 ? 'Bearish' : 'Neutral';
   const headlineList = headlines.length ? headlines.slice(0, 5).map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No major headlines at this time.';
+  // Intent mode: once a page has real recorded demand, the searcher's wording
+  // outranks the bias-of-the-day template. Before that (cold start) the strict
+  // "PAIR Bias Today | CATALYST" format still applies — it's a fine default,
+  // it just must never override what people are actually typing into Google.
+  const intentMode = !!(topQueries && topQueries.length && topQueries[0].impr >= 10);
   const queryBlock = (topQueries && topQueries.length)
     ? `\nREAL GOOGLE QUERIES already bringing impressions to THIS page (last 28d) — write the SEO <title> to MATCH this dominant search intent and lift click-through; mirror the searcher's wording where it fits naturally, never keyword-stuff:\n${topQueries.map(q => `- "${q.query}" (${q.impr} impr, avg pos ${Math.round(q.pos)})`).join('\n')}\n`
     : '';
@@ -5608,13 +5632,18 @@ Hard rules:
 - Total length: 200–280 words.
 - NEVER write vague phrases like "rate expectations", "strength dominates", "sentiment shift", "rate divergence", "[currency] strength", "risk sentiment", "risk appetite", "quiet markets", "no major headlines", "no major catalysts", "absence of data", "lack of data", "no data", "markets await" — if headlines are quiet, describe positioning, technical levels, or the macro backdrop instead.
 
-Title rules — STRICT format: "${pair.name} ${biasLabel} Today | [CATALYST] — ${dateShort}"
-CATALYST must name a specific named event, policy decision, data print, or macro theme. If headlines are quiet, describe the POSITIONING or TECHNICAL driver (e.g. "USD Holds Near 99 as Traders Await FOMC", "EUR Tests Support on Thin Volume"). Never acknowledge the absence of news. Max 65 chars total.
+${intentMode ? `Title rules — INTENT MODE (this page has real recorded search demand; matching it outranks every template):
+- Format: "${pair.name} [INTENT PHRASE] — ${dateShort}". INTENT PHRASE must mirror the dominant query's wording naturally so the searcher sees their own words answered (e.g. query "usdcad intraday bearish factors" → "USD/CAD Today: Bullish & Bearish Factors to Watch").
+- NEVER assert a direction that contradicts a directional query. If searchers ask about "bearish factors" while today's bias is bullish, cover BOTH sides ("Bullish or Bearish?", "Key Factors to Watch") instead of stamping "${biasLabel} Today". You may state "${biasLabel}" only when it does not conflict with what was searched.
+- Front-load "${pair.name}". Max 65 chars total.` : `Title rules — STRICT format: "${pair.name} ${biasLabel} Today | [CATALYST] — ${dateShort}"
+CATALYST must name a specific named event, policy decision, data print, or macro theme. If headlines are quiet, describe the POSITIONING or TECHNICAL driver (e.g. "USD Holds Near 99 as Traders Await FOMC", "EUR Tests Support on Thin Volume"). Never acknowledge the absence of news. Max 65 chars total.`}
 BANNED words/phrases in title (any = failure): "Rate Expectations", "Strength Dominates", "Sentiment Shift", "Rate Divergence", "CHF Strength", "USD Strength", "EUR Strength", "GBP Strength", "AUD Strength", "JPY Strength", "CAD Strength", "NZD Strength", "Risk Appetite", "Risk Sentiment", "Markets Await", "Sentiment Bullish", "Sentiment Bearish", "Sentiment Neutral", "Bias Today —" (without pipe), "No Major", "Absence of", "Lack of", "No Data", "No Catalyst", "Quiet Session", score notation like "72/100".
-Rules: (1) Em dash — before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC, SNB not snb. (3) No brand suffix. (4) ALWAYS use format "PAIR Bullish/Bearish/Neutral Today | CATALYST — DATE" — never "Sentiment Bullish" or "Bias Today —".
+Rules: (1) Em dash — before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC, SNB not snb. (3) No brand suffix.${intentMode ? '' : ' (4) ALWAYS use format "PAIR Bullish/Bearish/Neutral Today | CATALYST — DATE" — never "Sentiment Bullish" or "Bias Today —".'}
+
+Also write a meta description: max 150 chars, answers the dominant search intent directly (never boilerplate), includes "${pair.name}", ends with a reason to click (what the reader learns).
 
 Return ONLY valid JSON (no markdown, no code fences):
-{"page_title":"<title here>","html":"<the three paragraphs>"}`;
+{"page_title":"<title here>","meta_description":"<description here>","html":"<the three paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -5625,15 +5654,15 @@ Return ONLY valid JSON (no markdown, no code fences):
   if (!resp.ok) throw new Error(`Haiku SEO ${pair.slug}: ${resp.status}`);
   const data = await resp.json();
   const raw = data.content?.[0]?.text?.trim() || '';
-  let pageTitle = '', html = raw;
+  let pageTitle = '', pageDesc = '', html = raw;
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
+    try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; pageDesc = p.meta_description||''; html = p.html||raw; } catch(_) {}
   }
   if (!pageTitle) pageTitle = `${pair.name} ${biasLabel} Bias Today | ${pair.name} Sentiment — ${dateShort}`;
   pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
   html = _addInternalLinks(html, '/pairs/' + pair.slug, 4);
-  return { pageTitle, html };
+  return { pageTitle, pageDesc, html };
 }
 
 async function saveSEOCache(slug, html, env) {
@@ -5690,12 +5719,12 @@ async function generateAllPairSEO(env, opts = {}) {
           const relevant = newsRows.filter(n => { const c = n.currencies_affected||[]; return c.includes(pair.base) || c.includes(pair.quote); }).map(n => n.title);
           const others   = newsRows.filter(n => { const c = n.currencies_affected||[]; return !c.includes(pair.base) && !c.includes(pair.quote); }).map(n => n.title);
           const pairHeadlines = [...relevant, ...others].filter(Boolean).slice(0, 6);
-          const { pageTitle, html } = await generatePairSEO(pair, pairScore, pairHeadlines, env, pageQueries['/pairs/' + pair.slug] || []);
+          const { pageTitle, pageDesc, html } = await generatePairSEO(pair, pairScore, pairHeadlines, env, pageQueries['/pairs/' + pair.slug] || []);
           if (html) {
             try { await saveSEOCache(pair.slug, html, env); } catch(ce) { console.log(`cache ${pair.slug}:`, ce.message); }
             console.log(`SEO processed: ${pair.slug} — title: ${pageTitle}`);
           }
-          if (pageTitle) titleUpdates.push({ path: `pairs/${pair.slug}/index.html`, pageTitle, pair, pairScore });
+          if (pageTitle) titleUpdates.push({ path: `pairs/${pair.slug}/index.html`, pageTitle, pageDesc, pair, pairScore });
         } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
       }));
       if (i + BATCH < SEO_PAIRS.length) await new Promise(r => setTimeout(r, 1000));
@@ -5712,7 +5741,7 @@ async function generateAllPairSEO(env, opts = {}) {
         const filesToCommit = [];
         const committed = [];
         for (let i = 0; i < titleUpdates.length; i++) {
-          const { path, pageTitle, pair, pairScore } = titleUpdates[i];
+          const { path, pageTitle, pageDesc, pair, pairScore } = titleUpdates[i];
           const current = fileContents[i];
           if (!current) { console.log(`Pair title patch: file not found ${path}`); continue; }
           const gate = await _titleGateAllows(pair.slug, pagePerf[`/pairs/${pair.slug}/`], env);
@@ -5725,12 +5754,17 @@ async function generateAllPairSEO(env, opts = {}) {
           const biasLabel = pairScore > 10 ? 'Bullish' : pairScore < -10 ? 'Bearish' : 'Neutral';
           const dateShort = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-          // Dynamic meta description (max 155 chars)
-          const descRaw = `${pair.name} is ${biasLabel} today. ${catalyst}. Live news-based forex sentiment & bias for traders — ${dateShort}.`;
+          // Meta description: prefer the intent-matched one from the generator;
+          // the constructed line is only a fallback (it reads as boilerplate).
+          const descRaw = (pageDesc && pageDesc.length >= 50)
+            ? pageDesc
+            : `${pair.name} is ${biasLabel} today. ${catalyst}. Live news-based forex sentiment & bias for traders — ${dateShort}.`;
           const safeDesc = descRaw.replace(/"/g, '&quot;').slice(0, 155);
 
-          // H1: keep flag span, replace static "Sentiment Today" with bias + catalyst
-          const h1Text = `${pair.name} ${biasLabel} Today — ${catalyst}`;
+          // H1: keep flag span; mirror the title (minus the date) so heading and
+          // snippet agree — fall back to the constructed bias+catalyst line.
+          const h1Text = pageTitle.replace(/\s*[—–-]\s*\d{1,2} \w{3,} \d{4}\s*$/, '').replace(/\s*\|\s*/g, ' — ')
+            || `${pair.name} ${biasLabel} Today — ${catalyst}`;
 
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
@@ -7020,6 +7054,206 @@ async function executeSeoActions(env) {
   await writeSystemState(env, 'seo_actions:last_run', summary).catch(() => {});
   console.log(`executeSeoActions: ${executed.length} committed, ${skipped.length} skipped`);
   return summary;
+}
+
+// ============================================================
+// SPRINT 6 — DEMAND-DRIVEN EVERGREEN GUIDES (weekly, Sunday 21:00)
+// The 3h cycles optimise pages that already exist; nothing in the
+// pipeline CREATES pages for demand we keep appearing for but never
+// win. This step mines gsc_performance for unbranded informational
+// queries at position 4–40 with real impressions, has Haiku pick ONE
+// topic no existing guide covers, and writes a full evergreen guide:
+// page rendered by re-skinning a live guide file (header/CSS/footer
+// stay in lock-step with the site), plus a guides-hub card and a
+// sitemap entry, committed as one batch. Max 1 guide per run; dupes
+// prevented by the live guides/ dir listing + a registry in
+// system_state ('auto_guides:registry'). Manual: GET /run-guide-gen.
+// ============================================================
+const _GUIDE_TEMPLATE_PATH = 'guides/what-moves-usd-jpy/index.html';
+const _GUIDE_CATS = ['Pair Guides', 'Reading the Market', 'Macro & Events'];
+
+function _guideEsc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+}
+
+async function generateOpportunityGuide(env) {
+  try {
+    if (!env.CLAUDE_API_KEY) return { ok: false, reason: 'no-api-key' };
+    if (!env.GITHUB_TOKEN) return { ok: false, reason: 'no-github-token' };
+
+    // 1) Ground truth for dedupe: the live guides/ directory.
+    let existing = [];
+    try {
+      const dir = await _insGh(env, 'GET', `/repos/{owner}/{repo}/contents/guides?ref=${env.GITHUB_BRANCH || 'main'}`);
+      existing = (Array.isArray(dir) ? dir : []).filter(e => e.type === 'dir').map(e => e.name);
+    } catch (e) { console.log('guideGen: dir list failed:', e.message); }
+    if (!existing.length) return { ok: false, reason: 'no-guide-dir' };
+    const registry = (await readSystemState(env, 'auto_guides:registry')) || { guides: [] };
+    const doneQueries = new Set((registry.guides || []).map(g => g.query));
+
+    // 2) Demand: unbranded queries we appear for (impr >= 15) but don't win (pos 4–40).
+    const candidates = (await _seoAggGsc(env, 'query', 28))
+      .filter(q => q.impr >= 15 && q.pos >= 4 && q.pos <= 40 && !/fxnewsbias/i.test(q.k) && !doneQueries.has(q.k))
+      .sort((a, b) => b.impr - a.impr).slice(0, 25);
+    if (!candidates.length) return { ok: false, reason: 'no-candidate-demand' };
+
+    // 3) One Haiku call: pick the best topic and write the whole guide.
+    const qLines = candidates.map(q => `- "${q.k}" (${q.impr} impr, avg pos ${q.pos.toFixed(1)})`).join('\n');
+    const prompt = `You write evergreen educational guides for FXNewsBias.com (live forex news-sentiment site). Below are real Google queries the site appears for but does not rank well on, plus the slugs of every guide that already exists.
+
+CANDIDATE QUERIES (28d Search Console):
+${qLines}
+
+EXISTING GUIDE SLUGS (never duplicate or closely overlap these topics):
+${existing.join(', ')}
+
+Pick the ONE candidate query with the best ratio of (search demand) to (competition a small site can beat) whose topic is EVERGREEN (educational "how/what/why" — not tied to one week's news) and NOT covered by an existing guide. If every candidate is navigational, news-of-the-day, or already covered, return {"skip":true,"reason":"<why>"}.
+
+Otherwise write a complete guide. Requirements:
+- 900–1300 words total across 5–7 sections. Confident, direct, educational — no fluff, no "in conclusion", no invented statistics or price levels.
+- Naturally include the chosen query's wording in the title, h1 and intro.
+- Weave in 2–3 internal links inside section html where genuinely relevant: /pairs/<pair-slug> (live bias pages, e.g. /pairs/usd-cad), /guides/<existing-slug>, /calendar or /news.
+- Section html: ONLY <p>, <strong>, <em>, <a href> tags. FAQ answers: plain text only.
+
+Return ONLY valid JSON (no markdown, no code fences):
+{"skip":false,
+ "primary_query":"<the chosen query>",
+ "slug":"<lowercase-hyphen slug, 8-60 chars, not in the existing list>",
+ "title":"<max 60 chars, front-loads the query wording>",
+ "description":"<max 150 chars meta description answering the search intent>",
+ "h1":"<page heading>",
+ "category":"<exactly one of: ${_GUIDE_CATS.join(' | ')}>",
+ "intro_html":"<1-2 <p> paragraphs>",
+ "sections":[{"heading":"<h2 text>","html":"<1-2 <p> paragraphs>"}],
+ "faq":[{"q":"<question>","a":"<plain-text answer, 1-3 sentences>"}],
+ "related":[{"slug":"<existing guide slug>","label":"<link text>"}]}
+sections: 5-7 items. faq: exactly 4. related: 2-4, slugs strictly from the existing list.`;
+
+    let spec = null;
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 6000, messages: [{ role: 'user', content: prompt }] }),
+        signal: AbortSignal.timeout(90000),
+      });
+      if (!resp.ok) throw new Error(`Anthropic HTTP ${resp.status}`);
+      const data = await resp.json();
+      const m = (data.content?.[0]?.text || '').match(/\{[\s\S]*\}/);
+      if (m) spec = JSON.parse(m[0]);
+    } catch (e) { console.log('guideGen LLM error:', e.message); return { ok: false, reason: 'llm-error', error: e.message }; }
+    if (!spec || spec.skip) return { ok: true, created: 0, reason: (spec && spec.reason) || 'llm-skip' };
+
+    // 4) Validate hard before touching the repo.
+    const slug = String(spec.slug || '').toLowerCase();
+    if (!/^[a-z0-9][a-z0-9-]{6,58}[a-z0-9]$/.test(slug)) return { ok: false, reason: 'bad-slug', slug };
+    if (existing.includes(slug)) return { ok: false, reason: 'slug-exists', slug };
+    if (await _insGetFile(env, `guides/${slug}/index.html`)) return { ok: false, reason: 'slug-file-exists', slug };
+    if (!Array.isArray(spec.sections) || spec.sections.length < 4) return { ok: false, reason: 'too-few-sections' };
+    if (!Array.isArray(spec.faq) || spec.faq.length < 3) return { ok: false, reason: 'too-few-faq' };
+    if (!spec.title || !spec.h1 || !spec.description || !spec.intro_html) return { ok: false, reason: 'missing-fields' };
+    const category = _GUIDE_CATS.includes(spec.category) ? spec.category : 'Reading the Market';
+    const related = (Array.isArray(spec.related) ? spec.related : []).filter(r => r && existing.includes(r.slug)).slice(0, 4);
+
+    // 5) Render the page off a LIVE guide file so chrome/CSS never drift.
+    const tpl = await _insGetFile(env, _GUIDE_TEMPLATE_PATH);
+    if (!tpl) return { ok: false, reason: 'template-missing' };
+    const pageUrl = `https://fxnewsbias.com/guides/${slug}`;
+    const today = new Date().toISOString().slice(0, 10);
+    const todayLong = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    const fullTitle = `${spec.title} | FXNewsBias`.slice(0, 70);
+    const desc = String(spec.description).slice(0, 155);
+    const eTitle = _guideEsc(fullTitle), eDesc = _guideEsc(desc);
+
+    const ldArticle = JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: spec.title, description: desc,
+      author: { '@type': 'Organization', name: 'FXNewsBias', url: 'https://fxnewsbias.com' },
+      publisher: { '@type': 'Organization', name: 'FXNewsBias', logo: { '@type': 'ImageObject', url: 'https://fxnewsbias.com/logo-fxnb.png' } },
+      datePublished: today, dateModified: today, mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl } });
+    const ldFaq = JSON.stringify({ '@context': 'https://schema.org', '@type': 'FAQPage',
+      mainEntity: spec.faq.slice(0, 6).map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) });
+    const ldCrumb = JSON.stringify({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://fxnewsbias.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Guides', item: 'https://fxnewsbias.com/guides' },
+      { '@type': 'ListItem', position: 3, name: spec.title, item: pageUrl } ] });
+    const ldBlock = `<script type="application/ld+json">${ldArticle}</script>\n<script type="application/ld+json">${ldFaq}</script>\n<script type="application/ld+json">${ldCrumb}</script>\n`;
+
+    const article = [
+      `  <div class="breadcrumb"><a href="/">Home</a> · <a href="/guides">Guides</a> · ${_guideEsc(spec.title)}</div>`,
+      '  <article>',
+      `    <h1>${_guideEsc(spec.h1)}</h1>`,
+      `    <p class="page-reviewed">📅 Page reviewed: ${todayLong} · ${_guideEsc(category)}</p>`,
+      '    <!-- seo_inject -->',
+      spec.intro_html,
+      ...spec.sections.slice(0, 7).map(s => `<h2>${_guideEsc(s.heading)}</h2>\n${s.html}`),
+      '    <div class="faq">',
+      '      <h2>Frequently asked questions</h2>',
+      ...spec.faq.slice(0, 6).map(f => `<h3>${_guideEsc(f.q)}</h3>\n<p>${_guideEsc(f.a)}</p>`),
+      '    </div>',
+      ...(related.length ? [
+        '    <div class="related">',
+        '      <h2>Keep reading</h2>',
+        '      <ul>',
+        ...related.map(r => `<li><a href="/guides/${r.slug}">${_guideEsc(r.label || r.slug)}</a></li>`),
+        '      </ul>',
+        '    </div>'] : []),
+      '  </article>',
+      '</div>',
+    ].join('\n');
+
+    let page = tpl
+      .replace(/<title>[^<]*<\/title>/, `<title>${eTitle}</title>`)
+      .replace(/<meta name="description"[^>]*>/, `<meta name="description" content="${eDesc}">`)
+      .replace(/<link rel="canonical"[^>]*>/, `<link rel="canonical" href="${pageUrl}">`)
+      .replace(/<meta property="og:title"[^>]*>/, `<meta property="og:title" content="${eTitle}">`)
+      .replace(/<meta property="og:description"[^>]*>/, `<meta property="og:description" content="${eDesc}">`)
+      .replace(/<meta property="og:url"[^>]*>/, `<meta property="og:url" content="${pageUrl}">`)
+      .replace(/<meta name="twitter:title"[^>]*>/, `<meta name="twitter:title" content="${eTitle}">`)
+      .replace(/<meta name="twitter:description"[^>]*>/, `<meta name="twitter:description" content="${eDesc}">`)
+      .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>\s*/g, '')
+      .replace(/<style>/, `${ldBlock}<style>`);
+    const bodyRe = /<div class="wrap">[\s\S]*?<\/article>\s*<\/div>/;
+    if (!bodyRe.test(page)) return { ok: false, reason: 'template-body-mismatch' };
+    page = page.replace(bodyRe, () => `<div class="wrap">\n${article}`);
+
+    // 6) Hub card (guides/index.html) — abort rather than commit an orphan page.
+    const hub = await _insGetFile(env, 'guides/index.html');
+    if (!hub) return { ok: false, reason: 'hub-missing' };
+    const card = `<a class="gcard" href="/guides/${slug}"><span class="gt">${_guideEsc(spec.title)}</span><span class="gd">${eDesc}</span></a>`;
+    // Insert the card at the top of the category's grid (categories are a fixed
+    // set, so plain string search beats regex-escaping here).
+    const catIdx = hub.indexOf(`<div class="hubcat">${_guideEsc(category)}</div>`);
+    if (catIdx < 0) return { ok: false, reason: 'hub-category-not-found', category };
+    const gridOpen = '<div class="hubgrid">';
+    const gridIdx = hub.indexOf(gridOpen, catIdx);
+    if (gridIdx < 0) return { ok: false, reason: 'hub-grid-not-found', category };
+    const insertAt = gridIdx + gridOpen.length;
+    const hubPatched = (hub.slice(0, insertAt) + '\n' + card + hub.slice(insertAt))
+      .replace(/(Page reviewed:\s*)[^·<]+(·)/, `$1${todayLong} $2`);
+
+    // 7) Sitemap entry + bump the /guides hub lastmod.
+    const sm = await _insGetFile(env, 'sitemap.xml');
+    if (!sm) return { ok: false, reason: 'sitemap-missing' };
+    const hubLineRe = /(<url><loc>https:\/\/fxnewsbias\.com\/guides<\/loc>.*?<\/url>)/;
+    if (!hubLineRe.test(sm)) return { ok: false, reason: 'sitemap-hub-line-missing' };
+    const smPatched = sm
+      .replace(/(<url><loc>https:\/\/fxnewsbias\.com\/guides<\/loc><lastmod>)[^<]*/, `$1${today}`)
+      .replace(hubLineRe, (m) => `${m}\n  <url><loc>${pageUrl}</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`);
+
+    // 8) One batch commit, then nudge crawlers and record the win.
+    await _insCommitFiles(env, [
+      { path: `guides/${slug}/index.html`, content: page },
+      { path: 'guides/index.html', content: hubPatched },
+      { path: 'sitemap.xml', content: smPatched },
+    ], `seo: new demand-driven guide — ${slug}`);
+    await pingIndexNow([pageUrl, 'https://fxnewsbias.com/guides']).catch(() => {});
+    registry.guides = [...(registry.guides || []), { slug, title: spec.title, query: spec.primary_query || '', at: new Date().toISOString() }];
+    await writeSystemState(env, 'auto_guides:registry', registry).catch(() => {});
+    console.log(`generateOpportunityGuide: created /guides/${slug} for "${spec.primary_query}"`);
+    return { ok: true, created: 1, slug, title: spec.title, primary_query: spec.primary_query || '' };
+  } catch (e) {
+    console.log('generateOpportunityGuide failed:', e.message);
+    return { ok: false, error: e.message };
+  }
 }
 
 // ============================================================
