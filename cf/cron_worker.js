@@ -4334,9 +4334,48 @@ function _insBuildOgSvg({ headline, sessionShort, dateLabel, biggestMover }) {
     + '</svg>';
 }
 
-function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category, narrative, ogImageOverride}){
+// ~155-char meta description: search snippets truncate past this and site
+// audits flag longer ones; og/twitter descriptions keep the full summary.
+function _insClampMeta(str, max = 155) {
+  const t = String(str || '').trim();
+  if (t.length <= max) return t;
+  let cut = t.slice(0, max - 1);
+  const sp = cut.lastIndexOf(' ');
+  if (sp > 40) cut = cut.slice(0, sp);
+  cut = cut.replace(/&[a-zA-Z#0-9]*$/, ''); // never cut mid-entity
+  return cut + '…';
+}
+
+// Human label for a chain link, derived purely from the slug so it works for
+// every article regardless of manifest depth.
+function _insSlugLabel(slug) {
+  const m = String(slug).match(/^(\d{4})-(\d{2})-(\d{2})-(?:(asia|london|ny)-)?(.*)$/);
+  if (!m) return slug;
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const sess = { asia: 'Asia', london: 'London', ny: 'NY' }[m[4]] || '';
+  const CCY = new Set(['usd','eur','gbp','jpy','aud','cad','chf','nzd','fed','boj','ecb','rba','boe','cpi','ppi','gdp','fomc','rbnz','snb','boc']);
+  const words = (m[5] || '').split('-').filter(Boolean).slice(0, 7)
+    .map(w => CCY.has(w) ? w.toUpperCase() : w).join(' ');
+  const title = words.charAt(0).toUpperCase() + words.slice(1);
+  return `${parseInt(m[3], 10)} ${MON[parseInt(m[2], 10) - 1]}${sess ? ' ' + sess : ''} — ${title}`;
+}
+
+// Prev/next chain nav carried by every insight article. The markers make the
+// block replaceable, so the generator can add the "next →" link to the
+// previous article when a new one publishes. This keeps the whole archive a
+// fully-linked chain — no insight is ever an orphan page.
+function _insNavBlock(prevSlug, nextSlug) {
+  const link = (href, label, right) => `<a href="${href}" style="color:inherit;text-decoration:none;opacity:.8;max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${right ? 'text-align:right;' : ''}">${label}</a>`;
+  return `<!-- fxnb-inav --><nav aria-label="More session insights" style="max-width:860px;margin:26px auto 6px;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:14px;font-size:13.5px;border-top:1px solid rgba(148,163,184,.25);">`
+    + (prevSlug ? link(`/insight/${prevSlug}`, `← ${_insEsc(_insSlugLabel(prevSlug))}`) : '<span></span>')
+    + `<a href="/insight/" style="color:inherit;text-decoration:none;opacity:.6;white-space:nowrap;">All insights</a>`
+    + (nextSlug ? link(`/insight/${nextSlug}`, `${_insEsc(_insSlugLabel(nextSlug))} →`, true) : '<span></span>')
+    + `</nav><!-- /fxnb-inav -->`;
+}
+
+function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category, narrative, ogImageOverride, prevSlug}){
   const url = `${_INS_SITE}/insight/${slug}`;
-  const shortHeadline = String(headline).split(" — ")[0]; const h = _insEsc(headline), hShort = _insEsc(shortHeadline), s = _insEsc(summary);
+  const shortHeadline = String(headline).split(" — ")[0]; const h = _insEsc(headline), hShort = _insEsc(shortHeadline), s = _insEsc(summary), sMeta = _insEsc(_insClampMeta(summary));
   const pageTitle = (narrative && narrative.pageTitle) ? _insEsc(narrative.pageTitle) : h;
   const N = narrative || _insBuildNarrative({sentiment, news, biggestMover});
   // Internal links: funnel article-body authority into money pages. Shared budget
@@ -4357,7 +4396,7 @@ function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMov
 <script>try{if(localStorage.getItem("fxnb_is_pro")==="true")document.documentElement.dataset.pro="1";}catch(e){}</script>
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="icon" href="/favicon.ico"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
-<title>${pageTitle} | FXNewsBias</title><meta name="description" content="${s}"><meta name="robots" content="index, follow"><meta name="author" content="FXNewsBias Team"><link rel="canonical" href="${url}">
+<title>${pageTitle} | FXNewsBias</title><meta name="description" content="${sMeta}"><meta name="robots" content="index, follow"><meta name="author" content="FXNewsBias Team"><link rel="canonical" href="${url}">
 <meta property="og:type" content="article"><meta property="og:title" content="${pageTitle}"><meta property="og:description" content="${s}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ogImage}"><meta property="og:image:secure_url" content="${ogImage}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${pageTitle} — FXNewsBias daily insight"><meta property="og:site_name" content="FXNewsBias">
 <meta property="article:published_time" content="${dateISO}"><meta property="article:author" content="FXNewsBias Team"><meta property="article:section" content="Forex Analysis">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${pageTitle}"><meta name="twitter:description" content="${s}"><meta name="twitter:image" content="${ogImage}"><meta name="twitter:image:alt" content="${pageTitle} — FXNewsBias daily insight">
@@ -4417,6 +4456,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <div class="sidebar-card"><div class="sidebar-h">📤 Share This Insight</div><div class="share-row"><a class="share-btn" href="https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(headline)}" target="_blank" rel="noopener">𝕏 Twitter</a><a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}" target="_blank" rel="noopener">LinkedIn</a><a class="share-btn" href="https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(headline)}" target="_blank" rel="noopener">🔴 Reddit</a></div></div>
 </aside>
 </div>
+${_insNavBlock(prevSlug, null)}
 <footer><div class="footer-inner"><div class="footer-bottom">© ${new Date().getFullYear()} FXNewsBias · <a href="/about">About</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/insight/">All Daily Insights</a> · <a href="/insight/rss.xml">RSS</a> · <a href="https://www.reddit.com/u/fxnewsbias/s/1bZFbWSZ50" target="_blank" rel="noopener noreferrer">🔴 Reddit</a></div></div></footer>
 </body></html>`;
 }
@@ -4685,17 +4725,45 @@ async function generateDailyInsight(env, session) {
       console.log('Insight: SVG→PNG failed, falling back to SVG + currency PNG:', e.message);
     }
 
+    // Orphan-proofing: every article chains to its neighbours. The new
+    // article links back to the previous one; the previous article gains a
+    // "next →" link to this one in the same commit.
+    const prevSlug = ((storedEntries.find(e => e.slug !== slug)) || {}).slug || null;
+
     // Rebuild article HTML now that we know the final og:image URL
     const finalArticleHtml = _insRenderArticle({
       headline: sessionHeadline, slug, summary: sessionSummary,
       sentiment, news, biggestMover: angle.biggestMover,
       dateISO, dateLabel, category: sessionCategory,
-      narrative, ogImageOverride
+      narrative, ogImageOverride, prevSlug
     });
+
+    let prevPatch = null;
+    if (prevSlug) {
+      try {
+        const prevHtml = await _insGetFile(env, `insight/${prevSlug}.html`);
+        if (prevHtml) {
+          const navRe = /<!-- fxnb-inav -->[\s\S]*?<!-- \/fxnb-inav -->/;
+          const mBlock = prevHtml.match(navRe);
+          let prevPrev = null;
+          if (mBlock) {
+            const mp = mBlock[0].match(/href="\/insight\/([\w][\w-]*)"/);
+            prevPrev = mp ? mp[1] : null;
+            if (prevPrev === slug) prevPrev = null;
+          }
+          const newBlock = _insNavBlock(prevPrev, slug);
+          const patched = mBlock
+            ? prevHtml.replace(navRe, newBlock)
+            : prevHtml.replace('<footer>', newBlock + '\n<footer>');
+          if (patched !== prevHtml) prevPatch = { path: `insight/${prevSlug}.html`, content: patched };
+        }
+      } catch (e) { console.log('insight prev-chain patch:', e.message); }
+    }
 
     // 8. Commit all files
     const sha = await _insCommitFiles(env, [
       { path: `insight/${slug}.html`, content: finalArticleHtml },
+      ...(prevPatch ? [prevPatch] : []),
       ogFileEntry,
       { path: 'insight/articles.json', content: updatedManifest },
       { path: 'insight/index.html', content: _insRenderIndex(articlesMeta) },
