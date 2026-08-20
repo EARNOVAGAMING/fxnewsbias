@@ -366,6 +366,10 @@ return handleGa4Summary(request, env);
 // Web Push (V1) — session-insight delivery only. Identity is always derived
 // server-side from the Firebase ID token; the VAPID private key never leaves
 // the worker (only the public key is exposed, which is by design).
+// Public Sandbox API (contract: data/API_CONTRACT_v1.md — frozen v1)
+if (url.pathname === '/api/v1/sentiment') return handleApiSentiment(request, env);
+if (url.pathname === '/api/keys')         return handleApiKeyRequest(request, env);
+
 if (url.pathname === '/api/push/public-key') {
 return new Response(JSON.stringify({ key: env.VAPID_PUBLIC_KEY || null }), {
   status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600', 'Access-Control-Allow-Origin': '*' } });
@@ -2606,6 +2610,203 @@ return ids;
 console.log('getActiveIncidentSentimentIds error:', e.message);
 return [];
 }
+}
+
+// ============================================
+// PUBLIC SANDBOX API — contract frozen in data/API_CONTRACT_v1.md
+// Bearer-auth, hashed key storage, atomic UTC-day rate limit (100/day).
+// Response fields are explicitly whitelisted — never spread DB rows — so
+// nothing outside the v1 contract can leak.
+// ============================================
+const _API_CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+};
+const _API_CCY_ORDER = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'NZD'];
+
+function _apiJson(obj, status = 200, extra = {}) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ..._API_CORS, ...extra },
+  });
+}
+
+async function _sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// 32 random bytes as hex — unbiased, 256 bits of entropy.
+function _randApiKey() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return 'fxnb_live_' + [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function _nextUtcMidnightEpoch() {
+  const d = new Date();
+  return Math.floor(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1) / 1000);
+}
+
+// POST /api/keys — issue a Sandbox key. The raw key is DELIVERED BY EMAIL
+// ONLY (never in the HTTP response) and only its SHA-256 hash is stored.
+// Requesting again with the same email revokes the previous key.
+async function handleApiKeyRequest(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _API_CORS });
+  if (request.method !== 'POST') return _apiJson({ error: 'method-not-allowed' }, 405);
+  try {
+    const body = await request.json().catch(() => ({}));
+    const em = String(body.email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em) || em.length > 254) return _apiJson({ error: 'invalid-email' }, 400);
+    const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
+
+    // Issuance throttle (3/day per email AND per IP) — fail-closed: this
+    // endpoint sends email, so infra trouble must not allow spam.
+    const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+    for (const ident of [`email:${em}`, `ip:${ip}`]) {
+      const r = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_key_issuance`, {
+        method: 'POST', headers: sb, body: JSON.stringify({ p_ident: ident }), signal: AbortSignal.timeout(15000),
+      });
+      if (!r.ok) return _apiJson({ error: 'server-error' }, 503);
+      if ((await r.text()).trim() !== 'true') {
+        return _apiJson({ error: 'too-many-requests', message: 'Key requests are limited to 3 per day. Please try again tomorrow.' }, 429);
+      }
+    }
+
+    // Rotate: revoke any existing active key for this email.
+    await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?email=eq.${encodeURIComponent(em)}&status=eq.active`, {
+      method: 'PATCH', headers: { ...sb, Prefer: 'return=minimal' },
+      body: JSON.stringify({ status: 'revoked', revoked_at: new Date().toISOString() }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    const raw = _randApiKey();
+    const hash = await _sha256Hex(raw);
+    const ins = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys`, {
+      method: 'POST', headers: { ...sb, Prefer: 'return=minimal' },
+      body: JSON.stringify({ email: em, key_hash: hash }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!ins.ok) return _apiJson({ error: 'server-error' }, 500);
+
+    const fromEmail = env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com';
+    const mail = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: `FXNewsBias <${fromEmail}>`,
+        to: [em],
+        subject: 'Your FXNewsBias API key',
+        html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e;line-height:1.6;padding:24px;">
+<h2 style="margin:0 0 14px;">Your FXNewsBias API key</h2>
+<p>Here is your Sandbox API key. Keep it secret — anyone holding it can use your daily quota. We store only a hash, so this email is the only copy.</p>
+<p style="background:#0f172a;color:#93c5fd;padding:14px 16px;border-radius:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all;">${raw}</p>
+<p style="margin:18px 0 6px;"><strong>Quickstart</strong></p>
+<p style="background:#f1f5f9;padding:12px 14px;border-radius:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;word-break:break-all;">curl -H "Authorization: Bearer ${raw}" https://fxnewsbias-cron.dineshsanther123gf.workers.dev/api/v1/sentiment</p>
+<ul style="padding-left:20px;font-size:14px;">
+<li>Current news-sentiment scores for 8 currencies, refreshed every 3 hours</li>
+<li>Limit: 100 requests per UTC day (headers show your remaining quota)</li>
+<li>Attribution required where the data is displayed: "Data by FXNewsBias" with a link to fxnewsbias.com</li>
+<li>Personal / non-commercial use — commercial use: just reply to this email</li>
+</ul>
+<p style="font-size:14px;">Full contract &amp; docs: <a href="https://fxnewsbias.com/developers" style="color:#1e40af;">fxnewsbias.com/developers</a><br>Need a fresh key? Request again with the same email — the old key is revoked automatically.</p>
+<p style="font-size:12px;color:#94a3b8;">You received this because this address requested an API key at fxnewsbias.com. If that wasn't you, ignore this email — the key dies with your quota unused.</p>
+</div>`,
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!mail.ok) {
+      // Undo: a key the user never received must not stay live.
+      await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?key_hash=eq.${hash}`, {
+        method: 'PATCH', headers: { ...sb, Prefer: 'return=minimal' },
+        body: JSON.stringify({ status: 'revoked', revoked_at: new Date().toISOString() }),
+        signal: AbortSignal.timeout(15000),
+      }).catch(() => {});
+      return _apiJson({ error: 'email-failed', message: 'Could not deliver the key. Please try again later.' }, 500);
+    }
+    return _apiJson({ ok: true, message: 'API key sent to your email' });
+  } catch (e) {
+    console.log('handleApiKeyRequest error:', e.message);
+    return _apiJson({ error: 'server-error' }, 500);
+  }
+}
+
+// GET /api/v1/sentiment — the Sandbox endpoint. Contract-frozen response.
+async function handleApiSentiment(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _API_CORS });
+  if (request.method !== 'GET') return _apiJson({ error: 'method-not-allowed' }, 405);
+  try {
+    const auth = request.headers.get('authorization') || '';
+    const m = auth.match(/^Bearer\s+(fxnb_live_[0-9a-f]{64})$/i);
+    if (!m) return _apiJson({ error: 'unauthorized' }, 401);
+    const hash = await _sha256Hex(m[1]);
+    const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
+
+    const kr = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?select=id,status&key_hash=eq.${hash}`, {
+      headers: sb, signal: AbortSignal.timeout(15000),
+    });
+    const key = kr.ok ? (await kr.json())[0] : null;
+    if (!key || key.status !== 'active') return _apiJson({ error: 'unauthorized' }, 401);
+
+    // Rate limit — fail-open on limiter infra errors: a limiter outage must
+    // never take the API down for legitimate users.
+    let used = null, limited = false;
+    try {
+      const rl = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_api_slot`, {
+        method: 'POST', headers: sb, body: JSON.stringify({ p_key_hash: hash }), signal: AbortSignal.timeout(15000),
+      });
+      if (rl.ok) {
+        const r = (await rl.json())[0];
+        if (r) { used = r.used; limited = r.claimed !== true; }
+      }
+    } catch (e) { console.log('claim_api_slot error:', e.message); }
+
+    const reset = _nextUtcMidnightEpoch();
+    const rateHeaders = {
+      'X-RateLimit-Limit': '100',
+      'X-RateLimit-Remaining': String(used === null ? 100 : Math.max(0, 100 - used)),
+      'X-RateLimit-Reset': String(reset),
+    };
+    if (limited) {
+      const retry = Math.max(1, reset - Math.floor(Date.now() / 1000));
+      return _apiJson({ error: 'rate-limited', retry_after_seconds: retry }, 429,
+        { ...rateHeaders, 'X-RateLimit-Remaining': '0', 'Retry-After': String(retry) });
+    }
+
+    // Current snapshot only — fields picked explicitly per the v1 contract.
+    const sr = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment?select=currency,score,bias,created_at&order=created_at.desc&limit=24`, {
+      headers: sb, signal: AbortSignal.timeout(15000),
+    });
+    if (!sr.ok) return _apiJson({ error: 'server-error' }, 500);
+    const latest = {};
+    for (const row of await sr.json()) if (!latest[row.currency]) latest[row.currency] = row;
+    const data = _API_CCY_ORDER.filter(c => latest[c]).map(c => ({
+      currency: c,
+      score: latest[c].score,
+      bias: latest[c].bias,
+      updated_at: latest[c].created_at,
+    }));
+
+    const now = new Date();
+    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), (Math.floor(now.getUTCHours() / 3) + 1) * 3, 0, 0));
+
+    await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?id=eq.${key.id}`, {
+      method: 'PATCH', headers: { ...sb, Prefer: 'return=minimal' },
+      body: JSON.stringify({ last_used_at: now.toISOString() }),
+      signal: AbortSignal.timeout(10000),
+    }).catch(() => {});
+
+    return _apiJson({
+      schema: 'fxnb.sentiment.v1',
+      generated_at: now.toISOString(),
+      next_update_expected: next.toISOString(),
+      attribution: { required: true, text: 'Data by FXNewsBias', url: 'https://fxnewsbias.com' },
+      data,
+    }, 200, rateHeaders);
+  } catch (e) {
+    console.log('handleApiSentiment error:', e.message);
+    return _apiJson({ error: 'server-error' }, 500);
+  }
 }
 
 // ============================================

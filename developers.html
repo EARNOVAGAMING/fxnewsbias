@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" href="/favicon.ico">
+<title>Developer API | FXNewsBias Forex Sentiment Data</title>
+<meta name="description" content="Free Sandbox API for FXNewsBias forex news-sentiment scores. Current bias for 8 major currencies, refreshed every 3 hours. Get an API key by email in seconds.">
+<meta name="robots" content="index, follow">
+<meta name="author" content="FXNewsBias">
+<link rel="canonical" href="https://fxnewsbias.com/developers">
+<meta property="og:title" content="Developer API | FXNewsBias Forex Sentiment Data">
+<meta property="og:description" content="Free Sandbox API: current news-sentiment scores for 8 major currencies, refreshed every 3 hours.">
+<meta property="og:url" content="https://fxnewsbias.com/developers">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://fxnewsbias.com/og-image.webp">
+<meta property="og:site_name" content="FXNewsBias">
+<meta name="theme-color" content="#0f172a">
+<style>
+:root{--bg:#0f172a;--card:#16213c;--line:rgba(148,163,184,.18);--ink:#e2e8f0;--muted:#94a3b8;--accent:#60a5fa;--btn:#2563eb;--mono:ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 Inter,-apple-system,'Segoe UI',Roboto,sans-serif;}
+.wrap{max-width:840px;margin:0 auto;padding:32px 20px 80px}
+a{color:var(--accent)}
+.top a{color:var(--muted);text-decoration:none;font-size:14px}
+h1{font-size:2rem;margin:.6em 0 .2em;line-height:1.2}
+h2{font-size:1.3rem;margin:2.2em 0 .5em}
+.sub{color:var(--muted);max-width:60ch}
+.badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;background:rgba(37,99,235,.15);padding:4px 12px;border-radius:20px;margin-bottom:12px}
+pre{background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;color:#c3d4f0;margin:12px 0}
+code{font-family:var(--mono);font-size:.9em;color:#93c5fd}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:20px 0}
+.keyform{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.keyform input{flex:1;min-width:220px;padding:12px 14px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:var(--ink);font-size:14px}
+.keyform button{padding:12px 22px;border-radius:9px;border:none;background:var(--btn);color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.keyform button:disabled{opacity:.6;cursor:wait}
+#key-msg{font-size:13.5px;margin-top:10px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted)}
+ul{padding-left:20px}
+.tblwrap{overflow-x:auto}
+footer{margin-top:60px;border-top:1px solid var(--line);padding-top:18px;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top"><a href="/">← fxnewsbias.com</a></div>
+<span class="badge" style="margin-top:26px;">Sandbox · Free</span>
+<h1>FXNewsBias Developer API</h1>
+<p class="sub">The current news-sentiment read for 8 major currencies — the same scores that power the FXNewsBias dashboard — as clean JSON. Refreshed every 3 hours, around the clock.</p>
+
+<div class="card" id="get-key">
+  <h2 style="margin-top:0;">Get a free API key</h2>
+  <p class="note">Your key arrives by email within seconds. No account needed. We store only a hash of the key, and use your email solely to deliver the key and occasional API updates.</p>
+  <div class="keyform">
+    <input type="email" id="key-email" placeholder="you@example.com" autocomplete="email">
+    <button id="key-btn" type="button">Email me a key</button>
+  </div>
+  <div id="key-msg"></div>
+</div>
+
+<h2>Quickstart</h2>
+<pre>curl -H "Authorization: Bearer fxnb_live_YOUR_KEY" \
+  https://fxnewsbias-cron.dineshsanther123gf.workers.dev/api/v1/sentiment</pre>
+
+<h2>Response</h2>
+<pre>{
+  "schema": "fxnb.sentiment.v1",
+  "generated_at": "2026-08-21T09:00:12Z",
+  "next_update_expected": "2026-08-21T12:00:00Z",
+  "attribution": {
+    "required": true,
+    "text": "Data by FXNewsBias",
+    "url": "https://fxnewsbias.com"
+  },
+  "data": [
+    { "currency": "USD", "score": 72, "bias": "Bullish",
+      "updated_at": "2026-08-21T09:00:00Z" },
+    ...
+  ]
+}</pre>
+
+<div class="tblwrap"><table>
+<tr><th>Field</th><th>Contract (frozen — v1 never changes shape)</th></tr>
+<tr><td><code>data</code></td><td>Always exactly 8 rows, ordered USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD</td></tr>
+<tr><td><code>score</code></td><td>Integer 0–100. 50 is the neutral midpoint; higher = bullish news tone, lower = bearish</td></tr>
+<tr><td><code>bias</code></td><td>Exactly one of <code>Bullish</code>, <code>Bearish</code>, <code>Neutral</code></td></tr>
+<tr><td><code>updated_at</code></td><td>ISO-8601 UTC — when the score was computed (3-hour cycles)</td></tr>
+<tr><td><code>next_update_expected</code></td><td>The next scheduled refresh. Polling faster than 3-hourly just returns the same values</td></tr>
+</table></div>
+
+<h2>Rate limits</h2>
+<ul>
+<li><strong>100 requests per UTC calendar day</strong> per key, resetting at 00:00 UTC — comfortably enough for hourly polling with headroom</li>
+<li>Every response carries <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code></li>
+<li>Request 101 returns <code>429</code> with a <code>Retry-After</code> header</li>
+</ul>
+
+<h2>Attribution &amp; terms</h2>
+<ul>
+<li>Wherever the data is displayed or republished, retain the attribution: <strong>"Data by FXNewsBias"</strong> linking to <code>https://fxnewsbias.com</code> (it's included in every response)</li>
+<li>Sandbox is for personal and internal non-commercial use</li>
+<li>No redistribution, resale, or use to build a competing sentiment service</li>
+<li>Keys can be revoked for abuse; request a new key any time (the old one is revoked automatically)</li>
+<li>Commercial or higher-volume use: <a href="mailto:hello@fxnewsbias.com">hello@fxnewsbias.com</a></li>
+</ul>
+
+<h2>Coming next</h2>
+<p class="sub">Developer and Quant tiers — full score history since May 2026, session-scorecard data, bulk CSV, webhooks and higher limits. Want early access? Say so when you request your key, or email us.</p>
+
+<p class="note">This API provides news-sentiment data for informational purposes. It is not financial advice, a forecast, or a trading signal.</p>
+
+<footer>© 2026 FXNewsBias · <a href="/about">About</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/contact">Contact</a></footer>
+</div>
+<script>
+(function(){
+  var btn=document.getElementById('key-btn'),inp=document.getElementById('key-email'),msg=document.getElementById('key-msg');
+  btn.addEventListener('click',function(){
+    var em=(inp.value||'').trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){msg.textContent='Please enter a valid email address.';return;}
+    btn.disabled=true;msg.textContent='Sending…';
+    fetch('https://fxnewsbias-cron.dineshsanther123gf.workers.dev/api/keys',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em})
+    }).then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j};});})
+    .then(function(res){
+      btn.disabled=false;
+      if(res.ok){msg.textContent='✅ Key sent — check your inbox (and spam folder).';inp.value='';}
+      else if(res.j&&res.j.error==='too-many-requests'){msg.textContent='Limit reached: 3 key requests per day. Try again tomorrow.';}
+      else{msg.textContent='Something went wrong — please try again in a minute.';}
+    }).catch(function(){btn.disabled=false;msg.textContent='Network error — please try again.';});
+  });
+})();
+</script>
+</body>
+</html>
