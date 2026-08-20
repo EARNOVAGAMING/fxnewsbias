@@ -2707,7 +2707,7 @@ async function handleApiKeyRequest(request, env) {
 <li>Current news-sentiment scores for 8 currencies, refreshed every 3 hours</li>
 <li>Limit: 100 requests per UTC day (headers show your remaining quota)</li>
 <li>Attribution required where the data is displayed: "Data by FXNewsBias" with a link to fxnewsbias.com</li>
-<li>Personal and non-commercial use. For commercial use, just reply to this email</li>
+<li>Personal and non-commercial use. For commercial use, email <a href="mailto:contact@fxnewsbias.com" style="color:#1e40af;">contact@fxnewsbias.com</a></li>
 </ul>
 <p style="font-size:14px;">Full contract &amp; docs: <a href="https://fxnewsbias.com/developers" style="color:#1e40af;">fxnewsbias.com/developers</a><br>Need a fresh key? Request again with the same email — the old key is revoked automatically.</p>
 <p style="font-size:12px;color:#94a3b8;">You received this because this address requested an API key at fxnewsbias.com. If that wasn't you, ignore this email and the key dies with your quota unused.</p>

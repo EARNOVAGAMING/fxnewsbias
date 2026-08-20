@@ -103,4 +103,4 @@ Content-Type: application/json
 - Attribution must be retained wherever the data is displayed or republished.
 - No redistribution, resale, or use to build a competing sentiment service.
 - Keys may be revoked for abuse. Commercial/higher-volume use:
-  hello@fxnewsbias.com.
+  contact@fxnewsbias.com.
