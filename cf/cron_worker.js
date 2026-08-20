@@ -2699,7 +2699,7 @@ async function handleApiKeyRequest(request, env) {
         subject: 'Your FXNewsBias API key',
         html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e;line-height:1.6;padding:24px;">
 <h2 style="margin:0 0 14px;">Your FXNewsBias API key</h2>
-<p>Here is your Sandbox API key. Keep it secret — anyone holding it can use your daily quota. We store only a hash, so this email is the only copy.</p>
+<p>Here is your Sandbox API key. Keep it secret, anyone holding it can use your daily quota. We store only a hash, so this email is the only copy.</p>
 <p style="background:#0f172a;color:#93c5fd;padding:14px 16px;border-radius:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all;">${raw}</p>
 <p style="margin:18px 0 6px;"><strong>Quickstart</strong></p>
 <p style="background:#f1f5f9;padding:12px 14px;border-radius:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;word-break:break-all;">curl -H "Authorization: Bearer ${raw}" https://fxnewsbias.com/api/v1/sentiment</p>
@@ -2707,10 +2707,10 @@ async function handleApiKeyRequest(request, env) {
 <li>Current news-sentiment scores for 8 currencies, refreshed every 3 hours</li>
 <li>Limit: 100 requests per UTC day (headers show your remaining quota)</li>
 <li>Attribution required where the data is displayed: "Data by FXNewsBias" with a link to fxnewsbias.com</li>
-<li>Personal / non-commercial use — commercial use: just reply to this email</li>
+<li>Personal and non-commercial use. For commercial use, just reply to this email</li>
 </ul>
 <p style="font-size:14px;">Full contract &amp; docs: <a href="https://fxnewsbias.com/developers" style="color:#1e40af;">fxnewsbias.com/developers</a><br>Need a fresh key? Request again with the same email — the old key is revoked automatically.</p>
-<p style="font-size:12px;color:#94a3b8;">You received this because this address requested an API key at fxnewsbias.com. If that wasn't you, ignore this email — the key dies with your quota unused.</p>
+<p style="font-size:12px;color:#94a3b8;">You received this because this address requested an API key at fxnewsbias.com. If that wasn't you, ignore this email and the key dies with your quota unused.</p>
 </div>`,
       }),
       signal: AbortSignal.timeout(20000),
