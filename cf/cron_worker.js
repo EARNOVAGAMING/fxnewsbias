@@ -2702,7 +2702,7 @@ async function handleApiKeyRequest(request, env) {
 <p>Here is your Sandbox API key. Keep it secret — anyone holding it can use your daily quota. We store only a hash, so this email is the only copy.</p>
 <p style="background:#0f172a;color:#93c5fd;padding:14px 16px;border-radius:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all;">${raw}</p>
 <p style="margin:18px 0 6px;"><strong>Quickstart</strong></p>
-<p style="background:#f1f5f9;padding:12px 14px;border-radius:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;word-break:break-all;">curl -H "Authorization: Bearer ${raw}" https://fxnewsbias-cron.dineshsanther123gf.workers.dev/api/v1/sentiment</p>
+<p style="background:#f1f5f9;padding:12px 14px;border-radius:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;word-break:break-all;">curl -H "Authorization: Bearer ${raw}" https://fxnewsbias.com/api/v1/sentiment</p>
 <ul style="padding-left:20px;font-size:14px;">
 <li>Current news-sentiment scores for 8 currencies, refreshed every 3 hours</li>
 <li>Limit: 100 requests per UTC day (headers show your remaining quota)</li>

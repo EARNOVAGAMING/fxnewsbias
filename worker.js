@@ -2,6 +2,10 @@
 
 const CURRENCY_CODES = new Set(['usd','eur','gbp','jpy','aud','cad','chf','nzd']);
 
+// Upstream host for the public API. Kept in one place so the published
+// docs and emails only ever reference fxnewsbias.com.
+const API_ORIGIN_HOST = 'fxnewsbias-cron.dineshsanther123gf.workers.dev';
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -10,6 +14,18 @@ export default {
     if (url.protocol === 'http:') {
       url.protocol = 'https:';
       return Response.redirect(url.toString(), 301);
+    }
+
+    // Public API, served from fxnewsbias.com so published docs never expose the
+    // internal workers.dev hostname. Method, headers (including Authorization)
+    // and body are forwarded untouched, and the upstream response is returned
+    // as-is so status codes and X-RateLimit-* headers pass through unchanged.
+    // Sits before the non-GET guard below so CORS preflight (OPTIONS) works.
+    if (url.pathname.startsWith('/api/v1/')) {
+      const upstream = new URL(request.url);
+      upstream.hostname = API_ORIGIN_HOST;
+      const res = await fetch(new Request(upstream.toString(), request));
+      return new Response(res.body, res);
     }
 
     // Allow HEAD through to dynamic routing so Googlebot HEAD crawls return
