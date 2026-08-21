@@ -88,13 +88,13 @@ a:hover{color:#93c5fd}
 
 /* ---- site chrome, same shape the rest of the site uses so nav.js can drive it ---- */
 .topbar{background:#0f172a;color:#94a3b8;font-size:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
-.topbar-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center;gap:14px}
 .topbar-left,.topbar-right{display:flex;gap:16px;align-items:center}
 .topbar a{color:#94a3b8}
 @media(max-width:720px){.topbar-left span:nth-child(n+3){display:none}}
 
 header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.4)}
-.header-inner{max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.header-inner{max-width:1280px;margin:0 auto;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px}
 .logo{display:inline-flex;align-items:center;gap:10px;line-height:1}
 .logo img{height:38px;width:auto;display:block;flex:0 0 auto}
 nav ul{list-style:none;display:flex;gap:24px;margin:0;padding:0}
@@ -103,8 +103,12 @@ nav a:hover{color:var(--accent)}
 .nav-actions{display:flex;gap:10px;align-items:center}
 .btn-outline{background:transparent;color:#f1f5f9;border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:8px 15px;font-size:13px;font-weight:600;white-space:nowrap}
 .btn-outline:hover{border-color:rgba(96,165,250,.6);color:#fff}
+/* The site puts Login and Register inside the burger drawer, which nav.js
+   builds from these anchors. Keep them in the DOM, out of the header, so
+   there is one way to sign in rather than three. */
+.nav-actions > .btn-outline{display:none}
 .burger{display:none;background:none;border:none}
-@media(max-width:900px){nav ul{display:none}.nav-actions .btn-outline{display:none}}
+@media(max-width:900px){nav ul{display:none}}
 .who{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;min-width:0}
 .who strong{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:30vw}
 .pill{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap}
@@ -112,7 +116,7 @@ nav a:hover{color:var(--accent)}
 .pill-free{background:rgba(148,163,184,.16);color:#cbd5e1}
 
 /* ---- page shell ---- */
-.wrap{max-width:940px;margin:0 auto;padding:0 24px 72px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 24px 48px}
 .breadcrumb{font-size:12.5px;color:var(--faint);padding:20px 0 0;display:flex;flex-wrap:wrap;gap:7px;align-items:center}
 .breadcrumb a{color:var(--muted)}
 .breadcrumb a:hover{color:var(--ink)}
@@ -126,6 +130,14 @@ h1{font-size:clamp(1.7rem,4.4vw,2.05rem);line-height:1.18;letter-spacing:-.5px;m
 .livechip.show{display:flex}
 @media(max-width:640px){.pagehead{flex-direction:column;align-items:flex-start;gap:12px}.livechip{padding-bottom:0}}
 
+/* Wide screens read the reference in two columns instead of one long
+   ribbon with empty margins either side. */
+.docs{display:grid;grid-template-columns:1fr;gap:0 40px}
+.docs > .col{min-width:0}
+@media(min-width:1060px){
+  .docs{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+  .docs > .col > h2:first-child{margin-top:26px}
+}
 h2{font-size:1.28rem;letter-spacing:-.2px;margin:38px 0 12px;font-weight:700}
 h3{font-size:1.02rem;margin:22px 0 6px;font-weight:700}
 p{margin:0 0 12px}
@@ -228,7 +240,8 @@ th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.
   font-family:var(--mono);font-size:12px;line-height:1.7;color:#c3d4f0;overflow-x:auto;margin:0;-webkit-overflow-scrolling:touch}
 
 /* endpoint cards */
-.eplist{display:flex;flex-direction:column;gap:10px}
+.eplist{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:1060px){.eplist{grid-template-columns:1fr 1fr}}
 .ep{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 18px;display:flex;align-items:center;gap:14px}
 .ep .verb{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--good);background:rgba(52,211,153,.12);padding:3px 8px;border-radius:5px;flex:none}
 .ep .body{flex:1;min-width:0}
@@ -237,7 +250,9 @@ th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.
 @media(max-width:520px){.ep{flex-wrap:wrap;gap:10px}.ep .body{flex:1 1 100%;order:3}}
 
 /* faq */
-.faq{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--card)}
+.faqgrid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:1060px){.faqgrid{grid-template-columns:1fr 1fr}}
+.faq{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--card);align-self:start}
 .faq details{border-bottom:1px solid var(--line)}
 .faq details:last-child{border-bottom:none}
 .faq summary{cursor:pointer;padding:15px 18px;font-size:14.5px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:14px;align-items:center}
@@ -254,9 +269,17 @@ th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.
 .crosslinks .t{font-size:14px;font-weight:700;margin-bottom:3px}
 .crosslinks .d{font-size:12.5px;color:var(--muted);line-height:1.55}
 
-footer{margin-top:56px;border-top:1px solid var(--line);padding-top:18px;font-size:13px;color:var(--muted)}
-footer a{color:var(--muted)}
-footer a:hover{color:var(--accent)}
+/* Site footer, identical to the homepage so the bottom of every page matches */
+footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:48px;border-top:1px solid #1e293b}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 24px}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;margin:0 0 14px;text-transform:uppercase;letter-spacing:1px}
+.footer-col ul{list-style:none;margin:0;padding:0}
+.footer-col li{margin-bottom:8px}
+.footer-col a{color:#94a3b8;text-decoration:none;font-size:13px}
+.footer-col a:hover{color:#fff}
+.footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#94a3b8}
+@media(max-width:768px){.header-inner{padding:12px 16px}.topbar-inner{padding:0 16px}.wrap{padding-left:16px;padding-right:16px}.footer-inner{padding:0 16px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -477,6 +500,9 @@ footer a:hover{color:var(--accent)}
   </div>
   <p class="note" style="margin-top:14px;">The API serves <strong style="color:var(--ink)">forward data</strong>: the current read and everything published from now on. Historical series are not available through the API. If you need history for research, <a href="mailto:contact@fxnewsbias.com?subject=Historical%20data%20licence">talk to us about a data licence</a>.</p>
 
+  <div class="docs">
+  <div class="col">
+
   <h2>Quickstart</h2>
   <p class="lede">Bearer header only. Keys are never accepted in the URL or query string.</p>
   <pre><code>curl -H "Authorization: Bearer <span class="tok-n">$FXNB_KEY</span>" \
@@ -510,18 +536,8 @@ footer a:hover{color:var(--accent)}
     </tbody>
   </table></div>
 
-  <h2>Staying current without wasting quota</h2>
-  <p class="lede">Scores publish on a fixed 3-hour cycle. Rather than polling blindly, read <code>next_update_expected</code> and come back then. You get the new data within seconds of publication and spend about 8 requests a day.</p>
-  <pre><code>import requests, time
-from datetime import datetime, timezone
-
-H = {"Authorization": "Bearer " + FXNB_KEY}
-
-while True:
-    r = requests.get("https://fxnewsbias.com/api/v1/sentiment", headers=H).json()
-    handle(r["data"])
-    nxt = datetime.fromisoformat(r["next_update_expected"].replace("Z", "+00:00"))
-    time.sleep(max(30, (nxt - datetime.now(timezone.utc)).total_seconds() + 20))</code></pre>
+  </div>
+  <div class="col">
 
   <h2>Rate limits</h2>
   <ul class="plain">
@@ -551,7 +567,24 @@ while True:
     <li>Questions, higher volume, or a data licence: <a href="mailto:contact@fxnewsbias.com">contact@fxnewsbias.com</a></li>
   </ul>
 
+  </div>
+  </div>
+
+  <h2>Staying current without wasting quota</h2>
+  <p class="lede">Scores publish on a fixed 3-hour cycle. Rather than polling blindly, read <code>next_update_expected</code> and come back then. You get the new data within seconds of publication and spend about 8 requests a day.</p>
+  <pre><code>import requests, time
+from datetime import datetime, timezone
+
+H = {"Authorization": "Bearer " + FXNB_KEY}
+
+while True:
+    r = requests.get("https://fxnewsbias.com/api/v1/sentiment", headers=H).json()
+    handle(r["data"])
+    nxt = datetime.fromisoformat(r["next_update_expected"].replace("Z", "+00:00"))
+    time.sleep(max(30, (nxt - datetime.now(timezone.utc)).total_seconds() + 20))</code></pre>
+
   <h2 id="faq">Frequently asked questions</h2>
+  <div class="faqgrid">
   <div class="faq">
     <details open>
       <summary>What is a forex sentiment API?</summary>
@@ -569,6 +602,8 @@ while True:
       <summary>How much does the forex sentiment API cost?</summary>
       <p class="ans">API access is included with FXNewsBias Pro at $30 per month, which starts with a 7 day free trial. There is no separate API fee. The key works throughout the trial and stops when the subscription ends. <a href="/pro">See what else Pro includes</a>.</p>
     </details>
+  </div>
+  <div class="faq">
     <details>
       <summary>What is the rate limit?</summary>
       <p class="ans">200 requests per UTC calendar day per account, resetting at 00:00 UTC. Every response carries <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code> headers, and going over returns HTTP 429 with a <code>Retry-After</code> header.</p>
@@ -581,6 +616,7 @@ while True:
       <summary>How do I get an API key?</summary>
       <p class="ans">Sign in to your FXNewsBias account and the key panel at the top of this page creates one instantly. There is no application form, no waiting list, and no email delivery. The key is shown once at creation because only a fingerprint of it is stored.</p>
     </details>
+  </div>
   </div>
 
   <h2>Where the data comes from</h2>
@@ -601,8 +637,64 @@ while True:
 
   </main>
 
-  <footer>&copy; 2026 FXNewsBias &middot; <a href="/">Dashboard</a> &middot; <a href="/pro">Pro</a> &middot; <a href="/about">About</a> &middot; <a href="/terms">Terms</a> &middot; <a href="/disclaimer">Disclaimer</a> &middot; <a href="/contact">Contact</a></footer>
 </div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>FXNewsBias</h4>
+        <ul>
+          <li><a href="/about">About Us</a></li>
+          <li><a href="/how">How It Works</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Markets</h4>
+        <ul>
+          <li><a href="/currencies">Currencies</a></li>
+          <li><a href="/pairs">Pairs</a></li>
+          <li><a href="/calendar">Calendar</a></li>
+          <li><a href="/news">News</a></li>
+          <li><a href="/insight/">Daily Insights</a></li>
+          <li><a href="/forecast">Forecast</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="/community">Community Hub</a></li>
+          <li><a href="/report">Weekly Report</a></li>
+          <li><a href="/history">Sentiment History</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/disclaimer">Disclaimer</a></li>
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms of Service</a></li>
+          <li><a href="/developers">Developer API</a></li>
+          <li><a href="/data-quality">Data Quality</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Follow Us</h4>
+        <ul>
+          <li><a href="https://x.com/fxnewsbias" target="_blank" rel="noopener noreferrer">𝕏 Twitter / X</a></li>
+          <li><a href="https://www.tiktok.com/@fxnewsbias" target="_blank" rel="noopener noreferrer">🎵 TikTok</a></li>
+          <li><a href="https://t.me/fxnewsbias_alerts" target="_blank" rel="noopener noreferrer">📱 Telegram</a></li>
+          <li><a href="https://www.reddit.com/u/fxnewsbias/s/1bZFbWSZ50" target="_blank" rel="noopener noreferrer">🔴 Reddit</a></li>
+          <li><a href="mailto:contact@fxnewsbias.com">✉️ Email Us</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2026 FXNewsBias. All rights reserved. Forex trading involves risk. Not financial advice.
+    </div>
+  </div>
+</footer>
 
 <script src="/nav.js?v=2" defer></script>
 <script type="module" src="/firebase.js?v=4"></script>
@@ -721,7 +813,9 @@ while True:
   }
   function renderWho(email, tier) {
     var el = $('who');
-    if (!email) { el.innerHTML = '<a href="/login">Sign in</a>'; return; }
+    // Signed out, the header already has Login and Register. A third link
+    // here just gave the same action three names.
+    if (!email) { el.innerHTML = ''; return; }
     var pill = tier === 'pro' ? '<span class="pill pill-pro">Pro</span>'
              : '<span class="pill pill-free">Free</span>';
     el.innerHTML = '<strong>' + email.replace(/[<>&]/g, '') + '</strong>' + pill;
