@@ -32,12 +32,17 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 Inter,-apple-
 .wrap{max-width:860px;margin:0 auto;padding:0 20px 80px}
 a{color:var(--accent)}
 
-/* header */
-.dev-head{border-bottom:1px solid var(--line);background:rgba(11,18,32,.6);position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);}
-.dev-head-in{max-width:860px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;}
-.dev-head a.home{color:var(--muted);text-decoration:none;font-size:14px;font-weight:600;white-space:nowrap;}
-.dev-head a.home:hover{color:var(--ink);}
-.dev-head .spacer{flex:1}
+/* site header, shared shape so nav.js can drive it */
+header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.4);}
+.header-inner{max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;}
+.logo img{height:38px;width:auto;display:block;}
+nav ul{list-style:none;display:flex;gap:24px;margin:0;padding:0;}
+nav a{color:#94a3b8;font-weight:500;font-size:14px;text-decoration:none;}
+nav a:hover{color:#60a5fa;}
+.nav-actions{display:flex;gap:10px;align-items:center;}
+.btn-outline{background:transparent;color:#f1f5f9;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;}
+.btn-outline:hover{border-color:rgba(96,165,250,.6);color:#fff;}
+@media(max-width:768px){nav ul{display:none;}}
 .who{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;min-width:0;}
 .who strong{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:34vw;}
 .pill{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap;}
@@ -116,13 +121,20 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:18px;font-si
 </head>
 <body>
 
-<header class="dev-head">
-  <div class="dev-head-in">
-    <a class="home" href="/">&larr; fxnewsbias.com</a>
-    <span class="spacer"></span>
+<header><div class="header-inner">
+  <a href="/" class="logo"><img src="/logo-fxnb.png?v=2" alt="FX News Bias"></a>
+  <nav><ul>
+    <li><a href="/">Markets</a></li><li><a href="/currencies">Currencies</a></li>
+    <li><a href="/pairs">Pairs</a></li><li><a href="/news">News</a></li>
+    <li><a href="/calendar">Calendar</a></li><li><a href="/insight/">Insights</a></li>
+  </ul></nav>
+  <div class="nav-actions" id="nav-actions">
     <span class="who" id="who"></span>
+    <a href="/login" class="btn-outline">Login</a>
+    <a href="/register" class="btn-outline">Register</a>
+    <a href="/profile" class="btn-outline">Account</a>
   </div>
-</header>
+</div></header>
 
 <div class="wrap">
   <span class="badge">Developer API</span>
@@ -288,7 +300,8 @@ while True:
   <footer>&copy; 2026 FXNewsBias &middot; <a href="/">Dashboard</a> &middot; <a href="/about">About</a> &middot; <a href="/disclaimer">Disclaimer</a> &middot; <a href="/contact">Contact</a></footer>
 </div>
 
-<script type="module" src="/firebase.js?v=3"></script>
+<script src="/nav.js?v=2" defer></script>
+<script type="module" src="/firebase.js?v=4"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
