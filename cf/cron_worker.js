@@ -423,6 +423,7 @@ if (url.pathname === '/pro-status') return handleProStatus(request, env);
 if (url.pathname === '/create-portal-session') return handleCreatePortalSession(request, env);
 if (url.pathname === '/save-alerts') return handleSaveAlerts(request, env);
 if (url.pathname === '/api/pro/sentiment-history') return handleProSentimentHistory(request, env);
+if (url.pathname === '/api/email/unsubscribe') return handleEmailUnsubscribe(request, env);
 if (url.pathname === '/api/auth/register') return handleAuthRegister(request, env);
 if (url.pathname === '/api/pro/api-key') return handleProApiKey(request, env, 'status');
 if (url.pathname === '/api/pro/api-key/create') return handleProApiKey(request, env, 'create');
@@ -1614,6 +1615,7 @@ async function handleWelcomeEmail(request, env) {
 
   const firstName = name.split(' ')[0] || 'there';
   const from = env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com';
+  const unsubUrl = await _unsubUrl(email, env);
 
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Welcome to FXNewsBias</title></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:40px 0;">
@@ -1652,6 +1654,7 @@ async function handleWelcomeEmail(request, env) {
       </td></tr>
     </table>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.7;">Questions? Reply to this email or visit <a href="https://fxnewsbias.com/contact" style="color:#1e40af;text-decoration:none;font-weight:600;">fxnewsbias.com/contact</a></p>
+    <p style="margin:0;font-size:11.5px;color:#94a3b8;line-height:1.6;">Do not want these emails? <a href="${unsubUrl}" style="color:#94a3b8;">Unsubscribe</a></p>
     <p style="margin:0;font-size:15px;color:#0f172a;line-height:1.8;">Happy trading,<br><strong>The FXNewsBias Team</strong></p>
   </td></tr>
   <tr><td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 40px;text-align:center;">
@@ -1680,7 +1683,9 @@ Questions? Reply to this email or visit https://fxnewsbias.com/contact
 
 Happy trading,
 The FXNewsBias Team
-https://fxnewsbias.com`;
+https://fxnewsbias.com
+
+Do not want these emails? Unsubscribe: ${unsubUrl}`;
 
   try {
     const resp = await fetch('https://api.resend.com/emails', {
@@ -1689,6 +1694,7 @@ https://fxnewsbias.com`;
       body: JSON.stringify({
         from: `FXNewsBias <${from}>`,
         to: [email],
+        headers: await _listUnsubHeaders(email, env),
         subject: 'Welcome to FXNewsBias, your forex sentiment edge starts now',
         html,
         text,
@@ -1853,15 +1859,94 @@ async function reconcileWelcomeAudience(env) {
 }
 
 // Same welcome email as /send-welcome-email, callable server-side.
+// ============================================================
+// EMAIL UNSUBSCRIBE
+// Mailbox providers treat a promotional message with no unsubscribe mechanism
+// as a spam signal, regardless of how well the domain is authenticated. The
+// daily digest goes out as a Resend broadcast, which adds these headers for us,
+// which is why it has always reached the inbox. Mail we send directly had no
+// such headers, so the welcome email was filtered while the purely
+// transactional verification email was not.
+//
+// The token is an HMAC of the address, so a link cannot be edited to
+// unsubscribe somebody else. It is derived from a secret we already hold, so
+// there is no new secret to manage.
+// ============================================================
+async function _unsubToken(email, env) {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(String(env.SUPABASE_SERVICE_KEY || 'fxnb')),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode('unsub:' + String(email).toLowerCase()));
+  return [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+}
+
+async function _unsubUrl(email, env) {
+  const t = await _unsubToken(email, env);
+  return `https://fxnewsbias.com/api/email/unsubscribe?e=${encodeURIComponent(String(email).toLowerCase())}&t=${t}`;
+}
+
+// Headers that make a promotional send acceptable to Gmail and Yahoo.
+// One-Click (RFC 8058) means the provider can unsubscribe on the reader's
+// behalf without them leaving the inbox, which is what they want to see.
+async function _listUnsubHeaders(email, env) {
+  const url = await _unsubUrl(email, env);
+  return {
+    'List-Unsubscribe': `<${url}>, <mailto:contact@fxnewsbias.com?subject=unsubscribe>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
+}
+
+async function handleEmailUnsubscribe(request, env) {
+  const url = new URL(request.url);
+  const email = String(url.searchParams.get('e') || '').toLowerCase();
+  const token = String(url.searchParams.get('t') || '');
+  const html = (title, msg) => new Response(
+    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">`
+    + `<title>${title}</title><div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;`
+    + `max-width:460px;margin:16vh auto;padding:0 24px;text-align:center;color:#0f172a;">`
+    + `<h1 style="font-size:22px;margin:0 0 10px;">${title}</h1>`
+    + `<p style="color:#475569;line-height:1.6;margin:0 0 22px;">${msg}</p>`
+    + `<a href="https://fxnewsbias.com" style="color:#2563eb;text-decoration:none;font-weight:600;">Back to FXNewsBias</a></div>`,
+    { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
+  );
+
+  if (!email || !token) return html('Link not valid', 'This unsubscribe link is incomplete.');
+  const expected = await _unsubToken(email, env);
+  if (token !== expected) return html('Link not valid', 'This unsubscribe link does not look right. Email contact@fxnewsbias.com and we will remove you by hand.');
+
+  // Remove from both audiences. Idempotent: unsubscribing twice is fine.
+  let ok = false;
+  try {
+    const H = { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' };
+    const ids = [_FREE_AUDIENCE];
+    const proId = await _getProAudienceId(env).catch(() => null);
+    if (proId) ids.push(proId);
+    for (const id of ids) {
+      const r = await fetch(`https://api.resend.com/audiences/${id}/contacts/${encodeURIComponent(email)}`, {
+        method: 'PATCH', headers: H, body: JSON.stringify({ unsubscribed: true }), signal: AbortSignal.timeout(15000),
+      });
+      if (r.ok) ok = true;
+    }
+  } catch (e) { console.log('unsubscribe error:', e.message); }
+  console.log(`unsubscribe ${email}: ${ok ? 'ok' : 'not found or failed'}`);
+
+  // Always confirm to the reader. Whether we found a list entry is our problem,
+  // not theirs, and a failure message here invites them to hit spam instead.
+  return html('You are unsubscribed', 'You will not receive further FXNewsBias emails. Account and billing messages still apply if you have an account.');
+}
+
 async function _sendReconcileWelcome(env, email, name) {
   const firstName = (name || '').split(' ')[0] || 'there';
   const from = env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com';
+  const unsubUrl = await _unsubUrl(email, env);
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: `FXNewsBias <${from}>`,
       to: [email],
+      headers: await _listUnsubHeaders(email, env),
       subject: 'Welcome to FXNewsBias, your forex sentiment edge starts now',
       // A plain-text alternative is one of the cheapest deliverability wins
       // there is. HTML-only mail is a well known spam signal, and this is the
@@ -1885,7 +1970,9 @@ Questions? Just reply to this email, or visit https://fxnewsbias.com/contact
 
 Happy trading,
 The FXNewsBias Team
-https://fxnewsbias.com`,
+https://fxnewsbias.com
+
+Do not want these emails? Unsubscribe: ${unsubUrl}`,
       html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
 <div style="background:#1e40af;padding:28px 32px;text-align:center;"><p style="margin:0;font-size:12px;color:#93c5fd;letter-spacing:.08em;text-transform:uppercase;font-weight:600;">FXNewsBias</p><h1 style="margin:10px 0 0;color:#fff;font-size:23px;font-weight:800;">Your Forex Sentiment Edge Starts Now 🚀</h1></div>
 <div style="padding:28px 32px;">
