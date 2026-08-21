@@ -4012,6 +4012,19 @@ if (!tsJson.success) {
 console.log('Turnstile rejected:', JSON.stringify(tsJson['error-codes'] || []));
 return contactJson({ error: 'Security check failed. Please refresh and try again.' }, 403);
 }
+// success alone is not enough: a token minted by this widget anywhere it is
+// served can otherwise be replayed here. Pin it to our own hostname, and to
+// the widget's action once every cached page has picked up data-action.
+const TS_HOSTS = new Set(['fxnewsbias.com', 'www.fxnewsbias.com']);
+if (tsJson.hostname && !TS_HOSTS.has(String(tsJson.hostname).toLowerCase())) {
+console.log('Turnstile wrong hostname:', tsJson.hostname);
+return contactJson({ error: 'Security check failed. Please refresh and try again.' }, 403);
+}
+const tsAction = String(tsJson.action || '');
+if (tsAction && tsAction !== 'contact') {
+console.log('Turnstile wrong action:', tsAction);
+return contactJson({ error: 'Security check failed. Please refresh and try again.' }, 403);
+}
 } catch (e) {
 console.log('Turnstile verify error:', e.message);
 return contactJson({ error: 'Security check unavailable. Please try again later.' }, 502);

@@ -723,7 +723,7 @@ window.confirmDeleteAccount = async function() {
   } catch(e) {
     btn.disabled = false; btn.textContent = 'Delete Forever';
     let msg = e.message || 'Delete failed.';
-    if (e.code === 'auth/wrong-password') msg = 'Incorrect password.';
+    if ((e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password')) msg = 'Incorrect password.';
     if (e.code === 'auth/popup-closed-by-user') msg = 'Re-authentication cancelled.';
     if (e.code === 'auth/requires-recent-login') msg = 'Please log out, log back in, and try again.';
     showToast(msg, 'error');
