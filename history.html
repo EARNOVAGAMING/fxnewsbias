@@ -23,7 +23,6 @@
 <meta name="twitter:title" content="Forex Sentiment History | Historical Forex News Sentiment - FXNewsBias">
 <meta name="twitter:description" content="Pro: Historical forex news sentiment charts and currency analysis over time."> 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#0f172a">
@@ -399,11 +398,28 @@ footer{background:#080c14;border-top:1px solid rgba(255,255,255,.05);margin-top:
 <script src="/nav.js?v=2" defer></script><script src="/promo-popup.js?v=2" defer></script>
 <script src="/cookie.js?v=2" defer></script>
 <script src="/analytics.js?v=2" defer></script>
-<script type="module" src="/firebase.js?v=2"></script>
+<script type="module" src="/firebase.js?v=3"></script>
 
 <script>
-const SUPABASE_URL = 'https://vtbmtxtgtdprpbilragm.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0Ym10eHRndGRwcnBiaWxyYWdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA0NzMsImV4cCI6MjA5MzExNjQ3M30.brlTWgFgTw0536PO_fXWgrGzSkqAMhOojlUA-UwlMnA';
+// Sentiment history is a paid feature, so it is not read with the public
+// anon key any more. This endpoint verifies the Firebase token and the
+// subscription server-side before it returns anything.
+const HISTORY_API = '/api/pro/sentiment-history';
+
+async function fetchProHistory(params) {
+  const u = window.getCurrentUser && window.getCurrentUser();
+  if (!u) return { error: 'unauthorized' };
+  let idToken;
+  try { idToken = await u.getIdToken(); } catch (e) { return { error: 'unauthorized' }; }
+  try {
+    const res = await fetch(HISTORY_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ idToken }, params)),
+    });
+    return await res.json();
+  } catch (e) { return { error: 'network' }; }
+}
 
 let mainChart = null;
 window.selectedCurrency = 'USD';
@@ -442,14 +458,14 @@ async function loadHistory(currency, days) {
   document.getElementById('main-chart').style.display = 'none';
 
   try {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
-
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/sentiment?currency=eq.${currency}&created_at=gte.${since.toISOString()}&order=created_at.asc&limit=1000`,
-      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
-    );
-    const data = await res.json();
+    const payload = await fetchProHistory({ currency, days });
+    if (payload.error) {
+      document.getElementById('chart-loading').textContent = payload.error === 'pro-only'
+        ? '🔒 Sentiment history is a Pro feature.'
+        : '⚠️ Could not load history. Please refresh and try again.';
+      return;
+    }
+    const data = payload.data;
 
     if (!data || data.length === 0) {
       document.getElementById('chart-loading').textContent = '📭 No history data yet. Data builds over time as sentiment is analyzed every 3 hours.';
@@ -621,11 +637,9 @@ async function loadAllCurrencies() {
     const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'NZD'];
     const flags = { USD:'🇺🇸', EUR:'🇪🇺', GBP:'🇬🇧', JPY:'🇯🇵', AUD:'🇦🇺', CAD:'🇨🇦', CHF:'🇨🇭', NZD:'🇳🇿' };
 
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/sentiment?order=id.desc&limit=80`,
-      { headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` } }
-    );
-    const data = await res.json();
+    const payload = await fetchProHistory({ latest: 80 });
+    if (payload.error) return;
+    const data = payload.data;
     if (!data || data.length === 0) return;
 
     const grid = document.getElementById('all-grid');

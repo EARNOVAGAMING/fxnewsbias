@@ -408,6 +408,7 @@ return handleAdminData(request, env);
 if (url.pathname === '/pro-status') return handleProStatus(request, env);
 if (url.pathname === '/create-portal-session') return handleCreatePortalSession(request, env);
 if (url.pathname === '/save-alerts') return handleSaveAlerts(request, env);
+if (url.pathname === '/api/pro/sentiment-history') return handleProSentimentHistory(request, env);
 if (url.pathname === '/admin-create-post' && request.method === 'POST') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 try {
@@ -5180,6 +5181,51 @@ async function handleSaveAlerts(request, env) {
     });
     if (!r.ok) return _proJson({ error: 'save-failed', detail: (await r.text()).slice(0, 200) }, 500);
     return _proJson({ ok: true, alerts: { enabled: enabled === true, email: email !== false, currencies: valid } });
+  } catch (e) { return _proJson({ error: e.message }, 500); }
+}
+
+// POST /api/pro/sentiment-history — deep sentiment series, Pro only.
+// The public anon key can read a rolling recent window only (RLS on the
+// sentiment table), so the long history Pro subscribers pay for is served
+// here instead: verified Firebase token, real subscription check, service
+// key on the query. Fields are picked explicitly so no column can leak.
+async function handleProSentimentHistory(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  if (request.method !== 'POST') return _proJson({ error: 'method-not-allowed' }, 405);
+  try {
+    const body = await request.json().catch(() => ({}));
+    const user = await _verifyFirebaseUser(env, body.idToken);
+    if (!user) return _proJson({ error: 'unauthorized' }, 401);
+    const sub = await _getSubscriptionDoc(env, user.email);
+    if (!sub.isPro) return _proJson({ error: 'pro-only', message: 'Sentiment history is a Pro feature.' }, 403);
+
+    // Every input is clamped server-side; nothing from the client reaches the query raw.
+    const currency = _CCYS.includes(body.currency) ? body.currency : null;
+    const latest = Math.min(Math.max(parseInt(body.latest, 10) || 0, 0), 500);
+    const days = Math.min(Math.max(parseInt(body.days, 10) || 0, 1), 365);
+
+    const qs = new URLSearchParams();
+    qs.set('select', 'currency,score,bias,created_at');
+    if (currency) qs.set('currency', `eq.${currency}`);
+    if (latest) {
+      qs.set('order', 'id.desc');
+      qs.set('limit', String(latest));
+    } else {
+      qs.set('created_at', `gte.${new Date(Date.now() - days * 864e5).toISOString()}`);
+      qs.set('order', 'created_at.asc');
+      qs.set('limit', '4000');
+    }
+
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/sentiment?${qs.toString()}`, {
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!r.ok) return _proJson({ error: 'upstream', detail: (await r.text()).slice(0, 200) }, 502);
+    const rows = await r.json();
+    const data = (Array.isArray(rows) ? rows : []).map(x => ({
+      currency: x.currency, score: x.score, bias: x.bias, created_at: x.created_at,
+    }));
+    return _proJson({ ok: true, currency, days: latest ? null : days, latest: latest || null, count: data.length, data });
   } catch (e) { return _proJson({ error: e.message }, 500); }
 }
 
