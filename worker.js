@@ -24,7 +24,7 @@ export default {
     // Same treatment for /data-quality, the public machine-readable coverage
     // report the data dictionary points at. It lived only on the workers.dev
     // hostname before, which leaked the internal origin into a published doc.
-    if (url.pathname.startsWith('/api/v1/') || url.pathname.startsWith('/api/pro/') || url.pathname === '/data-quality') {
+    if (url.pathname.startsWith('/api/v1/') || url.pathname.startsWith('/api/pro/') || url.pathname.startsWith('/api/auth/') || url.pathname === '/data-quality') {
       const upstream = new URL(request.url);
       upstream.hostname = API_ORIGIN_HOST;
       const res = await fetch(new Request(upstream.toString(), request));

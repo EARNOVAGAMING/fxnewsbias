@@ -409,6 +409,7 @@ if (url.pathname === '/pro-status') return handleProStatus(request, env);
 if (url.pathname === '/create-portal-session') return handleCreatePortalSession(request, env);
 if (url.pathname === '/save-alerts') return handleSaveAlerts(request, env);
 if (url.pathname === '/api/pro/sentiment-history') return handleProSentimentHistory(request, env);
+if (url.pathname === '/api/auth/register') return handleAuthRegister(request, env);
 if (url.pathname === '/admin-create-post' && request.method === 'POST') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 try {
@@ -5195,6 +5196,159 @@ async function handleSaveAlerts(request, env) {
     if (!r.ok) return _proJson({ error: 'save-failed', detail: (await r.text()).slice(0, 200) }, 500);
     return _proJson({ ok: true, alerts: { enabled: enabled === true, email: email !== false, currencies: valid } });
   } catch (e) { return _proJson({ error: e.message }, 500); }
+}
+
+// POST /api/auth/register — captcha-gated email/password signup.
+//
+// Signup does NOT happen in the browser. The page has no Firebase signup call
+// at all: it posts here, and the account is only created after Cloudflare
+// Turnstile has been verified server-side against our secret. A bot that fills
+// the form without solving the challenge gets nothing.
+//
+// Honest boundary, written down so nobody forgets it: this closes the form.
+// It does not close Google's own accounts:signUp endpoint, which accepts the
+// public web API key from anywhere. Only Identity Platform bot protection in
+// the Firebase console closes that, and that is a console action.
+const _REG_HOSTS = new Set(['fxnewsbias.com', 'www.fxnewsbias.com']);
+
+function _regPasswordProblem(pw) {
+  if (pw.length < 10) return 'Password must be at least 10 characters.';
+  if (pw.length > 4096) return 'Password is too long.';
+  if (!/[a-z]/.test(pw)) return 'Password needs a lowercase letter.';
+  if (!/[A-Z]/.test(pw)) return 'Password needs an uppercase letter.';
+  if (!/[0-9]/.test(pw)) return 'Password needs a number.';
+  if (!/[^A-Za-z0-9]/.test(pw)) return 'Password needs a symbol.';
+  return null;
+}
+
+async function handleAuthRegister(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  if (request.method !== 'POST') return _proJson({ error: 'method-not-allowed' }, 405);
+  try {
+    const body = await request.json().catch(() => ({}));
+    const name = String(body.name || '').trim().slice(0, 60);
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+    const tsToken = String(body.turnstileToken || '');
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) {
+      return _proJson({ error: 'invalid-email', message: 'Please enter a valid email address.' }, 400);
+    }
+    const pwProblem = _regPasswordProblem(password);
+    if (pwProblem) return _proJson({ error: 'weak-password', message: pwProblem }, 400);
+
+    // 1. Turnstile. Fail closed: this endpoint creates accounts and sends mail,
+    //    so a misconfiguration must refuse everyone rather than admit everyone.
+    if (!env.TURNSTILE_SECRET) {
+      console.log('register: TURNSTILE_SECRET not configured');
+      return _proJson({ error: 'captcha-unconfigured', message: 'Signup is temporarily unavailable.' }, 503);
+    }
+    if (!tsToken) return _proJson({ error: 'captcha-required', message: 'Please complete the security check.' }, 400);
+
+    const ip = request.headers.get('CF-Connecting-IP') || '';
+    try {
+      const form = new FormData();
+      form.append('secret', env.TURNSTILE_SECRET);
+      form.append('response', tsToken);
+      if (ip) form.append('remoteip', ip);
+      const vr = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST', body: form, signal: AbortSignal.timeout(15000),
+      });
+      const vj = await vr.json();
+      // success alone is replayable: pin the token to our hostname and to this
+      // form's action, so a token solved on the contact form cannot be reused.
+      if (!vj.success ||
+          (vj.hostname && !_REG_HOSTS.has(String(vj.hostname).toLowerCase())) ||
+          String(vj.action || '') !== 'register') {
+        console.log('register: turnstile rejected', JSON.stringify({ codes: vj['error-codes'] || [], host: vj.hostname, action: vj.action }));
+        return _proJson({ error: 'captcha-failed', message: 'Security check failed. Please try again.' }, 403);
+      }
+    } catch (e) {
+      console.log('register: turnstile verify error', e.message);
+      return _proJson({ error: 'captcha-unavailable', message: 'Security check unavailable. Please try again shortly.' }, 502);
+    }
+
+    // 2. Per-IP cap, fail closed. A solved challenge is still one challenge per
+    //    account, so this bounds anyone farming them.
+    const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
+    try {
+      const rl = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_key_issuance`, {
+        method: 'POST', headers: sb,
+        body: JSON.stringify({ p_ident: `reg:ip:${ip || 'unknown'}`, p_cap: 5 }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!rl.ok) return _proJson({ error: 'server-error', message: 'Signup is temporarily unavailable.' }, 503);
+      if ((await rl.text()).trim() !== 'true') {
+        return _proJson({ error: 'too-many-requests', message: 'Too many signups from this network today. Please try again tomorrow.' }, 429);
+      }
+    } catch (e) {
+      console.log('register: rate limit error', e.message);
+      return _proJson({ error: 'server-error', message: 'Signup is temporarily unavailable.' }, 503);
+    }
+
+    // 3. Create the account.
+    const key = env.FIREBASE_API_KEY || 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
+    const cr = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, returnSecureToken: true }),
+      signal: AbortSignal.timeout(20000),
+    });
+    const cd = await cr.json();
+    if (!cr.ok) {
+      const msg = String((cd.error && cd.error.message) || '');
+      if (msg.startsWith('EMAIL_EXISTS')) {
+        return _proJson({ error: 'email-exists', message: 'That email already has an account. Please log in instead.' }, 409);
+      }
+      if (msg.startsWith('TOO_MANY_ATTEMPTS')) {
+        return _proJson({ error: 'too-many-requests', message: 'Too many attempts. Please try again in a few minutes.' }, 429);
+      }
+      console.log('register: signUp failed', msg.slice(0, 120));
+      return _proJson({ error: 'signup-failed', message: 'Could not create the account. Please try again.' }, 400);
+    }
+
+    // 4. Profile name, user document and welcome email, all server-side so an
+    //    email signup lands in exactly the same state as a Google/GitHub one.
+    if (name) {
+      await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:update?key=${key}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: cd.idToken, displayName: name, returnSecureToken: false }),
+        signal: AbortSignal.timeout(15000),
+      }).catch(() => {});
+    }
+    try {
+      const tok = await getFirebaseToken(env);
+      if (tok) {
+        const pid = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
+        await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents/users?documentId=${encodeURIComponent(_fsDocId(email))}`, {
+          method: 'POST', headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: {
+            username: { stringValue: name || email.split('@')[0] },
+            email: { stringValue: email },
+            photoURL: { nullValue: null },
+            createdAt: { stringValue: new Date().toISOString() },
+            isPro: { booleanValue: false },
+          } }),
+          signal: AbortSignal.timeout(20000),
+        });
+      }
+    } catch (e) { console.log('register: user doc failed', e.message); }
+
+    // Verification email, then the welcome email. Neither is allowed to fail
+    // the signup: the account already exists and the user is about to log in.
+    fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestType: 'VERIFY_EMAIL', idToken: cd.idToken }),
+    }).catch(() => {});
+    if (env.RESEND_API_KEY) {
+      try { await _sendReconcileWelcome(env, email, name || email.split('@')[0]); }
+      catch (e) { console.log('register: welcome email failed', e.message); }
+    }
+
+    return _proJson({ ok: true });
+  } catch (e) {
+    console.log('register: unhandled', e.message);
+    return _proJson({ error: 'server-error', message: 'Something went wrong. Please try again.' }, 500);
+  }
 }
 
 // POST /api/pro/sentiment-history — deep sentiment series, Pro only.
