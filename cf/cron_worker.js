@@ -5248,6 +5248,10 @@ async function handleAuthRegister(request, env) {
     if (!tsToken) return _proJson({ error: 'captcha-required', message: 'Please complete the security check.' }, 400);
 
     const ip = request.headers.get('CF-Connecting-IP') || '';
+    // Behind the fxnewsbias.com proxy, CF-Connecting-IP is the proxy worker,
+    // not the visitor. worker.js forwards the real one; without this the per-IP
+    // cap becomes a single site-wide bucket that throttles real users.
+    const clientIp = request.headers.get('X-FXNB-Client-IP') || ip;
     try {
       const form = new FormData();
       form.append('secret', env.TURNSTILE_SECRET);
@@ -5270,22 +5274,30 @@ async function handleAuthRegister(request, env) {
       return _proJson({ error: 'captcha-unavailable', message: 'Security check unavailable. Please try again shortly.' }, 502);
     }
 
-    // 2. Per-IP cap, fail closed. A solved challenge is still one challenge per
-    //    account, so this bounds anyone farming them.
+    // 2. Caps, fail closed. Two buckets, because they catch different things:
+    //    per email stops a retry loop on one address, per IP stops one machine
+    //    farming solved challenges. Turnstile above is the real gate; these are
+    //    depth behind it.
     const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
-    try {
-      const rl = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_key_issuance`, {
-        method: 'POST', headers: sb,
-        body: JSON.stringify({ p_ident: `reg:ip:${ip || 'unknown'}`, p_cap: 5 }),
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!rl.ok) return _proJson({ error: 'server-error', message: 'Signup is temporarily unavailable.' }, 503);
-      if ((await rl.text()).trim() !== 'true') {
-        return _proJson({ error: 'too-many-requests', message: 'Too many signups from this network today. Please try again tomorrow.' }, 429);
+    const buckets = [
+      { ident: `reg:email:${email}`, cap: 3, msg: 'Too many signup attempts for this email today. Please try again tomorrow.' },
+      { ident: `reg:ip:${clientIp || 'unknown'}`, cap: 5, msg: 'Too many signups from this network today. Please try again tomorrow.' },
+    ];
+    for (const b of buckets) {
+      try {
+        const rl = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_key_issuance`, {
+          method: 'POST', headers: sb,
+          body: JSON.stringify({ p_ident: b.ident, p_cap: b.cap }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (!rl.ok) return _proJson({ error: 'server-error', message: 'Signup is temporarily unavailable.' }, 503);
+        if ((await rl.text()).trim() !== 'true') {
+          return _proJson({ error: 'too-many-requests', message: b.msg }, 429);
+        }
+      } catch (e) {
+        console.log('register: rate limit error', e.message);
+        return _proJson({ error: 'server-error', message: 'Signup is temporarily unavailable.' }, 503);
       }
-    } catch (e) {
-      console.log('register: rate limit error', e.message);
-      return _proJson({ error: 'server-error', message: 'Signup is temporarily unavailable.' }, 503);
     }
 
     // 3. Create the account.

@@ -27,7 +27,13 @@ export default {
     if (url.pathname.startsWith('/api/v1/') || url.pathname.startsWith('/api/pro/') || url.pathname.startsWith('/api/auth/') || url.pathname === '/data-quality') {
       const upstream = new URL(request.url);
       upstream.hostname = API_ORIGIN_HOST;
-      const res = await fetch(new Request(upstream.toString(), request));
+      // Carry the visitor's IP across the hop. Proxying rewrites
+      // CF-Connecting-IP to this worker's own address, so anything upstream
+      // that rate-limits per IP would otherwise see one shared bucket for the
+      // whole site and throttle real users against each other.
+      const fwd = new Request(upstream.toString(), request);
+      fwd.headers.set('X-FXNB-Client-IP', request.headers.get('CF-Connecting-IP') || '');
+      const res = await fetch(fwd);
       return new Response(res.body, res);
     }
 

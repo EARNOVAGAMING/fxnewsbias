@@ -8,58 +8,238 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="icon" href="/favicon.ico">
 <title>Developer API | FXNewsBias Forex Sentiment Data</title>
-<meta name="description" content="Free Sandbox API for FXNewsBias forex news-sentiment scores. Current bias for 8 major currencies, refreshed every 3 hours. Clean JSON, contract-frozen v1.">
+<meta name="description" content="Forex news-sentiment scores as clean JSON. Current bias for 8 major currencies plus the session scorecard, refreshed every 3 hours. Free Sandbox tier, full access included with Pro.">
 <meta name="robots" content="index, follow">
 <meta name="author" content="FXNewsBias">
 <link rel="canonical" href="https://fxnewsbias.com/developers">
 <meta property="og:title" content="Developer API | FXNewsBias Forex Sentiment Data">
-<meta property="og:description" content="Free Sandbox API: current news-sentiment scores for 8 major currencies, refreshed every 3 hours.">
+<meta property="og:description" content="Forex news-sentiment scores as clean JSON. 8 major currencies, refreshed every 3 hours. Free Sandbox tier, full access included with Pro.">
 <meta property="og:url" content="https://fxnewsbias.com/developers">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://fxnewsbias.com/og-image.webp">
 <meta property="og:site_name" content="FXNewsBias">
 <meta name="theme-color" content="#0f172a">
 <style>
-:root{--bg:#0f172a;--card:#16213c;--line:rgba(148,163,184,.18);--ink:#e2e8f0;--muted:#94a3b8;--accent:#60a5fa;--btn:#2563eb;--mono:ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;}
+:root{
+  --bg:#0f172a;--card:#16213c;--card-2:#0b1220;--line:rgba(148,163,184,.18);
+  --line-strong:rgba(148,163,184,.32);
+  --ink:#e2e8f0;--muted:#94a3b8;--faint:#64748b;--accent:#60a5fa;--btn:#2563eb;--btn-hover:#1d4ed8;
+  --gold:#f59e0b;--good:#34d399;--bad:#fb7185;
+  --mono:ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 Inter,-apple-system,'Segoe UI',Roboto,sans-serif;}
-.wrap{max-width:840px;margin:0 auto;padding:32px 20px 80px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 Inter,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-text-size-adjust:100%;}
+.wrap{max-width:860px;margin:0 auto;padding:0 20px 80px}
 a{color:var(--accent)}
-.top a{color:var(--muted);text-decoration:none;font-size:14px}
-h1{font-size:2rem;margin:.6em 0 .2em;line-height:1.2}
-h2{font-size:1.3rem;margin:2.2em 0 .5em}
-.sub{color:var(--muted);max-width:60ch}
-.badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;background:rgba(37,99,235,.15);padding:4px 12px;border-radius:20px;margin-bottom:12px}
-pre{background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;color:#c3d4f0;margin:12px 0}
+
+/* header */
+.dev-head{border-bottom:1px solid var(--line);background:rgba(11,18,32,.6);position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);}
+.dev-head-in{max-width:860px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;}
+.dev-head a.home{color:var(--muted);text-decoration:none;font-size:14px;font-weight:600;white-space:nowrap;}
+.dev-head a.home:hover{color:var(--ink);}
+.dev-head .spacer{flex:1}
+.who{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;min-width:0;}
+.who strong{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:34vw;}
+.pill{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap;}
+.pill-pro{background:rgba(245,158,11,.16);color:#fcd34d;}
+.pill-free{background:rgba(148,163,184,.16);color:#cbd5e1;}
+.pill-sandbox{background:rgba(37,99,235,.18);color:#93c5fd;}
+
+h1{font-size:2.05rem;margin:.7em 0 .18em;line-height:1.18;letter-spacing:-.5px}
+h2{font-size:1.28rem;margin:2.4em 0 .5em;letter-spacing:-.2px}
+h3{font-size:1rem;margin:1.6em 0 .4em}
+.sub{color:var(--muted);max-width:62ch;font-size:17px}
+.badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;background:rgba(37,99,235,.15);padding:4px 12px;border-radius:20px;margin-top:26px}
+
+pre{background:var(--card-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;color:#c3d4f0;margin:12px 0}
 code{font-family:var(--mono);font-size:.9em;color:#93c5fd}
 table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0}
-th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
 th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.tblwrap{overflow-x:auto}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:20px 0}
 .note{font-size:13px;color:var(--muted)}
 ul{padding-left:20px}
-.tblwrap{overflow-x:auto}
-footer{margin-top:60px;border-top:1px solid var(--line);padding-top:18px;font-size:13px;color:var(--muted)}
+li{margin:5px 0}
+
+/* access panel */
+#access{scroll-margin-top:70px}
+.panel{background:linear-gradient(160deg,#182a4d,#131d33);border:1px solid var(--line-strong);border-radius:16px;padding:24px;margin:22px 0 8px;}
+.panel h2{margin:0 0 6px;font-size:1.15rem}
+.panel p{margin:0 0 16px;color:var(--muted);font-size:14.5px}
+.panel p:last-child{margin-bottom:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;background:var(--btn);color:#fff;border:none;border-radius:9px;font:inherit;font-size:14.5px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .18s ease;}
+.btn:hover:not(:disabled){background:var(--btn-hover)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn-ghost{background:transparent;border:1px solid var(--line-strong);color:var(--ink);font-weight:600}
+.btn-ghost:hover:not(:disabled){background:rgba(148,163,184,.1)}
+.btn-danger{background:transparent;border:1px solid rgba(251,113,133,.4);color:#fda4af;font-weight:600}
+.btn-danger:hover:not(:disabled){background:rgba(251,113,133,.1)}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+
+/* key reveal */
+.reveal{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.35);border-radius:12px;padding:16px 18px;margin:4px 0 16px}
+.reveal-label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6ee7b7;margin-bottom:9px}
+.keybox{display:flex;align-items:center;gap:10px;background:var(--card-2);border:1px solid var(--line);border-radius:9px;padding:11px 13px}
+.keybox code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;color:#e2e8f0;font-size:12.5px;-webkit-overflow-scrolling:touch}
+.copy{flex:none;background:rgba(148,163,184,.14);border:none;border-radius:7px;color:var(--ink);font:inherit;font-size:12px;font-weight:700;padding:7px 11px;cursor:pointer}
+.copy:hover{background:rgba(148,163,184,.24)}
+.warn{font-size:12.5px;color:#fcd34d;margin-top:11px;line-height:1.55}
+
+/* key meta */
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:13.5px;margin:2px 0 4px}
+.kv dt{color:var(--faint)}
+.kv dd{margin:0;color:var(--ink);font-variant-numeric:tabular-nums}
+.meter{height:7px;border-radius:99px;background:rgba(148,163,184,.16);overflow:hidden;margin:9px 0 5px}
+.meter-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .3s ease}
+.meter-fill.hot{background:var(--gold)}
+.meter-fill.full{background:var(--bad)}
+
+.msg{display:none;font-size:13.5px;border-radius:9px;padding:11px 13px;margin-top:14px;line-height:1.55}
+.msg.show{display:block}
+.msg-err{background:rgba(251,113,133,.12);border:1px solid rgba(251,113,133,.35);color:#fda4af}
+.msg-ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.32);color:#6ee7b7}
+
+/* tiers */
+.tiers{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+@media(max-width:620px){.tiers{grid-template-columns:1fr}}
+.tier{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px 20px}
+.tier.pro{border-color:rgba(245,158,11,.3)}
+.tier h3{margin:0 0 3px;font-size:1.05rem}
+.tier .price{font-size:13px;color:var(--muted);margin-bottom:12px}
+.tier ul{padding-left:18px;margin:0;font-size:13.5px}
+.tier li{margin:6px 0;color:#cbd5e1}
+
+.preview-bar{background:rgba(245,158,11,.14);border-bottom:1px solid rgba(245,158,11,.3);color:#fcd34d;font-size:12.5px;padding:8px 20px;text-align:center;display:none}
+.preview-bar.show{display:block}
+.preview-bar a{color:#fcd34d;font-weight:700}
+
+footer{margin-top:64px;border-top:1px solid var(--line);padding-top:18px;font-size:13px;color:var(--muted)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
+
+<div class="preview-bar" id="preview-bar"></div>
+
+<header class="dev-head">
+  <div class="dev-head-in">
+    <a class="home" href="/">&larr; fxnewsbias.com</a>
+    <span class="spacer"></span>
+    <span class="who" id="who"></span>
+  </div>
+</header>
+
 <div class="wrap">
-<div class="top"><a href="/">← fxnewsbias.com</a></div>
-<span class="badge" style="margin-top:26px;">Sandbox · Free</span>
-<h1>FXNewsBias Developer API</h1>
-<p class="sub">The current news-sentiment read for 8 major currencies - the same scores that power the FXNewsBias dashboard, as clean JSON. Refreshed every 3 hours, around the clock.</p>
+  <span class="badge">Developer API</span>
+  <h1>Forex sentiment, as clean JSON</h1>
+  <p class="sub">The same news-sentiment scores that power the FXNewsBias dashboard, served straight to your code. Eight major currencies, refreshed every three hours, around the clock.</p>
 
-<div class="card" id="get-key">
-  <h2 style="margin-top:0;">Access</h2>
-  <p class="note">Sandbox keys are issued on request. If you already have a key, it works with the examples below.</p>
-</div>
+  <!-- ACCESS PANEL: swapped by JS -->
+  <div id="access">
 
-<h2>Quickstart</h2>
-<pre>curl -H "Authorization: Bearer fxnb_live_YOUR_KEY" \
+    <div class="panel" id="state-loading">
+      <h2>Your access</h2>
+      <p>Checking your account...</p>
+    </div>
+
+    <div class="panel" id="state-guest" hidden>
+      <h2>Sign in to get your key</h2>
+      <p>API access is included with FXNewsBias Pro, and works throughout your free trial. Sign in and your key appears here.</p>
+      <div class="btn-row">
+        <a class="btn" href="/login">Sign in</a>
+        <a class="btn btn-ghost" href="/register">Create free account</a>
+      </div>
+    </div>
+
+    <div class="panel" id="state-free" hidden>
+      <h2>API access comes with Pro</h2>
+      <p>Start the 7-day free trial and your key is available on this page immediately. It keeps working for as long as your subscription is active. Cancel and it stops.</p>
+      <div class="btn-row">
+        <a class="btn" href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" target="_blank" rel="noopener">Start 7-day free trial</a>
+        <a class="btn btn-ghost" href="#tiers">Compare tiers</a>
+      </div>
+      <p class="note" style="margin-top:16px;">Building something non-commercial and just need the current scores? The free Sandbox tier exists for that. <a href="mailto:contact@fxnewsbias.com?subject=Sandbox%20API%20key%20request">Ask for a Sandbox key</a>.</p>
+    </div>
+
+    <div class="panel" id="state-nokey" hidden>
+      <h2>Create your API key</h2>
+      <p>One key per account. You will see it once, right here, the moment it is created. We only ever store a fingerprint of it, so it cannot be shown again afterwards.</p>
+      <div class="btn-row">
+        <button class="btn" id="btn-create">Create my API key</button>
+      </div>
+      <div class="msg msg-err" id="msg-nokey"></div>
+    </div>
+
+    <div class="panel" id="state-haskey" hidden>
+      <h2>Your API key</h2>
+
+      <div class="reveal" id="reveal" hidden>
+        <div class="reveal-label">Copy this now</div>
+        <div class="keybox">
+          <code id="reveal-key"></code>
+          <button class="copy" id="btn-copy">Copy</button>
+        </div>
+        <p class="warn">This is the only time the key is shown. We store a fingerprint, not the key itself, so we genuinely cannot show it to you again. Lost it? Regenerate below, which replaces it and kills the old one.</p>
+      </div>
+
+      <dl class="kv">
+        <dt>Tier</dt><dd id="k-tier">Pro</dd>
+        <dt>Key</dt><dd><code id="k-masked">fxnb_live_****</code></dd>
+        <dt>Created</dt><dd id="k-created">-</dd>
+        <dt>Last used</dt><dd id="k-lastused">-</dd>
+      </dl>
+
+      <div style="margin-top:14px;">
+        <div class="note" style="display:flex;justify-content:space-between;gap:12px;">
+          <span>Requests today</span><span id="k-usage">0 / 200</span>
+        </div>
+        <div class="meter"><div class="meter-fill" id="k-meter" style="width:0%"></div></div>
+        <div class="note" id="k-reset">Resets at 00:00 UTC</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btn-regen">Regenerate key</button>
+        <button class="btn btn-danger" id="btn-revoke">Revoke</button>
+      </div>
+      <div class="msg" id="msg-haskey"></div>
+    </div>
+
+  </div>
+
+  <h2 id="tiers">Tiers</h2>
+  <div class="tiers">
+    <div class="tier">
+      <h3>Sandbox</h3>
+      <div class="price">Free &middot; issued on request</div>
+      <ul>
+        <li><code>/sentiment</code>, the current read for 8 currencies</li>
+        <li>100 requests per day</li>
+        <li>Personal and internal non-commercial use</li>
+        <li>Attribution required</li>
+      </ul>
+    </div>
+    <div class="tier pro">
+      <h3>Pro <span class="pill pill-pro">Included</span></h3>
+      <div class="price">Part of Pro, $30/month, 7-day free trial</div>
+      <ul>
+        <li>Everything in Sandbox</li>
+        <li><code>/session-bias</code>, the pair scorecard for the open session</li>
+        <li>200 requests per day</li>
+        <li>Key available instantly on this page</li>
+        <li>Commercial use within your own product</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note">Both tiers serve <strong>forward data</strong>: the current read and everything published from now on. Historical series are not available through the API. If you need history for research, <a href="mailto:contact@fxnewsbias.com?subject=Historical%20data%20licence">talk to us about a data licence</a>.</p>
+
+  <h2>Quickstart</h2>
+  <pre>curl -H "Authorization: Bearer fxnb_live_YOUR_KEY" \
   https://fxnewsbias.com/api/v1/sentiment</pre>
+  <p class="note">Bearer header only. Keys are never accepted in the URL or query string.</p>
 
-<h2>Response</h2>
-<pre>{
+  <h2>Response</h2>
+  <pre>{
   "schema": "fxnb.sentiment.v1",
   "generated_at": "2026-08-21T09:00:12Z",
   "next_update_expected": "2026-08-21T12:00:00Z",
@@ -75,32 +255,204 @@ footer{margin-top:60px;border-top:1px solid var(--line);padding-top:18px;font-si
   ]
 }</pre>
 
-<div class="tblwrap"><table>
-<tr><th>Field</th><th>Contract (frozen, v1 never changes shape)</th></tr>
-<tr><td><code>data</code></td><td>Always exactly 8 rows, ordered USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD</td></tr>
-<tr><td><code>score</code></td><td>Integer 0-100. 50 is the neutral midpoint; higher = bullish news tone, lower = bearish</td></tr>
-<tr><td><code>bias</code></td><td>Exactly one of <code>Bullish</code>, <code>Bearish</code>, <code>Neutral</code></td></tr>
-<tr><td><code>updated_at</code></td><td>ISO-8601 UTC. When the score was computed (3-hour cycles)</td></tr>
-<tr><td><code>next_update_expected</code></td><td>The next scheduled refresh. Polling faster than 3-hourly just returns the same values</td></tr>
-</table></div>
+  <div class="tblwrap"><table>
+  <tr><th>Field</th><th>Contract, frozen. v1 never changes shape</th></tr>
+  <tr><td><code>data</code></td><td>Always exactly 8 rows, ordered USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD</td></tr>
+  <tr><td><code>score</code></td><td>Integer 0 to 100. 50 is the neutral midpoint, higher is bullish news tone, lower is bearish</td></tr>
+  <tr><td><code>bias</code></td><td>Exactly one of <code>Bullish</code>, <code>Bearish</code>, <code>Neutral</code></td></tr>
+  <tr><td><code>updated_at</code></td><td>ISO-8601 UTC. When the score was computed</td></tr>
+  <tr><td><code>next_update_expected</code></td><td>When the next refresh lands. Sleep until this, then poll once</td></tr>
+  </table></div>
 
-<h2>Rate limits</h2>
-<ul>
-<li><strong>100 requests per UTC calendar day</strong> per key, resetting at 00:00 UTC, comfortably enough for hourly polling with headroom</li>
-<li>Every response carries <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code></li>
-<li>Request 101 returns <code>429</code> with a <code>Retry-After</code> header</li>
-</ul>
+  <h2>Staying current without wasting quota</h2>
+  <p class="sub" style="font-size:16px;">Scores publish on a fixed 3-hour cycle. Rather than polling blindly, read <code>next_update_expected</code> and come back then. You get the new data within seconds of publication and spend about 8 requests a day.</p>
+  <pre>import requests, time
+from datetime import datetime, timezone
 
-<h2>Attribution &amp; terms</h2>
-<ul>
-<li>Wherever the data is displayed or republished, retain the attribution: <strong>"Data by FXNewsBias"</strong> linking to <code>https://fxnewsbias.com</code> (it's included in every response)</li>
-<li>Sandbox is for personal and internal non-commercial use</li>
-<li>No redistribution, resale, or use to build a competing sentiment service</li>
-<li>Keys can be revoked for abuse; request a new key any time (the old one is revoked automatically)</li>
-<li>Commercial or higher-volume use: <a href="mailto:contact@fxnewsbias.com">contact@fxnewsbias.com</a></li>
-</ul>
+H = {"Authorization": "Bearer fxnb_live_YOUR_KEY"}
 
-<footer>© 2026 FXNewsBias · <a href="/about">About</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/contact">Contact</a></footer>
+while True:
+    r = requests.get("https://fxnewsbias.com/api/v1/sentiment", headers=H).json()
+    handle(r["data"])
+    nxt = datetime.fromisoformat(r["next_update_expected"].replace("Z", "+00:00"))
+    time.sleep(max(30, (nxt - datetime.now(timezone.utc)).total_seconds() + 20))</pre>
+
+  <h2>Rate limits</h2>
+  <ul>
+    <li><strong>Sandbox: 100 requests</strong> per UTC calendar day. <strong>Pro: 200.</strong> Both reset at 00:00 UTC</li>
+    <li>Every response carries <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code></li>
+    <li>One over the limit returns <code>429</code> with a <code>Retry-After</code> header</li>
+  </ul>
+
+  <h2>Errors</h2>
+  <div class="tblwrap"><table>
+  <tr><th>Status</th><th>Body</th><th>When</th></tr>
+  <tr><td><code>401</code></td><td><code>{"error":"unauthorized"}</code></td><td>Missing or malformed header, unknown key, revoked key</td></tr>
+  <tr><td><code>405</code></td><td><code>{"error":"method-not-allowed"}</code></td><td>Anything but GET</td></tr>
+  <tr><td><code>429</code></td><td><code>{"error":"rate-limited","retry_after_seconds":n}</code></td><td>Past your daily limit</td></tr>
+  </table></div>
+
+  <h2>Attribution and terms</h2>
+  <ul>
+    <li>Wherever the data is displayed or republished, keep the attribution <strong>"Data by FXNewsBias"</strong> linking to <code>https://fxnewsbias.com</code>. It ships in every response</li>
+    <li>Sandbox is for personal and internal non-commercial use. Pro covers commercial use inside your own product</li>
+    <li>No redistribution, resale, or using the data to build a competing sentiment service</li>
+    <li>One key per account. Sharing a key across separate users or products is not permitted and is detectable</li>
+    <li>Pro keys work while your subscription is active, including the free trial, and stop when it ends</li>
+    <li>Questions, higher volume, or a data licence: <a href="mailto:contact@fxnewsbias.com">contact@fxnewsbias.com</a></li>
+  </ul>
+
+  <footer>&copy; 2026 FXNewsBias &middot; <a href="/">Dashboard</a> &middot; <a href="/about">About</a> &middot; <a href="/disclaimer">Disclaimer</a> &middot; <a href="/contact">Contact</a></footer>
 </div>
+
+<script type="module" src="/firebase.js?v=3"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var STATES = ['state-loading', 'state-guest', 'state-free', 'state-nokey', 'state-haskey'];
+
+  function show(id) {
+    STATES.forEach(function (s) { var el = $(s); if (el) el.hidden = (s !== id); });
+  }
+  function msg(boxId, text, kind) {
+    var el = $(boxId); if (!el) return;
+    el.textContent = text;
+    el.className = 'msg show ' + (kind === 'ok' ? 'msg-ok' : 'msg-err');
+  }
+  function fmtDate(iso) {
+    if (!iso) return 'Never';
+    try {
+      return new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return iso; }
+  }
+  function renderKey(k) {
+    $('k-tier').textContent = k.tier === 'pro' ? 'Pro' : 'Sandbox';
+    $('k-masked').textContent = k.masked || 'fxnb_live_****';
+    $('k-created').textContent = fmtDate(k.created_at);
+    $('k-lastused').textContent = fmtDate(k.last_used_at);
+    var used = k.used || 0, limit = k.limit || 200;
+    $('k-usage').textContent = used + ' / ' + limit;
+    var pct = Math.min(100, limit ? (used / limit * 100) : 0);
+    var meter = $('k-meter');
+    meter.style.width = pct + '%';
+    meter.className = 'meter-fill' + (pct >= 100 ? ' full' : pct >= 75 ? ' hot' : '');
+    show('state-haskey');
+  }
+  function renderWho(email, tier) {
+    var el = $('who');
+    if (!email) { el.innerHTML = '<a href="/login" style="text-decoration:none;">Sign in</a>'; return; }
+    var pill = tier === 'pro' ? '<span class="pill pill-pro">Pro</span>'
+             : tier === 'sandbox' ? '<span class="pill pill-sandbox">Sandbox</span>'
+             : '<span class="pill pill-free">Free</span>';
+    el.innerHTML = '<strong>' + email.replace(/[<>&]/g, '') + '</strong>' + pill;
+  }
+
+  // ---- Preview mode -------------------------------------------------------
+  // Lets the owner review every state before the backend exists. Purely
+  // cosmetic: it renders fixed sample values and never calls an endpoint.
+  // Remove this block once the API is live.
+  var preview = new URLSearchParams(location.search).get('preview');
+  if (preview) {
+    var bar = $('preview-bar');
+    bar.className = 'preview-bar show';
+    bar.innerHTML = 'Preview: <strong>' + preview + '</strong> &middot; '
+      + '<a href="?preview=guest">guest</a> &middot; <a href="?preview=free">free</a> &middot; '
+      + '<a href="?preview=nokey">no key</a> &middot; <a href="?preview=haskey">has key</a> &middot; '
+      + '<a href="?preview=new">just created</a> &middot; <a href="/developers">exit</a>';
+
+    if (preview === 'guest') { renderWho(null); show('state-guest'); }
+    else if (preview === 'free') { renderWho('you@example.com', 'free'); show('state-free'); }
+    else if (preview === 'nokey') { renderWho('you@example.com', 'pro'); show('state-nokey'); }
+    else if (preview === 'haskey' || preview === 'new') {
+      renderWho('you@example.com', 'pro');
+      renderKey({
+        tier: 'pro', masked: 'fxnb_live_610b...c0f1',
+        created_at: '2026-08-20T18:37:16Z', last_used_at: '2026-08-21T09:02:11Z',
+        used: 47, limit: 200,
+      });
+      if (preview === 'new') {
+        $('reveal').hidden = false;
+        $('reveal-key').textContent = 'fxnb_live_610b2714e81e2b37de777382d27ef4561616c2f1ae6d21cafa0b454133bbc0f1';
+      }
+    } else { show('state-loading'); }
+    return;
+  }
+
+  // ---- Live mode ----------------------------------------------------------
+  // Endpoints land with the backend phases. Until then this shows the guest or
+  // free state, which is correct rather than broken.
+  var API = { status: '/api/pro/api-key', create: '/api/pro/api-key/create', revoke: '/api/pro/api-key/revoke' };
+
+  async function authed(url, body) {
+    var u = window.getCurrentUser && window.getCurrentUser();
+    if (!u) return { error: 'unauthorized' };
+    var idToken;
+    try { idToken = await u.getIdToken(); } catch (e) { return { error: 'unauthorized' }; }
+    try {
+      var res = await fetch(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ idToken: idToken }, body || {})),
+      });
+      return await res.json();
+    } catch (e) { return { error: 'network' }; }
+  }
+
+  async function load() {
+    var u = window.getCurrentUser && window.getCurrentUser();
+    if (!u) { renderWho(null); show('state-guest'); return; }
+    var r = await authed(API.status);
+    if (r.error === 'unauthorized') { renderWho(null); show('state-guest'); return; }
+    if (r.error === 'pro-only' || r.isPro === false) { renderWho(u.email, 'free'); show('state-free'); return; }
+    renderWho(u.email, r.key && r.key.tier === 'sandbox' ? 'sandbox' : 'pro');
+    if (r.key) renderKey(r.key); else show('state-nokey');
+  }
+
+  window.addEventListener('userLoaded', load);
+  setTimeout(function () { if (!$('state-loading').hidden) load(); }, 2500);
+
+  $('btn-create').addEventListener('click', async function () {
+    this.disabled = true; this.textContent = 'Creating...';
+    var r = await authed(API.create);
+    this.disabled = false; this.textContent = 'Create my API key';
+    if (r.error || !r.key) { msg('msg-nokey', r.message || 'Could not create the key. Please try again.', 'err'); return; }
+    renderKey(r.key);
+    $('reveal').hidden = false;
+    $('reveal-key').textContent = r.raw_key || '';
+  });
+
+  $('btn-regen').addEventListener('click', async function () {
+    if (!confirm('Regenerate your key? The current one stops working immediately.')) return;
+    this.disabled = true;
+    var r = await authed(API.create, { rotate: true });
+    this.disabled = false;
+    if (r.error || !r.key) { msg('msg-haskey', r.message || 'Could not regenerate the key.', 'err'); return; }
+    renderKey(r.key);
+    $('reveal').hidden = false;
+    $('reveal-key').textContent = r.raw_key || '';
+    msg('msg-haskey', 'New key created. The old one no longer works.', 'ok');
+  });
+
+  $('btn-revoke').addEventListener('click', async function () {
+    if (!confirm('Revoke your key? Anything using it stops working immediately.')) return;
+    this.disabled = true;
+    var r = await authed(API.revoke);
+    this.disabled = false;
+    if (r.error) { msg('msg-haskey', r.message || 'Could not revoke the key.', 'err'); return; }
+    show('state-nokey');
+  });
+
+  $('btn-copy').addEventListener('click', function () {
+    var txt = $('reveal-key').textContent, btn = this;
+    var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1800); };
+    if (navigator.clipboard) { navigator.clipboard.writeText(txt).then(done, function () {}); }
+    else {
+      var ta = document.createElement('textarea');
+      ta.value = txt; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      ta.remove();
+    }
+  });
+})();
+</script>
 </body>
 </html>

@@ -37,7 +37,7 @@ button:disabled{opacity:0.6;cursor:not-allowed;}
 <body>
 <div class="card">
   <a href="/" class="logo"><img src="/logo-fxnb.png?v=2" alt="FX News Bias" ><span class="logo-word">FX<em>News</em>Bias</span></a>
-  <div id="reset-section">
+  <div id="reset-section" style="display:none;">
     <h1>🔐 Reset Password</h1>
     <p>Enter your new password below.</p>
     <div class="msg" id="msg"></div>
@@ -56,11 +56,16 @@ button:disabled{opacity:0.6;cursor:not-allowed;}
     <p>This reset link has expired or already been used.</p>
     <a href="/login"><button>Back to Login</button></a>
   </div>
+  <div id="verified-section" style="display:none;">
+    <h1 id="verify-title">📧 Verifying...</h1>
+    <p id="verify-status">One moment.</p>
+    <a href="/login" id="verify-cta" style="display:none;"><button>Continue →</button></a>
+  </div>
 </div>
 
 <script type="module">
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getAuth, confirmPasswordReset, verifyPasswordResetCode } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import { getAuth, confirmPasswordReset, verifyPasswordResetCode, applyActionCode } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
 const app = getApps().length ? getApps()[0] : initializeApp({
   apiKey: "AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4",
@@ -76,14 +81,40 @@ const params = new URLSearchParams(window.location.search);
 const oobCode = params.get('oobCode');
 const mode = params.get('mode');
 
-if (!oobCode || mode !== 'resetPassword') {
-  document.getElementById('reset-section').style.display = 'none';
-  document.getElementById('error-section').style.display = 'block';
-} else {
-  verifyPasswordResetCode(auth, oobCode).catch(() => {
-    document.getElementById('reset-section').style.display = 'none';
-    document.getElementById('error-section').style.display = 'block';
+const _show = (id) => {
+  ['reset-section', 'success-section', 'error-section', 'verified-section'].forEach((s) => {
+    const el = document.getElementById(s);
+    if (el) el.style.display = (s === id ? 'block' : 'none');
   });
+};
+
+// Firebase sends every email action to this one page and distinguishes them
+// with ?mode=. Only resetPassword was handled, so verification links landed on
+// "Link Expired" even though the code was perfectly valid.
+if (!oobCode) {
+  _show('error-section');
+} else if (mode === 'resetPassword') {
+  _show('reset-section');
+  verifyPasswordResetCode(auth, oobCode).catch(() => _show('error-section'));
+} else if (mode === 'verifyEmail' || mode === 'verifyAndChangeEmail') {
+  _show('verified-section');
+  document.getElementById('verify-status').textContent = 'Confirming your email...';
+  applyActionCode(auth, oobCode).then(async () => {
+    document.getElementById('verify-title').textContent = '✅ Email Verified!';
+    document.getElementById('verify-status').textContent = 'Your email address is confirmed. You can carry on.';
+    document.getElementById('verify-cta').style.display = 'inline-block';
+    // The email_verified claim is baked into the ID token, so a signed-in
+    // session keeps the old value until the token is refreshed.
+    try {
+      if (auth.currentUser) { await auth.currentUser.reload(); await auth.currentUser.getIdToken(true); }
+    } catch (e) {}
+  }).catch(() => {
+    document.getElementById('verify-title').textContent = '❌ Link Expired';
+    document.getElementById('verify-status').textContent = 'This verification link has expired or was already used. Sign in and request a new one.';
+    document.getElementById('verify-cta').style.display = 'inline-block';
+  });
+} else {
+  _show('error-section');
 }
 
 window.resetPassword = async function() {
