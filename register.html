@@ -234,8 +234,8 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
         </div>
         <div class="reg-field">
           <label class="reg-label" for="reg-password">Password</label>
-          <input class="reg-input" type="password" id="reg-password" name="password" autocomplete="new-password" placeholder="At least 10 characters" required>
-          <div class="reg-hint" id="reg-pw-hint">Use 10 or more characters, with an uppercase letter, a number and a symbol.</div>
+          <input class="reg-input" type="password" id="reg-password" name="password" autocomplete="new-password" placeholder="At least 6 characters" required>
+          <div class="reg-hint" id="reg-pw-hint">At least 6 characters, including one uppercase and one lowercase letter.</div>
         </div>
         <div class="cf-turnstile" data-sitekey="0x4AAAAAADM_Zwt7Tdb0zCT3" data-action="register" data-size="flexible" style="margin:14px 0 4px;"></div>
         <div class="reg-error" id="reg-error" role="alert"></div>
@@ -306,10 +306,8 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return fail('Please enter a valid email address.', emailEl);
     // Mirrors the server rule so the common case fails instantly, but the
     // server is the one that decides.
-    if (password.length < 10) return fail('Password must be at least 10 characters.', pwEl);
+    if (password.length < 6) return fail('Password must be at least 6 characters.', pwEl);
     if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) return fail('Password needs both an uppercase and a lowercase letter.', pwEl);
-    if (!/[0-9]/.test(password)) return fail('Password needs a number.', pwEl);
-    if (!/[^A-Za-z0-9]/.test(password)) return fail('Password needs a symbol, for example ! or #.', pwEl);
 
     var tokenInput = form.querySelector('[name="cf-turnstile-response"]');
     var turnstileToken = tokenInput ? tokenInput.value : '';

@@ -5211,13 +5211,15 @@ async function handleSaveAlerts(request, env) {
 // the Firebase console closes that, and that is a console action.
 const _REG_HOSTS = new Set(['fxnewsbias.com', 'www.fxnewsbias.com']);
 
+// Mirrors the Firebase console password policy exactly: minimum 6, uppercase
+// and lowercase required, no digit or symbol requirement. Keep the two in sync;
+// if the server were stricter, a password Firebase accepts would be rejected
+// here and the user would see no reason why.
 function _regPasswordProblem(pw) {
-  if (pw.length < 10) return 'Password must be at least 10 characters.';
+  if (pw.length < 6) return 'Password must be at least 6 characters.';
   if (pw.length > 4096) return 'Password is too long.';
   if (!/[a-z]/.test(pw)) return 'Password needs a lowercase letter.';
   if (!/[A-Z]/.test(pw)) return 'Password needs an uppercase letter.';
-  if (!/[0-9]/.test(pw)) return 'Password needs a number.';
-  if (!/[^A-Za-z0-9]/.test(pw)) return 'Password needs a symbol.';
   return null;
 }
 
