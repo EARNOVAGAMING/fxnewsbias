@@ -191,7 +191,7 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
     <div class="register-right">
       <div id="paid-banner" style="display:none;background:linear-gradient(135deg,#065f46,#047857);color:#fff;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;line-height:1.6;">
         <div style="font-weight:800;font-size:15px;margin-bottom:4px;">✅ Payment Successful!</div>
-        Sign in with <strong>Google</strong> using the same email you paid with to unlock your <strong>Pro access</strong> instantly.
+        Sign in with <strong>Google</strong> or <strong>GitHub</strong> using the same email you paid with to unlock your <strong>Pro access</strong> instantly.
       </div>
       <h1 id="register-heading">Create Free Account 🚀</h1>
       <p id="register-sub">No credit card required. Free forever.</p>
@@ -203,8 +203,9 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
       </div>
 
       <button class="google-btn" onclick="loginWithGoogle()" style="padding:14px;font-size:15px;font-weight:700;">🔵 Continue with Google</button>
+      <button class="google-btn" onclick="loginWithGithub()" style="padding:14px;font-size:15px;font-weight:700;margin-top:10px;">⚫ Continue with GitHub</button>
 
-      <p style="font-size:11px;color:var(--text-muted);margin-top:12px;text-align:center;line-height:1.6;">New accounts use Google sign-in only — safer, with no password to manage. By continuing you agree to our <a href="/terms" style="color:var(--accent);text-decoration:none;">Terms</a> &amp; <a href="/disclaimer" style="color:var(--accent);text-decoration:none;">Disclaimer</a>.</p>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:12px;text-align:center;line-height:1.6;">New accounts use Google or GitHub sign-in. Safer, with no password to manage. By continuing you agree to our <a href="/terms" style="color:var(--accent);text-decoration:none;">Terms</a> &amp; <a href="/disclaimer" style="color:var(--accent);text-decoration:none;">Disclaimer</a>.</p>
 
       <div class="register-footer">
         Already have an account? <a href="/login">Login →</a>
@@ -228,7 +229,7 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
 <script src="/nav.js?v=2" defer></script><script src="/promo-popup.js?v=2" defer></script>
 <script src="/cookie.js?v=2" defer></script>
 <script src="/analytics.js?v=2" defer></script>
-<script type="module" src="/firebase.js?v=2"></script>
+<script type="module" src="/firebase.js?v=3"></script>
 <script>
 // Detect post-payment flow
 (function() {
@@ -241,7 +242,7 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
     return;
   }
 
-  // Not logged in — show banner + update heading
+  // Not logged in: show banner + update heading
   document.getElementById('paid-banner').style.display = 'block';
   document.getElementById('register-heading').textContent = 'Activate Your Pro Account';
   document.getElementById('register-sub').innerHTML =
@@ -249,11 +250,11 @@ footer{background:#0f172a;color:#94a3b8;padding:24px 0;}
     'Already have an account? <a href="/login?paid=1" style="color:#2563eb;font-weight:700;">Log in instead</a>.';
 })();
 
-// Manual email/password registration has been removed — new accounts are
-// Google-only (safer, no stored passwords). Sign-up is handled by
-// loginWithGoogle() in firebase.js, which also fires the welcome email +
-// daily-sentiment audience subscription for brand-new users. Existing
-// email/password users continue to sign in at /login.
+// Manual email/password registration has been removed. New accounts are
+// created through an OAuth provider (safer, no stored passwords). Sign-up is
+// handled by loginWithGoogle() / loginWithGithub() in firebase.js, which also
+// fire the welcome email + daily-sentiment audience subscription for brand-new
+// users. Existing email/password users continue to sign in at /login.
 </script>
 </body>
 </html>
