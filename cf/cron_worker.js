@@ -5344,6 +5344,15 @@ async function handleAuthRegister(request, env) {
     if (env.RESEND_API_KEY) {
       try { await _sendReconcileWelcome(env, email, name || email.split('@')[0]); }
       catch (e) { console.log('register: welcome email failed', e.message); }
+      // Parity with the Google/GitHub path: /send-welcome-email adds the new
+      // user to the free Resend audience, which is what actually receives the
+      // daily digest. Without this an email signup would get the welcome mail
+      // but no digest until the 03:15 reconciler swept them up, up to a day
+      // later. Awaited, not fire-and-forget: an un-awaited fetch can be
+      // cancelled when the handler returns, which is how audience adds were
+      // silently dropped before.
+      await _addToAudience(env, email, name || email.split('@')[0])
+        .catch(e => console.log('register: audience add failed', e.message));
     }
 
     return _proJson({ ok: true });
