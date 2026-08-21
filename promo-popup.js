@@ -1,4 +1,4 @@
-/* FXNewsBias — unified subscribe + 7-day Pro trial pop-out.
+/* FXNewsBias: unified subscribe + 7-day Pro trial pop-out.
    Self-contained, no dependencies. Self-gates so it only shows to logged-out
    visitors on content pages, and remembers dismissal for 7 days. */
 (function () {
@@ -54,10 +54,10 @@
         '<button class="fxnb-x" aria-label="Close">&times;</button>' +
         '<span class="fxnb-badge">Free daily digest</span>' +
         '<h3>Never miss a sentiment shift</h3>' +
-        '<p>Get the daily forex sentiment digest free by email — plus try ' +
-        '<strong style="color:#e2e8f0;">Pro free for 7 days</strong>.</p>' +
-        '<a class="fxnb-primary" href="/register">🔵&nbsp; Sign up free with Google</a>' +
-        '<a class="fxnb-secondary" href="' + TRIAL_URL + '" target="_blank" rel="noopener">Start 7-day Pro trial →</a>' +
+        '<p>Get the daily forex sentiment digest free by email. No credit card, '
+        + 'takes one tap.</p>' +
+        '<a class="fxnb-primary" href="/register">Create your free account</a>' +
+        '<a class="fxnb-secondary" href="' + TRIAL_URL + '" target="_blank" rel="noopener">Or start a 7-day Pro trial</a>' +
         '<button class="fxnb-later">Maybe later</button>';
       document.body.appendChild(box);
       requestAnimationFrame(function () { box.classList.add('in'); });
@@ -79,5 +79,5 @@
       if (h > 0 && (window.scrollY / h) > 0.45) { clearTimeout(timer); build(); window.removeEventListener('scroll', onScroll); }
     }
     window.addEventListener('scroll', onScroll, { passive: true });
-  } catch (e) { /* fail silently — never block the page */ }
+  } catch (e) { /* fail silently, never block the page */ }
 })();
