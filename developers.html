@@ -110,17 +110,12 @@ li{margin:5px 0}
 .tier ul{padding-left:18px;margin:0;font-size:13.5px}
 .tier li{margin:6px 0;color:#cbd5e1}
 
-.preview-bar{background:rgba(245,158,11,.14);border-bottom:1px solid rgba(245,158,11,.3);color:#fcd34d;font-size:12.5px;padding:8px 20px;text-align:center;display:none}
-.preview-bar.show{display:block}
-.preview-bar a{color:#fcd34d;font-weight:700}
 
 footer{margin-top:64px;border-top:1px solid var(--line);padding-top:18px;font-size:13px;color:var(--muted)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-
-<div class="preview-bar" id="preview-bar"></div>
 
 <header class="dev-head">
   <div class="dev-head-in">
@@ -345,37 +340,6 @@ while True:
              : tier === 'sandbox' ? '<span class="pill pill-sandbox">Sandbox</span>'
              : '<span class="pill pill-free">Free</span>';
     el.innerHTML = '<strong>' + email.replace(/[<>&]/g, '') + '</strong>' + pill;
-  }
-
-  // ---- Preview mode -------------------------------------------------------
-  // Lets the owner review every state before the backend exists. Purely
-  // cosmetic: it renders fixed sample values and never calls an endpoint.
-  // Remove this block once the API is live.
-  var preview = new URLSearchParams(location.search).get('preview');
-  if (preview) {
-    var bar = $('preview-bar');
-    bar.className = 'preview-bar show';
-    bar.innerHTML = 'Preview: <strong>' + preview + '</strong> &middot; '
-      + '<a href="?preview=guest">guest</a> &middot; <a href="?preview=free">free</a> &middot; '
-      + '<a href="?preview=nokey">no key</a> &middot; <a href="?preview=haskey">has key</a> &middot; '
-      + '<a href="?preview=new">just created</a> &middot; <a href="/developers">exit</a>';
-
-    if (preview === 'guest') { renderWho(null); show('state-guest'); }
-    else if (preview === 'free') { renderWho('you@example.com', 'free'); show('state-free'); }
-    else if (preview === 'nokey') { renderWho('you@example.com', 'pro'); show('state-nokey'); }
-    else if (preview === 'haskey' || preview === 'new') {
-      renderWho('you@example.com', 'pro');
-      renderKey({
-        tier: 'pro', masked: 'fxnb_live_610b...c0f1',
-        created_at: '2026-08-20T18:37:16Z', last_used_at: '2026-08-21T09:02:11Z',
-        used: 47, limit: 200,
-      });
-      if (preview === 'new') {
-        $('reveal').hidden = false;
-        $('reveal-key').textContent = 'fxnb_live_610b2714e81e2b37de777382d27ef4561616c2f1ae6d21cafa0b454133bbc0f1';
-      }
-    } else { show('state-loading'); }
-    return;
   }
 
   // ---- Live mode ----------------------------------------------------------

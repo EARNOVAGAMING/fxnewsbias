@@ -57,7 +57,7 @@
         '<p>Get the daily forex sentiment digest free by email. No credit card, '
         + 'takes one tap.</p>' +
         '<a class="fxnb-primary" href="/register">Create your free account</a>' +
-        '<a class="fxnb-secondary" href="' + TRIAL_URL + '" target="_blank" rel="noopener">Or start a 7-day Pro trial</a>' +
+        '<a class="fxnb-secondary" href="' + TRIAL_URL + '" target="_blank" rel="noopener">Or start a 7-day Pro trial, API included</a>' +
         '<button class="fxnb-later">Maybe later</button>';
       document.body.appendChild(box);
       requestAnimationFrame(function () { box.classList.add('in'); });

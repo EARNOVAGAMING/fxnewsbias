@@ -212,6 +212,12 @@ return handleDataQuality(env);
 }
 
 // Ops: run the weekly off-site snapshot on demand.
+if (url.pathname === '/reconcile-api-keys') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const out = await reconcileApiKeys(env);
+return new Response(JSON.stringify(out, null, 2), { headers: { 'Content-Type': 'application/json' } });
+}
+
 if (url.pathname === '/export-snapshot') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const out = await exportDataSnapshot(env);
@@ -368,6 +374,7 @@ return handleGa4Summary(request, env);
 // the worker (only the public key is exposed, which is by design).
 // Public Sandbox API (contract: data/API_CONTRACT_v1.md — frozen v1)
 if (url.pathname === '/api/v1/sentiment') return handleApiSentiment(request, env);
+if (url.pathname === '/api/v1/session-bias') return handleApiSessionBias(request, env);
 if (url.pathname === '/api/keys')         return handleApiKeyRequest(request, env);
 
 if (url.pathname === '/api/push/public-key') {
@@ -410,6 +417,9 @@ if (url.pathname === '/create-portal-session') return handleCreatePortalSession(
 if (url.pathname === '/save-alerts') return handleSaveAlerts(request, env);
 if (url.pathname === '/api/pro/sentiment-history') return handleProSentimentHistory(request, env);
 if (url.pathname === '/api/auth/register') return handleAuthRegister(request, env);
+if (url.pathname === '/api/pro/api-key') return handleProApiKey(request, env, 'status');
+if (url.pathname === '/api/pro/api-key/create') return handleProApiKey(request, env, 'create');
+if (url.pathname === '/api/pro/api-key/revoke') return handleProApiKey(request, env, 'revoke');
 if (url.pathname === '/admin-create-post' && request.method === 'POST') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 try {
@@ -536,6 +546,10 @@ if (event.cron === '*/15 * * * *') {
       // Self-healing signup net: any registrant whose browser-side welcome
       // call was aborted gets picked up here within a day.
       await reconcileWelcomeAudience(env).catch(e => console.log('reconcileWelcomeAudience error:', e.message));
+      // API keys follow the subscription. The Stripe webhook revokes on
+      // cancellation, but webhooks get missed, so membership is reconciled
+      // here too. Keys flagged revoke_on_cancel = false are never touched.
+      await reconcileApiKeys(env).catch(e => console.log('reconcileApiKeys error:', e.message));
       // Web Push hygiene: retire subscriptions that keep failing (410/404 are
       // deactivated inline at send time; this catches soft/repeated failures).
       await cleanupPushSubscriptions(env).catch(e => console.log('cleanupPushSubscriptions error:', e.message));
@@ -1096,6 +1110,14 @@ console.log('Firestore updated:', email, 'isPro:', isPro, 'status:', res.status)
 
 // Move the contact between the free and Pro Resend audiences so the daily
 // digest never pitches "Upgrade to Pro" to someone already paying.
+// API access follows the subscription. This is the single choke point where
+// Pro status is written, so hooking here catches cancellation, expiry and a
+// failed card alike, rather than trying to enumerate Stripe event types.
+// Keys flagged revoke_on_cancel = false are granted and are never touched.
+if (isPro === false) {
+try { await _revokeKeysForEmail(env, email, `subscription inactive (${subStatus || 'unknown'})`); }
+catch (e) { console.log('revoke api keys on cancel:', e.message); }
+}
 try { await _syncContactTier(env, email, isPro); }
 catch (e) { console.log('tier sync error:', e.message); }
 
@@ -2734,6 +2756,239 @@ async function handleApiKeyRequest(request, env) {
 }
 
 // GET /api/v1/sentiment — the Sandbox endpoint. Contract-frozen response.
+// Daily request cap by tier. Sandbox is the frozen v1 contract number; Pro is
+// the subscriber allowance. Both reset at 00:00 UTC.
+const _API_CAPS = { sandbox: 100, pro: 200 };
+
+// Shared auth for a Bearer API key: returns the key row or null. Used by every
+// /api/v1 endpoint so the token rules can never drift between them.
+async function _apiAuthKey(request, env) {
+  const auth = request.headers.get('authorization') || '';
+  const m = auth.match(/^Bearer\s+(fxnb_live_[0-9a-f]{64})$/i);
+  if (!m) return null;
+  const hash = await _sha256Hex(m[1]);
+  const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
+  const kr = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?select=id,status,tier,email&key_hash=eq.${hash}`, {
+    headers: sb, signal: AbortSignal.timeout(15000),
+  });
+  const key = kr.ok ? (await kr.json())[0] : null;
+  if (!key || key.status !== 'active') return null;
+  return { ...key, hash, sb };
+}
+
+// GET /api/v1/session-bias — the Pro endpoint. Settled reads for the most
+// recent session, forward only: what we published, never a history dump.
+async function handleApiSessionBias(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _API_CORS });
+  if (request.method !== 'GET') return _apiJson({ error: 'method-not-allowed' }, 405);
+  try {
+    const key = await _apiAuthKey(request, env);
+    if (!key) return _apiJson({ error: 'unauthorized' }, 401);
+    if (key.tier !== 'pro') {
+      return _apiJson({ error: 'pro-only', message: 'The session scorecard is available on the Pro tier.' }, 403);
+    }
+    const cap = _API_CAPS.pro;
+
+    let used = null, limited = false;
+    try {
+      const rl = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_api_slot`, {
+        method: 'POST', headers: key.sb, body: JSON.stringify({ p_key_hash: key.hash, p_cap: cap }), signal: AbortSignal.timeout(15000),
+      });
+      if (rl.ok) { const r = (await rl.json())[0]; if (r) { used = r.used; limited = r.claimed !== true; } }
+    } catch (e) { console.log('session-bias claim_api_slot:', e.message); }
+
+    const reset = _nextUtcMidnightEpoch();
+    const rateHeaders = {
+      'X-RateLimit-Limit': String(cap),
+      'X-RateLimit-Remaining': String(used === null ? cap : Math.max(0, cap - used)),
+      'X-RateLimit-Reset': String(reset),
+    };
+    if (limited) {
+      const retry = Math.max(1, reset - Math.floor(Date.now() / 1000));
+      return _apiJson({ error: 'rate-limited', retry_after_seconds: retry }, 429,
+        { ...rateHeaders, 'X-RateLimit-Remaining': '0', 'Retry-After': String(retry) });
+    }
+
+    const q = `${env.SUPABASE_URL}/rest/v1/session_bias`
+      + `?select=pair,tone,strength,session,session_date,entry_time`
+      + `&order=session_date.desc,entry_time.desc&limit=40`;
+    const r = await fetch(q, { headers: key.sb, signal: AbortSignal.timeout(20000) });
+    if (!r.ok) return _apiJson({ error: 'upstream' }, 502, rateHeaders);
+    const rows = Array.isArray(await r.clone().json()) ? await r.json() : [];
+
+    // Only the newest session, so the shape is stable and nobody can walk
+    // backwards through the ledger one request at a time.
+    const newest = rows.length ? `${rows[0].session_date}|${rows[0].session}` : null;
+    const data = rows
+      .filter(x => `${x.session_date}|${x.session}` === newest)
+      .map(x => ({ pair: x.pair, tone: x.tone, strength: x.strength }));
+
+    fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?id=eq.${key.id}`, {
+      method: 'PATCH', headers: { ...key.sb, Prefer: 'return=minimal' },
+      body: JSON.stringify({ last_used_at: new Date().toISOString() }),
+    }).catch(() => {});
+
+    return _apiJson({
+      schema: 'fxnb.session_bias.v1',
+      generated_at: new Date().toISOString(),
+      session: rows.length ? rows[0].session : null,
+      session_date: rows.length ? rows[0].session_date : null,
+      attribution: { required: true, text: 'Data by FXNewsBias', url: 'https://fxnewsbias.com' },
+      data,
+    }, 200, rateHeaders);
+  } catch (e) {
+    console.log('handleApiSessionBias:', e.message);
+    return _apiJson({ error: 'server-error' }, 500);
+  }
+}
+
+// POST /api/pro/api-key[...] — self-serve key management for subscribers.
+// Every action re-checks the live subscription, so a lapsed account cannot
+// mint or keep a key even if the page is left open.
+async function handleProApiKey(request, env, action) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  if (request.method !== 'POST') return _proJson({ error: 'method-not-allowed' }, 405);
+  try {
+    const body = await request.json().catch(() => ({}));
+    const user = await _verifyFirebaseUser(env, body.idToken);
+    if (!user) return _proJson({ error: 'unauthorized' }, 401);
+    const email = String(user.email || '').toLowerCase();
+    const sub = await _getSubscriptionDoc(env, email);
+    const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
+
+    const existing = await _activeKeyFor(env, email, sb);
+
+    // A Sandbox holder keeps their key regardless of subscription: that tier
+    // was granted separately and is not part of Pro.
+    const sandboxHolder = !!existing && existing.tier === 'sandbox';
+    if (!sub.isPro && !sandboxHolder) {
+      return _proJson({ ok: true, isPro: false, key: null }, 200);
+    }
+
+    if (action === 'status') {
+      return _proJson({ ok: true, isPro: sub.isPro, key: existing ? await _keyView(env, existing, sb) : null });
+    }
+
+    if (action === 'revoke') {
+      if (!existing) return _proJson({ ok: true, key: null });
+      await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?id=eq.${existing.id}`, {
+        method: 'PATCH', headers: { ...sb, Prefer: 'return=minimal' },
+        body: JSON.stringify({ status: 'revoked', revoked_at: new Date().toISOString() }),
+        signal: AbortSignal.timeout(15000),
+      });
+      return _proJson({ ok: true, key: null });
+    }
+
+    if (action === 'create') {
+      if (!sub.isPro) return _proJson({ error: 'pro-only', message: 'API keys are part of Pro.' }, 403);
+      // Rotation is the only way to replace a key, and it revokes first so a
+      // failure part-way through can never leave two live keys on one account.
+      if (existing) {
+        await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?id=eq.${existing.id}`, {
+          method: 'PATCH', headers: { ...sb, Prefer: 'return=minimal' },
+          body: JSON.stringify({ status: 'revoked', revoked_at: new Date().toISOString() }),
+          signal: AbortSignal.timeout(15000),
+        });
+      }
+      const raw = _newApiKey();
+      const hash = await _sha256Hex(raw);
+      const ins = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys`, {
+        method: 'POST', headers: { ...sb, Prefer: 'return=representation' },
+        body: JSON.stringify({ email, key_hash: hash, tier: 'pro', status: 'active' }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!ins.ok) {
+        console.log('pro key insert failed:', ins.status, (await ins.text()).slice(0, 160));
+        return _proJson({ error: 'server-error', message: 'Could not create the key. Please try again.' }, 500);
+      }
+      const row = (await ins.json())[0];
+      // The raw key is returned exactly once, here. Only the hash is stored, so
+      // this response is the only chance the owner ever gets to copy it.
+      return _proJson({ ok: true, raw_key: raw, key: await _keyView(env, row, sb, raw) });
+    }
+
+    return _proJson({ error: 'bad-request' }, 400);
+  } catch (e) {
+    console.log('handleProApiKey:', e.message);
+    return _proJson({ error: 'server-error' }, 500);
+  }
+}
+
+async function _activeKeyFor(env, email, sb) {
+  const r = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?select=id,email,tier,status,created_at,last_used_at,key_hash&email=eq.${encodeURIComponent(email)}&status=eq.active&limit=1`, {
+    headers: sb, signal: AbortSignal.timeout(15000),
+  });
+  return r.ok ? ((await r.json())[0] || null) : null;
+}
+
+// What the account page is allowed to see. Never the key, never the hash.
+async function _keyView(env, row, sb, raw) {
+  const today = new Date().toISOString().slice(0, 10);
+  let used = 0;
+  try {
+    const u = await fetch(`${env.SUPABASE_URL}/rest/v1/api_usage?select=used&key_hash=eq.${row.key_hash}&used_date=eq.${today}`, {
+      headers: sb, signal: AbortSignal.timeout(15000),
+    });
+    if (u.ok) { const rows = await u.json(); used = (rows[0] && rows[0].used) || 0; }
+  } catch (e) { /* usage is cosmetic; never fail the panel over it */ }
+  return {
+    tier: row.tier,
+    masked: raw ? `${raw.slice(0, 15)}...${raw.slice(-4)}` : 'fxnb_live_' + '\u2022'.repeat(8),
+    created_at: row.created_at,
+    last_used_at: row.last_used_at,
+    used,
+    limit: _API_CAPS[row.tier] || _API_CAPS.sandbox,
+  };
+}
+
+// Revoke every automation-revocable key for an email. Keys flagged
+// revoke_on_cancel = false are granted access and are deliberately untouchable
+// here, which is how the first external developer keeps permanent access.
+async function _revokeKeysForEmail(env, email, reason) {
+  if (!email) return 0;
+  const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
+  try {
+    const url = `${env.SUPABASE_URL}/rest/v1/api_keys`
+      + `?email=eq.${encodeURIComponent(String(email).toLowerCase())}`
+      + `&status=eq.active&tier=eq.pro&revoke_on_cancel=eq.true`;
+    const r = await fetch(url, {
+      method: 'PATCH', headers: { ...sb, Prefer: 'return=representation' },
+      body: JSON.stringify({ status: 'revoked', revoked_at: new Date().toISOString() }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) { console.log('revokeKeys failed:', r.status); return 0; }
+    const n = (await r.json()).length;
+    if (n) console.log(`api key revoked for ${email} (${reason}): ${n}`);
+    return n;
+  } catch (e) { console.log('revokeKeys error:', e.message); return 0; }
+}
+
+// Nightly sweep. Webhooks get missed, so membership is reconciled from the
+// subscriptions collection rather than trusted to arrive as an event.
+async function reconcileApiKeys(env) {
+  const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
+  const out = { checked: 0, revoked: 0, exempt: 0 };
+  try {
+    const kr = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?select=id,email,tier,revoke_on_cancel&status=eq.active`, {
+      headers: sb, signal: AbortSignal.timeout(20000),
+    });
+    if (!kr.ok) return { ...out, error: `keys ${kr.status}` };
+    const keys = await kr.json();
+    for (const k of keys) {
+      out.checked++;
+      if (k.revoke_on_cancel === false || k.tier !== 'pro') { out.exempt++; continue; }
+      const sub = await _getSubscriptionDoc(env, k.email);
+      if (sub.isPro) continue;
+      out.revoked += await _revokeKeysForEmail(env, k.email, 'nightly sweep, subscription inactive');
+    }
+    console.log('reconcileApiKeys:', JSON.stringify(out));
+    return out;
+  } catch (e) {
+    console.log('reconcileApiKeys error:', e.message);
+    return { ...out, error: e.message };
+  }
+}
+
 async function handleApiSentiment(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _API_CORS });
   if (request.method !== 'GET') return _apiJson({ error: 'method-not-allowed' }, 405);
@@ -2744,18 +2999,19 @@ async function handleApiSentiment(request, env) {
     const hash = await _sha256Hex(m[1]);
     const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
 
-    const kr = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?select=id,status&key_hash=eq.${hash}`, {
+    const kr = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?select=id,status,tier&key_hash=eq.${hash}`, {
       headers: sb, signal: AbortSignal.timeout(15000),
     });
     const key = kr.ok ? (await kr.json())[0] : null;
     if (!key || key.status !== 'active') return _apiJson({ error: 'unauthorized' }, 401);
+    const cap = _API_CAPS[key.tier] || _API_CAPS.sandbox;
 
     // Rate limit — fail-open on limiter infra errors: a limiter outage must
     // never take the API down for legitimate users.
     let used = null, limited = false;
     try {
       const rl = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_api_slot`, {
-        method: 'POST', headers: sb, body: JSON.stringify({ p_key_hash: hash }), signal: AbortSignal.timeout(15000),
+        method: 'POST', headers: sb, body: JSON.stringify({ p_key_hash: hash, p_cap: cap }), signal: AbortSignal.timeout(15000),
       });
       if (rl.ok) {
         const r = (await rl.json())[0];
@@ -2765,8 +3021,8 @@ async function handleApiSentiment(request, env) {
 
     const reset = _nextUtcMidnightEpoch();
     const rateHeaders = {
-      'X-RateLimit-Limit': '100',
-      'X-RateLimit-Remaining': String(used === null ? 100 : Math.max(0, 100 - used)),
+      'X-RateLimit-Limit': String(cap),
+      'X-RateLimit-Remaining': String(used === null ? cap : Math.max(0, cap - used)),
       'X-RateLimit-Reset': String(reset),
     };
     if (limited) {
@@ -5642,6 +5898,33 @@ async function handleAdminData(request, env) {
         cancelAtPeriodEnd: sub.cancelAtPeriodEnd
       };
     });
+    // API keys, joined on email so the dashboard shows who is actually using
+    // the API and how hard, alongside their subscription state.
+    try {
+      const sbh = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` };
+      const today = new Date().toISOString().slice(0, 10);
+      const [kr, ur] = await Promise.all([
+        fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?select=email,tier,status,created_at,last_used_at,revoke_on_cancel,key_hash&status=eq.active`, { headers: sbh, signal: AbortSignal.timeout(15000) }),
+        fetch(`${env.SUPABASE_URL}/rest/v1/api_usage?select=key_hash,used&used_date=eq.${today}`, { headers: sbh, signal: AbortSignal.timeout(15000) }),
+      ]);
+      const keys = kr.ok ? await kr.json() : [];
+      const usage = ur.ok ? await ur.json() : [];
+      const usedBy = {};
+      for (const u of usage) usedBy[u.key_hash] = u.used;
+      const byEmail = {};
+      for (const k of keys) {
+        byEmail[String(k.email || '').toLowerCase()] = {
+          apiTier: k.tier,
+          apiCreatedAt: k.created_at,
+          apiLastUsedAt: k.last_used_at,
+          apiExempt: k.revoke_on_cancel === false,
+          apiUsedToday: usedBy[k.key_hash] || 0,
+          apiLimit: (k.tier === 'pro' ? 200 : 100),
+        };
+      }
+      for (const r of rows) Object.assign(r, byEmail[String(r.email || '').toLowerCase()] || { apiTier: null });
+    } catch (e) { console.log('admin api key join:', e.message); }
+
     rows.sort((a,b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     const stats = {
       total: rows.length,
@@ -5653,6 +5936,11 @@ async function handleAdminData(request, env) {
       googleSignIn: rows.filter(r => r.providers.includes('google.com')).length,
       last7d: rows.filter(r => r.createdAt && (Date.now() - new Date(r.createdAt).getTime()) < 7*86400e3).length,
       last30d: rows.filter(r => r.createdAt && (Date.now() - new Date(r.createdAt).getTime()) < 30*86400e3).length,
+      apiKeys: rows.filter(r => r.apiTier).length,
+      apiPro: rows.filter(r => r.apiTier === 'pro').length,
+      apiSandbox: rows.filter(r => r.apiTier === 'sandbox').length,
+      apiCallsToday: rows.reduce((n, r) => n + (r.apiUsedToday || 0), 0),
+      apiActiveToday: rows.filter(r => (r.apiUsedToday || 0) > 0).length,
     };
     return new Response(JSON.stringify({ ok: true, stats, users: rows, generatedAt: new Date().toISOString() }), { status: 200, headers: cors });
   } catch (e) {
