@@ -1663,13 +1663,13 @@ async function handleWelcomeEmail(request, env) {
 
   const text = `Hi ${firstName},
 
-Welcome to FXNewsBias — you've just unlocked real-time forex news sentiment analysis.
+Welcome to FXNewsBias. You have just unlocked real-time forex news sentiment analysis.
 
 Here's what you can do right now:
 📰 Track sentiment across major currency pairs
 📊 View live bias scores updated every 3 hours
 📅 Check the economic calendar
-💬 Join the community — share your analysis
+💬 Join the community and share your analysis
 
 Ready to go Pro?
 Upgrade to FXNewsBias Pro for $30/month and unlock full history, advanced filters and priority updates.
@@ -1688,7 +1688,7 @@ https://fxnewsbias.com`;
       body: JSON.stringify({
         from: `FXNewsBias <${from}>`,
         to: [email],
-        subject: 'Welcome to FXNewsBias — Your Forex Sentiment Edge Starts Now 🚀',
+        subject: 'Welcome to FXNewsBias, your forex sentiment edge starts now',
         html,
         text,
       }),
@@ -1861,7 +1861,30 @@ async function _sendReconcileWelcome(env, email, name) {
     body: JSON.stringify({
       from: `FXNewsBias <${from}>`,
       to: [email],
-      subject: 'Welcome to FXNewsBias — Your Forex Sentiment Edge Starts Now 🚀',
+      subject: 'Welcome to FXNewsBias, your forex sentiment edge starts now',
+      // A plain-text alternative is one of the cheapest deliverability wins
+      // there is. HTML-only mail is a well known spam signal, and this is the
+      // welcome every email signup receives.
+      text: `Hi ${firstName},
+
+Welcome to FXNewsBias. You have just unlocked real-time forex news sentiment analysis.
+
+Here is what you can do right now:
+- Track sentiment across the major currency pairs
+- View live bias scores, updated every 3 hours
+- Check the economic calendar
+- Join the community and share your analysis
+
+Ready to go Pro?
+FXNewsBias Pro is $30/month with a 7-day free trial: full sentiment history,
+bias-flip alerts, the weekly intelligence brief and a developer API key.
+https://fxnewsbias.com
+
+Questions? Just reply to this email, or visit https://fxnewsbias.com/contact
+
+Happy trading,
+The FXNewsBias Team
+https://fxnewsbias.com`,
       html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
 <div style="background:#1e40af;padding:28px 32px;text-align:center;"><p style="margin:0;font-size:12px;color:#93c5fd;letter-spacing:.08em;text-transform:uppercase;font-weight:600;">FXNewsBias</p><h1 style="margin:10px 0 0;color:#fff;font-size:23px;font-weight:800;">Your Forex Sentiment Edge Starts Now 🚀</h1></div>
 <div style="padding:28px 32px;">
@@ -5498,6 +5521,72 @@ function _regPasswordProblem(pw) {
   return null;
 }
 
+// Verification email, sent through Resend from our own authenticated domain.
+//
+// Firebase will happily send this itself, but it goes out as
+// noreply@<project>.firebaseapp.com, a Google address with no relationship to
+// fxnewsbias.com, and lands in spam often enough to matter. Every other mail we
+// send is Resend on our own verified domain, so this one is too.
+//
+// The trick is returnOobLink: with a service-account token, Identity Toolkit
+// returns the verification link instead of mailing it. We then rewrite it onto
+// our own /auth-action page and send it ourselves, so the sender, the wording
+// and the landing page are all on our domain.
+async function _sendVerifyEmail(env, email, name) {
+  if (!env.RESEND_API_KEY) { console.log('verify email: no RESEND_API_KEY'); return false; }
+  const token = await getFirebaseToken(env);
+  if (!token) { console.log('verify email: no service account token'); return false; }
+  const pid = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
+
+  const r = await fetch(`https://identitytoolkit.googleapis.com/v1/projects/${pid}/accounts:sendOobCode`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requestType: 'VERIFY_EMAIL', email, returnOobLink: true }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!r.ok) { console.log('verify email: oob link failed', r.status, (await r.text()).slice(0, 160)); return false; }
+  const oobLink = (await r.json()).oobLink;
+  if (!oobLink) { console.log('verify email: no oobLink in response'); return false; }
+
+  // Point the link at our own page rather than Google's handler. The code is
+  // all that matters; auth-action.html applies it.
+  let link = oobLink;
+  try {
+    const code = new URL(oobLink).searchParams.get('oobCode');
+    if (code) link = `https://fxnewsbias.com/auth-action?mode=verifyEmail&oobCode=${encodeURIComponent(code)}`;
+  } catch (e) { /* fall back to the link Google gave us */ }
+
+  const firstName = (name || '').split(' ')[0] || 'there';
+  const from = env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com';
+  const mail = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: `FXNewsBias <${from}>`,
+      to: [email],
+      subject: 'Confirm your email address',
+      // A plain-text part materially improves inbox placement; a link-only
+      // HTML mail is one of the strongest spam signals there is.
+      text: `Hi ${firstName},\n\nConfirm your email address for FXNewsBias by opening this link:\n\n${link}\n\nIf you did not create an account, you can ignore this message and nothing will happen.\n\nFXNewsBias\nhttps://fxnewsbias.com`,
+      html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
+<div style="background:#1e40af;padding:24px 30px;"><p style="margin:0;font-size:12px;color:#93c5fd;letter-spacing:.08em;text-transform:uppercase;font-weight:600;">FXNewsBias</p><h1 style="margin:8px 0 0;color:#fff;font-size:20px;font-weight:800;">Confirm your email address</h1></div>
+<div style="padding:26px 30px;">
+<p style="margin:0 0 14px;font-size:15px;color:#0f172a;">Hi <strong>${firstName}</strong>,</p>
+<p style="margin:0 0 20px;font-size:14px;color:#334155;line-height:1.7;">Please confirm this is your address so we know your account details are correct.</p>
+<p style="margin:0 0 22px;"><a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 26px;border-radius:8px;">Confirm my email</a></p>
+<p style="margin:0 0 8px;font-size:12.5px;color:#64748b;line-height:1.6;">If the button does not work, copy this into your browser:</p>
+<p style="margin:0 0 20px;font-size:12px;color:#2563eb;word-break:break-all;">${link}</p>
+<p style="margin:0;font-size:12.5px;color:#64748b;line-height:1.6;">If you did not create an account, ignore this email and nothing will happen.</p>
+</div>
+<div style="padding:16px 30px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11.5px;color:#94a3b8;">FXNewsBias &middot; <a href="https://fxnewsbias.com" style="color:#64748b;">fxnewsbias.com</a></div>
+</div>`,
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!mail.ok) { console.log('verify email: resend failed', mail.status, (await mail.text()).slice(0, 160)); return false; }
+  return true;
+}
+
 async function handleAuthRegister(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
   if (request.method !== 'POST') return _proJson({ error: 'method-not-allowed' }, 405);
@@ -5624,10 +5713,8 @@ async function handleAuthRegister(request, env) {
 
     // Verification email, then the welcome email. Neither is allowed to fail
     // the signup: the account already exists and the user is about to log in.
-    fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${key}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ requestType: 'VERIFY_EMAIL', idToken: cd.idToken }),
-    }).catch(() => {});
+    try { await _sendVerifyEmail(env, email, name || email.split('@')[0]); }
+    catch (e) { console.log('register: verification email failed', e.message); }
     if (env.RESEND_API_KEY) {
       try { await _sendReconcileWelcome(env, email, name || email.split('@')[0]); }
       catch (e) { console.log('register: welcome email failed', e.message); }
