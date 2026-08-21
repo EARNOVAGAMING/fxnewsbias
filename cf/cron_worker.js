@@ -2875,6 +2875,11 @@ async function handleApiKeyRequest(request, env) {
 // GET /api/v1/sentiment — the Sandbox endpoint. Contract-frozen response.
 // Daily request cap by tier. Sandbox is the frozen v1 contract number; Pro is
 // the subscriber allowance. Both reset at 00:00 UTC.
+// The daily allowance belongs to the ACCOUNT, not to the key. Keying the
+// counter on the key hash meant regenerating a key started a fresh count, so a
+// subscriber allowed 5 rotations a day could take 5 x 200 = 1000 requests.
+const _apiUsageId = (email) => 'acct:' + String(email || '').toLowerCase();
+
 const _API_CAPS = { sandbox: 100, pro: 200 };
 
 // Shared auth for a Bearer API key: returns the key row or null. Used by every
@@ -2909,7 +2914,7 @@ async function handleApiSessionBias(request, env) {
     let used = null, limited = false;
     try {
       const rl = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_api_slot`, {
-        method: 'POST', headers: key.sb, body: JSON.stringify({ p_key_hash: key.hash, p_cap: cap }), signal: AbortSignal.timeout(15000),
+        method: 'POST', headers: key.sb, body: JSON.stringify({ p_key_hash: _apiUsageId(key.email), p_cap: cap }), signal: AbortSignal.timeout(15000),
       });
       if (rl.ok) { const r = (await rl.json())[0]; if (r) { used = r.used; limited = r.claimed !== true; } }
     } catch (e) { console.log('session-bias claim_api_slot:', e.message); }
@@ -3056,7 +3061,7 @@ async function _keyView(env, row, sb, raw) {
   const today = new Date().toISOString().slice(0, 10);
   let used = 0;
   try {
-    const u = await fetch(`${env.SUPABASE_URL}/rest/v1/api_usage?select=used&key_hash=eq.${row.key_hash}&used_date=eq.${today}`, {
+    const u = await fetch(`${env.SUPABASE_URL}/rest/v1/api_usage?select=used&key_hash=eq.${encodeURIComponent(_apiUsageId(row.email))}&used_date=eq.${today}`, {
       headers: sb, signal: AbortSignal.timeout(15000),
     });
     if (u.ok) { const rows = await u.json(); used = (rows[0] && rows[0].used) || 0; }
@@ -3129,7 +3134,7 @@ async function handleApiSentiment(request, env) {
     const hash = await _sha256Hex(m[1]);
     const sb = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json' };
 
-    const kr = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?select=id,status,tier&key_hash=eq.${hash}`, {
+    const kr = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?select=id,status,tier,email&key_hash=eq.${hash}`, {
       headers: sb, signal: AbortSignal.timeout(15000),
     });
     const key = kr.ok ? (await kr.json())[0] : null;
@@ -3141,7 +3146,7 @@ async function handleApiSentiment(request, env) {
     let used = null, limited = false;
     try {
       const rl = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_api_slot`, {
-        method: 'POST', headers: sb, body: JSON.stringify({ p_key_hash: hash, p_cap: cap }), signal: AbortSignal.timeout(15000),
+        method: 'POST', headers: sb, body: JSON.stringify({ p_key_hash: _apiUsageId(key.email), p_cap: cap }), signal: AbortSignal.timeout(15000),
       });
       if (rl.ok) {
         const r = (await rl.json())[0];
@@ -6143,7 +6148,7 @@ async function handleAdminData(request, env) {
       const keys = kr.ok ? await kr.json() : [];
       const usage = ur.ok ? await ur.json() : [];
       const usedBy = {};
-      for (const u of usage) usedBy[u.key_hash] = u.used;
+      for (const u of usage) usedBy[u.key_hash] = u.used;   // keyed 'acct:<email>'
       const byEmail = {};
       for (const k of keys) {
         byEmail[String(k.email || '').toLowerCase()] = {
@@ -6151,7 +6156,7 @@ async function handleAdminData(request, env) {
           apiCreatedAt: k.created_at,
           apiLastUsedAt: k.last_used_at,
           apiExempt: k.revoke_on_cancel === false,
-          apiUsedToday: usedBy[k.key_hash] || 0,
+          apiUsedToday: usedBy['acct:' + String(k.email || '').toLowerCase()] || 0,
           apiLimit: (k.tier === 'pro' ? 200 : 100),
         };
       }
