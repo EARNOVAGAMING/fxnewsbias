@@ -181,6 +181,12 @@ function renderDash() {
       <div class="stat"><div class="label">API keys live</div><div class="val">${stats.apiKeys||0}</div><div class="sub">${stats.apiPro||0} Pro · ${stats.apiSandbox||0} Sandbox</div></div>
       <div class="stat"><div class="label">API calls today</div><div class="val">${stats.apiCallsToday||0}</div><div class="sub">${stats.apiActiveToday||0} key(s) active</div></div>
     </div>
+    <div class="toolbar" style="flex-wrap:wrap;">
+      <input id="t-email" placeholder="Send a test email to…" autocomplete="off" style="min-width:210px;">
+      <button id="t-verify" class="btn">Send verification</button>
+      <button id="t-welcome" class="btn">Send welcome</button>
+      <span id="t-msg" style="font-size:12px;color:#94a3b8;align-self:center;"></span>
+    </div>
     <div class="toolbar">
       <input id="q" placeholder="Search email or name…" autocomplete="off">
       <select id="f-tier"><option value="">All tiers</option><option value="pro">Pro only</option><option value="free">Free only</option><option value="api">API users only</option></select>
@@ -194,6 +200,8 @@ function renderDash() {
   document.getElementById('so').onclick = () => signOut(auth);
   document.getElementById('rf').onclick = () => u.getIdToken(true).then(loadData);
   document.getElementById('dl').onclick = downloadCsv;
+  document.getElementById('t-verify').onclick = () => sendTest('verify');
+  document.getElementById('t-welcome').onclick = () => sendTest('welcome');
   document.getElementById('q').oninput = renderRows;
   document.getElementById('f-tier').onchange = renderRows;
   document.getElementById('f-sort').onchange = renderRows;
@@ -269,6 +277,27 @@ function renderRows() {
       <td>${ver}</td>
     </tr>`;
   }).join('');
+}
+
+// Fire a real transactional email at any address, to check where it lands.
+// The verification path needs the address to already have an account.
+async function sendTest(type) {
+  const box = document.getElementById('t-msg');
+  const to = (document.getElementById('t-email').value || '').trim();
+  if (!to) { box.textContent = 'Enter an address first.'; return; }
+  box.textContent = 'Sending…';
+  try {
+    const tok = await auth.currentUser.getIdToken();
+    const r = await fetch(ADMIN_API.replace('/admin-data', '/admin-send-test'), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: tok, email: to, type })
+    }).then(x => x.json());
+    box.textContent = r.ok ? `Sent ${r.type} to ${r.to}. Check inbox and spam.`
+                           : (r.detail || r.error || 'Failed.');
+    box.style.color = r.ok ? '#34d399' : '#f87171';
+  } catch (e) {
+    box.textContent = 'Network error.'; box.style.color = '#f87171';
+  }
 }
 
 function downloadCsv() {

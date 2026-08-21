@@ -414,6 +414,7 @@ return new Response(JSON.stringify({ ok: true, message: 'Generating in backgroun
 }
 // Admin panel data — gated by Firebase ID token + admin email allowlist.
 // Read-only: lists Firebase Auth users + Firestore subscription tiers.
+if (url.pathname === '/admin-send-test') return handleAdminSendTest(request, env);
 if (url.pathname === '/admin-data') {
 return handleAdminData(request, env);
 }
@@ -5911,6 +5912,45 @@ async function _sendForecastAlertEmail(env, to, calls) {
     method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: `FXNewsBias Forecasts <${fromEmail}>`, to: [to], subject: `🎯 ${calls.length} new forecast${calls.length === 1 ? '' : 's'} today`, html }), signal: AbortSignal.timeout(20000),
   });
+}
+
+// POST /admin-send-test — fire a real transactional email at an address you
+// choose, so deliverability can be checked without inventing a new account.
+// Admin only, and the recipient must already exist for the verification path,
+// because that is how Identity Toolkit mints the link.
+async function handleAdminSendTest(request, env) {
+  const cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json',
+  };
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  if (request.method !== 'POST') return new Response(JSON.stringify({ error: 'POST only' }), { status: 405, headers: cors });
+  try {
+    const ADMIN_EMAILS = ['dineshsanther123gf@gmail.com'];
+    const { idToken, email, type } = await request.json();
+    const user = await _verifyFirebaseUser(env, idToken);
+    if (!user || !ADMIN_EMAILS.includes(String(user.email || '').toLowerCase())) {
+      return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: cors });
+    }
+    const to = String(email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to)) {
+      return new Response(JSON.stringify({ error: 'invalid-email' }), { status: 400, headers: cors });
+    }
+    const name = to.split('@')[0];
+    let ok = false, detail = '';
+    if (type === 'welcome') {
+      try { await _sendReconcileWelcome(env, to, name); ok = true; }
+      catch (e) { detail = e.message; }
+    } else {
+      ok = await _sendVerifyEmail(env, to, name);
+      if (!ok) detail = 'Could not mint or send the verification link. The address must already have an account, and check the worker logs.';
+    }
+    return new Response(JSON.stringify({ ok, type: type === 'welcome' ? 'welcome' : 'verify', to, detail }), { status: ok ? 200 : 500, headers: cors });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
+  }
 }
 
 async function handleAdminData(request, env) {
