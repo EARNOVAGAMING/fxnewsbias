@@ -43,6 +43,10 @@ FXNewsBias scans hundreds of forex news sources every 3 hours and uses Claude AI
 - [CAD/JPY](https://fxnewsbias.com/pairs/cad-jpy/)
 - [AUD/NZD](https://fxnewsbias.com/pairs/aud-nzd/)
 
+## Developer API
+
+- [Forex Sentiment API](https://fxnewsbias.com/developers): REST API returning news sentiment scores for the 8 major currencies as JSON, refreshed every 3 hours, plus a session pair bias scorecard. Bearer token auth, 200 requests per day, included with FXNewsBias Pro at $30/month with a 7 day free trial. Forward data only, no historical series.
+
 ## About
 
 - [How it works](https://fxnewsbias.com/how)

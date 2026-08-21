@@ -3057,15 +3057,52 @@ async function _activeKeyFor(env, email, sb) {
 }
 
 // What the account page is allowed to see. Never the key, never the hash.
+// One read covers all three counters the page draws: today's requests, the
+// seven day trend, and how many key regenerations are left today. They all
+// live in api_usage under different identifiers.
 async function _keyView(env, row, sb, raw) {
   const today = new Date().toISOString().slice(0, 10);
-  let used = 0;
+  const since = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+  const acctId = _apiUsageId(row.email);
+  const issueId = `issue:apikey:${String(row.email || '').toLowerCase()}`;
+
+  let used = 0, rotations_used = 0;
+  const byDate = {};
   try {
-    const u = await fetch(`${env.SUPABASE_URL}/rest/v1/api_usage?select=used&key_hash=eq.${encodeURIComponent(_apiUsageId(row.email))}&used_date=eq.${today}`, {
-      headers: sb, signal: AbortSignal.timeout(15000),
-    });
-    if (u.ok) { const rows = await u.json(); used = (rows[0] && rows[0].used) || 0; }
-  } catch (e) { /* usage is cosmetic; never fail the panel over it */ }
+    const inList = `("${acctId}","${issueId}")`;
+    const u = await fetch(`${env.SUPABASE_URL}/rest/v1/api_usage`
+      + `?select=key_hash,used_date,used`
+      + `&key_hash=in.${encodeURIComponent(inList)}`
+      + `&used_date=gte.${since}`, { headers: sb, signal: AbortSignal.timeout(15000) });
+    if (u.ok) {
+      for (const r of await u.json()) {
+        if (r.key_hash === acctId) {
+          byDate[r.used_date] = r.used || 0;
+          if (r.used_date === today) used = r.used || 0;
+        } else if (r.key_hash === issueId && r.used_date === today) {
+          rotations_used = r.used || 0;
+        }
+      }
+    }
+    else { throw new Error('usage query ' + u.status); }
+  } catch (e) {
+    // Fall back to the single day read. Showing today's real number with a flat
+    // chart beats showing zero requests to someone who has been calling all day.
+    try {
+      const u = await fetch(`${env.SUPABASE_URL}/rest/v1/api_usage?select=used&key_hash=eq.${encodeURIComponent(acctId)}&used_date=eq.${today}`, {
+        headers: sb, signal: AbortSignal.timeout(15000),
+      });
+      if (u.ok) { const rows = await u.json(); used = (rows[0] && rows[0].used) || 0; byDate[today] = used; }
+    } catch (e2) { /* usage is cosmetic; never fail the panel over it */ }
+  }
+
+  // Always seven entries, oldest first, so the chart never has to guess at gaps.
+  const history = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    history.push({ date: d, used: byDate[d] || 0 });
+  }
+
   return {
     tier: row.tier,
     masked: raw ? `${raw.slice(0, 15)}...${raw.slice(-4)}` : 'fxnb_live_' + '\u2022'.repeat(8),
@@ -3073,6 +3110,8 @@ async function _keyView(env, row, sb, raw) {
     last_used_at: row.last_used_at,
     used,
     limit: _API_CAPS[row.tier] || _API_CAPS.sandbox,
+    history,
+    rotations_left: Math.max(0, 5 - rotations_used),
   };
 }
 
