@@ -375,7 +375,13 @@ return handleGa4Summary(request, env);
 // Public Sandbox API (contract: data/API_CONTRACT_v1.md — frozen v1)
 if (url.pathname === '/api/v1/sentiment') return handleApiSentiment(request, env);
 if (url.pathname === '/api/v1/session-bias') return handleApiSessionBias(request, env);
-if (url.pathname === '/api/keys')         return handleApiKeyRequest(request, env);
+// Self-serve key issuance is CLOSED. API access is part of Pro and is granted
+// on /developers to an authenticated subscriber. The one non-Pro key that
+// exists is a private arrangement granted by hand, and that tier is not
+// advertised anywhere. This route is left returning 404 so its existence is
+// not advertised either; handleApiKeyRequest is retained only for a future
+// deliberate re-opening.
+if (url.pathname === '/api/keys') return new Response('Not found', { status: 404 });
 
 if (url.pathname === '/api/push/public-key') {
 return new Response(JSON.stringify({ key: env.VAPID_PUBLIC_KEY || null }), {

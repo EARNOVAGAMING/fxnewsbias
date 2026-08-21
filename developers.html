@@ -8,12 +8,12 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="icon" href="/favicon.ico">
 <title>Developer API | FXNewsBias Forex Sentiment Data</title>
-<meta name="description" content="Forex news-sentiment scores as clean JSON. Current bias for 8 major currencies plus the session scorecard, refreshed every 3 hours. Free Sandbox tier, full access included with Pro.">
+<meta name="description" content="Forex news-sentiment scores as clean JSON. Current bias for 8 major currencies plus the session scorecard, refreshed every 3 hours. Included with FXNewsBias Pro.">
 <meta name="robots" content="index, follow">
 <meta name="author" content="FXNewsBias">
 <link rel="canonical" href="https://fxnewsbias.com/developers">
 <meta property="og:title" content="Developer API | FXNewsBias Forex Sentiment Data">
-<meta property="og:description" content="Forex news-sentiment scores as clean JSON. 8 major currencies, refreshed every 3 hours. Free Sandbox tier, full access included with Pro.">
+<meta property="og:description" content="Forex news-sentiment scores as clean JSON. 8 major currencies, refreshed every 3 hours. Included with FXNewsBias Pro.">
 <meta property="og:url" content="https://fxnewsbias.com/developers">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://fxnewsbias.com/og-image.webp">
@@ -43,7 +43,6 @@ a{color:var(--accent)}
 .pill{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap;}
 .pill-pro{background:rgba(245,158,11,.16);color:#fcd34d;}
 .pill-free{background:rgba(148,163,184,.16);color:#cbd5e1;}
-.pill-sandbox{background:rgba(37,99,235,.18);color:#93c5fd;}
 
 h1{font-size:2.05rem;margin:.7em 0 .18em;line-height:1.18;letter-spacing:-.5px}
 h2{font-size:1.28rem;margin:2.4em 0 .5em;letter-spacing:-.2px}
@@ -152,9 +151,8 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:18px;font-si
       <p>Start the 7-day free trial and your key is available on this page immediately. It keeps working for as long as your subscription is active. Cancel and it stops.</p>
       <div class="btn-row">
         <a class="btn" href="https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01" target="_blank" rel="noopener">Start 7-day free trial</a>
-        <a class="btn btn-ghost" href="#tiers">Compare tiers</a>
+        <a class="btn btn-ghost" href="#tiers">See what is included</a>
       </div>
-      <p class="note" style="margin-top:16px;">Building something non-commercial and just need the current scores? The free Sandbox tier exists for that. <a href="mailto:contact@fxnewsbias.com?subject=Sandbox%20API%20key%20request">Ask for a Sandbox key</a>.</p>
     </div>
 
     <div class="panel" id="state-nokey" hidden>
@@ -202,31 +200,21 @@ footer{margin-top:64px;border-top:1px solid var(--line);padding-top:18px;font-si
 
   </div>
 
-  <h2 id="tiers">Tiers</h2>
+  <h2 id="tiers">What you get</h2>
   <div class="tiers">
-    <div class="tier">
-      <h3>Sandbox</h3>
-      <div class="price">Free &middot; issued on request</div>
+    <div class="tier pro" style="grid-column:1/-1;">
+      <h3>Included with Pro <span class="pill pill-pro">$30/month</span></h3>
+      <div class="price">7-day free trial. Your key works throughout the trial.</div>
       <ul>
-        <li><code>/sentiment</code>, the current read for 8 currencies</li>
-        <li>100 requests per day</li>
-        <li>Personal and internal non-commercial use</li>
-        <li>Attribution required</li>
-      </ul>
-    </div>
-    <div class="tier pro">
-      <h3>Pro <span class="pill pill-pro">Included</span></h3>
-      <div class="price">Part of Pro, $30/month, 7-day free trial</div>
-      <ul>
-        <li>Everything in Sandbox</li>
-        <li><code>/session-bias</code>, the pair scorecard for the open session</li>
-        <li>200 requests per day</li>
-        <li>Key available instantly on this page</li>
-        <li>Commercial use within your own product</li>
+        <li><code>/sentiment</code>, the current news-sentiment read for 8 major currencies</li>
+        <li><code>/session-bias</code>, the pair scorecard for the open session, tone and conviction</li>
+        <li>200 requests per day, plenty for polling every cycle with headroom</li>
+        <li>Your key is created here, instantly, no waiting and no email</li>
+        <li>Commercial use inside your own product</li>
       </ul>
     </div>
   </div>
-  <p class="note">Both tiers serve <strong>forward data</strong>: the current read and everything published from now on. Historical series are not available through the API. If you need history for research, <a href="mailto:contact@fxnewsbias.com?subject=Historical%20data%20licence">talk to us about a data licence</a>.</p>
+  <p class="note">The API serves <strong>forward data</strong>: the current read and everything published from now on. Historical series are not available through the API. If you need history for research, <a href="mailto:contact@fxnewsbias.com?subject=Historical%20data%20licence">talk to us about a data licence</a>.</p>
 
   <h2>Quickstart</h2>
   <pre>curl -H "Authorization: Bearer fxnb_live_YOUR_KEY" \
@@ -274,7 +262,7 @@ while True:
 
   <h2>Rate limits</h2>
   <ul>
-    <li><strong>Sandbox: 100 requests</strong> per UTC calendar day. <strong>Pro: 200.</strong> Both reset at 00:00 UTC</li>
+    <li><strong>200 requests per UTC calendar day</strong>, resetting at 00:00 UTC</li>
     <li>Every response carries <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code></li>
     <li>One over the limit returns <code>429</code> with a <code>Retry-After</code> header</li>
   </ul>
@@ -290,10 +278,10 @@ while True:
   <h2>Attribution and terms</h2>
   <ul>
     <li>Wherever the data is displayed or republished, keep the attribution <strong>"Data by FXNewsBias"</strong> linking to <code>https://fxnewsbias.com</code>. It ships in every response</li>
-    <li>Sandbox is for personal and internal non-commercial use. Pro covers commercial use inside your own product</li>
+    <li>Your Pro subscription covers commercial use inside your own product</li>
     <li>No redistribution, resale, or using the data to build a competing sentiment service</li>
     <li>One key per account. Sharing a key across separate users or products is not permitted and is detectable</li>
-    <li>Pro keys work while your subscription is active, including the free trial, and stop when it ends</li>
+    <li>Your key works while your subscription is active, including the free trial, and stops when it ends</li>
     <li>Questions, higher volume, or a data licence: <a href="mailto:contact@fxnewsbias.com">contact@fxnewsbias.com</a></li>
   </ul>
 
@@ -321,7 +309,7 @@ while True:
     } catch (e) { return iso; }
   }
   function renderKey(k) {
-    $('k-tier').textContent = k.tier === 'pro' ? 'Pro' : 'Sandbox';
+    $('k-tier').textContent = k.tier === 'pro' ? 'Pro' : 'Active';
     $('k-masked').textContent = k.masked || 'fxnb_live_****';
     $('k-created').textContent = fmtDate(k.created_at);
     $('k-lastused').textContent = fmtDate(k.last_used_at);
@@ -337,7 +325,6 @@ while True:
     var el = $('who');
     if (!email) { el.innerHTML = '<a href="/login" style="text-decoration:none;">Sign in</a>'; return; }
     var pill = tier === 'pro' ? '<span class="pill pill-pro">Pro</span>'
-             : tier === 'sandbox' ? '<span class="pill pill-sandbox">Sandbox</span>'
              : '<span class="pill pill-free">Free</span>';
     el.innerHTML = '<strong>' + email.replace(/[<>&]/g, '') + '</strong>' + pill;
   }
@@ -367,7 +354,7 @@ while True:
     var r = await authed(API.status);
     if (r.error === 'unauthorized') { renderWho(null); show('state-guest'); return; }
     if (r.error === 'pro-only' || r.isPro === false) { renderWho(u.email, 'free'); show('state-free'); return; }
-    renderWho(u.email, r.key && r.key.tier === 'sandbox' ? 'sandbox' : 'pro');
+    renderWho(u.email, r.isPro ? 'pro' : 'free');
     if (r.key) renderKey(r.key); else show('state-nokey');
   }
 

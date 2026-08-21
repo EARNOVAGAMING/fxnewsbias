@@ -1,6 +1,6 @@
 # FXNewsBias Public API - Contract v1 (frozen 2026-08-21)
 
-This document is the authoritative contract for the Sandbox tier. Nothing in a
+This document is the authoritative contract for the public API. Nothing in a
 `/v1` response may change shape or semantics; breaking changes require a new
 `/v2` path. Additive changes (new OPTIONAL response fields) are permitted but
 discouraged.
@@ -63,11 +63,11 @@ than that returns the same values - expected behaviour, not an error.
 Query parameters are **ignored**. This endpoint exposes the current snapshot
 only: no historical data, no session scorecard, no CSV, no other fields.
 
-### Rate limiting - Sandbox tier
+### Rate limiting
 
-- **100 requests per UTC calendar day** per key, resetting at 00:00 UTC.
+- **200 requests per UTC calendar day** per key, resetting at 00:00 UTC.
 - Every response carries:
-  - `X-RateLimit-Limit: 100`
+  - `X-RateLimit-Limit: <your cap>`
   - `X-RateLimit-Remaining: <n>`
   - `X-RateLimit-Reset: <unix epoch of next 00:00 UTC>`
 
@@ -84,23 +84,23 @@ only: no historical data, no session scorecard, no CSV, no other fields.
 Responses are `Cache-Control: no-store` (they carry per-key rate headers).
 Consumers are encouraged to cache locally - a 3-hour TTL loses nothing.
 
-## Key issuance
+## Access
 
-```
-POST /api/keys
-Content-Type: application/json
-{"email": "you@example.com"}
-```
+API access is part of an FXNewsBias Pro subscription and includes the 7-day
+free trial. Subscribers create their own key at
+[fxnewsbias.com/developers](https://fxnewsbias.com/developers); it is shown
+once, at creation, and only its SHA-256 hash is stored.
 
-- Response: `{"ok":true,"message":"API key sent to your email"}` - the key
-  itself arrives by email only.
-- Issuance is throttled (3/day per email and per IP).
-- No site account is required for the Sandbox tier.
+- Creating a key revokes the previous one. One active key per account.
+- A key works while the subscription is active and stops when it ends.
+- There is no self-serve issuance endpoint.
 
-## Terms (Sandbox)
+## Terms
 
-- Personal and internal non-commercial use.
+- A Pro subscription covers commercial use inside your own product.
 - Attribution must be retained wherever the data is displayed or republished.
 - No redistribution, resale, or use to build a competing sentiment service.
-- Keys may be revoked for abuse. Commercial/higher-volume use:
+- One key per account. Sharing a key across separate users or products is not
+  permitted and is detectable.
+- Forward data only. Historical series require a separate data licence:
   contact@fxnewsbias.com.
