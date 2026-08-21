@@ -2883,6 +2883,19 @@ async function handleProApiKey(request, env, action) {
       if (!sub.isPro) return _proJson({ error: 'pro-only', message: 'API keys are part of Pro.' }, 403);
       // Rotation is the only way to replace a key, and it revokes first so a
       // failure part-way through can never leave two live keys on one account.
+      // 5 key creations per account per UTC day. Generous for a genuine
+      // "I lost it" rotation, tight enough that nobody can churn the table.
+      try {
+        const rl = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/claim_key_issuance`, {
+          method: 'POST', headers: sb,
+          body: JSON.stringify({ p_ident: `apikey:${email}`, p_cap: 5 }),
+          signal: AbortSignal.timeout(15000),
+        });
+        if (rl.ok && (await rl.text()).trim() !== 'true') {
+          return _proJson({ error: 'too-many-requests', message: 'You have regenerated your key several times today. Please try again tomorrow.' }, 429);
+        }
+      } catch (e) { console.log('api key rotate cap:', e.message); }
+
       if (existing) {
         await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?id=eq.${existing.id}`, {
           method: 'PATCH', headers: { ...sb, Prefer: 'return=minimal' },
@@ -2890,7 +2903,7 @@ async function handleProApiKey(request, env, action) {
           signal: AbortSignal.timeout(15000),
         });
       }
-      const raw = _newApiKey();
+      const raw = _randApiKey();
       const hash = await _sha256Hex(raw);
       const ins = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys`, {
         method: 'POST', headers: { ...sb, Prefer: 'return=representation' },
@@ -2910,7 +2923,7 @@ async function handleProApiKey(request, env, action) {
     return _proJson({ error: 'bad-request' }, 400);
   } catch (e) {
     console.log('handleProApiKey:', e.message);
-    return _proJson({ error: 'server-error' }, 500);
+    return _proJson({ error: 'server-error', message: 'Something went wrong on our side. Please try again, and tell us if it keeps happening.' }, 500);
   }
 }
 
