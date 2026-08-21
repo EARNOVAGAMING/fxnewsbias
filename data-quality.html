@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" href="/favicon.ico">
+
+<title>Data Quality | Live Forex Sentiment Coverage and Gaps - FXNewsBias</title>
+<meta name="description" content="Live coverage report for the FXNewsBias forex sentiment series. Row counts, first and last reading, complete days, gap days and scorecard settlement, published straight from the database.">
+<meta name="robots" content="index, follow, max-snippet:-1">
+<meta name="author" content="FXNewsBias">
+<link rel="canonical" href="https://fxnewsbias.com/data-quality">
+
+<meta property="og:title" content="Data Quality | Live Forex Sentiment Coverage and Gaps - FXNewsBias">
+<meta property="og:description" content="Row counts, gap days and settlement stats for the FXNewsBias sentiment series, published live from the database so you can audit it yourself.">
+<meta property="og:url" content="https://fxnewsbias.com/data-quality">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://fxnewsbias.com/og-image.webp">
+<meta property="og:site_name" content="FXNewsBias">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Data Quality | Live Forex Sentiment Coverage and Gaps - FXNewsBias">
+<meta name="twitter:description" content="Row counts, gap days and settlement stats for the FXNewsBias sentiment series, published live from the database.">
+<meta name="twitter:image" content="https://fxnewsbias.com/og-image.webp">
+<meta name="theme-color" content="#0f172a">
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},
+{"@type":"ListItem","position":2,"name":"Data Quality","item":"https://fxnewsbias.com/data-quality"}]}
+</script>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Dataset",
+"name":"FXNewsBias Forex News Sentiment Series",
+"description":"Point in time news sentiment scores for the 8 major currencies, computed every 3 hours, never revised after publication. Published alongside a live coverage report showing row counts, complete days and any gap days.",
+"url":"https://fxnewsbias.com/data-quality",
+"license":"https://fxnewsbias.com/terms",
+"isAccessibleForFree":true,
+"creator":{"@type":"Organization","name":"FXNewsBias","url":"https://fxnewsbias.com"},
+"temporalCoverage":"2026-05-19/..",
+"variableMeasured":[
+{"@type":"PropertyValue","name":"score","description":"News sentiment score from 0 to 100 per currency, where 50 is neutral"},
+{"@type":"PropertyValue","name":"bias","description":"Bullish, Bearish or Neutral"}],
+"distribution":[
+{"@type":"DataDownload","encodingFormat":"application/json","contentUrl":"https://fxnewsbias.com/data-quality.json","name":"Coverage report, machine readable"},
+{"@type":"DataDownload","encodingFormat":"application/json","contentUrl":"https://fxnewsbias.com/api/v1/sentiment","name":"Current sentiment, developer API"}]}
+</script>
+
+<style>
+:root{
+  --bg:#0f172a;--card:#16213c;--card-2:#0b1220;--line:rgba(148,163,184,.18);
+  --line-strong:rgba(148,163,184,.32);
+  --ink:#e2e8f0;--muted:#94a3b8;--faint:#64748b;--accent:#60a5fa;--btn:#2563eb;
+  --gold:#f59e0b;--gold-soft:#fcd34d;--good:#34d399;--bad:#fb7185;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#93c5fd}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:12px;top:12px;background:var(--btn);color:#fff;padding:9px 14px;border-radius:8px;z-index:2000}
+
+.topbar{background:#0f172a;color:#94a3b8;font-size:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+.topbar-left,.topbar-right{display:flex;gap:16px;align-items:center}
+.topbar a{color:#94a3b8}
+@media(max-width:720px){.topbar-left span:nth-child(n+3){display:none}}
+
+header{background:#0f172a;border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.header-inner{max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.logo{display:inline-flex;align-items:center;gap:10px;line-height:1}
+.logo img{height:38px;width:auto;display:block;flex:0 0 auto}
+nav ul{list-style:none;display:flex;gap:24px;margin:0;padding:0}
+nav a{color:#cbd5e1;font-weight:500;font-size:14px}
+nav a:hover{color:var(--accent)}
+.nav-actions{display:flex;gap:10px;align-items:center}
+.btn-outline{background:transparent;color:#f1f5f9;border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:8px 15px;font-size:13px;font-weight:600;white-space:nowrap}
+.btn-outline:hover{border-color:rgba(96,165,250,.6);color:#fff}
+.burger{display:none;background:none;border:none}
+@media(max-width:900px){nav ul{display:none}.nav-actions .btn-outline{display:none}}
+
+.wrap{max-width:940px;margin:0 auto;padding:0 24px 72px}
+.breadcrumb{font-size:12.5px;color:var(--faint);padding:20px 0 0;display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.breadcrumb a{color:var(--muted)}
+.breadcrumb a:hover{color:var(--ink)}
+.breadcrumb .sep{color:#334155}
+
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:22px 0 26px}
+.badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;background:rgba(37,99,235,.15);padding:4px 12px;border-radius:20px;margin-bottom:12px}
+h1{font-size:clamp(1.7rem,4.4vw,2.05rem);line-height:1.18;letter-spacing:-.5px;margin:0;font-weight:800}
+.sub{color:var(--muted);max-width:64ch;font-size:17px;margin:10px 0 0}
+.stamp{font-size:12.5px;color:var(--faint);padding-bottom:6px;white-space:nowrap}
+@media(max-width:640px){.pagehead{flex-direction:column;align-items:flex-start;gap:10px}.stamp{padding-bottom:0}}
+
+h2{font-size:1.28rem;letter-spacing:-.2px;margin:38px 0 12px;font-weight:700}
+.lede{color:var(--muted);font-size:14.5px;max-width:70ch;margin:0 0 14px}
+.note{font-size:13px;color:var(--faint);line-height:1.6}
+code{font-family:var(--mono);font-size:.9em;color:#93c5fd}
+
+.hero-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 8px}
+@media(max-width:760px){.hero-stats{grid-template-columns:1fr 1fr}}
+.stat{background:linear-gradient(160deg,#182a4d,#131d33);border:1px solid var(--line-strong);border-radius:14px;padding:18px 18px 16px}
+.stat .lbl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.stat .big{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;font-variant-numeric:tabular-nums}
+.stat .big.good{color:var(--good)}
+.stat .big.warn{color:var(--gold-soft)}
+.stat .foot{font-size:12px;color:var(--faint);margin-top:7px}
+
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card h3{margin:0 0 4px;font-size:1.02rem;font-weight:700;display:flex;align-items:center;gap:9px}
+.card .desc{font-size:12.5px;color:var(--faint);margin:0 0 14px;line-height:1.55}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:9px 16px;margin:0;font-size:13.5px}
+dl.kv dt{color:var(--faint)}
+dl.kv dd{margin:0;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+.tag{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.tag-ok{background:rgba(52,211,153,.14);color:#6ee7b7}
+.tag-lock{background:rgba(96,165,250,.14);color:#93c5fd}
+
+.gapbar{display:flex;gap:5px;margin:12px 0 10px;flex-wrap:wrap}
+.gapbar i{flex:1 1 14px;min-width:11px;height:30px;border-radius:3px;background:rgba(52,211,153,.55);display:block}
+.gapbar i.part{background:var(--gold)}
+.gapbar i.none{background:rgba(148,163,184,.2)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--faint);margin-top:4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend b{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:420px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;background:rgba(148,163,184,.05);font-weight:700}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+
+.state{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;color:var(--muted);font-size:14.5px}
+ul.plain{padding-left:20px;margin:10px 0}
+ul.plain li{margin:7px 0;color:#cbd5e1;font-size:14.5px}
+
+.crosslinks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 0}
+@media(max-width:700px){.crosslinks{grid-template-columns:1fr}}
+.crosslinks a{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:block;color:var(--ink)}
+.crosslinks a:hover{border-color:rgba(96,165,250,.45);color:var(--ink)}
+.crosslinks .t{font-size:14px;font-weight:700;margin-bottom:3px}
+.crosslinks .d{font-size:12.5px;color:var(--muted);line-height:1.55}
+
+footer{margin-top:56px;border-top:1px solid var(--line);padding-top:18px;font-size:13px;color:var(--muted)}
+footer a{color:var(--muted)}
+footer a:hover{color:var(--accent)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main-content">Skip to content</a>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span>Data quality</span>
+      <span>Published live</span>
+      <span>Updated every 3 hours</span>
+    </div>
+    <div class="topbar-right">
+      <a href="/about">About</a>
+      <a href="/contact">Contact</a>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo" aria-label="FXNewsBias home">
+      <picture>
+        <source type="image/webp" srcset="/logo-fxnb.webp">
+        <img src="/logo-fxnb.png?v=2" alt="FXNewsBias" width="152" height="48">
+      </picture>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="/">Markets</a></li>
+        <li><a href="/currencies">Currencies</a></li>
+        <li><a href="/pairs">Pairs</a></li>
+        <li><a href="/news">News</a></li>
+        <li><a href="/calendar">Calendar</a></li>
+        <li><a href="/insight/">Insights</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions" id="nav-actions">
+      <a href="/login" class="btn-outline">Login</a>
+      <a href="/register" class="btn-outline">Register</a>
+      <button class="burger" aria-label="Toggle navigation menu" aria-expanded="false"></button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/">Home</a><span class="sep">/</span><span aria-current="page">Data Quality</span>
+  </nav>
+
+  <div class="pagehead">
+    <div>
+      <span class="badge">Transparency</span>
+      <h1>Data quality</h1>
+      <p class="sub">Most sentiment products never show you their coverage. This page reads the database directly and publishes what is actually there, gaps included.</p>
+    </div>
+    <div class="stamp" id="stamp">Loading...</div>
+  </div>
+
+  <main id="main-content">
+
+    <div id="report" hidden>
+
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="lbl">Sentiment readings</div>
+          <div class="big" id="s-rows">-</div>
+          <div class="foot" id="s-since">-</div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Complete days</div>
+          <div class="big" id="s-complete">-</div>
+          <div class="foot">of the last 30</div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Headlines held</div>
+          <div class="big" id="s-news">-</div>
+          <div class="foot" id="s-sources">-</div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Scorecard settled</div>
+          <div class="big" id="s-settled">-</div>
+          <div class="foot" id="s-ledger">-</div>
+        </div>
+      </div>
+
+      <h2>Coverage over the last 30 days</h2>
+      <p class="lede">One block per day. A full day is <span id="s-expected">64</span> readings, which is 8 currencies across 8 three-hourly cycles. Short days are shown in amber rather than hidden.</p>
+      <div class="gapbar" id="gapbar" role="img" aria-label="Daily coverage for the last 30 days"></div>
+      <div class="legend">
+        <span><b style="background:rgba(52,211,153,.55)"></b> Complete day</span>
+        <span><b style="background:#f59e0b"></b> Partial day</span>
+        <span><b style="background:rgba(148,163,184,.2)"></b> Before the series started</span>
+      </div>
+      <div id="gaptable"></div>
+
+      <h2>What is in each table</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Sentiment <span class="tag tag-lock">Append only</span></h3>
+          <p class="desc">The score series. Rows are point in time and are never revised after publication. Database triggers reject edits and deletes outright.</p>
+          <dl class="kv">
+            <dt>Rows live</dt><dd id="t-sent-rows">-</dd>
+            <dt>Currencies</dt><dd id="t-sent-ccy">-</dd>
+            <dt>First reading</dt><dd id="t-sent-first">-</dd>
+            <dt>Latest reading</dt><dd id="t-sent-last">-</dd>
+          </dl>
+        </div>
+        <div class="card">
+          <h3>News</h3>
+          <p class="desc">Deduplicated headlines and links only. Article bodies are never stored or republished, and every headline keeps its link back to the publisher.</p>
+          <dl class="kv">
+            <dt>Rows live</dt><dd id="t-news-rows">-</dd>
+            <dt>Sources</dt><dd id="t-news-src">-</dd>
+            <dt>First headline</dt><dd id="t-news-first">-</dd>
+            <dt>Latest headline</dt><dd id="t-news-last">-</dd>
+          </dl>
+        </div>
+        <div class="card">
+          <h3>Session scorecard <span class="tag tag-ok" id="t-led-prot">Delete protected</span></h3>
+          <p class="desc">Every pair and session read is frozen with a reference price at publication, then settled against the next session's open and marked aligned, contra or quiet.</p>
+          <dl class="kv">
+            <dt>Reads recorded</dt><dd id="t-led-rows">-</dd>
+            <dt>Settled</dt><dd id="t-led-settled">-</dd>
+            <dt>First</dt><dd id="t-led-first">-</dd>
+            <dt>Latest</dt><dd id="t-led-last">-</dd>
+          </dl>
+        </div>
+        <div class="card">
+          <h3>Price history</h3>
+          <p class="desc">Reference prices used to settle the scorecard, so a read can never be marked correct against a price picked after the fact.</p>
+          <dl class="kv">
+            <dt>Rows</dt><dd id="t-px-rows">-</dd>
+            <dt>First</dt><dd id="t-px-first">-</dd>
+            <dt>Latest</dt><dd id="t-px-last">-</dd>
+          </dl>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="state" id="loading">Reading the database...</div>
+    <div class="state" id="failed" hidden>
+      The live report could not be loaded just now. It is generated on request, so a refresh usually fixes it. The raw figures are always at <a href="/data-quality.json">/data-quality.json</a>.
+    </div>
+
+    <h2>How to read this</h2>
+    <ul class="plain">
+      <li><strong>Scores are point in time.</strong> A reading published at 09:00 UTC keeps the value it had at 09:00 UTC forever. Nothing is backfilled or quietly corrected later</li>
+      <li><strong>Gap days are published, not hidden.</strong> If a cycle failed, the day shows short here rather than being smoothed over</li>
+      <li><strong>Settled scorecard rows are frozen.</strong> Once a read is settled against the next session's open it cannot be edited, and deletion is blocked at the database level</li>
+      <li><strong>Everything above is generated on request</strong> straight from the database, so it cannot drift from reality</li>
+    </ul>
+
+    <h2>Machine readable</h2>
+    <p class="lede">The same report as JSON, no key required:</p>
+    <div class="tblwrap"><table>
+      <thead><tr><th scope="col">Endpoint</th><th scope="col">Returns</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /data-quality.json</code></td><td>This coverage report</td></tr>
+        <tr><td><code>GET /api/v1/sentiment</code></td><td>Current scores for the 8 majors. Key required, see the <a href="/developers">developer API</a></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Every field in the series is documented in the data dictionary published in the public repository.</p>
+
+    <h2>Related</h2>
+    <div class="crosslinks">
+      <a href="/how">
+        <div class="t">How the scoring works</div>
+        <div class="d">The pipeline behind every score, from newswire to a 0 to 100 number</div>
+      </a>
+      <a href="/developers">
+        <div class="t">Developer API</div>
+        <div class="d">The same scores as JSON, refreshed every three hours</div>
+      </a>
+      <a href="/currencies">
+        <div class="t">Live currency scores</div>
+        <div class="d">Current bias for all 8 majors with the news driving each one</div>
+      </a>
+    </div>
+
+  </main>
+
+  <footer>&copy; 2026 FXNewsBias &middot; <a href="/">Dashboard</a> &middot; <a href="/developers">Developer API</a> &middot; <a href="/about">About</a> &middot; <a href="/terms">Terms</a> &middot; <a href="/disclaimer">Disclaimer</a> &middot; <a href="/contact">Contact</a></footer>
+</div>
+
+<script src="/nav.js?v=2" defer></script>
+<script type="module" src="/firebase.js?v=4"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var n = function (v) { return (v == null) ? '-' : Number(v).toLocaleString(); };
+  function dt(iso, withTime) {
+    if (!iso) return '-';
+    var d = new Date(iso);
+    if (isNaN(d)) return String(iso);
+    var o = { day: 'numeric', month: 'short', year: 'numeric' };
+    if (withTime) { o.hour = '2-digit'; o.minute = '2-digit'; }
+    try { return d.toLocaleString(undefined, o); } catch (e) { return String(iso); }
+  }
+  function set(id, v) { var el = $(id); if (el) el.textContent = v; }
+
+  function render(d) {
+    var s = d.sentiment || {}, nw = d.news || {}, led = d.session_bias_ledger || {}, px = d.price_history || {};
+
+    set('stamp', 'Generated ' + dt(d.generated_at, true));
+
+    set('s-rows', n(s.rows_live));
+    set('s-since', s.first ? 'since ' + dt(s.first) : '-');
+    var comp = s.complete_days_last_30;
+    set('s-complete', comp == null ? '-' : comp + ' / 30');
+    $('s-complete').className = 'big' + (comp === 30 ? ' good' : comp != null && comp < 27 ? ' warn' : '');
+    set('s-news', n(nw.rows_live));
+    set('s-sources', nw.sources ? nw.sources + ' sources' : '-');
+    set('s-settled', n(led.settled));
+    set('s-ledger', led.rows ? 'of ' + n(led.rows) + ' reads' : '-');
+
+    set('t-sent-rows', n(s.rows_live));
+    set('t-sent-ccy', n(s.currencies));
+    set('t-sent-first', dt(s.first));
+    set('t-sent-last', dt(s.last, true));
+    set('t-news-rows', n(nw.rows_live));
+    set('t-news-src', n(nw.sources));
+    set('t-news-first', dt(nw.first));
+    set('t-news-last', dt(nw.last, true));
+    set('t-led-rows', n(led.rows));
+    set('t-led-settled', n(led.settled));
+    set('t-led-first', dt(led.first));
+    set('t-led-last', dt(led.last));
+    set('t-px-rows', n(px.rows));
+    set('t-px-first', dt(px.first));
+    set('t-px-last', dt(px.last, true));
+    if (led.delete_protected === false) {
+      var t = $('t-led-prot'); t.textContent = 'Unprotected'; t.className = 'tag';
+    }
+
+    var expected = s.expected_rows_per_day || 64;
+    set('s-expected', expected);
+
+    // 30 day strip. Anything in gap_days_last_30 is a short day; the rest of the
+    // window is complete, except days before the series started.
+    var gaps = {};
+    (s.gap_days_last_30 || []).forEach(function (g) { gaps[g.day] = g.rows; });
+    var start = s.first ? s.first.slice(0, 10) : null;
+    var todayKey = new Date().toISOString().slice(0, 10);
+    var bar = $('gapbar');
+    bar.innerHTML = '';
+    // Every short day the report knows about is listed, even if it falls just
+    // outside the strip. Hiding one would defeat the point of this page.
+    var short = (s.gap_days_last_30 || [])
+      .filter(function (g) { return g.day !== todayKey; })
+      .map(function (g) { return { day: g.day, rows: g.rows }; })
+      .sort(function (a, b) { return a.day < b.day ? 1 : -1; });
+    for (var i = 30; i >= 0; i--) {
+      var key = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+      var el = document.createElement('i');
+      if (start && key < start) { el.className = 'none'; el.title = key + ': before the series started'; }
+      else if (Object.prototype.hasOwnProperty.call(gaps, key)) {
+        el.className = 'part';
+        el.title = key + ': ' + gaps[key] + ' of ' + expected + ' readings';
+      } else { el.title = key + ': complete, ' + expected + ' readings'; }
+      bar.appendChild(el);
+    }
+
+    var box = $('gaptable');
+    if (!short.length) {
+      box.innerHTML = '<p class="note" style="margin-top:14px;">No short days in the window, other than today which is still filling up.</p>';
+    } else {
+      var rows = short.map(function (g) {
+        return '<tr><td>' + dt(g.day) + '</td><td class="num">' + g.rows + ' of ' + expected + '</td>'
+             + '<td class="num">' + Math.round(g.rows / expected * 100) + '%</td></tr>';
+      }).join('');
+      box.innerHTML = '<div class="tblwrap"><table><thead><tr><th scope="col">Short day</th>'
+        + '<th scope="col" style="text-align:right">Readings</th>'
+        + '<th scope="col" style="text-align:right">Coverage</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+
+    $('loading').hidden = true;
+    $('report').hidden = false;
+  }
+
+  fetch('/data-quality.json', { headers: { Accept: 'application/json' } })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(render)
+    .catch(function () {
+      $('loading').hidden = true;
+      $('failed').hidden = false;
+      set('stamp', '');
+    });
+})();
+</script>
+</body>
+</html>

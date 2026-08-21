@@ -28,7 +28,7 @@ AI-derived news-tone score per currency, published on a fixed cycle.
   a large language model into per-currency tone implications, aggregated into
   the 0 to 100 score. Scores are point-in-time: they reflect the news available
   at publication, are never revised, and are not trading recommendations.
-- **Completeness:** verify live at `GET /data-quality` (see §4).
+- **Completeness:** verify live at `GET /data-quality.json` (see §4).
 
 ### 1.2 `news` headline corpus
 
@@ -102,7 +102,10 @@ timestamps ISO-8601 UTC.
 
 ## 4. Data quality, live and machine-readable
 
-`GET https://fxnewsbias.com/data-quality`
+`GET https://fxnewsbias.com/data-quality.json`
+
+The same figures are rendered for humans at
+<https://fxnewsbias.com/data-quality>.
 
 Returns first/last timestamps, row counts (live + archived), expected vs actual
 daily coverage for the last 30 days with individual gap days listed, and ledger

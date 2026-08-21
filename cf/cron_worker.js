@@ -207,7 +207,10 @@ try {
 // Welcome/audience reconciliation — manual trigger (also runs daily 03:15).
 // Public, read-only completeness report for the sentiment/news/ledger
 // series — the "how good is your data" answer, machine-readable.
-if (url.pathname === '/data-quality') {
+// /data-quality is the human page (a static asset on the site worker) and
+// /data-quality.json is this machine-readable report. The bare path stays
+// answered here so anything already polling it keeps working.
+if (url.pathname === '/data-quality' || url.pathname === '/data-quality.json') {
 return handleDataQuality(env);
 }
 

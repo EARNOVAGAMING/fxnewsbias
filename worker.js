@@ -21,10 +21,12 @@ export default {
     // and body are forwarded untouched, and the upstream response is returned
     // as-is so status codes and X-RateLimit-* headers pass through unchanged.
     // Sits before the non-GET guard below so CORS preflight (OPTIONS) works.
-    // Same treatment for /data-quality, the public machine-readable coverage
+    // Same treatment for /data-quality.json, the machine-readable coverage
     // report the data dictionary points at. It lived only on the workers.dev
     // hostname before, which leaked the internal origin into a published doc.
-    if (url.pathname.startsWith('/api/v1/') || url.pathname.startsWith('/api/pro/') || url.pathname.startsWith('/api/auth/') || url.pathname.startsWith('/api/email/') || url.pathname === '/data-quality') {
+    // /data-quality itself is deliberately NOT proxied: it is the human page,
+    // a static asset. Proxying it served raw JSON to anyone who clicked a link.
+    if (url.pathname.startsWith('/api/v1/') || url.pathname.startsWith('/api/pro/') || url.pathname.startsWith('/api/auth/') || url.pathname.startsWith('/api/email/') || url.pathname === '/data-quality.json') {
       const upstream = new URL(request.url);
       upstream.hostname = API_ORIGIN_HOST;
       // Carry the visitor's IP across the hop. Proxying rewrites
@@ -63,6 +65,7 @@ export default {
       '/forecast.html': '/forecast', '/forecast-history.html': '/forecast-history',
       '/forecast-performance.html': '/forecast-performance', '/forecast-pair.html': '/forecast-pair',
       '/developers.html': '/developers',
+      '/data-quality.html': '/data-quality',
     };
     const cleanPath = HTML_REDIRECTS[url.pathname];
     if (cleanPath) {
