@@ -21,7 +21,10 @@ export default {
     // and body are forwarded untouched, and the upstream response is returned
     // as-is so status codes and X-RateLimit-* headers pass through unchanged.
     // Sits before the non-GET guard below so CORS preflight (OPTIONS) works.
-    if (url.pathname.startsWith('/api/v1/')) {
+    // Same treatment for /data-quality, the public machine-readable coverage
+    // report the data dictionary points at. It lived only on the workers.dev
+    // hostname before, which leaked the internal origin into a published doc.
+    if (url.pathname.startsWith('/api/v1/') || url.pathname === '/data-quality') {
       const upstream = new URL(request.url);
       upstream.hostname = API_ORIGIN_HOST;
       const res = await fetch(new Request(upstream.toString(), request));
