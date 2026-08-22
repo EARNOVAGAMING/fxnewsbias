@@ -1458,7 +1458,7 @@ name: 'email',
 send: () => fetch('https://api.resend.com/emails', {
 method: 'POST',
 headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: recipients, subject, text, html: htmlBody }),
+body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, reply_to: 'contact@fxnewsbias.com', to: recipients, subject, text, html: htmlBody }),
 signal: AbortSignal.timeout(25000)
 })
 });
@@ -1718,7 +1718,7 @@ Do not want these emails? Unsubscribe: ${unsubUrl}`;
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: `FXNewsBias <${from}>`,
+        from: `FXNewsBias <${from}>`, reply_to: 'contact@fxnewsbias.com',
         to: [email],
         headers: await _listUnsubHeaders(email, env),
         subject: 'Welcome to FXNewsBias, your forex sentiment edge starts now',
@@ -1970,7 +1970,7 @@ async function _sendReconcileWelcome(env, email, name) {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from: `FXNewsBias <${from}>`,
+      from: `FXNewsBias <${from}>`, reply_to: 'contact@fxnewsbias.com',
       to: [email],
       headers: await _listUnsubHeaders(email, env),
       subject: 'Welcome to FXNewsBias, your forex sentiment edge starts now',
@@ -2096,7 +2096,7 @@ async function sendTestBroadcast(env, testEmail) {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: `FXNewsBias <${env.ALERT_EMAIL_FROM || 'contact@fxnewsbias.com'}>`,
+        from: `FXNewsBias <${env.ALERT_EMAIL_FROM || 'contact@fxnewsbias.com'}>`, reply_to: 'contact@fxnewsbias.com',
         to: [testEmail],
         subject: `[TEST] 📊 ${headline}`,
         html,
@@ -2255,6 +2255,7 @@ async function _sendBroadcastTo(env, audienceId, subject, html, name) {
     body: JSON.stringify({
       audience_id: audienceId,
       from: `FXNewsBias <${env.ALERT_EMAIL_FROM || 'contact@fxnewsbias.com'}>`,
+      reply_to: 'contact@fxnewsbias.com',
       subject,
       html,
       name,
@@ -2861,7 +2862,7 @@ async function handleApiKeyRequest(request, env) {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: `FXNewsBias <${fromEmail}>`,
+        from: `FXNewsBias <${fromEmail}>`, reply_to: 'contact@fxnewsbias.com',
         to: [em],
         subject: 'Your FXNewsBias API key',
         html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;color:#1a1a2e;line-height:1.6;padding:24px;">
@@ -5540,7 +5541,7 @@ async function _insSendFailureEmail(env, error, ctx) {
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: recipients, subject, text, html }),
+      body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, reply_to: 'contact@fxnewsbias.com', to: recipients, subject, text, html }),
       signal: AbortSignal.timeout(25000),
     });
     console.log('Insight failure email sent to', recipients.join(','));
@@ -5979,7 +5980,7 @@ async function _sendVerifyEmail(env, email, name) {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from: `FXNewsBias <${from}>`,
+      from: `FXNewsBias <${from}>`, reply_to: 'contact@fxnewsbias.com',
       to: [email],
       subject: 'Confirm your email address',
       // A plain-text part materially improves inbox placement; a link-only
@@ -6286,7 +6287,7 @@ async function _sendAlertEmail(env, to, flips) {
   const fromEmail = env.ALERT_EMAIL_FROM || 'alerts@fxnewsbias.com';
   await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: [to], subject: `⚡ ${flips.map(f => f.currency + ' ' + f.to).join(', ')}, bias flip`, html }), signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, reply_to: 'contact@fxnewsbias.com', to: [to], subject: `⚡ ${flips.map(f => f.currency + ' ' + f.to).join(', ')}, bias flip`, html }), signal: AbortSignal.timeout(20000),
   });
 }
 
@@ -6326,7 +6327,7 @@ async function _sendForecastAlertEmail(env, to, calls) {
   const fromEmail = env.ALERT_EMAIL_FROM || 'alerts@fxnewsbias.com';
   await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: `FXNewsBias Forecasts <${fromEmail}>`, to: [to], subject: `🎯 ${calls.length} new forecast${calls.length === 1 ? '' : 's'} today`, html }), signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ from: `FXNewsBias Forecasts <${fromEmail}>`, reply_to: 'contact@fxnewsbias.com', to: [to], subject: `🎯 ${calls.length} new forecast${calls.length === 1 ? '' : 's'} today`, html }), signal: AbortSignal.timeout(20000),
   });
 }
 
@@ -7749,7 +7750,7 @@ async function _sendBiasAlertEmail(env, to, session, reads) {
   const fromEmail = env.ALERT_EMAIL_FROM || 'alerts@fxnewsbias.com';
   await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: [to], subject: `📰 ${reads.map(r => r.pair).join(', ')}, strong ${sessionName} session tone`, html }), signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, reply_to: 'contact@fxnewsbias.com', to: [to], subject: `📰 ${reads.map(r => r.pair).join(', ')}, strong ${sessionName} session tone`, html }), signal: AbortSignal.timeout(20000),
   });
 }
 
