@@ -228,7 +228,16 @@ return new Response(JSON.stringify(out, null, 2), { headers: { 'Content-Type': '
 }
 
 if (url.pathname === '/backfill-trial-fingerprints') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const out = await backfillTrialFingerprints(env);
+return new Response(JSON.stringify(out, null, 2), { headers: { 'Content-Type': 'application/json' } });
+}
+
+// Stamp trialUsed on every account that already has Stripe history, so the
+// one-trial-per-account rule starts from the real past rather than from today.
+if (url.pathname === '/backfill-trial-used') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const out = await backfillTrialUsed(env);
 return new Response(JSON.stringify(out, null, 2), { headers: { 'Content-Type': 'application/json' } });
 }
 
@@ -3061,6 +3070,55 @@ async function _trialEligibility(env, email, subDoc) {
     return { eligible: false, reason: 'check-failed' };
   }
   return { eligible: true, reason: 'ok' };
+}
+
+// Every email that has ever had a Stripe subscription has used its trial.
+// Walks the customer list once and stamps the flag, using each account's
+// oldest subscription as the timestamp so the burst window in
+// _webhookTrialGuard measures from the real first trial.
+async function backfillTrialUsed(env) {
+  const H = { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` };
+  const out = { customers: 0, emails: 0, marked: 0, skipped: 0, errors: [] };
+  const firstByEmail = {};
+  try {
+    let startingAfter = null;
+    for (let page = 0; page < 20; page++) {
+      const u = 'https://api.stripe.com/v1/customers?limit=100' + (startingAfter ? `&starting_after=${startingAfter}` : '');
+      const r = await fetch(u, { headers: H, signal: AbortSignal.timeout(20000) });
+      if (!r.ok) throw new Error('customers ' + r.status);
+      const body = await r.json();
+      const rows = body.data || [];
+      for (const c of rows) {
+        out.customers++;
+        const email = String(c.email || '').toLowerCase();
+        if (!email) continue;
+        const sr = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${c.id}&status=all&limit=100`, {
+          headers: H, signal: AbortSignal.timeout(20000),
+        });
+        if (!sr.ok) { out.errors.push(`subs ${c.id} ${sr.status}`); continue; }
+        for (const sub of (((await sr.json()).data) || [])) {
+          const ms = (sub.created || 0) * 1000;
+          if (!ms) continue;
+          if (!firstByEmail[email] || ms < firstByEmail[email]) firstByEmail[email] = ms;
+        }
+      }
+      if (!body.has_more || !rows.length) break;
+      startingAfter = rows[rows.length - 1].id;
+    }
+
+    for (const [email, ms] of Object.entries(firstByEmail)) {
+      out.emails++;
+      let doc = null;
+      try { doc = await _getSubscriptionDoc(env, email); } catch (e) { /* mark anyway */ }
+      if (doc && doc.trialUsed) { out.skipped++; continue; }
+      await _markTrialUsed(env, email, new Date(ms).toISOString());
+      out.marked++;
+    }
+  } catch (e) {
+    out.errors.push(e.message);
+  }
+  console.log('backfillTrialUsed:', JSON.stringify(out));
+  return out;
 }
 
 // POST /api/pro/eligibility — everything the pricing page needs to decide
