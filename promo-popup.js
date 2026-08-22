@@ -12,7 +12,7 @@
     var last = parseInt(localStorage.getItem(KEY) || '0', 10);
     if (last && (Date.now() - last) < 7 * 864e5) return;          // 7-day cooldown
 
-    var TRIAL_URL = 'https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01';
+    var TRIAL_URL = '/pricing';
     var built = false;
 
     function remember() { try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {} }

@@ -26,7 +26,7 @@ export default {
     // hostname before, which leaked the internal origin into a published doc.
     // /data-quality itself is deliberately NOT proxied: it is the human page,
     // a static asset. Proxying it served raw JSON to anyone who clicked a link.
-    if (url.pathname.startsWith('/api/v1/') || url.pathname.startsWith('/api/pro/') || url.pathname.startsWith('/api/auth/') || url.pathname.startsWith('/api/email/') || url.pathname === '/data-quality.json') {
+    if (url.pathname.startsWith('/api/v1/') || url.pathname.startsWith('/api/pro/') || url.pathname.startsWith('/api/auth/') || url.pathname.startsWith('/api/email/') || url.pathname === '/data-quality.json' || url.pathname === '/create-portal-session') {
       const upstream = new URL(request.url);
       upstream.hostname = API_ORIGIN_HOST;
       // Carry the visitor's IP across the hop. Proxying rewrites
@@ -66,6 +66,7 @@ export default {
       '/forecast-performance.html': '/forecast-performance', '/forecast-pair.html': '/forecast-pair',
       '/developers.html': '/developers',
       '/data-quality.html': '/data-quality',
+      '/pricing.html': '/pricing',
     };
     const cleanPath = HTML_REDIRECTS[url.pathname];
     if (cleanPath) {

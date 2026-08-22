@@ -428,6 +428,11 @@ if (url.pathname === '/save-alerts') return handleSaveAlerts(request, env);
 if (url.pathname === '/api/pro/sentiment-history') return handleProSentimentHistory(request, env);
 if (url.pathname === '/api/email/unsubscribe') return handleEmailUnsubscribe(request, env);
 if (url.pathname === '/api/auth/register') return handleAuthRegister(request, env);
+// Billing. Eligibility is answered before the pricing page paints a button,
+// and the checkout session is built here so the trial decision is made
+// server-side. A visitor cannot ask for a trial they are not entitled to.
+if (url.pathname === '/api/pro/eligibility') return handleProEligibility(request, env);
+if (url.pathname === '/api/pro/checkout') return handleProCheckout(request, env);
 if (url.pathname === '/api/pro/api-key') return handleProApiKey(request, env, 'status');
 if (url.pathname === '/api/pro/api-key/create') return handleProApiKey(request, env, 'create');
 if (url.pathname === '/api/pro/api-key/revoke') return handleProApiKey(request, env, 'revoke');
@@ -853,20 +858,20 @@ if (event.type === 'customer.subscription.created' && isActive) {
 try { await dedupeStripeSubscriptions(customerEmail, env); }
 catch (e) { console.log('dedupe error:', e.message); }
 }
-// One free trial per person. The check also RECORDS first-time card
-// fingerprints, so it runs on updated events too (backfills trials that
-// predate this guard); revoking only ever happens on created.
+// One free trial per account, ever. Checkout already refuses a trial to
+// anyone ineligible, so this is the backstop for a raw payment link.
+// A repeat trial is CANCELLED, never converted into a charge: billing
+// someone $30 on a page that said "free" is how chargebacks are made.
 if (subscription.status === 'trialing') {
 try {
-const used = await _trialAlreadyUsed(env, customerEmail, subscription);
-if (used && event.type === 'customer.subscription.created') {
+const repeat = await _webhookTrialGuard(env, customerEmail, subscription);
+if (repeat && event.type === 'customer.subscription.created') {
 const r = await fetch(`https://api.stripe.com/v1/subscriptions/${subscription.id}`, {
-method: 'POST',
-headers: { 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-body: new URLSearchParams({ trial_end: 'now' }),
+method: 'DELETE',
+headers: { 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}` },
 signal: AbortSignal.timeout(20000),
 });
-console.log(`trial revoked (${used} reuse) for ${customerEmail}: HTTP ${r.status}`);
+console.log(`repeat trial (${repeat}) cancelled for ${customerEmail}: HTTP ${r.status}`);
 }
 } catch (e) { console.log('trial abuse check error:', e.message); }
 }
@@ -1034,25 +1039,34 @@ async function backfillTrialFingerprints(env) {
   return { ok: true, live_subs: subs.length, results };
 }
 
-// One free trial per person, ever. Two independent checks:
-//  (a) the email has any subscription older than the 3-day duplicate window
-//      (repeat signup after a previous trial/cancellation), or
-//  (b) the card fingerprint was already used for a trial — catches the same
-//      card returning under a fresh email. Fingerprints live in Supabase
-//      trial_card_history; first-time cards are recorded here.
-// Returns 'email' | 'card' when the trial was already used, null when clean.
-async function _trialAlreadyUsed(env, email, subscription) {
-  const H = { 'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}` };
-  try {
-    const cutoff = subscription.created - 3 * 86400;
-    const cRes = await fetch(`https://api.stripe.com/v1/customers?email=${encodeURIComponent(email)}&limit=100`, { headers: H, signal: AbortSignal.timeout(20000) });
-    for (const c of (((await cRes.json()).data) || [])) {
-      const sRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${c.id}&status=all&limit=20`, { headers: H, signal: AbortSignal.timeout(20000) });
-      for (const s of (((await sRes.json()).data) || [])) {
-        if (s.id !== subscription.id && s.created < cutoff) return 'email';
-      }
-    }
-  } catch (e) { console.log('trial email-history check error:', e.message); }
+// Webhook backstop for repeat trials.
+//
+// It deliberately does NOT ask "has this email any prior subscription", because
+// a double-click creates two subscriptions seconds apart and dedupe cancels
+// one; that leftover would make the surviving, legitimate trial look like a
+// repeat. Instead it compares against the moment the account's trial was first
+// recorded. Anything inside a 10 minute window is the same checkout burst.
+//
+// The card fingerprint check runs alongside it and catches the same card
+// returning under a fresh email.
+const _TRIAL_BURST_MS = 10 * 60 * 1000;
+
+async function _webhookTrialGuard(env, email, subscription) {
+  const createdMs = (subscription.created || 0) * 1000;
+  let doc = null;
+  try { doc = await _getSubscriptionDoc(env, email); }
+  catch (e) { console.log('trial guard doc read:', e.message); }
+
+  if (doc && doc.trialUsed && doc.trialUsedAt) {
+    const firstMs = Date.parse(doc.trialUsedAt);
+    if (!isNaN(firstMs) && createdMs - firstMs > _TRIAL_BURST_MS) return 'account';
+  } else {
+    // First trial we have ever seen for this account. Stamp it with the
+    // subscription's own creation time so the burst window is measured from
+    // the real start, not from whenever this webhook happened to arrive.
+    await _markTrialUsed(env, email, new Date(createdMs || Date.now()).toISOString());
+  }
+
   const rec = await _recordTrialFingerprint(env, email, subscription);
   console.log('trial fingerprint check:', email, JSON.stringify(rec));
   if (rec && rec.reused) return 'card';
@@ -1653,7 +1667,7 @@ async function handleWelcomeEmail(request, env) {
         <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#c4b5fd;letter-spacing:0.1em;text-transform:uppercase;">Ready to go Pro?</p>
         <h2 style="margin:0 0 12px;color:#ffffff;font-size:20px;font-weight:800;">Unlock the Full Edge</h2>
         <p style="margin:0 0 20px;font-size:13px;color:#c4b5fd;line-height:1.6;">Full sentiment history · Advanced filters · Weekly AI intelligence brief · Priority updates</p>
-        <a href="https://fxnewsbias.com/report" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:15px;font-weight:800;padding:14px 32px;border-radius:8px;text-decoration:none;">⭐ Upgrade to Pro — $30/mo</a>
+        <a href="https://fxnewsbias.com/pricing" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:15px;font-weight:800;padding:14px 32px;border-radius:8px;text-decoration:none;">⭐ Upgrade to Pro, from $20/mo</a>
       </td></tr>
     </table>
     <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.7;">Questions? Reply to this email or visit <a href="https://fxnewsbias.com/contact" style="color:#1e40af;text-decoration:none;font-weight:600;">fxnewsbias.com/contact</a></p>
@@ -1965,7 +1979,7 @@ Here is what you can do right now:
 - Join the community and share your analysis
 
 Ready to go Pro?
-FXNewsBias Pro is $30/month with a 7-day free trial: full sentiment history,
+FXNewsBias Pro is from $20/month with a 7-day free trial: full sentiment history,
 bias-flip alerts, the weekly intelligence brief and a developer API key.
 https://fxnewsbias.com
 
@@ -2178,7 +2192,7 @@ async function _buildBroadcastHtml(env, firstName = 'Trader', tier = 'free') {
       <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#c4b5fd;letter-spacing:.1em;text-transform:uppercase;">Want More?</p>
       <h3 style="margin:0 0 8px;color:#fff;font-size:18px;font-weight:800;">Get the Full Sentiment History</h3>
       <p style="margin:0 0 16px;font-size:13px;color:#c4b5fd;line-height:1.6;">Upgrade to Pro for full history, advanced filters and the weekly AI intelligence brief.</p>
-      <a href="https://fxnewsbias.com/report" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:14px;font-weight:800;padding:12px 28px;border-radius:7px;text-decoration:none;">⭐ Upgrade to Pro — $30/mo</a>
+      <a href="https://fxnewsbias.com/pricing" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:14px;font-weight:800;padding:12px 28px;border-radius:7px;text-decoration:none;">⭐ Upgrade to Pro, from $20/mo</a>
     </td></tr></table>`}
     <p style="margin:0 0 4px;font-size:15px;color:#0f172a;">Happy trading,</p>
     <p style="margin:0 0 28px;font-size:15px;font-weight:700;color:#0f172a;">The FXNewsBias Team</p>
@@ -2964,6 +2978,213 @@ async function handleApiSessionBias(request, env) {
   } catch (e) {
     console.log('handleApiSessionBias:', e.message);
     return _apiJson({ error: 'server-error' }, 500);
+  }
+}
+
+// ============================================
+// BILLING: PLAN CATALOGUE, TRIAL ELIGIBILITY, CHECKOUT
+// ============================================
+
+// One product, three billing periods. Features are identical on all three;
+// only the commitment length and the effective monthly price differ.
+const _PLANS = {
+  monthly: { price: 'price_1TzXJXR7DluP3wHbAnTDwY61', label: 'Monthly',  amount: 3000,  perMonth: 3000, months: 1,  blurb: '$30 every month' },
+  q3:      { price: 'price_1U7B3NR7DluP3wHb7b0EE8sB', label: '3 months', amount: 7500,  perMonth: 2500, months: 3,  blurb: '$75 every 3 months' },
+  yearly:  { price: 'price_1U7B3WR7DluP3wHbbrGUNgQe', label: 'Yearly',   amount: 24000, perMonth: 2000, months: 12, blurb: '$240 once a year' },
+};
+const _TRIAL_DAYS = 7;
+
+// Trial state is cached on the subscriptions doc so the pricing page costs one
+// Firestore read, not a walk of the Stripe API. Written the first time a trial
+// is ever seen for an account and never cleared.
+async function _markTrialUsed(env, email, when) {
+  if (!email) return;
+  try {
+    const token = await getFirebaseToken(env);
+    if (!token) return;
+    const docId = String(email).replace(/[.#$[\]@]/g, '_');
+    const fields = {
+      trialUsed: { booleanValue: true },
+      trialUsedAt: { stringValue: when || new Date().toISOString() },
+    };
+    const mask = Object.keys(fields).map(k => 'updateMask.fieldPaths=' + k).join('&');
+    await fetch(`https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/subscriptions/${docId}?${mask}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ fields }),
+      signal: AbortSignal.timeout(15000),
+    });
+    console.log('trialUsed marked for', email);
+  } catch (e) { console.log('_markTrialUsed:', e.message); }
+}
+
+// Has this email ever had ANY subscription? Deliberately has no time window.
+// The old check ignored anything created in the last 3 days to tolerate
+// double-clicks, and one visitor used that window to open six trials in a
+// row. Duplicates are handled by dedupeStripeSubscriptions instead, which
+// cancels rather than charges.
+async function _stripeHasAnySubscription(env, email, exceptId) {
+  const H = { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` };
+  const cRes = await fetch(`https://api.stripe.com/v1/customers?email=${encodeURIComponent(email)}&limit=100`, {
+    headers: H, signal: AbortSignal.timeout(20000),
+  });
+  if (!cRes.ok) throw new Error('stripe customers ' + cRes.status);
+  for (const c of (((await cRes.json()).data) || [])) {
+    const sRes = await fetch(`https://api.stripe.com/v1/subscriptions?customer=${c.id}&status=all&limit=20`, {
+      headers: H, signal: AbortSignal.timeout(20000),
+    });
+    if (!sRes.ok) throw new Error('stripe subscriptions ' + sRes.status);
+    for (const sub of (((await sRes.json()).data) || [])) {
+      if (sub.id !== exceptId) return true;
+    }
+  }
+  return false;
+}
+
+// The single source of truth for "may this account start a free trial".
+// Fails CLOSED: if Stripe cannot be reached we refuse the trial rather than
+// hand out a second one, because refusing costs a support message and
+// granting costs a free month.
+async function _trialEligibility(env, email, subDoc) {
+  const e = String(email || '').toLowerCase();
+  if (!e) return { eligible: false, reason: 'signed-out' };
+  if (subDoc && subDoc.trialUsed) return { eligible: false, reason: 'already-used' };
+  if (subDoc && subDoc.isPro) return { eligible: false, reason: 'already-pro' };
+  if (subDoc && subDoc.subStatus) return { eligible: false, reason: 'already-used' };
+  try {
+    if (await _stripeHasAnySubscription(env, e, null)) {
+      await _markTrialUsed(env, e);
+      return { eligible: false, reason: 'already-used' };
+    }
+  } catch (err) {
+    console.log('_trialEligibility stripe check failed:', err.message);
+    return { eligible: false, reason: 'check-failed' };
+  }
+  return { eligible: true, reason: 'ok' };
+}
+
+// POST /api/pro/eligibility — everything the pricing page needs to decide
+// which buttons exist, in one round trip.
+async function handleProEligibility(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  if (request.method !== 'POST') return _proJson({ error: 'method-not-allowed' }, 405);
+  try {
+    const body = await request.json().catch(() => ({}));
+    const plans = Object.entries(_PLANS).map(([k, v]) => ({
+      key: k, label: v.label, amount: v.amount, perMonth: v.perMonth, months: v.months, blurb: v.blurb,
+    }));
+    const user = body.idToken ? await _verifyFirebaseUser(env, body.idToken) : null;
+    if (!user) {
+      // Signed out. The page still offers the trial: eligibility is checked
+      // again, against a real identity, at checkout.
+      return _proJson({ ok: true, signedIn: false, isPro: false, trialEligible: true, reason: 'signed-out', plans });
+    }
+    const email = String(user.email || '').toLowerCase();
+    const sub = await _getSubscriptionDoc(env, email);
+    const el = await _trialEligibility(env, email, sub);
+    return _proJson({
+      ok: true, signedIn: true, email,
+      isPro: !!sub.isPro,
+      subStatus: sub.subStatus || '',
+      plan: sub.plan || 'free',
+      currentPeriodEnd: sub.currentPeriodEnd || '',
+      cancelAtPeriodEnd: !!sub.cancelAtPeriodEnd,
+      hasBilling: !!sub.stripeCustomerId,
+      trialEligible: el.eligible,
+      reason: el.reason,
+      plans,
+    });
+  } catch (e) {
+    console.log('handleProEligibility:', e.message);
+    return _proJson({ error: 'server-error' }, 500);
+  }
+}
+
+// POST /api/pro/checkout — builds the Stripe Checkout Session.
+// The trial flag is decided HERE, never taken from the caller, so a crafted
+// request cannot mint a second free trial.
+async function handleProCheckout(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: _PRO_CORS });
+  if (request.method !== 'POST') return _proJson({ error: 'method-not-allowed' }, 405);
+  try {
+    const body = await request.json().catch(() => ({}));
+    const plan = _PLANS[String(body.plan || 'monthly')];
+    if (!plan) return _proJson({ error: 'bad-request', message: 'Unknown plan.' }, 400);
+
+    const user = body.idToken ? await _verifyFirebaseUser(env, body.idToken) : null;
+    if (!user || !user.email) {
+      return _proJson({ error: 'sign-in-required', message: 'Please sign in first so we can attach the subscription to your account.' }, 401);
+    }
+    const email = String(user.email).toLowerCase();
+    const sub = await _getSubscriptionDoc(env, email);
+
+    // A subscription already exists in some live form. Creating a second one
+    // would leave two on the account: dedupe only cleans up active/trialing,
+    // so a past_due subscription would survive and bill again when it
+    // recovers. Send these to the billing portal, which changes the plan or
+    // fixes the card in place.
+    const LIVE = ['active', 'past_due', 'unpaid', 'incomplete', 'trialing'];
+    if (sub.stripeCustomerId && LIVE.includes(sub.subStatus)) {
+      const pr = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ customer: sub.stripeCustomerId, return_url: 'https://fxnewsbias.com/pricing' }),
+        signal: AbortSignal.timeout(20000),
+      });
+      const pd = await pr.json();
+      if (pd && pd.url) return _proJson({ ok: true, url: pd.url, portal: true });
+      console.log('portal session failed:', pr.status, JSON.stringify(pd).slice(0, 200));
+      return _proJson({ error: 'server-error', message: 'Could not open your billing page. Please try again.' }, 502);
+    }
+
+    // wantsTrial is a request, not an instruction.
+    let trialDays = 0;
+    if (body.wantsTrial) {
+      const el = await _trialEligibility(env, email, sub);
+      if (el.eligible) trialDays = _TRIAL_DAYS;
+      else if (el.reason === 'check-failed') {
+        return _proJson({ error: 'try-again', message: 'We could not verify your trial eligibility just now. Please try again in a moment.' }, 503);
+      }
+      // Not eligible for any other reason: fall through and sell at full price
+      // rather than fail. The page already shows the paid button in that case.
+    }
+
+    const form = new URLSearchParams();
+    form.set('mode', 'subscription');
+    form.set('line_items[0][price]', plan.price);
+    form.set('line_items[0][quantity]', '1');
+    form.set('success_url', 'https://fxnewsbias.com/pro?checkout=success');
+    form.set('cancel_url', 'https://fxnewsbias.com/pricing?checkout=cancelled');
+    form.set('client_reference_id', email);
+    form.set('allow_promotion_codes', 'true');
+    form.set('billing_address_collection', 'auto');
+    form.set('subscription_data[metadata][plan]', plan.label);
+    form.set('subscription_data[metadata][fxnb_email]', email);
+    // The customer record is pinned to the signed-in address. Without this a
+    // visitor could pay under a different email and never receive Pro.
+    if (sub.stripeCustomerId) form.set('customer', sub.stripeCustomerId);
+    else { form.set('customer_email', email); form.set('customer_creation', 'always'); }
+    if (trialDays) {
+      form.set('subscription_data[trial_period_days]', String(trialDays));
+      form.set('subscription_data[trial_settings][end_behavior][missing_payment_method]', 'cancel');
+    }
+
+    const r = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form,
+      signal: AbortSignal.timeout(20000),
+    });
+    const data = await r.json();
+    if (!r.ok || !data.url) {
+      console.log('checkout session failed:', r.status, JSON.stringify(data).slice(0, 300));
+      return _proJson({ error: 'server-error', message: 'Could not open checkout. Please try again.' }, 502);
+    }
+    console.log('checkout session', data.id, 'for', email, 'plan', plan.label, 'trialDays', trialDays);
+    return _proJson({ ok: true, url: data.url, plan: plan.label, trialDays });
+  } catch (e) {
+    console.log('handleProCheckout:', e.message);
+    return _proJson({ error: 'server-error', message: 'Something went wrong on our side. Please try again.' }, 500);
   }
 }
 
@@ -5549,12 +5770,12 @@ async function _verifyFirebaseUser(env, idToken) {
 async function _getSubscriptionDoc(env, email) {
   const _allow = PRO_ALLOWLIST.includes(String(email || '').toLowerCase());
   const token = await getFirebaseToken(env);
-  if (!token) return { exists: false, isPro: _allow, alerts: { enabled: false, email: true, currencies: [] } };
+  if (!token) return { exists: false, isPro: _allow, trialUsed: false, trialUsedAt: '', alerts: { enabled: false, email: true, currencies: [] } };
   const pid = env.FIREBASE_PROJECT_ID || 'fxnewsbias';
   const r = await fetch(`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents/subscriptions/${_fsDocId(email)}`, {
     headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20000),
   });
-  if (!r.ok) return { exists: false, isPro: _allow, alerts: { enabled: false, email: true, currencies: [] } };
+  if (!r.ok) return { exists: false, isPro: _allow, trialUsed: false, trialUsedAt: '', alerts: { enabled: false, email: true, currencies: [] } };
   const f = (await r.json()).fields || {};
   const af = f.alerts && f.alerts.mapValue && f.alerts.mapValue.fields;
   const alerts = af ? {
@@ -5567,6 +5788,8 @@ async function _getSubscriptionDoc(env, email) {
     isPro: _allow || !!(f.isPro && f.isPro.booleanValue),
     plan: (f.plan && f.plan.stringValue) || 'free',
     subStatus: (f.subStatus && f.subStatus.stringValue) || '',
+    trialUsed: !!(f.trialUsed && f.trialUsed.booleanValue),
+    trialUsedAt: (f.trialUsedAt && f.trialUsedAt.stringValue) || '',
     currentPeriodEnd: (f.currentPeriodEnd && f.currentPeriodEnd.stringValue) || '',
     cancelAtPeriodEnd: !!(f.cancelAtPeriodEnd && f.cancelAtPeriodEnd.booleanValue),
     stripeCustomerId: (f.stripeCustomerId && f.stripeCustomerId.stringValue) || '',
@@ -8041,6 +8264,10 @@ async function executeSeoActions(env) {
 // API failure can't poll Stripe forever. Manual re-run:
 // /setup-stripe-redirect?key=... (force ignores the flag).
 // ============================================================
+// The legacy Stripe-hosted payment link. Kept only so ensureStripeRedirect can
+// find it by URL and keep its post-payment redirect correct for anyone who
+// still has the old link in an email. New traffic goes to /pricing, which
+// builds a Checkout Session server-side with the trial decided by us.
 const _STRIPE_BUY_URL = 'https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01';
 const _STRIPE_REDIRECT_TO = 'https://fxnewsbias.com/register?paid=1';
 

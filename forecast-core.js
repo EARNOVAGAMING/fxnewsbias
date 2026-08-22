@@ -461,7 +461,7 @@
   function isPro() { return _proState === true; }
   function onProChange(cb) { _proCbs.push(cb); }
 
-  var STRIPE_BUY = 'https://buy.stripe.com/4gMcN73RE0Dr7fpg3c0RG01';
+  var STRIPE_BUY = '/pricing';
 
   // Locked teaser shown to free users in place of a Pro-only section.
   function lockCard(title, sub) {
@@ -469,7 +469,7 @@
       + '<div class="fc-lock-ico">🔒</div>'
       + '<div class="fc-lock-title">' + esc(title) + '</div>'
       + (sub ? '<div class="fc-lock-sub">' + esc(sub) + '</div>' : '')
-      + '<a class="fc-lock-btn" href="' + STRIPE_BUY + '">⭐ Unlock with Pro — $30/mo</a>'
+      + '<a class="fc-lock-btn" href="' + STRIPE_BUY + '">⭐ Unlock with Pro, from $20/mo</a>'
       + '<div class="fc-lock-note">7-day free trial · Already Pro? <a href="/login">Log in →</a></div>'
       + '</div>';
   }
@@ -478,7 +478,7 @@
   function upgradeStrip(msg) {
     return '<a class="fc-upstrip" href="' + STRIPE_BUY + '">'
       + '<span class="fc-upstrip-txt">' + esc(msg || 'This is the public scorecard. Pro members see each session’s live tone reads the moment they publish, plus strong-read alerts.') + '</span>'
-      + '<span class="fc-upstrip-cta">Go Pro — $30/mo →</span>'
+      + '<span class="fc-upstrip-cta">Go Pro, from $20/mo →</span>'
       + '</a>';
   }
 

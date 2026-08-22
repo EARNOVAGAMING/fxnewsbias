@@ -43,6 +43,10 @@ FXNewsBias scans hundreds of forex news sources every 3 hours and uses Claude AI
 - [CAD/JPY](https://fxnewsbias.com/pairs/cad-jpy/)
 - [AUD/NZD](https://fxnewsbias.com/pairs/aud-nzd/)
 
+## Pricing
+
+- [Pricing](https://fxnewsbias.com/pricing): Free forever for live bias, pair reads, news and the calendar. Pro adds sentiment history, bias flip alerts, the weekly brief and the developer API, at $30 a month, $75 for 3 months ($25/mo) or $240 a year ($20/mo). Same features on every period. One 7-day free trial per account.
+
 ## Transparency
 
 - [Data quality](https://fxnewsbias.com/data-quality): live coverage report for the sentiment series, published straight from the database. Row counts, first and last reading, complete days, any short days, and scorecard settlement counts. Machine-readable at https://fxnewsbias.com/data-quality.json with no key required.
