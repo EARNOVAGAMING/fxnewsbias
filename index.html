@@ -111,8 +111,7 @@
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html{overflow-x:clip;}
-body{overflow-x:clip;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#ffffff;color:#1a1a1a;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#ffffff;color:#1a1a1a;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
 :root{
   --bg:#ffffff;--bg-soft:#f8fafc;--bg-card:#ffffff;
   --border:#e5e7eb;--border-strong:#d1d5db;
@@ -179,7 +178,12 @@ nav a:hover{color:#60a5fa;}
 .hero-stat.is-stale .hero-stat-label::after{content:" • delayed";color:#f59e0b;font-weight:700;}
 .hero-stat[title]{cursor:help;}
 
-.main{max-width:1280px;margin:24px auto;padding:0 24px;display:grid;grid-template-columns:1fr 320px;gap:28px;}
+.main{max-width:1280px;margin:24px auto;padding:0 24px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:28px;}
+.ad-slot ins{max-width:100%;}
+@media(max-width:480px){
+  .sb-row{flex-wrap:wrap;}
+  .sb-cta{white-space:normal;flex:1 1 100%;text-align:center;min-width:0;}
+}
 .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
 .section-title a{color:var(--accent);font-size:12px;font-weight:600;text-decoration:none;transition:color .2s ease;}
 .section-title a:hover{color:var(--accent-hover);}
@@ -216,6 +220,33 @@ nav a:hover{color:#60a5fa;}
 .news-effect{font-size:12px;color:var(--text-soft);}
 
 .sidebar-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:var(--shadow-sm);}
+/* The rail ran out of content well before the left column did, leaving a tall
+   empty gutter. Four more cards close that gap: the sidebar now runs 1938px
+   against the main column's 2002px, so the two finish together.
+   Deliberately NOT position:sticky. These cards sit at the bottom of the
+   aside, so there is no room left inside the container for a sticky element
+   to travel through, and the block is taller than the viewport anyway.
+   Measured at 900, 1200 and 1440px tall: it never pinned. */
+.rail-stick{}
+.rc-lbl{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-hover);margin-bottom:9px;}
+.rc-sub{font-size:12.5px;color:var(--text-soft);line-height:1.55;}
+.rc-btn{display:block;text-align:center;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:700;margin-top:13px;text-decoration:none;}
+.rc-btn-p{background:var(--accent);color:#fff;}
+.rc-btn-p:hover{background:var(--accent-hover);}
+.rc-btn-o{border:1px solid var(--border-strong);color:var(--text);}
+.rc-btn-o:hover{border-color:rgba(96,165,250,.5);color:var(--accent-hover);}
+.rc-code{background:#070b12;border:1px solid var(--border);border-radius:8px;padding:11px 12px;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.65;color:#c3d4f0;overflow-x:auto;white-space:pre;}
+.rc-code .k{color:#93c5fd}.rc-code .s{color:#6ee7b7}.rc-code .n{color:#fcd34d}.rc-code .c{color:#64748b}
+.rc-pill{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:20px;}
+.rc-pill-new{background:rgba(59,130,246,.18);color:#93c5fd;}
+.rc-pill-gold{background:rgba(245,158,11,.16);color:#fcd34d;}
+.rc-big{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;}
+.rc-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:9px 0 8px;}
+.rc-bar i{display:block;height:100%;background:var(--bull);border-radius:99px;}
+.rc-note{font-size:11px;color:var(--text-muted);}
+.rc-api{border-color:rgba(59,130,246,.32)!important;background:linear-gradient(160deg,#111b2c,#0d1930)!important;}
+.rc-tg{background:linear-gradient(160deg,#0e2436,#111b2c)!important;border-color:rgba(56,189,248,.28)!important;}
 .sidebar-card h3{font-size:14px;font-weight:700;margin-bottom:14px;letter-spacing:-.2px;}
 .session-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
 .session-row:last-child{border-bottom:none;}
@@ -396,7 +427,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 .footer-bottom{border-top:1px solid #1e293b;padding-top:20px;text-align:center;font-size:12px;color:#94a3b8;}
 
 @media(max-width:900px){
-  .main{grid-template-columns:1fr;gap:20px;}
+  .main{grid-template-columns:minmax(0,1fr);gap:20px;}
   nav ul{display:none;}
   .burger{display:block;}
   .hero-inner{flex-direction:column;align-items:stretch;}
@@ -689,7 +720,7 @@ footer{background:#080c14;}
   <div style="min-width:0;">
 
     <a href="/forecast" style="display:block;text-decoration:none;margin-bottom:20px;">
-      <div style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#1d4ed8 100%);border-radius:var(--radius-lg);padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid rgba(96,165,250,.25);box-shadow:0 2px 12px rgba(37,99,235,.15);transition:box-shadow .2s ease,transform .2s ease;" onmouseover="this.style.boxShadow='0 6px 24px rgba(37,99,235,.32)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 12px rgba(37,99,235,.15)';this.style.transform=''">
+      <div class="sb-row" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#1d4ed8 100%);border-radius:var(--radius-lg);padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid rgba(96,165,250,.25);box-shadow:0 2px 12px rgba(37,99,235,.15);transition:box-shadow .2s ease,transform .2s ease;" onmouseover="this.style.boxShadow='0 6px 24px rgba(37,99,235,.32)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 12px rgba(37,99,235,.15)';this.style.transform=''">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="font-size:28px;line-height:1;flex-shrink:0;">📰</div>
           <div>
@@ -698,7 +729,7 @@ footer{background:#080c14;}
             <div style="font-size:12px;color:#94a3b8;margin-top:3px;" id="sb-strip-sub">News-tone reads for 11 pairs at every session open, scored in public at the next session</div>
           </div>
         </div>
-        <div style="flex-shrink:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;">See the reads →</div>
+        <div class="sb-cta" style="flex-shrink:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;">See the reads →</div>
       </div>
     </a>
     <script>
@@ -973,6 +1004,52 @@ window.addEventListener('load',function(){
         <script src='https://www.googletagservices.com/dcm/dcmads.js' async></script>
       </ins><img src="https://trk.pepperstonepartners.com/aff_i?offer_id=382&aff_id=44603&file_id=5417" width="0" height="0" style="position:absolute;visibility:hidden;" border="0" />
     </div>
+
+    <div class="rail-stick">
+    <div class="sidebar-card rc-api">
+      <div class="rc-lbl">For developers</div>
+      <h3 style="margin-bottom:8px;">Pull this data into your own tools</h3>
+      <p class="rc-sub" style="margin-bottom:12px;">Every score on this page as clean JSON, refreshed every 3 hours.</p>
+      <div class="rc-code"><span class="c">$</span> curl -H <span class="s">"Authorization: Bearer &hellip;"</span> \
+  fxnewsbias.com<span class="k">/api/v1/sentiment</span>
+
+{ <span class="k">"currency"</span>: <span class="s">"USD"</span>, <span class="k">"score"</span>: <span class="n">62</span> }</div>
+      <div style="display:flex;gap:7px;margin-top:11px;flex-wrap:wrap;">
+        <span class="rc-pill rc-pill-new">200 req / day</span>
+        <span class="rc-pill rc-pill-gold">In Pro</span>
+      </div>
+      <a href="/developers" class="rc-btn rc-btn-p">Read the API docs &rarr;</a>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="rc-lbl" style="color:#6ee7b7;">Public scorecard</div>
+      <h3 style="margin-bottom:6px;">We mark our own homework</h3>
+      <div style="display:flex;align-items:baseline;gap:8px;margin:10px 0 2px;">
+        <span class="rc-big" style="color:#6ee7b7;" id="rc-settled">363</span>
+        <span class="rc-sub" id="rc-settled-of">of 374 reads settled</span>
+      </div>
+      <div class="rc-bar"><i id="rc-settled-bar" style="width:97%"></i></div>
+      <p class="rc-sub">Every session read is frozen with a reference price, then settled against the next open. Settled rows can never be edited.</p>
+      <a href="/forecast-performance" class="rc-btn rc-btn-o">See the scorecard &rarr;</a>
+    </div>
+
+    <div class="sidebar-card rc-tg">
+      <h3 style="margin-bottom:6px;">&#128241; Free bias alerts</h3>
+      <p class="rc-sub">Every 3 hours on Telegram, the moment the scores refresh. No account, no card.</p>
+      <a href="https://t.me/fxnewsbias_alerts" target="_blank" rel="noopener noreferrer" class="rc-btn" style="background:#229ED9;color:#fff;">Join the channel &rarr;</a>
+      <div class="rc-note" style="text-align:center;margin-top:6px;">Free forever</div>
+    </div>
+
+    <div class="sidebar-card">
+      <h3 style="margin-bottom:6px;">&#128202; Audit the data</h3>
+      <div style="display:flex;gap:18px;margin:11px 0 10px;">
+        <div><div style="font-size:19px;font-weight:800;line-height:1;" id="rc-rows">6,024</div><div class="rc-note">readings</div></div>
+        <div><div style="font-size:19px;font-weight:800;line-height:1;color:#6ee7b7;" id="rc-days">29/30</div><div class="rc-note">complete days</div></div>
+      </div>
+      <p class="rc-sub">Coverage, gaps included, published live from the database.</p>
+      <a href="/data-quality" class="rc-btn rc-btn-o">Data quality &rarr;</a>
+    </div>
+    </div>
   </aside>
 </main>
 
@@ -1044,6 +1121,7 @@ if(window.innerWidth>900){
         <ul>
           <li><a href="/about">About Us</a></li>
           <li><a href="/how">How It Works</a></li>
+          <li><a href="/pricing">Pricing</a></li>
           <li><a href="/contact">Contact</a></li>
         </ul>
       </div>
@@ -1073,6 +1151,7 @@ if(window.innerWidth>900){
           <li><a href="/privacy">Privacy Policy</a></li>
           <li><a href="/terms">Terms of Service</a></li>
           <li><a href="/developers">Developer API</a></li>
+          <li><a href="/data-quality">Data Quality</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -1122,5 +1201,29 @@ if(window.innerWidth>900){
 })();
 </script>
 
+<script>
+// Rail cards: fill the scorecard and coverage numbers from the live report so
+// they can never drift from the database. One public fetch, no key needed.
+// If it fails the markup keeps its last-known values rather than showing zeros.
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  fetch('/data-quality.json', { headers: { Accept: 'application/json' } })
+    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+    .then(function (d) {
+      var led = d.session_bias_ledger || {}, sen = d.sentiment || {};
+      if (led.settled != null && led.rows) {
+        $('rc-settled').textContent = Number(led.settled).toLocaleString();
+        $('rc-settled-of').textContent = 'of ' + Number(led.rows).toLocaleString() + ' reads settled';
+        $('rc-settled-bar').style.width = Math.round(led.settled / led.rows * 100) + '%';
+      }
+      if (sen.rows_live != null) $('rc-rows').textContent = Number(sen.rows_live).toLocaleString();
+      if (sen.complete_days_last_30 != null) {
+        $('rc-days').textContent = sen.complete_days_last_30 + '/30';
+        $('rc-days').style.color = sen.complete_days_last_30 >= 29 ? '#6ee7b7' : '#fcd34d';
+      }
+    })
+    .catch(function () {});
+})();
+</script>
 </body>
 </html>
