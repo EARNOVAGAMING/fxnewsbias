@@ -1,4 +1,4 @@
-# FXNewsBias — https://fxnewsbias.com
+# FXNewsBias, https://fxnewsbias.com
 # AI-scored forex news sentiment for the 8 major currencies.
 # Developer API: https://fxnewsbias.com/developers
 

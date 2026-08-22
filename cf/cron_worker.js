@@ -212,8 +212,21 @@ try {
 // answered here so anything already polling it keeps working.
 if (url.pathname === '/run-bing-ingest') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
-const out = await ingestBingPerformance(env);
-return new Response(JSON.stringify(out, null, 2), { headers: { 'Content-Type': 'application/json' } });
+const perf = await ingestBingPerformance(env);
+const crawl = await ingestBingCrawlStats(env);
+return new Response(JSON.stringify({ performance: perf, crawl }, null, 2), { headers: { 'Content-Type': 'application/json' } });
+}
+
+// Ops: find sitemap URLs Bing has never fetched and spend the free daily
+// submission quota on them. Same work the daily slot does, on demand.
+if (url.pathname === '/run-bing-submit') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const sm = await fetch('https://fxnewsbias.com/sitemap.xml', { signal: AbortSignal.timeout(20000) });
+if (!sm.ok) return new Response(JSON.stringify({ ok: false, error: `sitemap HTTP ${sm.status}` }), { status: 502, headers: { 'Content-Type': 'application/json' } });
+const locs = [...(await sm.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1].trim());
+const missing = await bingUndiscoveredUrls(env, locs, 100);
+const res = missing.length ? await submitBingUrls(env, missing) : { ok: true, submitted: 0 };
+return new Response(JSON.stringify({ sitemap_urls: locs.length, undiscovered: missing.length, sample: missing.slice(0, 20), submit: res }, null, 2), { headers: { 'Content-Type': 'application/json' } });
 }
 
 if (url.pathname === '/data-quality' || url.pathname === '/data-quality.json') {
@@ -576,6 +589,20 @@ if (event.cron === '*/15 * * * *') {
       // Same daily slot for Bing, so both engines land together and can be
       // compared on the admin page without a second dashboard.
       await ingestBingPerformance(env).catch(e => console.log('ingestBingPerformance error:', e.message));
+      await ingestBingCrawlStats(env).catch(e => console.log('ingestBingCrawlStats error:', e.message));
+      // Close the discovery gap the crawl stats keep exposing: read the live
+      // sitemap, ask Bing which of those URLs it has never fetched, and spend
+      // the free daily quota on exactly those. /developers, /pricing and
+      // /data-quality sat in the sitemap for days without Bing ever fetching
+      // them, so listing a URL is plainly not enough on its own.
+      await (async () => {
+        const sm = await fetch('https://fxnewsbias.com/sitemap.xml', { signal: AbortSignal.timeout(20000) });
+        if (!sm.ok) throw new Error(`sitemap HTTP ${sm.status}`);
+        const locs = [...(await sm.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1].trim());
+        const missing = await bingUndiscoveredUrls(env, locs, 100);
+        if (missing.length) await submitBingUrls(env, missing);
+        else console.log('bingUndiscoveredUrls: nothing missing');
+      })().catch(e => console.log('submitBingUrls error:', e.message));
       await pruneStaleInsights(env).catch(e => console.log('pruneStaleInsights error:', e.message));
       // Self-healing signup net: any registrant whose browser-side welcome
       // call was aborted gets picked up here within a day.
@@ -1359,6 +1386,144 @@ async function ingestBingPerformance(env) {
   }
   console.log('ingestBingPerformance:', JSON.stringify(out));
   return out;
+}
+
+// Crawl and index health, one row per day. GetCrawlStats returns a series
+// running oldest to newest, so the last row is today and in_index on that row
+// is the live count of our pages Bing holds. That single number is the honest
+// answer to "is the site gaining ground in Bing", which query stats cannot
+// give: impressions can rise while indexing stalls, and vice versa.
+async function ingestBingCrawlStats(env) {
+  if (!env.BING_API_KEY) return { ok: false, reason: 'no-key' };
+  const out = { ok: true, days: 0, latest: null, errors: [] };
+  let series;
+  try { series = (await _bingGet(env, 'GetCrawlStats')) || []; }
+  catch (e) { out.ok = false; out.errors.push(e.message); console.log('ingestBingCrawlStats:', e.message); return out; }
+
+  const now = new Date().toISOString();
+  const byDate = new Map();
+  for (const d of series) {
+    const date = _bingDate(d.Date);
+    if (!date) continue;
+    byDate.set(date, {
+      date,
+      crawled_pages: d.CrawledPages || 0,
+      in_index: d.InIndex || 0,
+      in_links: d.InLinks || 0,
+      blocked_by_robots: d.BlockedByRobotsTxt || 0,
+      crawl_errors: d.CrawlErrors || 0,
+      code_2xx: d.Code2xx || 0,
+      code_301: d.Code301 || 0,
+      code_302: d.Code302 || 0,
+      code_4xx: d.Code4xx || 0,
+      code_5xx: d.Code5xx || 0,
+      dns_failures: d.DnsFailures || 0,
+      timeouts: d.ConnectionTimeout || 0,
+      malware: d.ContainsMalware || 0,
+      fetched_at: now,
+    });
+  }
+  const rows = [...byDate.values()].sort((a, b) => a.date < b.date ? -1 : 1);
+  if (!rows.length) return out;
+  out.days = rows.length;
+  out.latest = rows[rows.length - 1];
+
+  for (let i = 0; i < rows.length; i += 500) {
+    const chunk = rows.slice(i, i + 500);
+    const up = await fetch(`${env.SUPABASE_URL}/rest/v1/bing_crawl_stats?on_conflict=date`, {
+      method: 'POST',
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(chunk), signal: AbortSignal.timeout(25000),
+    });
+    if (!up.ok) out.errors.push(`upsert ${up.status}: ${(await up.text()).slice(0, 160)}`);
+  }
+  console.log('ingestBingCrawlStats:', JSON.stringify({ days: out.days, in_index: out.latest.in_index,
+    crawled: out.latest.crawled_pages, in_links: out.latest.in_links, errors: out.errors }));
+  return out;
+}
+
+// Direct URL submission, a second discovery channel alongside IndexNow.
+// IndexNow failed silently for three months without anyone noticing, because
+// it answers with a bare status and no per-URL detail. SubmitUrlBatch answers
+// with an HTTP error we can log and a quota we can read back, so a broken
+// channel shows up in step_runs the next day instead of in a traffic chart
+// months later. Bing gives 100 URLs a day free; spending them on pages it has
+// never discovered costs nothing and needs no human.
+// step_runs rows carry the same shape everywhere so the ops dashboard can read
+// them without special cases: a failed submission has to be as visible as a
+// failed generation step.
+async function _bingStep(env, status, message) {
+  const now = new Date().toISOString();
+  try {
+    await _writeStepRun(env, {
+      step_name: 'bing_submit', started_at: now, ended_at: now, duration_seconds: 0,
+      status, error_message: status === 'success' ? null : String(message).slice(0, 500),
+      retry_attempt: 0, cycle_timestamp: now,
+    });
+  } catch { /* telemetry must never break the submission */ }
+}
+
+async function submitBingUrls(env, urls) {
+  if (!env.BING_API_KEY) return { ok: false, reason: 'no-key' };
+  const list = [...new Set((urls || []).filter(u => /^https:\/\/fxnewsbias\.com\//.test(u)))];
+  if (!list.length) return { ok: true, submitted: 0 };
+
+  let daily = 0;
+  try {
+    const q = await _bingGet(env, 'GetUrlSubmissionQuota');
+    daily = (q && q.DailyQuota) || 0;
+  } catch (e) {
+    await _bingStep(env, 'failed', `quota: ${e.message}`);
+    return { ok: false, reason: 'quota-read-failed', error: e.message };
+  }
+  if (daily <= 0) return { ok: true, submitted: 0, reason: 'quota-exhausted' };
+
+  const batch = list.slice(0, Math.min(daily, 100));
+  const url = `${_BING_API}/SubmitUrlBatch?apikey=${encodeURIComponent(env.BING_API_KEY)}`;
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ siteUrl: 'https://fxnewsbias.com', urlList: batch }),
+      signal: AbortSignal.timeout(25000),
+    });
+    const body = (await r.text()).slice(0, 300);
+    if (!r.ok) {
+      await _bingStep(env, 'failed', `HTTP ${r.status}: ${body}`);
+      return { ok: false, status: r.status, body };
+    }
+    await _bingStep(env, 'success', `submitted ${batch.length} of ${daily} daily quota`);
+    return { ok: true, submitted: batch.length, quota_before: daily };
+  } catch (e) {
+    await _bingStep(env, 'failed', e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+// Which of our sitemap URLs Bing has never fetched. GetUrlInfo answers with a
+// sentinel LastCrawledDate of year 1 for a URL it has not seen, which is how
+// three pages sat undiscovered while the sitemap listed them. Checking is
+// cheap and unquotaed; submitting is what costs quota, so check first and
+// spend the batch only on genuine gaps.
+async function bingUndiscoveredUrls(env, candidates, limit = 100, scanCap = 220) {
+  if (!env.BING_API_KEY) return [];
+  const list = [...new Set(candidates)].slice(0, scanCap);
+  const missing = [];
+  // Six at a time: sequential lookups over a whole sitemap take long enough to
+  // crowd out the rest of the daily slot, and Bing is comfortable at this rate.
+  for (let i = 0; i < list.length && missing.length < limit; i += 6) {
+    const found = await Promise.all(list.slice(i, i + 6).map(async u => {
+      try {
+        const info = await _bingGet(env, 'GetUrlInfo', `&url=${encodeURIComponent(u)}`);
+        const crawled = _bingDate(info && info.LastCrawledDate);
+        // Never-fetched URLs come back with a year-1 sentinel date, not null.
+        return (!crawled || crawled < '1990-01-01') ? u : null;
+      } catch { return null; } // a failed lookup is not evidence of a gap
+    }));
+    missing.push(...found.filter(Boolean));
+  }
+  return missing.slice(0, limit);
 }
 
 async function ingestGscPerformance(env, opts = {}) {
@@ -6481,6 +6646,59 @@ async function handleAdminSendTest(request, env) {
   }
 }
 
+
+// Bing and Search Console side by side. Everything here is best-effort: a
+// dashboard that fails to load because one search engine's table is empty
+// would be worse than one that shows a blank panel.
+async function _adminSearchVisibility(env) {
+  const out = { bing: null, google: null };
+  const sbh = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` };
+  const since = new Date(Date.now() - 28 * 864e5).toISOString().slice(0, 10);
+  const prior = new Date(Date.now() - 56 * 864e5).toISOString().slice(0, 10);
+
+  const totals = async (table) => {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/${table}?select=date,clicks,impressions&dimension=eq.site&date=gte.${prior}`,
+      { headers: sbh, signal: AbortSignal.timeout(15000) });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    const sum = (f) => rows.filter(f).reduce((a, x) => ({ clicks: a.clicks + (x.clicks || 0), impressions: a.impressions + (x.impressions || 0) }), { clicks: 0, impressions: 0 });
+    return { last28: sum(x => x.date >= since), prior28: sum(x => x.date < since) };
+  };
+
+  try {
+    const [crawlRes, perf] = await Promise.all([
+      fetch(`${env.SUPABASE_URL}/rest/v1/bing_crawl_stats?select=date,in_index,crawled_pages,in_links,blocked_by_robots,crawl_errors&order=date.desc&limit=30`,
+        { headers: sbh, signal: AbortSignal.timeout(15000) }),
+      totals('bing_performance'),
+    ]);
+    const days = crawlRes.ok ? await crawlRes.json() : [];
+    const latest = days[0] || null;
+    const monthAgo = days[days.length - 1] || null;
+    out.bing = {
+      inIndex: latest ? latest.in_index : null,
+      inIndex30dAgo: monthAgo ? monthAgo.in_index : null,
+      crawledYesterday: latest ? latest.crawled_pages : null,
+      inLinks: latest ? latest.in_links : null,
+      blockedByRobots: latest ? latest.blocked_by_robots : null,
+      crawlErrors: latest ? latest.crawl_errors : null,
+      asOf: latest ? latest.date : null,
+      traffic: perf,
+    };
+  } catch (e) { console.log('_adminSearchVisibility bing:', e.message); }
+
+  try {
+    const [perf, pagesRes] = await Promise.all([
+      totals('gsc_performance'),
+      fetch(`${env.SUPABASE_URL}/rest/v1/gsc_performance?select=key&dimension=eq.page&date=gte.${since}&limit=2000`,
+        { headers: sbh, signal: AbortSignal.timeout(15000) }),
+    ]);
+    const pages = pagesRes.ok ? await pagesRes.json() : [];
+    out.google = { traffic: perf, pagesWithImpressions: new Set(pages.map(p => p.key)).size };
+  } catch (e) { console.log('_adminSearchVisibility google:', e.message); }
+
+  return out;
+}
+
 async function handleAdminData(request, env) {
   const ADMIN_EMAILS = ['dineshsanther123gf@gmail.com'];
   const FIREBASE_API_KEY = env.FIREBASE_API_KEY || 'AIzaSyD88nfD-GSk2icxgPMqOHOuLjCM19Zzso4';
@@ -6616,7 +6834,13 @@ async function handleAdminData(request, env) {
       apiCallsToday: rows.reduce((n, r) => n + (r.apiUsedToday || 0), 0),
       apiActiveToday: rows.filter(r => (r.apiUsedToday || 0) > 0).length,
     };
-    return new Response(JSON.stringify({ ok: true, stats, users: rows, generatedAt: new Date().toISOString() }), { status: 200, headers: cors });
+    // Search visibility. Bing indexing was invisible until it was queried by
+    // hand and turned out to have three pages it had never fetched, so the
+    // numbers that would have shown that live here now: how many of our pages
+    // each engine holds, and what they earned over the last 28 days.
+    const search = await _adminSearchVisibility(env);
+
+    return new Response(JSON.stringify({ ok: true, stats, search, users: rows, generatedAt: new Date().toISOString() }), { status: 200, headers: cors });
   } catch (e) {
     console.error('admin-data error:', e.message);
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
@@ -7168,15 +7392,15 @@ async function generateAllPairSEO(env, opts = {}) {
 // (keys seo_intelligence:latest + seo_intelligence:<weekEnd>); read it via the
 // authed GET /seo-intelligence, or trigger manually via GET /run-seo-intelligence.
 // ============================================
-async function _seoAggGsc(env, dim, days) {
+async function _seoAggGsc(env, dim, days, table = 'gsc_performance') {
   const cutoff = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
   let all = [], from = 0;
   while (true) {
-    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/gsc_performance?select=key,clicks,impressions,position&dimension=eq.${dim}&date=gte.${cutoff}`, {
+    const r = await fetch(`${env.SUPABASE_URL}/rest/v1/${table}?select=key,clicks,impressions,position&dimension=eq.${dim}&date=gte.${cutoff}`, {
       headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, Range: `${from}-${from + 999}` },
       signal: AbortSignal.timeout(20000),
     });
-    if (!r.ok) { console.log(`_seoAggGsc ${dim} non-ok:`, r.status); break; }
+    if (!r.ok) { console.log(`_seoAggGsc ${table} ${dim} non-ok:`, r.status); break; }
     const rows = await r.json();
     all.push(...rows);
     if (rows.length < 1000) break;
@@ -7203,15 +7427,26 @@ function _seoClassifyPage(p) {
 async function runSeoIntelligence(env) {
   try {
     if (!env.CLAUDE_API_KEY) { console.log('runSeoIntelligence: CLAUDE_API_KEY missing'); return { ok: false, reason: 'no-api-key' }; }
-    const [pagesRaw, queriesRaw] = await Promise.all([_seoAggGsc(env, 'page', 28), _seoAggGsc(env, 'query', 28)]);
+    // Bing is pulled in alongside Google because the two ask different
+    // questions of us. Google sends keyword searches; Bing increasingly sends
+    // Copilot, so its query log is full of long spoken-language requests
+    // ("give me the bias for eur/usd usd/jpy and gold") that never show up in
+    // Search Console. Planning off Google alone would miss that demand.
+    const [pagesRaw, queriesRaw, bingQueriesRaw] = await Promise.all([
+      _seoAggGsc(env, 'page', 28),
+      _seoAggGsc(env, 'query', 28),
+      _seoAggGsc(env, 'query', 28, 'bing_performance').catch(() => []),
+    ]);
     const pages = pagesRaw.map(p => ({ ...p, url: p.k.replace('https://fxnewsbias.com', '') || '/', bucket: _seoClassifyPage(p) }))
       .filter(p => p.bucket !== 'low').sort((a, b) => b.impr - a.impr);
     const queries = queriesRaw.filter(q => q.impr >= 2 && q.pos > 10).sort((a, b) => b.impr - a.impr).slice(0, 25);
-    if (!pages.length && !queries.length) { console.log('runSeoIntelligence: no GSC data yet'); return { ok: false, reason: 'no-data' }; }
+    if (!pages.length && !queries.length) { console.log('runSeoIntelligence: no search data yet'); return { ok: false, reason: 'no-data' }; }
 
     const pageLines = pages.slice(0, 20).map(p => `${p.url} | impr=${p.impr} ctr=${(p.ctr * 100).toFixed(0)}% pos=${p.pos.toFixed(1)} | ${p.bucket}`).join('\n');
     const qLines = queries.map(q => `"${q.k}" | impr=${q.impr} pos=${q.pos.toFixed(0)}`).join('\n');
-    const prompt = `You are the SEO Intelligence analyst for FXNewsBias.com (a live forex sentiment site). Below is the last 28 days of Google Search Console data. Produce a PRIORITISED weekly action plan.
+    const bingQueries = (bingQueriesRaw || []).filter(q => q.k && q.impr >= 2).sort((a, b) => b.impr - a.impr).slice(0, 20);
+    const bingLines = bingQueries.map(q => `"${q.k}" | impr=${q.impr} clicks=${q.clicks} pos=${q.pos.toFixed(0)}`).join('\n');
+    const prompt = `You are the SEO Intelligence analyst for FXNewsBias.com (a live forex sentiment site). Below is the last 28 days of Google Search Console and Bing Webmaster data. Produce a PRIORITISED weekly action plan.
 
 PAGE PERFORMANCE (site-relative url | impressions, CTR, avg position | bucket):
 ${pageLines}
@@ -7219,11 +7454,14 @@ ${pageLines}
 UNDER-RANKED DEMAND (queries we get impressions for but rank below position 10):
 ${qLines}
 
+BING AND COPILOT DEMAND (same 28 days, from Bing Webmaster; these skew towards spoken-language assistant queries):
+${bingLines || '(no Bing data yet)'}
+
 Buckets: protect=leave alone (ranking well); ctr_gap=good position weak CTR -> rewrite title; near_winner=pos 5-15, a small push reaches page 1; expand=has demand but ranks deep -> needs more/better content.
 
 Return ONLY a JSON array (max 10 items), highest ROI first. Each item:
 {"target":"<url or query>","kind":"page|query","action":"rewrite_title|expand_content|add_faq|internal_link_boost|build_section|consolidate","priority":1-10,"effort":"low|med|high","why":"<one specific sentence tied to the data>"}
-Rules: prefer actions that turn near_winners and high-impression under-ranked queries into page-1 clicks. Do not recommend touching 'protect' pages. Be specific (name the page/query). No prose outside the JSON.`;
+Rules: prefer actions that turn near_winners and high-impression under-ranked queries into page-1 clicks. Where Bing demand shows a question we rank for but do not answer directly on the page, say so. Do not recommend touching 'protect' pages. Be specific (name the page/query). No prose outside the JSON.`;
 
     let actions = [];
     try {
@@ -7254,6 +7492,7 @@ Rules: prefer actions that turn near_winners and high-impression under-ranked qu
       // Keep the raw evidence alongside the plan so the view is useful even if the LLM call failed.
       top_pages: pages.slice(0, 20).map(p => ({ url: p.url, impr: p.impr, ctr: +(p.ctr * 100).toFixed(1), pos: +p.pos.toFixed(1), bucket: p.bucket })),
       top_queries: queries.map(q => ({ query: q.k, impr: q.impr, pos: +q.pos.toFixed(1) })),
+      top_bing_queries: bingQueries.map(q => ({ query: q.k, impr: q.impr, clicks: q.clicks, pos: +q.pos.toFixed(1) })),
     };
     const weekEnd = new Date().toISOString().slice(0, 10);
     await writeSystemState(env, 'seo_intelligence:latest', plan);

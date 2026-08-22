@@ -99,6 +99,7 @@ const root = document.getElementById('root');
 
 let allUsers = [];
 let stats = {};
+let search = {};
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(iso){if(!iso)return '—';const d=new Date(iso);return d.toLocaleString('en-MY',{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});}
@@ -148,10 +149,45 @@ async function loadData(idToken) {
     if (!r.ok || d.error) throw new Error(d.error || ('HTTP ' + r.status));
     allUsers = d.users || [];
     stats = d.stats || {};
+    search = d.search || {};
     renderDash();
   } catch (e) {
     root.innerHTML = `<div class="empty">Error loading data: ${esc(e.message)}<br><br><button class="btn" onclick="location.reload()">Retry</button></div>`;
   }
+}
+
+// Search visibility. Pages held by each engine matters more than clicks at
+// this size: clicks follow indexing, and indexing is the thing that can quietly
+// stop without anything else looking wrong.
+function renderSearch() {
+  const b = search.bing, g = search.google;
+  if (!b && !g) return '';
+  const n = v => (v === null || v === undefined) ? 'n/a' : Number(v).toLocaleString();
+  const delta = (now, then) => {
+    if (now === null || now === undefined || then === null || then === undefined) return '';
+    const d = now - then;
+    if (!d) return 'flat over 30 days';
+    return (d > 0 ? '+' : '') + d + ' in 30 days';
+  };
+  const trend = t => {
+    if (!t || !t.last28) return 'no data yet';
+    const c = t.last28.clicks, i = t.last28.impressions;
+    const pc = t.prior28 ? t.prior28.clicks : 0;
+    const arrow = !t.prior28 ? '' : (c > pc ? ' up' : c < pc ? ' down' : ' flat');
+    return n(c) + ' clicks · ' + n(i) + ' impressions' + (arrow ? ' (' + arrow.trim() + ' vs prior 28d)' : '');
+  };
+  const warn = [];
+  if (b && b.crawlErrors) warn.push(n(b.crawlErrors) + ' crawl error(s) yesterday');
+  if (b && b.inLinks !== null && b.inLinks < 20) warn.push('only ' + n(b.inLinks) + ' inbound links known to Bing');
+  return `
+    <div class="stats" style="margin-top:-6px;">
+      <div class="stat"><div class="label">Bing: pages indexed</div><div class="val">${n(b && b.inIndex)}</div><div class="sub">${b ? esc(delta(b.inIndex, b.inIndex30dAgo)) : ''}</div></div>
+      <div class="stat"><div class="label">Bing: crawled yesterday</div><div class="val">${n(b && b.crawledYesterday)}</div><div class="sub">${b && b.asOf ? 'as of ' + esc(b.asOf) : ''}</div></div>
+      <div class="stat"><div class="label">Bing: 28-day traffic</div><div class="val" style="font-size:15px;line-height:1.5;">${b ? esc(trend(b.traffic)) : 'n/a'}</div></div>
+      <div class="stat"><div class="label">Google: pages earning</div><div class="val">${n(g && g.pagesWithImpressions)}</div><div class="sub">with impressions, last 28 days</div></div>
+      <div class="stat"><div class="label">Google: 28-day traffic</div><div class="val" style="font-size:15px;line-height:1.5;">${g ? esc(trend(g.traffic)) : 'n/a'}</div></div>
+      ${warn.length ? `<div class="stat trial"><div class="label">Needs attention</div><div class="val" style="font-size:15px;line-height:1.5;">${esc(warn.join(' · '))}</div></div>` : ''}
+    </div>`;
 }
 
 function renderDash() {
@@ -181,6 +217,7 @@ function renderDash() {
       <div class="stat"><div class="label">API keys live</div><div class="val">${stats.apiKeys||0}</div><div class="sub">${stats.apiPro||0} Pro · ${stats.apiSandbox||0} Sandbox</div></div>
       <div class="stat"><div class="label">API calls today</div><div class="val">${stats.apiCallsToday||0}</div><div class="sub">${stats.apiActiveToday||0} key(s) active</div></div>
     </div>
+    ${renderSearch()}
     <div class="toolbar" style="flex-wrap:wrap;">
       <input id="t-email" placeholder="Send a test email to…" autocomplete="off" style="min-width:210px;">
       <button id="t-verify" class="btn">Send verification</button>
