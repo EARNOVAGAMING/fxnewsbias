@@ -55,6 +55,12 @@ FXNewsBias scans hundreds of forex news sources every 3 hours and uses Claude AI
 
 - [Forex Sentiment API](https://fxnewsbias.com/developers): REST API returning news sentiment scores for the 8 major currencies as JSON, refreshed every 3 hours, plus a session pair bias scorecard. Bearer token auth, 200 requests per day, included with FXNewsBias Pro at $30/month with a 7 day free trial. Forward data only, no historical series.
 
+## Legal and policies
+
+- [Terms of Service](https://fxnewsbias.com/terms): subscription plans, the one free trial per account rule, Developer API terms including attribution and redistribution limits, refunds, governing law.
+- [Privacy Policy](https://fxnewsbias.com/privacy): what is collected, the vendors used, cookie and retention detail.
+- [Risk Disclaimer](https://fxnewsbias.com/disclaimer): sentiment scores are descriptive news tone, not trading advice or signals. Applies to API data too.
+
 ## About
 
 - [How it works](https://fxnewsbias.com/how)

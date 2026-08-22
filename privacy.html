@@ -235,6 +235,10 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
       <li>Referring website (how you found us)</li>
       <li>Date and time of visits</li>
       <li>Subscription tier (Free / Pro) for feature gating</li>
+        <li><strong>Payment card fingerprint.</strong> When you start a free trial, Stripe gives us a non-reversible fingerprint of the card used. We store that fingerprint, not the card number, purely to enforce the one trial per person rule. It cannot be turned back into a card number and is never used for marketing.</li>
+        <li><strong>IP address for abuse limits.</strong> When you register or request an API key we record a counter against your IP address for that day, so a single address cannot open unlimited accounts or keys. These counters are aggregate and are not used to profile you.</li>
+        <li><strong>API key fingerprint and usage counts.</strong> If you use the Developer API we store a hash of your key, never the key itself, and a per-day count of requests made by your account.</li>
+        <li><strong>Web push subscription.</strong> If you allow browser notifications we store the push endpoint your browser issues, so we can deliver them. Revoking the permission in your browser ends this</li>
     </ul>
   </div>
 
@@ -247,7 +251,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
       <li><strong>Process payments</strong>, handle Pro subscription billing through Stripe.</li>
       <li><strong>Communication</strong>, respond to inquiries, send service-related and (if subscribed) marketing emails.</li>
       <li><strong>Improve the platform</strong>, analyze aggregated usage to refine features.</li>
-      <li><strong>Display ads</strong>, show relevant advertisements on the free tier (Google AdSense and partner ad networks).</li>
+      <li><strong>Display ads</strong>, show advertisements on the free tier through Google Campaign Manager and affiliate partners. Ads are not shown to Pro subscribers.</li>
       <li><strong>Security</strong>, detect fraud, abuse, automated scraping, and unauthorized access.</li>
       <li><strong>Legal compliance</strong>, comply with applicable laws and respond to lawful requests.</li>
     </ul>
@@ -262,7 +266,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
     <ul>
       <li><strong>Essential</strong>, <code>fxnb_logged_in</code> (login state flag), cookie-consent decision, and Firebase Authentication session tokens. Required for the site to function.</li>
       <li><strong>Analytics</strong>, Google Analytics 4 (<code>_ga</code>, <code>_ga_*</code>) to measure aggregated traffic.</li>
-      <li><strong>Advertising</strong>, Google AdSense sets cookies to serve relevant ads on the free tier. Disabled for Pro subscribers.</li>
+      <li><strong>Advertising</strong>, Our advertising partners set cookies to serve ads on the free tier. Ads are delivered through Google Campaign Manager, and the current advertiser is Pepperstone, an affiliate partner. Disabled for Pro subscribers.</li>
       <li><strong>Preference</strong>, UI choices (e.g. tab selection, dismissed banners) stored in localStorage on your device only.</li>
     </ul>
     <p>You can decline non-essential cookies via the consent banner shown on your first visit, and you can clear cookies at any time through your browser settings. Declining analytics/advertising cookies does not affect the core dashboard functionality.</p>
@@ -281,7 +285,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
       <li><strong>Resend</strong>, sends transactional emails (verification, password reset, Daily Brief, alerts). Receives your email address and message contents.</li>
       <li><strong>Telegram Bot API</strong>, delivers Telegram alerts to users who opt in. Receives your Telegram chat ID and the alert message.</li>
       <li><strong>Google Analytics 4</strong>, anonymized traffic and behaviour analytics.</li>
-      <li><strong>Google AdSense / Google Ad Manager and partner ad networks</strong>, display advertising on the free tier (disabled for Pro subscribers).</li>
+      <li><strong>Google Campaign Manager and affiliate partners (currently Pepperstone)</strong>, display advertising on the free tier (disabled for Pro subscribers).</li>
       <li><strong>Google Favicon Service (s2/favicons)</strong>, when news cards render, your browser fetches each publisher's favicon from <code>google.com/s2/favicons</code>. This is a passive request to Google and may be logged by Google per their own privacy policy.</li>
       <li><strong>Investing.com Calendar widget</strong>, embedded as an iframe on the calendar page; subject to Investing.com's own cookie and tracking policies.</li>
     </ul>
@@ -320,6 +324,9 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
       <li><strong>Payment records</strong>, retained by Stripe and by us for at least 7 years to meet financial record-keeping obligations.</li>
       <li><strong>Analytics</strong>, Google Analytics retains aggregated data for up to 14 months by default.</li>
       <li><strong>Email logs</strong>, Resend retains delivery metadata for up to 90 days.</li>
+        <li><strong>Trial card fingerprints</strong>, kept for as long as the one trial per person rule needs to be enforceable. Deleting your account does not remove the fingerprint, because doing so would defeat the rule it exists to enforce. It is not linked to anything but the trial check.</li>
+        <li><strong>API key hashes and usage counters</strong>, kept while the key is active and for a short period afterwards for abuse investigation. Daily request counters are aggregate.</li>
+        <li><strong>Abuse counters against IP addresses</strong>, kept for the day they apply to and then superseded.</li>
     </ul>
   </div>
 

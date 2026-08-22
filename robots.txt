@@ -1,6 +1,79 @@
+# FXNewsBias — https://fxnewsbias.com
+# AI-scored forex news sentiment for the 8 major currencies.
+# Developer API: https://fxnewsbias.com/developers
+
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /forecast-admin
+Disallow: /forecast-admin.html
 Disallow: /auth-action
 Disallow: /auth-action.html
+Disallow: /profile
+Disallow: /*?checkout=
+Disallow: /*?paid=
+
+# ---------------------------------------------------------------------------
+# AI and answer engines are welcome. Google-Extended and Applebot-Extended are
+# opt-out tokens, so listing them with Allow is the explicit signal that our
+# public pages may be used for AI grounding and answers.
+# ---------------------------------------------------------------------------
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
 
 Sitemap: https://fxnewsbias.com/sitemap.xml

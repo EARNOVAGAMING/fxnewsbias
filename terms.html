@@ -208,16 +208,18 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
     <h3>📋 Table of Contents</h3>
     <ol>
       <li><a href="#acceptance">Acceptance of Terms</a></li>
-      <li><a href="#service">Use of Service & Features</a></li>
+      <li><a href="#service">Use of Service and Features</a></li>
       <li><a href="#accounts">User Accounts</a></li>
-      <li><a href="#subscription">Pro Subscription & Payments</a></li>
-      <li><a href="#alerts">Email & Telegram Alerts</a></li>
+      <li><a href="#subscription">Pro Subscription, Trial and Payments</a></li>
+      <li><a href="#api">Developer API</a></li>
+      <li><a href="#alerts">Email and Telegram Alerts</a></li>
       <li><a href="#community">Community Rules</a></li>
       <li><a href="#content">User Content</a></li>
-      <li><a href="#intellectual">Intellectual Property & Data Sources</a></li>
+      <li><a href="#intellectual">Intellectual Property and Data Sources</a></li>
       <li><a href="#termination">Termination</a></li>
-      <li><a href="#liability">Limitation of Liability</a></li>
-      <li><a href="#changes">Changes to Terms</a></li>
+      <li><a href="#liability">Disclaimers and Limitation of Liability</a></li>
+      <li><a href="#general">General Legal Terms</a></li>
+      <li><a href="#changes">Changes to These Terms</a></li>
       <li><a href="#contact">Contact</a></li>
     </ol>
   </div>
@@ -238,7 +240,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
       <li><strong>Sentiment Streaks</strong>, counts consecutive days a currency has stayed in the same sentiment regime.</li>
       <li><strong>24h Top Movers</strong>, biggest sentiment shifts over the last 24 hours.</li>
       <li><strong>Live News Feed</strong>, forex-relevant headlines aggregated from public RSS sources, with publisher favicons fetched via Google's public favicon service.</li>
-      <li><strong>Economic Calendar, Currency Pages, Pair Pages, Historical Reports.</strong></li>
+      <li><strong>Economic Calendar, Currency Pages, Pair Pages, Session Bias Scorecard, and the Daily Insight briefings.</strong></li>
       <li><strong>Community Forum</strong> for registered users.</li>
     </ul>
     <p>By using this Service you agree that:</p>
@@ -267,19 +269,55 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="subscription">
-    <h2>4. Pro Subscription & Payments</h2>
-    <p>FXNewsBias offers an optional <strong>Pro</strong> subscription that removes advertising and unlocks premium features: <strong>Sentiment History Charts</strong> (full bias history per currency), <strong>Weekly PDF Reports</strong> (institutional-style market wrap every Sunday), and <strong>Priority Support</strong>. Payment processing is handled by <strong>Stripe</strong>; we do not store your card details on our servers.</p>
+    <h2>4. Pro Subscription, Trial and Payments</h2>
+    <p>FXNewsBias offers an optional <strong>Pro</strong> subscription. Pro removes advertising and unlocks sentiment history charts (7, 30 and 90 day views), bias flip email alerts, the Weekly Intelligence Brief, the Pro Dashboard, CSV export of your sentiment history, and access to the Developer API described in section 5.</p>
+
+    <h3>4.1 Plans and pricing</h3>
+    <p>Pro is offered on three billing periods. The features are identical on every period, only the commitment length and the effective monthly cost differ.</p>
     <ul>
-      <li><strong>Billing:</strong> Subscriptions renew automatically until cancelled. Charges appear under "FXNewsBias" or our merchant name.</li>
-      <li><strong>Cancellation:</strong> You may cancel at any time from your profile page or via the Stripe customer portal. Access continues until the end of the current billing period.</li>
-      <li><strong>Refunds:</strong> Subscription fees are generally non-refundable. We may issue pro-rated refunds at our discretion for proven service outages or billing errors.</li>
-      <li><strong>Pricing changes:</strong> We may adjust subscription pricing with at least 14 days advance email notice; the new price applies at your next renewal.</li>
-      <li><strong>Free tier:</strong> The free tier is supported by advertising. We may change the features available on the free tier at any time.</li>
+      <li><strong>Monthly</strong>, $30 per month, renewing every month.</li>
+      <li><strong>Three months</strong>, $75, renewing every three months.</li>
+      <li><strong>Yearly</strong>, $240, renewing every year.</li>
+    </ul>
+    <p>All prices are in United States dollars and exclude any taxes that may apply in your country. You may change billing period at any time from the billing portal, and Stripe credits the unused portion of the period you already paid for against the new plan.</p>
+
+    <h3>4.2 Free trial, one per account</h3>
+    <p>New accounts may start a <strong>7 day free trial</strong>. The trial is limited to <strong>one per account, ever</strong>. Eligibility is checked before checkout and again when the subscription is created, using your account history and the payment method presented. An account that has already held any subscription, or a payment card that has already been used to open a trial, is not eligible for another trial and is offered the paid plans instead.</p>
+    <p>A valid payment method is required to start a trial. Nothing is charged during the trial. If you cancel before the trial ends you are charged nothing at all. If you do not cancel, the plan you selected is charged when the trial ends and renews on that plan's cycle.</p>
+    <p>Attempting to obtain more than one trial, including by creating additional accounts, is a breach of these terms. Where we detect a repeat trial we cancel the subscription rather than converting it into a charge, so you are never billed unexpectedly.</p>
+
+    <h3>4.3 Billing and cancellation</h3>
+    <p>Payment processing is handled by <strong>Stripe</strong>. We never receive or store your full card number. Subscriptions renew automatically until cancelled. You may cancel at any time from your profile page or the Stripe billing portal, and access continues to the end of the period you have already paid for.</p>
+    <p>If a renewal payment fails, Stripe retries the payment for a limited period. Pro features and any active API key are suspended while the subscription is not in good standing, and are restored when a payment succeeds.</p>
+
+    <h3>4.4 Refunds</h3>
+    <p>Subscription fees are generally non-refundable, and cancelling stops future renewals rather than refunding the period in progress. We may issue a full or pro-rated refund at our discretion, for example for a proven service outage or a billing error. Nothing in this section limits any statutory cancellation or refund right you have as a consumer under the law of your own country. Where such a right applies, it takes precedence over this paragraph.</p>
+
+    <h3>4.5 Pricing changes</h3>
+    <p>We may adjust subscription pricing with at least 14 days advance notice by email. A new price applies from your next renewal and you may cancel before it takes effect. A period already paid for is not repriced.</p>
+
+    <h3>4.6 Free tier</h3>
+    <p>The free tier is supported by advertising. We may change the features available on the free tier at any time. The core sentiment dashboard is intended to remain free.</p>
+  </div>
+
+  <div class="section" id="api">
+    <h2>5. Developer API</h2>
+    <p>Pro includes access to the FXNewsBias Developer API. Full technical documentation is published at <a href="/developers">/developers</a>. The following terms govern its use.</p>
+    <ul>
+      <li><strong>Eligibility.</strong> API access is part of Pro and works throughout the free trial. It is not sold separately.</li>
+      <li><strong>Keys.</strong> One active key per account. The key is shown once at creation because we store only a fingerprint of it and cannot display it again. You are responsible for keeping it secret and for all requests made with it.</li>
+      <li><strong>Rate limit.</strong> 200 requests per UTC calendar day per account, resetting at 00:00 UTC. The allowance follows the account, not the key, so regenerating a key does not reset it. Requests beyond the limit return HTTP 429.</li>
+      <li><strong>Scope of data.</strong> The API serves forward data, meaning the current reading and everything published from the moment you subscribe. Historical series are not available through the API. A separate data licence is available on request.</li>
+      <li><strong>Attribution.</strong> Wherever the data is displayed or republished you must keep the attribution "Data by FXNewsBias" with a link to https://fxnewsbias.com. The required attribution text ships in every response.</li>
+      <li><strong>Permitted use.</strong> Your subscription covers commercial use inside your own product or workflow.</li>
+      <li><strong>Prohibited use.</strong> You may not redistribute or resell the raw data, provide it to third parties as a feed, use it to train a model that reproduces the scores, or use it to build a competing sentiment service. You may not share a key across separate users, products or organisations.</li>
+      <li><strong>Suspension.</strong> Your key works while your subscription is active, including during the trial, and stops when the subscription ends, is cancelled, or a payment fails. We may suspend a key immediately where we detect sharing, abuse, or use that threatens the stability of the service.</li>
+      <li><strong>No service level.</strong> The API is provided on a best-effort basis. We do not guarantee uptime, latency, or that any endpoint will remain available. The v1 response shape is frozen, and any breaking change would be published as a new version.</li>
     </ul>
   </div>
 
   <div class="section" id="alerts">
-    <h2>5. Email & Telegram Alerts</h2>
+    <h2>6. Email and Telegram Alerts</h2>
     <p>Registered users may opt in to receive notifications:</p>
     <ul>
       <li><strong>Email alerts and the Daily Brief</strong> are delivered via <strong>Resend</strong>. You can unsubscribe at any time via the link in any email.</li>
@@ -289,7 +327,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="community">
-    <h2>6. Community Rules</h2>
+    <h2>7. Community Rules</h2>
     <p>FXNewsBias has a strict community moderation policy. All posts and comments must follow these rules:</p>
     <div class="rules-grid">
       <div class="rules-card allowed">
@@ -323,7 +361,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="content">
-    <h2>7. User Content</h2>
+    <h2>8. User Content</h2>
     <p>By posting content on FXNewsBias, you grant us a non-exclusive, worldwide, royalty-free license to use, display, and distribute that content on our platform. You represent that:</p>
     <ul>
       <li>You own or have rights to post the content</li>
@@ -335,7 +373,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="intellectual">
-    <h2>8. Intellectual Property & Data Sources</h2>
+    <h2>9. Intellectual Property and Data Sources</h2>
     <p>The FXNewsBias platform, including its design, logo, sentiment scoring methodology, Market Pulse gauge, Divergence detector, Streaks calculator, and original written content, is owned by FXNewsBias and protected by intellectual property laws.</p>
     <p><strong>Third-party data:</strong> Currency price quotes are sourced from TwelveData. News headlines are aggregated from publicly available RSS feeds owned by their respective publishers (Reuters, Bloomberg, BBC, MarketWatch, Yahoo Finance, FXStreet, and others). Publisher favicons displayed alongside news cards are loaded directly from Google's public favicon service. We claim no ownership of third-party headlines, prices, logos, or trademarks; clicking a news card opens the original article on the publisher's site.</p>
     <p>You may not:</p>
@@ -350,7 +388,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="termination">
-    <h2>9. Termination</h2>
+    <h2>10. Termination</h2>
     <p>We may terminate or suspend your account immediately, without prior notice, for conduct that we believe:</p>
     <ul>
       <li>Violates these Terms of Service</li>
@@ -362,7 +400,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
   </div>
 
   <div class="section" id="liability">
-    <h2>10. Limitation of Liability</h2>
+    <h2>11. Disclaimers and Limitation of Liability</h2>
     <p>To the maximum extent permitted by law, FXNewsBias shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the Service, including but not limited to:</p>
     <ul>
       <li>Trading losses based on our sentiment data</li>
@@ -376,13 +414,42 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;}
     </div>
   </div>
 
+  <div class="section" id="general">
+    <h2>12. General Legal Terms</h2>
+
+    <h3>12.1 Service provided as is</h3>
+    <p>The Service is provided on an "as is" and "as available" basis without warranties of any kind, whether express or implied, including any implied warranty of merchantability, fitness for a particular purpose, accuracy, or non-infringement. We do not warrant that the Service will be uninterrupted, timely, secure, or error free, or that sentiment scores, prices, calendar entries or news headlines are accurate, complete or current.</p>
+
+    <h3>12.2 Governing law and disputes</h3>
+    <p>These terms are governed by the laws of Malaysia, without regard to its conflict of law rules, and the courts of Malaysia have non-exclusive jurisdiction over any dispute arising from them. If you are a consumer resident elsewhere, this does not deprive you of the protection of any mandatory consumer law of your country of residence, and you may also bring proceedings in your local courts where that law allows.</p>
+    <p>Before starting formal proceedings we ask that you contact us at <a href="mailto:contact@fxnewsbias.com">contact@fxnewsbias.com</a> so we can try to resolve the matter directly.</p>
+
+    <h3>12.3 Force majeure</h3>
+    <p>We are not liable for any failure or delay caused by events beyond our reasonable control, including outages at our hosting, database, payment, email or data providers, failures of upstream news or price feeds, network or internet failures, acts of government, or natural events.</p>
+
+    <h3>12.4 Severability</h3>
+    <p>If any provision of these terms is found unenforceable, that provision is limited or removed to the minimum extent necessary and the remaining provisions stay in full force.</p>
+
+    <h3>12.5 No waiver</h3>
+    <p>Our failure to enforce any provision is not a waiver of our right to enforce it later.</p>
+
+    <h3>12.6 Assignment</h3>
+    <p>You may not assign or transfer your account or these terms without our written consent. We may assign these terms to a successor in connection with a merger, acquisition, or sale of assets, on notice to you.</p>
+
+    <h3>12.7 Entire agreement</h3>
+    <p>These terms, together with the <a href="/privacy">Privacy Policy</a> and the <a href="/disclaimer">Risk Disclaimer</a>, form the entire agreement between you and FXNewsBias regarding the Service and supersede any prior understanding.</p>
+
+    <h3>12.8 Copyright complaints</h3>
+    <p>We aggregate headlines and links from public feeds and do not store or republish article bodies. If you are a rights holder and believe material on FXNewsBias infringes your copyright, email <a href="mailto:contact@fxnewsbias.com">contact@fxnewsbias.com</a> with the subject "Copyright", identifying the material, the work you say it infringes, your contact details, and a statement that you are authorised to act. We remove infringing material promptly on a valid notice.</p>
+  </div>
+
   <div class="section" id="changes">
-    <h2>11. Changes to Terms</h2>
+    <h2>13. Changes to These Terms</h2>
     <p>We reserve the right to modify these terms at any time. We will notify registered users of significant changes via email. Continued use of the Service after changes constitutes acceptance of the new terms.</p>
   </div>
 
   <div class="section" id="contact">
-    <h2>12. Contact</h2>
+    <h2>14. Contact</h2>
     <p>If you have questions about these Terms of Service, please contact us through our <a href="/contact" style="color:var(--accent);">contact page</a>.</p>
   </div>
 

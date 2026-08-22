@@ -1640,7 +1640,7 @@ async function handleWelcomeEmail(request, env) {
   const email = _wu.email;
 
   const firstName = name.split(' ')[0] || 'there';
-  const from = env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com';
+  const from = env.ALERT_EMAIL_FROM || 'contact@fxnewsbias.com';
   const unsubUrl = await _unsubUrl(email, env);
 
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Welcome to FXNewsBias</title></head><body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
@@ -1964,7 +1964,7 @@ async function handleEmailUnsubscribe(request, env) {
 
 async function _sendReconcileWelcome(env, email, name) {
   const firstName = (name || '').split(' ')[0] || 'there';
-  const from = env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com';
+  const from = env.ALERT_EMAIL_FROM || 'contact@fxnewsbias.com';
   const unsubUrl = await _unsubUrl(email, env);
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -2096,7 +2096,7 @@ async function sendTestBroadcast(env, testEmail) {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: `FXNewsBias <${env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com'}>`,
+        from: `FXNewsBias <${env.ALERT_EMAIL_FROM || 'contact@fxnewsbias.com'}>`,
         to: [testEmail],
         subject: `[TEST] 📊 ${headline}`,
         html,
@@ -2254,7 +2254,7 @@ async function _sendBroadcastTo(env, audienceId, subject, html, name) {
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       audience_id: audienceId,
-      from: `FXNewsBias <${env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com'}>`,
+      from: `FXNewsBias <${env.ALERT_EMAIL_FROM || 'contact@fxnewsbias.com'}>`,
       subject,
       html,
       name,
@@ -2856,7 +2856,7 @@ async function handleApiKeyRequest(request, env) {
     });
     if (!ins.ok) return _apiJson({ error: 'server-error' }, 500);
 
-    const fromEmail = env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com';
+    const fromEmail = env.ALERT_EMAIL_FROM || 'contact@fxnewsbias.com';
     const mail = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -5974,7 +5974,7 @@ async function _sendVerifyEmail(env, email, name) {
   } catch (e) { /* fall back to the link Google gave us */ }
 
   const firstName = (name || '').split(' ')[0] || 'there';
-  const from = env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com';
+  const from = env.ALERT_EMAIL_FROM || 'contact@fxnewsbias.com';
   const mail = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -7855,7 +7855,7 @@ async function _vapidAuthHeader(env, endpoint) {
   const now = Math.floor(Date.now() / 1000);
   const b64uJson = (o) => _b64uFromBytes(new TextEncoder().encode(JSON.stringify(o)));
   const signingInput = `${b64uJson({ typ: 'JWT', alg: 'ES256' })}.${b64uJson({
-    aud, exp: now + 12 * 3600, sub: `mailto:${env.ALERT_EMAIL_FROM || 'hello@fxnewsbias.com'}`,
+    aud, exp: now + 12 * 3600, sub: `mailto:${env.ALERT_EMAIL_FROM || 'contact@fxnewsbias.com'}`,
   })}`;
   const key = await _vapidSigningKey(env);
   const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, new TextEncoder().encode(signingInput));
