@@ -560,7 +560,7 @@ if (event.cron === '*/15 * * * *') {
     cleanupSystemState(env).catch(e => console.log('cleanupSystemState error:', e.message)),
     cleanupCleanupRuns(env).catch(e => console.log('cleanupCleanupRuns error:', e.message)),
     cleanupStepRuns(env).catch(e => console.log('cleanupStepRuns error:', e.message)),
-    pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow error:', e.message)),
+    pingIndexNow(ALL_DATA_URLS, env).catch(e => console.log('IndexNow error:', e.message)),
     // One-time self-config: set the Stripe payment link's post-checkout
     // redirect to /register?paid=1 (no-op once the flag is set).
     ensureStripeRedirect(env).catch(e => console.log('ensureStripeRedirect error:', e.message)),
@@ -598,7 +598,7 @@ if (event.cron === '*/15 * * * *') {
   ctx.waitUntil((async () => {
     const [insight] = await Promise.all([
       generateDailyInsight(env, session).catch(e => { console.log(`Daily insight (${session}) error:`, e.message); return null; }),
-      pingIndexNow(ALL_DATA_URLS).catch(e => console.log('IndexNow (insight) error:', e.message)),
+      pingIndexNow(ALL_DATA_URLS, env).catch(e => console.log('IndexNow (insight) error:', e.message)),
       // Session Bias Scorecard: settle the prior session's open reads at this
       // session's open, then publish this session's reads — sentiment is fresh
       // from the :00 cycle, prices are 15-min fresh.
@@ -731,8 +731,11 @@ async function _checkAndAlertConsecutiveFailures(env, label, errMsg, cycleTs) {
 // within minutes instead of waiting for their normal sitemap sweep. The
 // key file is hosted at https://fxnewsbias.com/<KEY>.txt and Bing reads
 // it once to verify ownership, then trusts subsequent pings.
-const INDEXNOW_KEY = 'd5871002582b47b993a5f4841d714dea';
-const INDEXNOW_KEY_LOCATION = 'https://fxnewsbias.com/d5871002582b47b993a5f4841d714dea.txt';
+// IndexNow key. Deliberately NOT the Bing Webmaster API key: IndexNow requires
+// the key to be hosted publicly, so reusing the API key published it to anyone
+// who looked, and that key can submit and block URLs on our behalf.
+const INDEXNOW_KEY = '03a3e0797370aa556fb5e037fc9c48e5';
+const INDEXNOW_KEY_LOCATION = 'https://fxnewsbias.com/03a3e0797370aa556fb5e037fc9c48e5.txt';
 
 const ALL_DATA_URLS = [
   'https://fxnewsbias.com/',
@@ -794,11 +797,11 @@ async function syncForecastSitemap(env) {
   if (!newUrls.length) { console.log('syncForecastSitemap: already up to date'); return; }
 
   await _insCommitFiles(env, [{ path: 'sitemap.xml', content: newSitemap }], `chore(sitemap): add ${newUrls.length} forecast post URL(s)`);
-  await pingIndexNow(newUrls).catch(e => console.log('IndexNow forecast:', e.message));
+  await pingIndexNow(newUrls, env).catch(e => console.log('IndexNow forecast:', e.message));
   console.log(`syncForecastSitemap: added ${newUrls.length} URLs`);
 }
 
-async function pingIndexNow(urlList) {
+async function pingIndexNow(urlList, env) {
   if (!urlList || urlList.length === 0) return;
   try {
     const res = await fetch('https://api.indexnow.org/IndexNow', {
@@ -807,9 +810,25 @@ async function pingIndexNow(urlList) {
       body: JSON.stringify({ host: 'fxnewsbias.com', key: INDEXNOW_KEY, keyLocation: INDEXNOW_KEY_LOCATION, urlList }),
       signal: AbortSignal.timeout(25000),
     });
-    console.log(`IndexNow: ${urlList.length} URLs -> HTTP ${res.status}`);
+    const body = res.ok ? '' : (await res.text().catch(() => '')).slice(0, 200);
+    console.log(`IndexNow: ${urlList.length} URLs -> HTTP ${res.status}${body ? ' ' + body : ''}`);
+    // A rejected ping used to be logged and forgotten. It sat at 403 from
+    // 16 May to 22 Aug 2026 without anyone noticing, so failures are now
+    // recorded as a step so they show up in the ops dashboard.
+    if (!res.ok && env) {
+      const now = new Date().toISOString();
+      try {
+        await _writeStepRun(env, {
+          step_name: 'indexnow', started_at: now, ended_at: now, duration_seconds: 0,
+          status: 'failed', error_message: `HTTP ${res.status} ${body}`.trim(),
+          retry_attempt: 0, cycle_timestamp: now,
+        });
+      } catch (e2) { /* never let telemetry break the ping */ }
+    }
+    return res.ok;
   } catch (e) {
     console.log('IndexNow ping error:', e.message);
+    return false;
   }
 }
 
@@ -8304,7 +8323,7 @@ async function executeSeoActions(env) {
       await writeSystemState(env, `seo_title_gate:pg:${e.url}`, { last_changed_at: new Date().toISOString(), title: e.title, reason: 'weekly-exec' });
     }
     // Nudge re-crawl of the changed pages.
-    await pingIndexNow(executed.map(e => `https://fxnewsbias.com${e.url}`)).catch(() => {});
+    await pingIndexNow(executed.map(e => `https://fxnewsbias.com${e.url}`), env).catch(() => {});
   }
   const summary = { ok: true, executed: executed.length, skipped: skipped.length, detail: { executed, skipped }, at: new Date().toISOString() };
   await writeSystemState(env, 'seo_actions:last_run', summary).catch(() => {});
