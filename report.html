@@ -6,7 +6,7 @@
 <link rel="icon" href="/favicon.ico">
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#0f172a">
-<title>Weekly Forex Intelligence Brief | Pro — FXNewsBias</title>
+<title>Weekly Forex Intelligence Brief | Pro, FXNewsBias</title>
 <meta name="description" content="Pro: AI-written weekly forex intelligence brief. Executive summary, market theme, currency scorecard, top stories, trade setups, risk radar and what to watch next week.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="canonical" href="https://fxnewsbias.com/report">
@@ -279,7 +279,7 @@ footer{background:#0f172a;color:#94a3b8;padding:28px 20px 16px;margin-top:32px;}
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},{"@type":"ListItem","position":2,"name":"Weekly Report","item":"https://fxnewsbias.com/report"}]}
 </script>
 <style id="pro-premium">
-/* ── PREMIUM DARK PRO THEME — Weekly Intelligence Brief ── */
+/* ── PREMIUM DARK PRO THEME, Weekly Intelligence Brief ── */
 :root{--border:rgba(255,255,255,.07);--border-strong:rgba(255,255,255,.15);--bg:#0a0e17;--card:#111b2c;--text:#e8edf4;--soft:#9aa7bd;--muted:#64748b;--bull:#34d399;--bear:#fb7185;--neutral:#fbbf24;}
 body{background:#0a0e17;color:#e8edf4;}
 .topbar{background:#080c14;}
@@ -328,7 +328,7 @@ body{background:#0a0e17;color:#e8edf4;}
 .watch-text{color:#cbd5e1;}
 .risk-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);}
 .risk-label{color:#e8edf4;}.risk-detail{color:#9aa7bd;}
-/* tables — dark theme colors; overflow handled by wrapper divs */
+/* tables, dark theme colors; overflow handled by wrapper divs */
 .delta-table,.events-table{white-space:nowrap;}
 .delta-table th,.events-table th{color:#64748b;border-bottom:2px solid rgba(255,255,255,.1);}
 .delta-table td,.events-table td{border-bottom:1px solid rgba(255,255,255,.05);color:#cbd5e1;}
@@ -360,7 +360,7 @@ footer{background:#080c14;border-top:1px solid rgba(255,255,255,.05);}
   .rpt-title{font-size:20px!important;}
   .stat-value{font-size:18px!important;}
   .ccy-score{font-size:18px!important;}
-  /* delta table: keep Currency/ThisWkAvg/Δ/Now — hide Last Wk Avg(2), Last Wk Bias(5), Flipped(7) */
+  /* delta table: keep Currency/ThisWkAvg/Δ/Now, hide Last Wk Avg(2), Last Wk Bias(5), Flipped(7) */
   .delta-table th:nth-child(2),.delta-table td:nth-child(2),
   .delta-table th:nth-child(5),.delta-table td:nth-child(5),
   .delta-table th:nth-child(7),.delta-table td:nth-child(7){display:none;}
@@ -401,7 +401,7 @@ footer{background:#080c14;border-top:1px solid rgba(255,255,255,.05);}
   <div class="pro-gate-card">
     <div class="pro-gate-icon">📊</div>
     <h2 class="pro-gate-title">Weekly Intelligence Brief</h2>
-    <p class="pro-gate-desc">A Bloomberg-style weekly forex brief written by AI — executive summary, currency scorecard, top stories, trade setups, risk radar and what to watch next week. Every Sunday night.</p>
+    <p class="pro-gate-desc">A Bloomberg-style weekly forex brief written by AI, executive summary, currency scorecard, top stories, trade setups, risk radar and what to watch next week. Every Sunday night.</p>
     <div class="pro-gate-features">
       <div class="pro-gate-feature">📋 Executive summary</div>
       <div class="pro-gate-feature">🎯 Market theme of the week</div>
@@ -482,7 +482,7 @@ const FLAGS = {USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧',JPY:'🇯🇵',AUD:'
 const CCYS  = ['USD','EUR','GBP','JPY','AUD','CAD','CHF','NZD'];
 
 // The report API is Pro-gated server-side (verifies a Firebase ID token), so
-// the data fetch must run AFTER auth resolves — that's initProPage, called by
+// the data fetch must run AFTER auth resolves, that's initProPage, called by
 // firebase.js once Pro is confirmed. The localStorage flag only drives instant
 // visual state (ad-hide/countdown), never the authenticated data fetch.
 let _reportLoaded = false;
@@ -515,7 +515,7 @@ function fmt(iso) {
 }
 function fmtShort(iso) {
   if (!iso) return '—';
-  // Accept either YYYY-MM-DD or a full ISO timestamp — the API has been seen
+  // Accept either YYYY-MM-DD or a full ISO timestamp, the API has been seen
   // returning both (timestamptz columns come back as full ISO; date columns
   // come back as YYYY-MM-DD). Strip any time portion before re-attaching UTC midnight.
   const dateOnly = String(iso).slice(0,10);
@@ -570,7 +570,7 @@ async function loadArchive() {
     }
   } catch(_) { /* fall through to derived archive below */ }
 
-  // Fallback — derive a single-row archive from the currently visible report
+  // Fallback, derive a single-row archive from the currently visible report
   // so the sidebar at minimum shows the latest week instead of an error.
   if (!rows.length) {
     try {
@@ -765,7 +765,7 @@ function renderReport(r) {
   if (!risks.length) {
     const synth = [];
     if (r.regime_warning) synth.push({ severity:'High', risk:'Regime watch', detail:r.regime_warning });
-    if (vol.currency)     synth.push({ severity:'Medium', risk:`${vol.currency} instability`, detail:`${vol.flips} bias flips this week signal a currency the market can't price cleanly — expect whipsaws.` });
+    if (vol.currency)     synth.push({ severity:'Medium', risk:`${vol.currency} instability`, detail:`${vol.flips} bias flips this week signal a currency the market can't price cleanly, expect whipsaws.` });
     if (gain.currency)    synth.push({ severity:'Medium', risk:`${gain.currency} positioning`, detail:`Sharp ${gain.change>=0?'+':''}${gain.change}-pt swing vs Monday open raises mean-reversion risk if catalysts cool.` });
     risks = synth;
   }
@@ -779,7 +779,7 @@ function renderReport(r) {
 
   // Header dates
   document.getElementById('rpt-dates').textContent =
-    `Week of ${fmtShort(r.week_start)} — ${fmtShort(r.week_end)} · Generated ${fmt(r.generated_at)}`;
+    `Week of ${fmtShort(r.week_start)}, ${fmtShort(r.week_end)} · Generated ${fmt(r.generated_at)}`;
 
   // Mood
   const bullC = CCYS.filter(c=>pc[c]&&pc[c].current_bias==='Bullish').length;
@@ -957,7 +957,7 @@ function renderReport(r) {
 
     <!-- CURRENCY SCORECARD -->
     <div class="section">
-      <div class="section-label">💱 Currency Scorecard — 7-Day View</div>
+      <div class="section-label">💱 Currency Scorecard, 7-Day View</div>
       <div class="ccy-grid">${ccyHTML}</div>
       <div style="margin-top:10px;font-size:11px;color:var(--muted)">Score 0–100 · 50 = neutral · Bar shows % time in each bias state this week · Sparkline = daily average Mon→Sun</div>
     </div>
@@ -970,7 +970,7 @@ function renderReport(r) {
 
     <!-- PAIR ANALYSIS -->
     <div class="section">
-      <div class="section-label">🔍 Pair Analysis — Top 5 This Week</div>
+      <div class="section-label">🔍 Pair Analysis: Top 5 This Week</div>
       ${pairHTML}
       <div style="margin-top:10px;font-size:11px;color:var(--muted)">Direction is derived from current sentiment divergence. Always apply technical analysis and your own risk plan.</div>
     </div>
@@ -1032,7 +1032,7 @@ function renderReport(r) {
 
     <!-- DISCLAIMER -->
     <div class="disclaimer">
-      ⚠️ <strong>Disclaimer:</strong> This report is AI-generated using publicly available news sentiment data and is for informational purposes only. It is not financial advice. Forex trading involves significant risk of loss. Sentiment scores reflect news tone only — not price targets or trading signals. Always apply your own analysis, risk management, and consult a qualified financial adviser before trading. Past sentiment patterns do not predict future price movements. FXNewsBias accepts no liability for trading losses.
+      ⚠️ <strong>Disclaimer:</strong> This report is AI-generated using publicly available news sentiment data and is for informational purposes only. It is not financial advice. Forex trading involves significant risk of loss. Sentiment scores reflect news tone only, not price targets or trading signals. Always apply your own analysis, risk management, and consult a qualified financial adviser before trading. Past sentiment patterns do not predict future price movements. FXNewsBias accepts no liability for trading losses.
     </div>
   `;
 }

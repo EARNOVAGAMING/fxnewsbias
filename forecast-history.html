@@ -5,8 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="/favicon.ico">
-<title>Scorecard Ledger — Every Session Read, Publicly Scored | FXNewsBias Pro</title>
-<meta name="description" content="The complete, immutable record of every FXNB session bias read — news tone, market move and score (aligned, contra or quiet). Nothing deleted, nothing edited.">
+<title>Scorecard Ledger, Every Session Read, Publicly Scored | FXNewsBias Pro</title>
+<meta name="description" content="The complete, immutable record of every FXNB session bias read, news tone, market move and score (aligned, contra or quiet). Nothing deleted, nothing edited.">
 <link rel="canonical" href="https://fxnewsbias.com/forecast-history">
 <link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
@@ -48,14 +48,14 @@
 </header>
 
 <!-- PRO GATE -->
-<!-- PUBLIC — the ledger is the public track record (SEO + proof of performance) -->
+<!-- PUBLIC, the ledger is the public track record (SEO + proof of performance) -->
 <div id="fc-content">
 
   <div class="fc-head">
     <div class="fc-head-inner">
       <span class="fc-eyebrow">⭐ Pro · Session Bias Scorecard</span>
       <h1 class="fc-title">Scorecard Ledger</h1>
-      <p class="fc-sub">The complete immutable record. Every session read and how it scored — including the contras. Being scored in public is what makes the reads worth trusting.</p>
+      <p class="fc-sub">The complete immutable record. Every session read and how it scored, including the contras. Being scored in public is what makes the reads worth trusting.</p>
       <div class="fc-immutable">🛡 Published once. Never edited. Every score recorded.</div>
       <nav class="fc-tabs" aria-label="Forecast module">
         <a class="fc-tab" href="/forecast">Session Reads</a>
@@ -100,10 +100,10 @@
           <tbody><tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">Loading ledger…</td></tr></tbody>
         </table>
       </div>
-      <div class="ledger-note">🛡 Immutable record — rows are written at publish, scored exactly once at the next session, and never modified after. Neutral reads are shown but excluded from alignment math. All times UTC.</div>
+      <div class="ledger-note">🛡 Immutable record, rows are written at publish, scored exactly once at the next session, and never modified after. Neutral reads are shown but excluded from alignment math. All times UTC.</div>
     </div>
 
-    <div class="disclaimer"><strong>Disclaimer:</strong> Session reads report the tone of news sentiment — not forecasts, trade signals or financial advice. The scorecard measures reporting accuracy, not trading performance.</div>
+    <div class="disclaimer"><strong>Disclaimer:</strong> Session reads report the tone of news sentiment, not forecasts, trade signals or financial advice. The scorecard measures reporting accuracy, not trading performance.</div>
 
     <div class="trust-strip">
       <span>✅ 100% Transparent</span><span>📜 All Results Public</span><span>🔒 Immutable Records</span><span>🚫 No Deletions. No Edits.</span>
@@ -174,7 +174,7 @@ function render(){
   document.getElementById('f-count').textContent=rows.length+' / '+allRows.length+' reads';
   var tb=document.querySelector('#ledger-table tbody');
   if(!rows.length){
-    tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">'+(allRows.length?'No reads match these filters.':'No session reads yet — reads publish every weekday at 00:13, 06:13 and 12:13 UTC.')+'</td></tr>';
+    tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">'+(allRows.length?'No reads match these filters.':'No session reads yet, reads publish every weekday at 00:13, 06:13 and 12:13 UTC.')+'</td></tr>';
     return;
   }
   tb.innerHTML=rows.map(row).join('');
@@ -193,7 +193,7 @@ function render(){
 }
 
 // CLS: drop the server-rendered block in the same task that renders the
-// interactive ledger, not at load time — removing it early collapsed the
+// interactive ledger, not at load time, removing it early collapsed the
 // page before a replacement existed.
 function dropSsr(){ var s=document.getElementById('fc-ssr'); if(s) s.remove(); }
 
@@ -221,7 +221,7 @@ function load(){
 var d=new Date(),el=document.getElementById('topbar-date');
 if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 
-// Public page — always render the track record. Show an upgrade strip to
+// Public page, always render the track record. Show an upgrade strip to
 // free visitors (removed once Pro resolves true).
 load();
 function _upToggle(p){var h=document.getElementById('fc-upstrip-host');if(h)h.innerHTML=p?'':FC.upgradeStrip();}

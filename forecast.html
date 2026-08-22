@@ -5,8 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="/favicon.ico">
-<title>Session Bias Scorecard — AI News-Tone Reads for 11 Forex Pairs, Publicly Scored | FXNewsBias Pro</title>
-<meta name="description" content="Three AI news-tone reads per weekday for 11 forex pairs, each scored at the next session as Aligned, Contra or Quiet against a per-pair volatility band. An immutable public scorecard — nothing deleted, nothing edited.">
+<title>Session Bias Scorecard: AI News-Tone Reads for 11 Forex Pairs, Publicly Scored | FXNewsBias Pro</title>
+<meta name="description" content="Three AI news-tone reads per weekday for 11 forex pairs, each scored at the next session as Aligned, Contra or Quiet against a per-pair volatility band. An immutable public scorecard, nothing deleted, nothing edited.">
 <link rel="canonical" href="https://fxnewsbias.com/forecast">
 <link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
@@ -102,10 +102,10 @@
           <tbody><tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">Loading…</td></tr></tbody>
         </table>
       </div>
-      <div class="ledger-note">🛡 Immutable record — results are written once at settlement and never modified. All times UTC.</div>
+      <div class="ledger-note">🛡 Immutable record, results are written once at settlement and never modified. All times UTC.</div>
     </div>
 
-    <div class="disclaimer"><strong>Disclaimer:</strong> Session reads report the tone of news sentiment — they are not forecasts, trade signals or financial advice, and the scorecard measures reporting accuracy, not trading performance. Tone reflects news-sentiment divergence only, never price targets. Forex trading involves significant risk of loss. Always apply your own analysis and risk management.</div>
+    <div class="disclaimer"><strong>Disclaimer:</strong> Session reads report the tone of news sentiment, they are not forecasts, trade signals or financial advice, and the scorecard measures reporting accuracy, not trading performance. Tone reflects news-sentiment divergence only, never price targets. Forex trading involves significant risk of loss. Always apply your own analysis and risk management.</div>
 
     <div class="trust-strip">
       <span>✅ 100% Transparent</span><span>📜 All Results Public</span><span>🔒 Immutable Records</span><span>🚫 No Deletions. No Edits.</span><span>📈 Trust by Performance</span>
@@ -151,7 +151,7 @@ function card(r,i){
   var bs=r.base_score==null?50:r.base_score, qs=r.quote_score==null?50:r.quote_score;
   var base=r.pair.slice(0,3), quote=r.pair.slice(4);
   var ps=FC.pairStats(allRows,r.pair);
-  // live move vs frozen entry — only when we have both real numbers and the forecast is open
+  // live move vs frozen entry, only when we have both real numbers and the forecast is open
   var live=livePx[r.pair], entry=r.entry_price?parseFloat(r.entry_price):null;
   var liveHtml='';
   if(r.status==='open'&&live&&entry){
@@ -187,7 +187,7 @@ function renderExposureBanner(){
   var ex=FC.exposure(todayRows);
   if(FC.isPro() && ex.concentrated){
     host.innerHTML='<div style="background:linear-gradient(90deg,rgba(245,181,68,.13),rgba(245,181,68,.04));border:1px solid rgba(245,181,68,.38);border-radius:12px;padding:13px 16px;margin:0 0 16px;color:#f3d08a;font-size:13.5px;line-height:1.55;">'
-      +'⚠ <b>Concentration risk:</b> today’s '+ex.total+' live reads are effectively <b>'+FC.esc(ex.label)+'</b> — they all share the '+FC.esc(ex.dominant.ccy)+' leg, so they move together. Read this as <b>one macro story</b>, not '+ex.total+' independent views.'
+      +'⚠ <b>Concentration risk:</b> today’s '+ex.total+' live reads are effectively <b>'+FC.esc(ex.label)+'</b>, they all share the '+FC.esc(ex.dominant.ccy)+' leg, so they move together. Read this as <b>one macro story</b>, not '+ex.total+' independent views.'
       +'</div>';
     host.style.display='block';
   } else { host.style.display='none'; host.innerHTML=''; }
@@ -216,7 +216,7 @@ function renderCards(){
       +'<div class="fc-lock-preview">'+tiles+'</div>'
       +'<div class="fc-lock-ico">🔒</div>'
       +'<div class="fc-lock-title">'+n+' live session read'+(n===1?'':'s')+' published</div>'
-      +'<div class="fc-lock-sub">The full scorecard is public below — every past read and how it scored. Pro members see each session’s live tone reads (tone, strength, sentiment evidence, AI note) the moment they publish, plus strong-read alerts.</div>'
+      +'<div class="fc-lock-sub">The full scorecard is public below, every past read and how it scored. Pro members see each session’s live tone reads (tone, strength, sentiment evidence, AI note) the moment they publish, plus strong-read alerts.</div>'
       +'<a class="fc-lock-btn" href="/pricing">⭐ Unlock live session reads, from $20/mo</a>'
       +'<div class="fc-lock-note">7-day free trial · Already Pro? <a href="/login">Log in →</a></div>'
       +'</div>';
@@ -241,7 +241,7 @@ function renderCards(){
 function renderRecent(){
   var tb=document.querySelector('#recent-table tbody');
   var settled=allRows.filter(function(r){return r.status==='settled'&&r.direction!=='Stand Aside';}).slice(0,8);
-  if(!settled.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">No scored reads yet — each read is scored at the next session open, about 6 hours after publish.</td></tr>';return;}
+  if(!settled.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">No scored reads yet, each read is scored at the next session open, about 6 hours after publish.</td></tr>';return;}
   tb.innerHTML=settled.map(function(r){
     var mv=parseFloat(r.move_pct);
     return '<tr><td>'+FC.fmtDate(r.forecast_date)+'</td>'
@@ -275,7 +275,7 @@ function load(){
     // so use the public summary's date for the section label when needed.
     var latestDate=allRows.length?allRows[0].forecast_date:(todaySummary?todaySummary.latest_date:null);
     todayRows=(latestDate&&FC.isPro())?allRows.filter(function(r){return r.forecast_date===latestDate;}):[];
-    if(latestDate){document.getElementById('today-label').textContent='Session reads — '+FC.fmtDate(latestDate);}
+    if(latestDate){document.getElementById('today-label').textContent='Session reads, '+FC.fmtDate(latestDate);}
     dropSsr();
     renderStats(FC.computeStats(allRows),todayRows);
     renderCards();
@@ -290,7 +290,7 @@ document.getElementById('sort-sel').addEventListener('change',renderCards);
 var d=new Date(),el=document.getElementById('topbar-date');
 if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 
-// Public page — load for everyone. Track record shows to all; today's cards
+// Public page, load for everyone. Track record shows to all; today's cards
 // render locked for free users and re-render unlocked when Pro resolves.
 load();
 // When Pro resolves (or flips), re-fetch: Pro pulls today's live calls from the

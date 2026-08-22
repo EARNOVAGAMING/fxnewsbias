@@ -149,7 +149,7 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://fxnewsbias.com/"},{"@type":"ListItem","position":2,"name":"Sentiment History","item":"https://fxnewsbias.com/history"}]}
 </script>
 <style id="pro-premium">
-/* ── PREMIUM DARK PRO THEME — institutional analytics ── */
+/* ── PREMIUM DARK PRO THEME, institutional analytics ── */
 body{background:#0a0e17;color:#e8edf4;}
 .topbar{background:#080c14;border-bottom:1px solid rgba(255,255,255,.05);}
 .content{max-width:1200px;margin:26px auto 8px;}
@@ -526,7 +526,7 @@ async function loadHistory(currency, days) {
     const yMin = Math.max(0,   Math.floor(dMin - dRange * 0.10));
     const yMax = Math.min(100, Math.ceil (dMax + dRange * 0.10));
 
-    // Canvas gradient — use actual canvas height so it survives resize
+    // Canvas gradient, use actual canvas height so it survives resize
     const isBull = latest.bias === 'Bullish', isBear = latest.bias === 'Bearish';
     const lineCol = isBull ? '#059669' : isBear ? '#dc2626' : '#d97706';
     const colA    = isBull ? '5,150,105' : isBear ? '220,38,38' : '217,119,6';

@@ -906,7 +906,7 @@ function attachPostHandlers() {
   });
 }
 
-// COMMENTS — queries top-level 'comments' collection (matches Firestore rules)
+// COMMENTS, queries top-level 'comments' collection (matches Firestore rules)
 async function loadComments(postId) {
   const section = document.getElementById(`cs-${postId}`);
   if (!section) return;
@@ -925,7 +925,7 @@ async function loadComments(postId) {
   } catch(e) {
     console.error('Comments load error:', e.code, e.message);
     const isPerms = e.code === 'permission-denied';
-    section.innerHTML = `<div style="padding:10px 0;color:#ef4444;font-size:12px;">${isPerms ? '🔒 Comments blocked — check Firestore rules.' : 'Failed to load comments (' + (e.code || e.message) + ').'} <span id="retry-${postId}" style="cursor:pointer;color:#2563eb;font-weight:600;">↺ Retry</span></div>`;
+    section.innerHTML = `<div style="padding:10px 0;color:#ef4444;font-size:12px;">${isPerms ? '🔒 Comments blocked, check Firestore rules.' : 'Failed to load comments (' + (e.code || e.message) + ').'} <span id="retry-${postId}" style="cursor:pointer;color:#2563eb;font-weight:600;">↺ Retry</span></div>`;
     const retryBtn = document.getElementById(`retry-${postId}`);
     if (retryBtn) retryBtn.addEventListener('click', () => loadComments(postId));
   }
@@ -945,7 +945,7 @@ function renderCommentSection(postId, comments, section) {
           : `<div class="comment-avatar" style="background:${col.bg};color:${col.color};">${initial}</div>`;
         return `<div class="comment-item">${avatarHtml}<div class="comment-body"><div class="comment-meta"><strong>${escapeHtml(c.authorName || 'Anonymous')}</strong> · ${timeAgo(date)}</div><div class="comment-text">${escapeHtml(c.text)}</div></div></div>`;
       }).join('')
-    : '<div class="no-comments">No comments yet — be the first to reply!</div>';
+    : '<div class="no-comments">No comments yet, be the first to reply!</div>';
 
   const inputHtml = currentUser
     ? `<div class="comment-form">
@@ -1078,7 +1078,7 @@ onSnapshot(postsQuery, (snapshot) => {
     postsLabel.textContent = weekPosts ? 'Posts this week' : 'Total posts';
   } else if (postCount > 0) {
     postsEl.textContent = postCount;
-    postsLabel.textContent = postCount === 1 ? 'Post — join in!' : 'Posts — join in!';
+    postsLabel.textContent = postCount === 1 ? 'Post, join in!' : 'Posts, join in!';
   } else {
     postsEl.textContent = 'Be the first';
     postsLabel.textContent = 'to post';

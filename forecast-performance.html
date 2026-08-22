@@ -5,8 +5,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="/favicon.ico">
-<title>Scorecard Analytics — Alignment Rate, Streaks & Accuracy | FXNewsBias Pro</title>
-<meta name="description" content="Full analytics for the FXNB session bias scorecard: alignment rate, per-pair accuracy, monthly performance, streaks and score distribution — computed from the immutable public ledger.">
+<title>Scorecard Analytics, Alignment Rate, Streaks & Accuracy | FXNewsBias Pro</title>
+<meta name="description" content="Full analytics for the FXNB session bias scorecard: alignment rate, per-pair accuracy, monthly performance, streaks and score distribution, computed from the immutable public ledger.">
 <link rel="canonical" href="https://fxnewsbias.com/forecast-performance">
 <link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin>
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
@@ -48,14 +48,14 @@
 </header>
 
 <!-- PRO GATE -->
-<!-- PUBLIC — performance analytics are the public proof of the track record -->
+<!-- PUBLIC, performance analytics are the public proof of the track record -->
 <div id="fc-content">
 
   <div class="fc-head">
     <div class="fc-head-inner">
       <span class="fc-eyebrow">⭐ Pro · Session Bias Scorecard</span>
       <h1 class="fc-title">Performance Analytics</h1>
-      <p class="fc-sub">Every number on this page is computed live from the immutable ledger — the same rows you can inspect call-by-call. No curated highlights.</p>
+      <p class="fc-sub">Every number on this page is computed live from the immutable ledger, the same rows you can inspect call-by-call. No curated highlights.</p>
       <div class="fc-immutable">🛡 Published once. Never edited. Every result recorded.</div>
       <nav class="fc-tabs" aria-label="Forecast module">
         <a class="fc-tab" href="/forecast">Session Reads</a>
@@ -91,23 +91,23 @@
     <div class="pa-grid" style="margin-top:26px;">
       <div style="min-width:0;">
         <div class="panel">
-          <h3>Monthly Scores — Aligned / Contra / Quiet</h3>
+          <h3>Monthly Scores, Aligned / Contra / Quiet</h3>
           <div class="chart-box" id="monthly-chart"><div class="empty-state" style="padding:26px;"><div class="s">Waiting for scored reads…</div></div></div>
           <div class="legend"><span><i style="background:#34d399"></i>Aligned</span><span><i style="background:#fb7185"></i>Contra</span><span><i style="background:rgba(255,255,255,.25)"></i>Quiet</span></div>
         </div>
         <div class="panel" id="rolling-panel">
-          <h3>Rolling Alignment Rate — last 10 scored, per read</h3>
+          <h3>Rolling Alignment Rate, last 10 scored, per read</h3>
           <div class="chart-box" id="rolling-chart"><div class="waiting">Waiting for sufficient scored reads (10+ needed).</div></div>
         </div>
         <div class="panel">
-          <h3>Pair Leaderboard — scored reads only</h3>
+          <h3>Pair Leaderboard, scored reads only</h3>
           <div class="bw-grid" id="bw-grid" hidden style="margin-bottom:14px;"></div>
           <div class="lb-list" id="lb-list"><div class="waiting">Waiting for scored reads.</div></div>
         </div>
       </div>
       <div style="min-width:0;">
         <div class="panel" id="timeline-panel" hidden>
-          <h3>Settlement Timeline — most recent first</h3>
+          <h3>Settlement Timeline, most recent first</h3>
           <div class="tl-strip" id="tl-strip"></div>
           <div class="legend" style="margin-top:12px;"><span><i style="background:#34d399"></i>Aligned</span><span><i style="background:#fb7185"></i>Contra</span><span><i style="background:rgba(255,255,255,.25)"></i>Quiet</span><span><i style="background:rgba(245,181,68,.5)"></i>Neutral</span></div>
         </div>
@@ -115,17 +115,17 @@
           <h3>Score Distribution</h3>
           <div class="chart-box" id="dist-chart" style="max-width:230px;margin:0 auto;"></div>
           <div class="legend" id="dist-legend" style="justify-content:center;"></div>
-          <p style="font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.6;">Neutral reads are published like any other but excluded from alignment math — reporting that the news is balanced is information, not a score.</p>
+          <p style="font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.6;">Neutral reads are published like any other but excluded from alignment math, reporting that the news is balanced is information, not a score.</p>
         </div>
         <div class="panel">
           <h3>Methodology</h3>
           <p style="font-size:12.5px;color:var(--soft);line-height:1.65;margin-bottom:10px;">Session reads publish every weekday at 00:13, 06:13 and 12:13 UTC from the sentiment gap between base and quote currencies (AI-scored news flow, refreshed every 3 hours). Gaps under 15 points publish as Neutral. The reference price is frozen at publish; scoring occurs at the next session open. Moves inside the pair's own volatility band score as Quiet.</p>
-          <p style="font-size:12.5px;color:var(--soft);line-height:1.65;">Rows are written once and never edited — the ledger is append-only by design.</p>
+          <p style="font-size:12.5px;color:var(--soft);line-height:1.65;">Rows are written once and never edited, the ledger is append-only by design.</p>
         </div>
       </div>
     </div>
 
-    <div class="disclaimer"><strong>Disclaimer:</strong> Statistics measure how often the news tone aligned with the subsequent market move — reporting accuracy, not trading performance, and not financial advice. Past performance is not indicative of future results. Forex trading involves significant risk of loss.</div>
+    <div class="disclaimer"><strong>Disclaimer:</strong> Statistics measure how often the news tone aligned with the subsequent market move, reporting accuracy, not trading performance, and not financial advice. Past performance is not indicative of future results. Forex trading involves significant risk of loss.</div>
 
     <div class="trust-strip">
       <span>✅ 100% Transparent</span><span>📜 All Results Public</span><span>🔒 Immutable Records</span><span>📈 Trust by Performance</span>
@@ -147,7 +147,7 @@ function fmtWr(v){return v===null?'—':v.toFixed(1)+'%';}
 function fmtMv(v){return v===null?'—':v.toFixed(2)+'%';}
 
 function donut(segs,total){
-  // segs: [{v,color}] — simple conic donut via SVG stroke-dasharray
+  // segs: [{v,color}], simple conic donut via SVG stroke-dasharray
   var R=54,C=2*Math.PI*R,acc=0,parts='';
   segs.forEach(function(s){
     if(!s.v)return;
@@ -208,7 +208,7 @@ function load(){
     document.getElementById('p-total-sub').textContent=st.directional+' directional · '+st.asides+' stand-aside';
     document.getElementById('p-settled').textContent=st.settled||'0';
 
-    // Correlation-adjusted daily win rate — the honest, de-correlated read.
+    // Correlation-adjusted daily win rate, the honest, de-correlated read.
     (function(){
       var host=document.getElementById('macro-wr');
       if(!host){ host=document.createElement('div'); host.id='macro-wr';
@@ -220,7 +220,7 @@ function load(){
           host.innerHTML='<div style="background:linear-gradient(90deg,rgba(59,130,246,.10),rgba(59,130,246,.03));border:1px solid rgba(59,130,246,.30);border-radius:14px;padding:16px 20px;margin:20px 0 4px;display:flex;flex-wrap:wrap;align-items:center;gap:14px;">'
             +'<div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;">Correlation-adjusted</div>'
             +'<div style="font-size:26px;font-weight:800;color:'+c+';font-family:JetBrains Mono,monospace;">'+st.macroDayWinRate.toFixed(0)+'%</div>'
-            +'<div style="font-size:13px;color:var(--muted);flex:1;min-width:240px;line-height:1.5;">daily win rate over <b style="color:#cbd5e1;">'+st.settledDays+' trading day'+(st.settledDays===1?'':'s')+'</b> ('+st.winDays+'W / '+st.lossDays+'L). Same-day USD-major calls share the USD leg, so we collapse each day into a single win/loss — this is the honest de-correlated track record. The headline rate above counts each correlated call separately.</div>'
+            +'<div style="font-size:13px;color:var(--muted);flex:1;min-width:240px;line-height:1.5;">daily win rate over <b style="color:#cbd5e1;">'+st.settledDays+' trading day'+(st.settledDays===1?'':'s')+'</b> ('+st.winDays+'W / '+st.lossDays+'L). Same-day USD-major calls share the USD leg, so we collapse each day into a single win/loss, this is the honest de-correlated track record. The headline rate above counts each correlated call separately.</div>'
             +'</div>';
           host.style.display='block';
         } else { host.style.display='none'; }
@@ -248,7 +248,7 @@ function load(){
     var mc=monthlyChart(rows);
     if(mc)document.getElementById('monthly-chart').innerHTML=mc;
 
-    // rolling win rate — needs 10+ graded results to mean anything
+    // rolling win rate, needs 10+ graded results to mean anything
     var graded=rows.filter(function(r){return r.status==='settled'&&(r.outcome==='hit'||r.outcome==='miss');})
       .sort(function(a,b){return a.forecast_date<b.forecast_date?-1:1;});
     if(graded.length>=10){
@@ -269,7 +269,7 @@ function load(){
       document.getElementById('rolling-chart').innerHTML=svg;
     }
 
-    // leaderboard — ranked cards, settled data only
+    // leaderboard, ranked cards, settled data only
     var lb=st.perPair.filter(function(p){return p.winRate!==null;});
     var lbEl=document.getElementById('lb-list');
     if(lb.length){
@@ -283,7 +283,7 @@ function load(){
           +'<span class="lb-meta">'+p.n+' forecasts'+(p.avgMove!==null?' · avg '+p.avgMove.toFixed(2)+'%':'')+'</span>'
           +'</div>';
       }).join('');
-      // best / worst callouts — only with a meaningful sample on both ends
+      // best / worst callouts, only with a meaningful sample on both ends
       var qual=lb.filter(function(p){var g=rows.filter(function(r){return r.pair===p.pair&&(r.outcome==='hit'||r.outcome==='miss');}).length;return g>=3;});
       if(qual.length>=2){
         var best=qual[0],worst=qual[qual.length-1];
@@ -294,12 +294,12 @@ function load(){
       }
     }
 
-    // settlement timeline — last 24 settled of any kind
+    // settlement timeline, last 24 settled of any kind
     var settledAll=rows.filter(function(r){return r.status==='settled';}).slice(0,24);
     if(settledAll.length){
       document.getElementById('tl-strip').innerHTML=settledAll.map(function(r){
         var c=r.direction==='Stand Aside'?'a':r.outcome==='hit'?'h':r.outcome==='miss'?'m':'f';
-        return '<i class="'+c+'" title="'+FC.fmtDate(r.forecast_date)+' '+r.pair+' — '+(r.direction==='Stand Aside'?'stand aside':r.outcome)+'"></i>';
+        return '<i class="'+c+'" title="'+FC.fmtDate(r.forecast_date)+' '+r.pair+', '+(r.direction==='Stand Aside'?'stand aside':r.outcome)+'"></i>';
       }).join('');
       document.getElementById('timeline-panel').hidden=false;
     }
@@ -312,7 +312,7 @@ function load(){
 var d=new Date(),el=document.getElementById('topbar-date');
 if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 
-// Public page — always render analytics. Upgrade strip for free visitors.
+// Public page, always render analytics. Upgrade strip for free visitors.
 load();
 function _upToggle(p){var h=document.getElementById('fc-upstrip-host');if(h)h.innerHTML=p?'':FC.upgradeStrip();}
 _upToggle(FC.isPro());

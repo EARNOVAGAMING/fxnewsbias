@@ -48,7 +48,7 @@
 </header>
 
 <!-- PRO GATE -->
-<!-- PUBLIC — track record public; today's live call gated inline -->
+<!-- PUBLIC, track record public; today's live call gated inline -->
 <div id="fc-content">
 
   <div class="fc-head">
@@ -100,7 +100,7 @@ function lifecycle(r){
 
 function render(latest,pairRows,prices,news,baseHist,quoteHist){
   var wrap=document.getElementById('pa-wrap');
-  document.getElementById('pa-title').textContent=FC.pairFlags(PAIR)+' '+PAIR+' — Session Read Analysis';
+  document.getElementById('pa-title').textContent=FC.pairFlags(PAIR)+' '+PAIR+', Session Read Analysis';
   if(!latest){
     document.getElementById('pa-sub').textContent='No session reads published for '+PAIR+' yet.';
     wrap.innerHTML='<div class="empty-state"><div class="ico">📭</div><div class="t">No forecast for '+PAIR+' yet</div><div class="s">Forecasts publish weekdays at 06:13 UTC. Check <a href="/forecast">Today\'s Forecasts</a> for covered pairs.</div></div>';
@@ -142,7 +142,7 @@ function render(latest,pairRows,prices,news,baseHist,quoteHist){
   html+='<div class="pa-grid">';
   // left column
   html+='<div style="min-width:0;">';
-  html+='<div class="panel"><h3>Sentiment Evidence — frozen at publish</h3>'
+  html+='<div class="panel"><h3>Sentiment Evidence, frozen at publish</h3>'
     +'<div class="gapbars" style="gap:12px;">'
     +'<div><div class="gapbar" style="margin-bottom:4px;"><span class="cc">'+BASE+'</span><span class="track" style="height:8px;"><span class="fill" style="width:'+bs+'%;background:'+FC.scoreColor(bs)+'"></span></span><span class="sc" style="color:'+FC.scoreColor(bs)+'">'+bs+'</span></div>'
     +(baseHist?'<div style="margin:6px 0 0 42px;">'+FC.spark(baseHist,FC.scoreColor(bs))+'</div>':'')+'</div>'
@@ -156,7 +156,7 @@ function render(latest,pairRows,prices,news,baseHist,quoteHist){
     var dr=latest.drivers||{};
     var dItems=[].concat((dr.base||[]).map(function(x){return {c:BASE,t:x};}),(dr.quote||[]).map(function(x){return {c:QUOTE,t:x};}));
     html+='<div class="panel"><h3>Drivers Behind the Call</h3>'
-      +(dItems.length?dItems.map(function(d){return '<div class="driver-li"><span><strong class="mono" style="color:#93c5fd;">'+d.c+'</strong> — '+FC.esc(d.t)+'</span></div>';}).join(''):'<p style="font-size:12.5px;color:var(--muted);">No driver detail recorded for this read.</p>')
+      +(dItems.length?dItems.map(function(d){return '<div class="driver-li"><span><strong class="mono" style="color:#93c5fd;">'+d.c+'</strong>, '+FC.esc(d.t)+'</span></div>';}).join(''):'<p style="font-size:12.5px;color:var(--muted);">No driver detail recorded for this read.</p>')
       +'</div>';
     if(latest.narrative){
       html+='<div class="panel"><h3>Market Narrative</h3><p style="font-size:13.5px;color:#cbd5e1;line-height:1.7;">'+FC.esc(latest.narrative)+'</p></div>';
@@ -186,11 +186,11 @@ function render(latest,pairRows,prices,news,baseHist,quoteHist){
     +'<div class="stat" style="padding:12px;"><div class="stat-lab">Reads</div><div class="stat-val" style="font-size:20px;">'+pairRows.length+'</div></div>'
     +'</div>'
     +(last10.length?'<div style="margin-top:14px;"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Last '+last10.length+' results (newest first)</div><div class="resq">'
-      +last10.map(function(r){return '<i class="'+(r.outcome==='hit'?'h':r.outcome==='miss'?'m':'f')+'" title="'+FC.fmtDate(r.forecast_date)+' — '+r.outcome+'"></i>';}).join('')
+      +last10.map(function(r){return '<i class="'+(r.outcome==='hit'?'h':r.outcome==='miss'?'m':'f')+'" title="'+FC.fmtDate(r.forecast_date)+', '+r.outcome+'"></i>';}).join('')
       +'</div></div>':'')
     +'</div>';
 
-  html+='<div class="panel"><h3>Supporting News — '+BASE+' &amp; '+QUOTE+'</h3>'
+  html+='<div class="panel"><h3>Supporting News, '+BASE+' &amp; '+QUOTE+'</h3>'
     +(news.length?news.map(function(n){
       return '<div class="news-li"><div class="t">'+(n.url?'<a href="'+FC.esc(n.url)+'" target="_blank" rel="noopener" style="color:inherit;">'+FC.esc(n.title)+'</a>':FC.esc(n.title))+'</div>'
         +'<div class="m">'+FC.esc(n.source||'')+' · '+(n.impact||'Medium')+' impact · '+((n.currencies_affected||[]).join(', '))+'</div></div>';
@@ -226,8 +226,8 @@ function load(){
 var d=new Date(),el=document.getElementById('topbar-date');
 if(el)el.textContent='📅 '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 
-// Public page — load for all; the current call re-renders unlocked if Pro resolves.
-// Public page — load for all; re-render (unlock the current call) if Pro resolves.
+// Public page, load for all; the current call re-renders unlocked if Pro resolves.
+// Public page, load for all; re-render (unlock the current call) if Pro resolves.
 FC.onProChange(function(){ if(loaded){ loaded=false; load(); } });
 load();
 })();
