@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Forex Forecast — FXNewsBias</title>
+<title>Forex Forecast, FXNewsBias</title>
 <meta name="description" content="Daily forex forecast and bias analysis from FXNewsBias.">
-<meta property="og:title" content="Forex Forecast — FXNewsBias">
+<meta property="og:title" content="Forex Forecast, FXNewsBias">
 <meta property="og:description" content="Daily forex forecast and bias analysis from FXNewsBias.">
 <meta property="og:type" content="article">
 <meta property="og:image" content="https://fxnewsbias.com/og/forecast.webp">
@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:site_name" content="FXNewsBias">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Forex Forecast — FXNewsBias">
+<meta name="twitter:title" content="Forex Forecast, FXNewsBias">
 <meta name="twitter:description" content="Daily forex forecast and bias analysis from FXNewsBias.">
 <meta name="twitter:image" content="https://fxnewsbias.com/og/forecast.webp">
 <link rel="icon" href="/favicon.ico">
@@ -268,9 +268,9 @@ if (!postId) {
         return;
       }
 
-      document.title = `${f.title} — FXNewsBias`;
+      document.title = `${f.title}, FXNewsBias`;
       const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) metaDesc.setAttribute('content', f.title + ' — Daily forex forecast from FXNewsBias.');
+      if (metaDesc) metaDesc.setAttribute('content', f.title + ', Daily forex forecast from FXNewsBias.');
 
       const pairsHtml = (f.pairs && f.pairs.length)
         ? `<div class="pairs-row">${f.pairs.map(p=>`<span class="pair-tag">${escHtml(p)}</span>`).join('')}</div>`

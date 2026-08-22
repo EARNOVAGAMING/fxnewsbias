@@ -100,7 +100,7 @@ error: e.message
 if (url.pathname === '/test-staleness-alert') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const sentAt = new Date().toISOString();
-const text = `🧪 *FXNewsBias staleness alert — TEST*\n\n`
+const text = `🧪 *FXNewsBias staleness alert, TEST*\n\n`
 + `This is a test message sent from \`/test-staleness-alert\` at \`${sentAt}\`.\n`
 + `No action is required. If you received this, the channel is wired up correctly.`;
 const result = await sendStalenessNotification(env, text);
@@ -273,7 +273,7 @@ return new Response(JSON.stringify(result, null, 2), { status: result.ok ? 200 :
 if (url.pathname === '/seo-intelligence') {
 if (!_authed()) return new Response('Unauthorized', { status: 401 });
 const plan = await readSystemState(env, 'seo_intelligence:latest');
-return new Response(JSON.stringify(plan || { note: 'no plan yet — call /run-seo-intelligence?key=...' }, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
+return new Response(JSON.stringify(plan || { note: 'no plan yet, call /run-seo-intelligence?key=...' }, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
 }
 // Sprint 4 — manually run the stale-insight auto-prune (also runs daily 03:15).
 if (url.pathname === '/prune-insights') {
@@ -714,7 +714,7 @@ async function _checkAndAlertConsecutiveFailures(env, label, errMsg, cycleTs) {
   const count = (prev && typeof prev.count === 'number' ? prev.count : 0) + 1;
   await writeSystemState(env, key, { count, last_cycle: cycleTs, last_error: errMsg });
   if (count >= 2) {
-    const text = `🚨 *FXNewsBias — step failure: ${label}*\n\n`
+    const text = `🚨 *FXNewsBias, step failure: ${label}*\n\n`
       + `This step has failed *${count} consecutive cycles*.\n`
       + `Last error: \`${errMsg.slice(0, 300)}\`\n`
       + `Cycle: \`${cycleTs}\`\n\n`
@@ -1653,7 +1653,7 @@ async function handleWelcomeEmail(request, env) {
   </td></tr>
   <tr><td style="padding:36px 40px;">
     <p style="margin:0 0 20px;font-size:16px;color:#0f172a;line-height:1.6;">Hi <strong>${firstName}</strong>,</p>
-    <p style="margin:0 0 24px;font-size:15px;color:#334155;line-height:1.7;">Welcome to FXNewsBias — you've just unlocked <strong>real-time forex news sentiment analysis</strong> across all major pairs and currencies.</p>
+    <p style="margin:0 0 24px;font-size:15px;color:#334155;line-height:1.7;">Welcome to FXNewsBias, you've just unlocked <strong>real-time forex news sentiment analysis</strong> across all major pairs and currencies.</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
       <tr><td style="padding:10px 14px;background:#f8fafc;border-radius:8px;">
         <p style="margin:0;font-size:14px;color:#0f172a;">📰 &nbsp;<strong>Sentiment tracking</strong> across major currency pairs</p>
@@ -1664,11 +1664,11 @@ async function handleWelcomeEmail(request, env) {
       </td></tr>
       <tr><td style="padding:6px 0;font-size:1px;">&nbsp;</td></tr>
       <tr><td style="padding:10px 14px;background:#f8fafc;border-radius:8px;">
-        <p style="margin:0;font-size:14px;color:#0f172a;">📅 &nbsp;<strong>Economic calendar</strong> — know what moves the market before it moves</p>
+        <p style="margin:0;font-size:14px;color:#0f172a;">📅 &nbsp;<strong>Economic calendar</strong>, know what moves the market before it moves</p>
       </td></tr>
       <tr><td style="padding:6px 0;font-size:1px;">&nbsp;</td></tr>
       <tr><td style="padding:10px 14px;background:#f8fafc;border-radius:8px;">
-        <p style="margin:0;font-size:14px;color:#0f172a;">💬 &nbsp;<strong>Community</strong> — share your analysis with other traders</p>
+        <p style="margin:0;font-size:14px;color:#0f172a;">💬 &nbsp;<strong>Community</strong>, share your analysis with other traders</p>
       </td></tr>
     </table>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#1e40af,#7c3aed);border-radius:10px;margin-bottom:28px;">
@@ -2105,7 +2105,7 @@ async function sendTestBroadcast(env, testEmail) {
     });
     if (!resp.ok) { const e = await resp.text(); throw new Error(`Resend error: ${resp.status} ${e.slice(0,200)}`); }
     const data = await resp.json();
-    console.log(`sendTestBroadcast: sent to ${testEmail} — id ${data.id}`);
+    console.log(`sendTestBroadcast: sent to ${testEmail}, id ${data.id}`);
     return { ok: true, id: data.id, to: testEmail };
   } catch (e) {
     console.error('sendTestBroadcast error:', e.message);
@@ -2130,7 +2130,7 @@ async function _buildBroadcastHtml(env, firstName = 'Trader', tier = 'free') {
   const sessionTag = category || 'London Session';
 
   const articleHtml = await _insGetFile(env, `insight/${slug}.html`);
-  let sections = [summary, 'Check the live sentiment dashboard for the latest bias scores across all major pairs.', 'The NY session insight drops at 8pm Malaysia time — watch the insights page for the latest.'];
+  let sections = [summary, 'Check the live sentiment dashboard for the latest bias scores across all major pairs.', 'The NY session insight drops at 8pm Malaysia time, watch the insights page for the latest.'];
   if (articleHtml) {
     const paras = [];
     const pRe = /<p[^>]*>([\s\S]*?)<\/p>/g;
@@ -2159,7 +2159,7 @@ async function _buildBroadcastHtml(env, firstName = 'Trader', tier = 'free') {
     <p style="margin:0;font-size:13px;color:#64748b;">${esc(sessionTag)} · ${today} · 2:30pm 🇲🇾</p>
   </td></tr>
   <tr><td style="background:linear-gradient(90deg,#1e3a8a,#1d4ed8);padding:13px 40px;text-align:center;">
-    <p style="margin:0;font-size:13px;color:#bfdbfe;font-weight:500;">London is open — here is today's forex sentiment picture 📊</p>
+    <p style="margin:0;font-size:13px;color:#bfdbfe;font-weight:500;">London is open, here is today's forex sentiment picture 📊</p>
   </td></tr>
   <tr><td style="padding:0;"><img src="${esc(ogImage)}" width="600" style="display:block;width:100%;max-width:600px;" alt="${esc(headline)}"></td></tr>
   <tr><td style="padding:36px 40px 20px;">
@@ -2184,13 +2184,13 @@ async function _buildBroadcastHtml(env, firstName = 'Trader', tier = 'free') {
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;background:#fefce8;border:1px solid #fde68a;border-radius:10px;"><tr><td style="padding:18px 22px;">
       <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#92400e;letter-spacing:.07em;text-transform:uppercase;">☀️ Also Out Today</p>
       <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#0f172a;">Asia Session Insight is live</p>
-      <p style="margin:0 0 12px;font-size:14px;color:#78350f;line-height:1.6;">Missed the Asian open? Today's Asia insight is already published — covering the overnight sentiment picture from Tokyo, Singapore and Sydney.</p>
+      <p style="margin:0 0 12px;font-size:14px;color:#78350f;line-height:1.6;">Missed the Asian open? Today's Asia insight is already published, covering the overnight sentiment picture from Tokyo, Singapore and Sydney.</p>
       <a href="https://fxnewsbias.com/insight" style="display:inline-block;background:#f59e0b;color:#1a1a1a;font-size:13px;font-weight:700;padding:10px 22px;border-radius:7px;text-decoration:none;">View Asia Insight →</a>
     </td></tr></table>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;"><tr><td style="padding:18px 22px;">
       <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#166534;letter-spacing:.07em;text-transform:uppercase;">🕗 Coming Up at 8:00pm 🇲🇾</p>
       <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#0f172a;">New York Session Insight</p>
-      <p style="margin:0;font-size:14px;color:#15803d;line-height:1.6;">The NY session insight drops at 8pm Malaysia time — covering the US open sentiment picture and what to watch heading into the American session.</p>
+      <p style="margin:0;font-size:14px;color:#15803d;line-height:1.6;">The NY session insight drops at 8pm Malaysia time, covering the US open sentiment picture and what to watch heading into the American session.</p>
     </td></tr></table>
     ${tier === 'pro' ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;background:linear-gradient(135deg,#065f46,#059669);border-radius:10px;"><tr><td style="padding:24px 28px;text-align:center;">
       <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#a7f3d0;letter-spacing:.1em;text-transform:uppercase;">Pro Member</p>
@@ -2227,7 +2227,7 @@ async function sendDailyBroadcast(env) {
   const today   = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
 
   // Free-tier copy (with the upgrade pitch) to the main audience.
-  await _sendBroadcastTo(env, _FREE_AUDIENCE, subject, html, `London Insight — ${dateLabel || today}`);
+  await _sendBroadcastTo(env, _FREE_AUDIENCE, subject, html, `London Insight, ${dateLabel || today}`);
 
   // Pro copy (upgrade pitch swapped for a member block) to the Pro audience.
   // Skipped while the Pro audience is empty; never fails the free send.
@@ -2240,7 +2240,7 @@ async function sendDailyBroadcast(env) {
       const members = pc.ok ? (((await pc.json()).data) || []).filter(x => !x.unsubscribed).length : 0;
       if (members > 0) {
         const proHtml = await _buildBroadcastHtml(env, 'Trader', 'pro');
-        await _sendBroadcastTo(env, proId, subject, proHtml, `London Insight (Pro) — ${dateLabel || today}`);
+        await _sendBroadcastTo(env, proId, subject, proHtml, `London Insight (Pro), ${dateLabel || today}`);
       } else {
         console.log('sendDailyBroadcast: pro audience empty, pro copy skipped');
       }
@@ -2276,7 +2276,7 @@ async function _sendBroadcastTo(env, audienceId, subject, html, name) {
     const err = await sendRes.text();
     throw new Error(`Resend send broadcast failed: ${sendRes.status} ${err.slice(0, 200)}`);
   }
-  console.log(`broadcast sent ${broadcastId} -> ${audienceId} — "${subject}"`);
+  console.log(`broadcast sent ${broadcastId} -> ${audienceId}, "${subject}"`);
 }
 
 // ============================================
@@ -2371,7 +2371,7 @@ function renderStepRunsHtml(rows, step, limit, key) {
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
-<title>FXNewsBias — Step Run Dashboard</title>
+<title>FXNewsBias, Step Run Dashboard</title>
 <meta name="robots" content="noindex,nofollow">
 <meta http-equiv="refresh" content="180">
 <style>
@@ -2396,7 +2396,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .meta{color:#64748b;font-size:12px;margin:10px 0 14px}
 </style>
 </head><body>
-<h1>FXNewsBias — Cron Step Dashboard</h1>
+<h1>FXNewsBias, Cron Step Dashboard</h1>
 <p class="sub">Auto-refreshes every 3 min &nbsp;·&nbsp; Append <code>&format=json</code> for raw JSON &nbsp;·&nbsp; <a href="?key=${encodeURIComponent(key)}&step=&limit=${limit}&format=json">JSON export</a></p>
 
 <div class="cards">${cardsHtml}</div>
@@ -2410,7 +2410,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
   <th>Step</th><th>Status</th><th>Started</th><th>Duration</th><th>Attempts</th><th>Cycle</th><th>Error</th>
 </tr></thead>
 <tbody>
-${tableRows || '<tr><td colspan="7" style="color:#64748b;text-align:center;padding:20px">No step_runs rows yet — waiting for next 0 */3 cron tick.</td></tr>'}
+${tableRows || '<tr><td colspan="7" style="color:#64748b;text-align:center;padding:20px">No step_runs rows yet, waiting for next 0 */3 cron tick.</td></tr>'}
 </tbody>
 </table>
 </body></html>`;
@@ -2876,7 +2876,7 @@ async function handleApiKeyRequest(request, env) {
 <li>Attribution required where the data is displayed: "Data by FXNewsBias" with a link to fxnewsbias.com</li>
 <li>Personal and non-commercial use. For commercial use, email <a href="mailto:contact@fxnewsbias.com" style="color:#1e40af;">contact@fxnewsbias.com</a></li>
 </ul>
-<p style="font-size:14px;">Full contract &amp; docs: <a href="https://fxnewsbias.com/developers" style="color:#1e40af;">fxnewsbias.com/developers</a><br>Need a fresh key? Request again with the same email — the old key is revoked automatically.</p>
+<p style="font-size:14px;">Full contract &amp; docs: <a href="https://fxnewsbias.com/developers" style="color:#1e40af;">fxnewsbias.com/developers</a><br>Need a fresh key? Request again with the same email, the old key is revoked automatically.</p>
 <p style="font-size:12px;color:#94a3b8;">You received this because this address requested an API key at fxnewsbias.com. If that wasn't you, ignore this email and the key dies with your quota unused.</p>
 </div>`,
       }),
@@ -3599,7 +3599,7 @@ async function exportDataSnapshot(env) {
       if (!rows.length) { results.push({ file: j.file, rows: 0, skipped: true }); continue; }
       const headers = Object.keys(rows[0]);
       const csv = headers.join(',') + '\n' + rows.map(r => headers.map(h => _csvCell(r[h])).join(',')).join('\n') + '\n';
-      await _ghPutFile(env, j.file, csv, `data: weekly snapshot ${stamp} — ${j.table} (${rows.length} rows)`);
+      await _ghPutFile(env, j.file, csv, `data: weekly snapshot ${stamp}, ${j.table} (${rows.length} rows)`);
       results.push({ file: j.file, rows: rows.length });
     } catch (e) {
       results.push({ file: j.file, error: e.message });
@@ -4050,7 +4050,7 @@ const drivers = (p.current_drivers || []).slice(0,2).join('; ') || 'no data';
 return `${c}: score=${p.current_score??'n/a'} bias=${p.current_bias} | wk avg=${p.this_week_avg} ${arrow} from ${p.last_week_avg??'n/a'} (delta ${p.delta??'n/a'}) | bull/neut/bear time: ${p.pct_bullish}%/${p.pct_neutral}%/${p.pct_bearish}% | ${p.bias_flips} flips | drivers: ${drivers}`;
 }).join('\n');
 
-const setupsBlock = setups.map(s => `${s.pair}: ${s.direction} (conviction ${s.conviction}/50) — ${s.B} score ${s.B_score} vs ${s.Q} score ${s.Q_score}`).join('\n');
+const setupsBlock = setups.map(s => `${s.pair}: ${s.direction} (conviction ${s.conviction}/50), ${s.B} score ${s.B_score} vs ${s.Q} score ${s.Q_score}`).join('\n');
 
 const claudePrompt = `You are a senior FX strategist at a prime brokerage writing the FXNewsBias Pro Weekly Intelligence Brief for the week of ${weekStart.toISOString().slice(0,10)} to ${weekEnd.toISOString().slice(0,10)}.
 
@@ -4070,7 +4070,7 @@ ${setupsBlock || 'No high-conviction setups this week.'}
 THIS WEEK'S NEWS HEADLINES (impact tagged, newest first):
 ${sampleNews}
 
-Write a professional JSON response. Be specific — reference actual scores, currencies, news items. No generic phrases. No "in conclusion". No "overall".
+Write a professional JSON response. Be specific, reference actual scores, currencies, news items. No generic phrases. No "in conclusion". No "overall".
 
 {
   "executive_summary": ["<bullet 1, max 28 words>", "<bullet 2, max 28 words>", "<bullet 3, max 28 words>"],
@@ -4080,7 +4080,7 @@ Write a professional JSON response. Be specific — reference actual scores, cur
     "description": "<2-3 sentences expanding on the theme. What drove it? What does it mean for traders?>"
   },
 
-  "narrative": "<4 paragraphs separated by \\n\\n. Para 1: What happened — tie sentiment moves to specific headlines. Para 2: Deep dive — 2-3 most important currency moves and why. Para 3: Market structure now — what regime, what the heatmap implies, divergence vs convergence. Para 4: Setup for next week — what changes the picture, key risks, scenarios. Total 320-420 words. Trader-language, not academic.>",
+  "narrative": "<4 paragraphs separated by \\n\\n. Para 1: What happened, tie sentiment moves to specific headlines. Para 2: Deep dive, 2-3 most important currency moves and why. Para 3: Market structure now, what regime, what the heatmap implies, divergence vs convergence. Para 4: Setup for next week, what changes the picture, key risks, scenarios. Total 320-420 words. Trader-language, not academic.>",
 
   "top_stories": [
     {"headline": "<max 12 words>", "currency": "<3-letter>", "direction": "bullish|bearish|neutral", "analysis": "<max 28 words explaining market impact>"},
@@ -4111,9 +4111,10 @@ Write a professional JSON response. Be specific — reference actual scores, cur
     ... (5-7 events total)
   ],
 
-  "regime_warning": "<One sentence max 40 words — the single most important risk or watch-point for traders going into next week.>"
+  "regime_warning": "<One sentence max 40 words, the single most important risk or watch-point for traders going into next week.>"
 }
 
+Never use em dashes, use a comma, a colon or a full stop instead.
 Return ONLY strict JSON. No markdown fences. No preamble.`;
 
 let claudeOut = { executive_summary: [], market_theme: {}, narrative: '', top_stories: [], pair_analysis: [], what_to_watch: '', risk_radar: [], key_events: [], regime_warning: '' };
@@ -4263,7 +4264,7 @@ For each currency provide:
 
 Scoring guide:
 - 0-20: extremely bearish | 21-40: bearish | 41-59: neutral | 60-79: bullish | 80-100: extremely bullish
-- Score each currency independently based ONLY on what the headlines say. Do not anchor to the example values below — they are for FORMAT ONLY.
+- Score each currency independently based ONLY on what the headlines say. Do not anchor to the example values below, they are for FORMAT ONLY.
 - If a currency is barely mentioned in the news, score it 50 (neutral) with drivers like "No fresh catalysts in current headlines".
 - Drivers must be SPECIFIC to the headlines provided, not generic statements.
 
@@ -4500,7 +4501,7 @@ const currencies = Object.entries(sentiment);
 msg = '📊 <b>FXNewsBias Sentiment Update</b>\n\n';
 currencies.forEach(([currency, data]) => {
 const emoji = data.bias === 'Bullish' ? '🟢' : data.bias === 'Bearish' ? '🔴' : '🟡';
-msg += `${emoji} <b>${esc(currency)}</b> — ${esc(data.bias)} ${esc(data.score)}/100\n`;
+msg += `${emoji} <b>${esc(currency)}</b>, ${esc(data.bias)} ${esc(data.score)}/100\n`;
 });
 const bullish = currencies.filter(([, d]) => d.bias === 'Bullish').length;
 const bearish = currencies.filter(([, d]) => d.bias === 'Bearish').length;
@@ -4888,9 +4889,9 @@ function _insBiasArrow(b) { return b === 'Bullish' ? '▲' : b === 'Bearish' ? '
 // Session metadata used to label each daily insight (3x/day publishing cadence).
 // Keys match SESSION_BY_CRON values in the scheduled() handler.
 const _INS_SESSIONS = {
-  asean:   { label: 'Asia Session',     short: 'asia',    intro: 'Asia session is opening — here is the overnight forex sentiment picture as Tokyo, Singapore and Sydney desks come online.' },
-  london:  { label: 'London Session',   short: 'london',  intro: 'London is opening — here is the forex sentiment setup heading into the European session.' },
-  newyork: { label: 'New York Session', short: 'ny',      intro: 'New York is opening — here is the forex sentiment setup heading into the US session.' }
+  asean:   { label: 'Asia Session',     short: 'asia',    intro: 'Asia session is opening, here is the overnight forex sentiment picture as Tokyo, Singapore and Sydney desks come online.' },
+  london:  { label: 'London Session',   short: 'london',  intro: 'London is opening, here is the forex sentiment setup heading into the European session.' },
+  newyork: { label: 'New York Session', short: 'ny',      intro: 'New York is opening, here is the forex sentiment setup heading into the US session.' }
 };
 
 // Detect session from current UTC hour for on-demand runs (manual /api/run-insight calls).
@@ -4912,33 +4913,33 @@ function _insDetectAngle(sentiment) {
   let category='Market Wrap';
   let headline, slug, summary;
   if (neutralCount >= 6) {
-    headline = `Quiet Forex Session as Markets Await Fresh Catalysts — ${dateLabel}`;
+    headline = `Quiet Forex Session as Markets Await Fresh Catalysts, ${dateLabel}`;
     slug = `quiet-forex-session-markets-await-catalysts`;
     category='Market Wrap';
     summary = `Forex markets traded in tight ranges with most major currencies showing neutral bias as traders await fresh data and central bank guidance.`;
   } else if (top.score >= 65) {
-    headline = `${_INS_CCY_NAMES[top.currency]} Strengthens as Bullish News Flow Builds — ${dateLabel}`;
+    headline = `${_INS_CCY_NAMES[top.currency]} Strengthens as Bullish News Flow Builds, ${dateLabel}`;
     slug = `${top.currency.toLowerCase()}-strengthens-bullish-sentiment`;
     category=`${top.currency} Analysis`;
     summary = `${_INS_CCY_NAMES[top.currency]} (${top.currency}) leads forex sentiment today with a strong bullish reading. Here is what drove the move and what to watch next.`;
   } else if (top.score <= 35) {
-    headline = `${_INS_CCY_NAMES[top.currency]} Slides as Bearish News Pressure Builds — ${dateLabel}`;
+    headline = `${_INS_CCY_NAMES[top.currency]} Slides as Bearish News Pressure Builds, ${dateLabel}`;
     slug = `${top.currency.toLowerCase()}-weakens-bearish-pressure`;
     category=`${top.currency} Analysis`;
     summary = `${_INS_CCY_NAMES[top.currency]} (${top.currency}) faces the strongest bearish news pressure across the majors today. Here is what triggered the move and where it goes from here.`;
   } else if (isRiskOn) {
-    headline = `Risk-On Mood Lifts Commodity Currencies as Safe Havens Slip — ${dateLabel}`;
+    headline = `Risk-On Mood Lifts Commodity Currencies as Safe Havens Slip, ${dateLabel}`;
     slug = `risk-on-commodity-currencies-rise`;
     category='Risk Sentiment';
     summary = `Risk-on sentiment lifted commodity-linked currencies (AUD, NZD, CAD) while traditional safe havens (JPY, CHF) lost ground in today's forex session.`;
   } else if (isRiskOff) {
-    headline = `Risk-Off Sweeps Forex as Safe Havens Strengthen — ${dateLabel}`;
+    headline = `Risk-Off Sweeps Forex as Safe Havens Strengthen, ${dateLabel}`;
     slug = `risk-off-safe-havens-strengthen`;
     category='Risk Sentiment';
     summary = `Risk-off flows dominated forex today as the Japanese Yen and Swiss Franc strengthened while higher-beta currencies came under pressure.`;
   } else {
     const movers = arr.slice(0,3).map(s => s.currency).join(', ');
-    headline = `Mixed Forex Bias as ${movers} Lead Today's Sentiment Shifts — ${dateLabel}`;
+    headline = `Mixed Forex Bias as ${movers} Lead Today's Sentiment Shifts, ${dateLabel}`;
     slug = `mixed-forex-bias-${movers.replace(/, /g,'-').toLowerCase()}-lead`;
     summary = `Mixed sentiment across the majors today with ${movers} showing the most pronounced bias shifts driven by overnight news flow.`;
   }
@@ -4966,15 +4967,15 @@ async function _insBuildNarrativeAI(env, {sentiment, news, biggestMover, sessMet
   const nicknames = {USD:'the dollar or greenback',EUR:'the euro',GBP:'the pound or sterling',JPY:'the yen',AUD:'the Aussie',CAD:'the loonie',CHF:'the franc',NZD:'the kiwi'};
   const nick = nicknames[biggestMover.currency] || moverName;
 
-  const sentSummary = arr.map(s=>`  ${s.currency} (${_INS_CCY_NAMES[s.currency]}): ${s.score}/100 — ${s.bias}${s.drivers&&s.drivers.length?' | drivers: '+s.drivers.slice(0,2).join('; '):''}`).join('\n');
-  const topNews = news.slice(0,20).map((n,i)=>`  ${i+1}. [${n.impact||'Med'}] "${n.title}" — ${n.source} (affects: ${(n.currencies_affected||[]).join(',')||'general'})`).join('\n');
+  const sentSummary = arr.map(s=>`  ${s.currency} (${_INS_CCY_NAMES[s.currency]}): ${s.score}/100, ${s.bias}${s.drivers&&s.drivers.length?' | drivers: '+s.drivers.slice(0,2).join('; '):''}`).join('\n');
+  const topNews = news.slice(0,20).map((n,i)=>`  ${i+1}. [${n.impact||'Med'}] "${n.title}", ${n.source} (affects: ${(n.currencies_affected||[]).join(',')||'general'})`).join('\n');
   const dateLabel = new Date().toUTCString().split(' ').slice(0,4).join(' ');
 
   const prompt = `You are a senior FX market analyst writing a session briefing for FXNewsBias.com, a real-time forex sentiment intelligence platform trusted by retail forex traders.
 
 SESSION: ${sessMeta.label} | DATE: ${dateLabel}
 HEADLINE: ${angle.headline}
-BIGGEST MOVER: ${moverName} (${biggestMover.currency}) — ${biggestMover.score}/100 — ${biggestMover.bias}
+BIGGEST MOVER: ${moverName} (${biggestMover.currency}), ${biggestMover.score}/100, ${biggestMover.bias}
 ${watchPair?`KEY PAIR TO WATCH: ${watchPair}`:''}
 
 SENTIMENT SCORES (all 8 majors):
@@ -4983,45 +4984,45 @@ ${sentSummary}
 TOP NEWS HEADLINES (last 24 hours, use these as your factual basis):
 ${topNews}
 
-Write a professional, SEO-optimised forex market briefing. Return ONLY valid JSON — no markdown, no commentary outside the JSON.
+Write a professional, SEO-optimised forex market briefing. Never use em dashes, use a comma, a colon or a full stop instead. Return ONLY valid JSON, no markdown, no commentary outside the JSON.
 
 {
   "lead": "One punchy hook sentence in plain text. Must name the currency in full, include its ${biggestMover.currency} code, score/100, and bias. Do not start with 'The'.",
   "standfirst": "One sentence telling the reader exactly what they will learn. Plain text.",
-  "what_happened_intro": "2–3 paragraphs of flowing prose explaining what drove ${biggestMover.currency} sentiment. Reference specific headlines and sources by name. Naturally alternate between '${moverName}', '${biggestMover.currency}', and '${nick}'. Separate paragraphs with \\n\\n. Plain text only — no HTML tags.",
+  "what_happened_intro": "2–3 paragraphs of flowing prose explaining what drove ${biggestMover.currency} sentiment. Reference specific headlines and sources by name. Naturally alternate between '${moverName}', '${biggestMover.currency}', and '${nick}'. Separate paragraphs with \\n\\n. Plain text only, no HTML tags.",
   "what_happened_quote": "A short verbatim extract from one headline above (max 12 words). Empty string if nothing fits neatly.",
   "what_happened_quote_source": "Source name and UTC time, e.g. 'Reuters · 14:30 UTC'. Empty string if no quote.",
   "reaction_prose": "1–2 paragraphs covering how the broader FX market reacted. Mention the widest sentiment gap and the ${watchPair||'most tradeable cross'} setup. Vary terminology: 'forex market', 'FX session', 'currency pairs', 'exchange rates'. Separate paragraphs with \\n\\n. Plain text only.",
   "drivers": [
-    "First key driver — one specific sentence tied directly to a real headline above",
-    "Second key driver — a distinct angle, not rephrasing the first",
-    "Third key driver — a third distinct factor; omit if fewer than 3 genuine drivers exist"
+    "First key driver, one specific sentence tied directly to a real headline above",
+    "Second key driver, a distinct angle, not rephrasing the first",
+    "Third key driver, a third distinct factor; omit if fewer than 3 genuine drivers exist"
   ],
   "bull_case": "2–3 sentences. What specific upcoming data release, central bank event, or technical confirmation would extend the ${biasWord} move? Name a real catalyst if one exists in the next 48 hours. Plain text.",
-  "bear_case": "2–3 sentences. What specific COUNTER-catalyst — a different narrative entirely from the bull case — would reverse the view and snap ${biggestMover.currency} pairs back? Plain text.",
+  "bear_case": "2–3 sentences. What specific COUNTER-catalyst, a different narrative entirely from the bull case, would reverse the view and snap ${biggestMover.currency} pairs back? Plain text.",
   "closing_note": "One forward-looking sentence mentioning the next session (Asia 00:13 UTC / London 06:13 UTC / New York 12:13 UTC). Plain text.",
-  "page_title": "Unique SEO <title> tag, max 65 chars. MANDATORY: name the SPECIFIC real-world catalyst — the actual event, price level, data print, or central bank action from the headlines above. BANNED (any = failure): 'Strengthens as Bullish News Flow Builds', 'Slides as Bearish News Pressure Builds', 'Quiet Forex Session', 'Mixed Forex Bias', 'Risk-On Mood', 'Risk-Off Sweeps', any score notation like '72/100' or 'X/100'. BAD examples: 'USD Hits 72/100 on Fed Rate-Hike Signals', 'USD Strengthens as Bullish News Flow Builds'. GOOD examples: 'USD Rallies Above 99.40 on Fed Rate Bets & Yen Weakness', 'GBP Slides as UK Jobs Data Misses, BoE Rate Bets Pare', 'AUD Falls Below 0.7150 as RBA Pause Fears Weigh'. Do NOT include the date or score — the date is in the URL and byline already."
+  "page_title": "Unique SEO <title> tag, max 65 chars. MANDATORY: name the SPECIFIC real-world catalyst, the actual event, price level, data print, or central bank action from the headlines above. BANNED (any = failure): 'Strengthens as Bullish News Flow Builds', 'Slides as Bearish News Pressure Builds', 'Quiet Forex Session', 'Mixed Forex Bias', 'Risk-On Mood', 'Risk-Off Sweeps', any score notation like '72/100' or 'X/100'. BAD examples: 'USD Hits 72/100 on Fed Rate-Hike Signals', 'USD Strengthens as Bullish News Flow Builds'. GOOD examples: 'USD Rallies Above 99.40 on Fed Rate Bets & Yen Weakness', 'GBP Slides as UK Jobs Data Misses, BoE Rate Bets Pare', 'AUD Falls Below 0.7150 as RBA Pause Fears Weigh'. Do NOT include the date or score, the date is in the URL and byline already."
 }
 
-Hard rules — violating any of these will make the article unusable:
+Hard rules, violating any of these will make the article unusable:
 1. Each section must be self-contained. Zero repeated phrases across sections.
 2. Bull case and bear case must describe genuinely different scenarios.
 3. Drivers must not echo the reaction_prose or each other.
 4. No generic filler like "markets await fresh catalysts" unless truly nothing happened.
-5. Natural SEO — include these terms once each where they fit: 'forex market analysis', 'currency strength', 'central bank', '${watchPair||biggestMover.currency+' pairs'}', 'exchange rate', 'price action'. Never force them.
-6. Tone: authoritative but readable — like FXStreet or Reuters FX desk, not academic.
+5. Natural SEO, include these terms once each where they fit: 'forex market analysis', 'currency strength', 'central bank', '${watchPair||biggestMover.currency+' pairs'}', 'exchange rate', 'price action'. Never force them.
+6. Tone: authoritative but readable, like FXStreet or Reuters FX desk, not academic.
 7. Total prose word count (all sections combined): 500–700 words.
-8. CRITICAL — "what_happened_intro" must ONLY reference headlines that directly affect ${biggestMover.currency}. Do NOT open a ${biggestMover.currency} article with a headline about a different currency (e.g. do not lead a USD article with a BoE/GBP headline). If a non-${biggestMover.currency} headline is contextually relevant (e.g. a risk-off event that drives safe-haven flows into USD), mention it briefly as a secondary factor only — never as the lead sentence.`;
+8. CRITICAL, "what_happened_intro" must ONLY reference headlines that directly affect ${biggestMover.currency}. Do NOT open a ${biggestMover.currency} article with a headline about a different currency (e.g. do not lead a USD article with a BoE/GBP headline). If a non-${biggestMover.currency} headline is contextually relevant (e.g. a risk-off event that drives safe-haven flows into USD), mention it briefly as a secondary factor only, never as the lead sentence.`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {'Content-Type':'application/json','x-api-key':env.CLAUDE_API_KEY,'anthropic-version':'2023-06-01'},
     body: JSON.stringify({model:'claude-haiku-4-5-20251001', max_tokens:3000, messages:[{role:'user',content:prompt}]}),
-    signal: AbortSignal.timeout(90000), // 90s — Haiku needs up to ~35s under peak API load; 90s = safe ceiling
+    signal: AbortSignal.timeout(90000), // 90s, Haiku needs up to ~35s under peak API load; 90s = safe ceiling
   });
   if (!resp.ok) throw new Error(`Anthropic HTTP ${resp.status}`);
   const data = await resp.json();
-  if (data.stop_reason === 'max_tokens') throw new Error('AI narrative truncated — max_tokens too low');
+  if (data.stop_reason === 'max_tokens') throw new Error('AI narrative truncated, max_tokens too low');
   const raw = data.content?.[0]?.text || '';
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in AI narrative response');
@@ -5078,13 +5079,13 @@ Hard rules — violating any of these will make the article unusable:
       driversSection += `<blockquote>&ldquo;${_insEsc(supp.title)}&rdquo;<cite>— ${_insEsc(supp.source)} · ${_insFmtTime(supp.created_at)}</cite></blockquote>`;
     }
   } else {
-    driversSection = `<p>Underlying drivers remain mixed. Today's ${biasWord} ${_insEsc(moverName)} reading appears to be a positioning move rather than a single-catalyst reaction — typically a less durable signal.</p>`;
+    driversSection = `<p>Underlying drivers remain mixed. Today's ${biasWord} ${_insEsc(moverName)} reading appears to be a positioning move rather than a single-catalyst reaction, typically a less durable signal.</p>`;
   }
 
   const bullCase = _insEsc(String(ai.bull_case||'').trim());
   const bearCase = _insEsc(String(ai.bear_case||'').trim());
   const scenarios = `<div class="scenario-box"><div class="scenario-title">📈 Bull case for the move</div><div class="scenario-text">${bullCase}</div></div><div class="scenario-box" style="border-left-color:#dc2626;"><div class="scenario-title" style="color:#dc2626;">📉 Risk to the view</div><div class="scenario-text">${bearCase}</div></div>`;
-  const closing = `<p>${_insEsc(String(ai.closing_note||'The next session wrap lands within the day — Asia at 00:05 UTC, London at 06:05 UTC, New York at 12:05 UTC.').trim())}</p>`;
+  const closing = `<p>${_insEsc(String(ai.closing_note||'The next session wrap lands within the day, Asia at 00:05 UTC, London at 06:05 UTC, New York at 12:05 UTC.').trim())}</p>`;
 
   return {lead, standfirst, whatHappened, reaction, driversSection, scenarios, closing, glance, pageTitle: String(ai.page_title||'').trim()};
 }
@@ -5167,9 +5168,9 @@ function _insBuildNarrative({sentiment, news, biggestMover}){
     : biggestMover.bias==='Bearish'
     ? `a hawkish policy shift or a stronger-than-expected data release`
     : `a sharp change in the headline flow`;
-  const bearCase = `The main risk to this view is ${bearTrigger} — either could quickly unwind the ${biasWord} positioning and snap the ${_insEsc(moverName)} bias back toward 50/100. Watch ${biggestMover.currency} pairs for early signs of reversal if the next central-bank wire pushes against the current narrative.`;
+  const bearCase = `The main risk to this view is ${bearTrigger}, either could quickly unwind the ${biasWord} positioning and snap the ${_insEsc(moverName)} bias back toward 50/100. Watch ${biggestMover.currency} pairs for early signs of reversal if the next central-bank wire pushes against the current narrative.`;
   const scenarios = `<div class="scenario-box"><div class="scenario-title">📈 Bull case for the move</div><div class="scenario-text">${bullCase}</div></div><div class="scenario-box" style="border-left-color:#dc2626;"><div class="scenario-title" style="color:#dc2626;">📉 Risk to the view</div><div class="scenario-text">${bearCase}</div></div>`;
-  const closing = `<p>The next session wrap lands within the day — Asia at <strong>00:05 UTC</strong>, London at <strong>06:05 UTC</strong>, New York at <strong>12:05 UTC</strong> — and will reset the picture against the latest overnight headlines. For live tracking through the day, the <a href="/">sentiment dashboard</a>, <a href="/currencies">currency strength meter</a>, and <a href="/calendar">economic calendar</a> all update in real time.</p>`;
+  const closing = `<p>The next session wrap lands within the day, Asia at <strong>00:05 UTC</strong>, London at <strong>06:05 UTC</strong>, New York at <strong>12:05 UTC</strong>, and will reset the picture against the latest overnight headlines. For live tracking through the day, the <a href="/">sentiment dashboard</a>, <a href="/currencies">currency strength meter</a>, and <a href="/calendar">economic calendar</a> all update in real time.</p>`;
 
   const glance = _INS_CCY_ORDER.map(c=>{const x=sentiment[c];if(!x)return '';return `<div class="glance-cell" style="border-top-color:${_insBiasColor(x.bias)};"><div class="glance-ccy">${c}</div><div class="glance-score">${x.score}</div><div class="glance-arr" style="color:${_insBiasColor(x.bias)};">${_insBiasArrow(x.bias)} ${x.bias.slice(0,4)}</div></div>`;}).join('');
 
@@ -5285,7 +5286,7 @@ function _insSlugLabel(slug) {
   const words = (m[5] || '').split('-').filter(Boolean).slice(0, 7)
     .map(w => CCY.has(w) ? w.toUpperCase() : w).join(' ');
   const title = words.charAt(0).toUpperCase() + words.slice(1);
-  return `${parseInt(m[3], 10)} ${MON[parseInt(m[2], 10) - 1]}${sess ? ' ' + sess : ''} — ${title}`;
+  return `${parseInt(m[3], 10)} ${MON[parseInt(m[2], 10) - 1]}${sess ? ' ' + sess : ''}, ${title}`;
 }
 
 // Prev/next chain nav carried by every insight article. The markers make the
@@ -5303,7 +5304,7 @@ function _insNavBlock(prevSlug, nextSlug) {
 
 function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMover, dateISO, dateLabel, category, narrative, ogImageOverride, prevSlug}){
   const url = `${_INS_SITE}/insight/${slug}`;
-  const shortHeadline = String(headline).split(" — ")[0]; const h = _insEsc(headline), hShort = _insEsc(shortHeadline), s = _insEsc(summary), sMeta = _insEsc(_insClampMeta(summary));
+  const shortHeadline = String(headline).split(", ")[0]; const h = _insEsc(headline), hShort = _insEsc(shortHeadline), s = _insEsc(summary), sMeta = _insEsc(_insClampMeta(summary));
   const pageTitle = (narrative && narrative.pageTitle) ? _insEsc(narrative.pageTitle) : h;
   const N = narrative || _insBuildNarrative({sentiment, news, biggestMover});
   // Internal links: funnel article-body authority into money pages. Shared budget
@@ -5325,9 +5326,9 @@ function _insRenderArticle({headline, slug, summary, sentiment, news, biggestMov
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="icon" href="/favicon.ico"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://vtbmtxtgtdprpbilragm.supabase.co" crossorigin><link rel="manifest" href="/site.webmanifest"><meta name="theme-color" content="#0f172a">
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"></noscript>
 <title>${pageTitle} | FXNewsBias</title><meta name="description" content="${sMeta}"><meta name="robots" content="index, follow"><meta name="author" content="FXNewsBias Team"><link rel="canonical" href="${url}">
-<meta property="og:type" content="article"><meta property="og:title" content="${pageTitle}"><meta property="og:description" content="${s}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ogImage}"><meta property="og:image:secure_url" content="${ogImage}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${pageTitle} — FXNewsBias daily insight"><meta property="og:site_name" content="FXNewsBias">
+<meta property="og:type" content="article"><meta property="og:title" content="${pageTitle}"><meta property="og:description" content="${s}"><meta property="og:url" content="${url}"><meta property="og:image" content="${ogImage}"><meta property="og:image:secure_url" content="${ogImage}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${pageTitle}, FXNewsBias daily insight"><meta property="og:site_name" content="FXNewsBias">
 <meta property="article:published_time" content="${dateISO}"><meta property="article:author" content="FXNewsBias Team"><meta property="article:section" content="Forex Analysis">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${pageTitle}"><meta name="twitter:description" content="${s}"><meta name="twitter:image" content="${ogImage}"><meta name="twitter:image:alt" content="${pageTitle} — FXNewsBias daily insight">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${pageTitle}"><meta name="twitter:description" content="${s}"><meta name="twitter:image" content="${ogImage}"><meta name="twitter:image:alt" content="${pageTitle}, FXNewsBias daily insight">
 <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}:root{--bg:#fff;--bg-soft:#f8f9fa;--border:#e5e7eb;--text:#1a1a1a;--text-soft:#6b7280;--text-muted:#9ca3af;--accent:#2563eb;--bull:#10b981;--bear:#ef4444;--neutral:#f59e0b;}a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}.topbar-left,.topbar-right{display:flex;gap:14px;color:#94a3b8;}.topbar a{color:#94a3b8;text-decoration:none;}.topbar a:hover{color:#fff;}
 .page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}.crumb{font-size:13px;color:#94a3b8;margin-bottom:10px;}.crumb a{color:#94a3b8;text-decoration:none;}
@@ -5375,8 +5376,8 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <h2 class="h2">What's Driving the Move</h2>${_il(N.driversSection)}
 <h2 class="h2">What to Watch Next</h2>${_il(N.scenarios)}${_il(N.closing)}
 <div class="glance"><div class="glance-h">📊 Bias snapshot at the time of writing</div><div class="glance-grid">${N.glance}</div></div>
-<div class="cta"><strong>Catch every session wrap as it drops.</strong> Bookmark <a href="/insight/">/insight/</a> or subscribe to our <a href="/insight/rss.xml">RSS feed</a> for fresh forex sentiment analysis 3 times a day — Asia, London and New York sessions.</div>
-<p class="ai-disclosure" style="margin-top:24px;padding:14px 16px;background:#f8fafc;border-left:3px solid #94a3b8;border-radius:4px;font-size:13px;color:#475569;line-height:1.6;"><strong>How this briefing was written:</strong> AI-drafted from real forex news headlines scanned every 3 hours by FXNewsBias, then auto-published on a fixed session schedule. Sentiment scores reflect news flow only — not technical signals or price action. This is information, not financial advice. Always cross-check with your own analysis before trading.</p>
+<div class="cta"><strong>Catch every session wrap as it drops.</strong> Bookmark <a href="/insight/">/insight/</a> or subscribe to our <a href="/insight/rss.xml">RSS feed</a> for fresh forex sentiment analysis 3 times a day, Asia, London and New York sessions.</div>
+<p class="ai-disclosure" style="margin-top:24px;padding:14px 16px;background:#f8fafc;border-left:3px solid #94a3b8;border-radius:4px;font-size:13px;color:#475569;line-height:1.6;"><strong>How this briefing was written:</strong> AI-drafted from real forex news headlines scanned every 3 hours by FXNewsBias, then auto-published on a fixed session schedule. Sentiment scores reflect news flow only, not technical signals or price action. This is information, not financial advice. Always cross-check with your own analysis before trading.</p>
 </article>
 <aside>
 <div class="sidebar-card"><div class="sidebar-h">📊 Live Currency Bias</div>${sidebarCcys}<a class="side-link" style="text-align:center;color:#2563eb;border-top:1px solid #e5e7eb;margin-top:6px;padding-top:12px;" href="/currencies">View all 8 currencies →</a></div>
@@ -5400,7 +5401,7 @@ function _insRenderIndex(articles){
 <title>Daily Forex Insights | News Sentiment Analysis - FXNewsBias</title>
 <meta name="description" content="Forex market wraps with focus on the highest-impact news, market reaction, and what to watch next. Published 3 times a day for the Asia, London and New York sessions.">
 <meta name="robots" content="index, follow"><link rel="canonical" href="${_INS_SITE}/insight/">
-<meta property="og:type" content="website"><meta property="og:title" content="Daily Forex Insights | FXNewsBias"><meta property="og:description" content="Daily forex market wraps with focus on the highest-impact news, market reaction, and what to watch next."><meta property="og:url" content="${_INS_SITE}/insight/"><meta property="og:image" content="${_INS_SITE}/og/insight/index.png?v=2"><meta property="og:image:secure_url" content="${_INS_SITE}/og/insight/index.png?v=2"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="FXNewsBias Daily Insights — forex market wraps 3 times a day"><meta property="og:site_name" content="FXNewsBias"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${_INS_SITE}/og/insight/index.png?v=2"><meta name="twitter:image:alt" content="FXNewsBias Daily Insights — forex market wraps 3 times a day">
+<meta property="og:type" content="website"><meta property="og:title" content="Daily Forex Insights | FXNewsBias"><meta property="og:description" content="Daily forex market wraps with focus on the highest-impact news, market reaction, and what to watch next."><meta property="og:url" content="${_INS_SITE}/insight/"><meta property="og:image" content="${_INS_SITE}/og/insight/index.png?v=2"><meta property="og:image:secure_url" content="${_INS_SITE}/og/insight/index.png?v=2"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="FXNewsBias Daily Insights, forex market wraps 3 times a day"><meta property="og:site_name" content="FXNewsBias"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${_INS_SITE}/og/insight/index.png?v=2"><meta name="twitter:image:alt" content="FXNewsBias Daily Insights, forex market wraps 3 times a day">
 <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Inter',-apple-system,sans-serif;background:#fff;color:#1a1a1a;line-height:1.5;}:root{--border:#e5e7eb;--accent:#2563eb;}a{color:#2563eb;text-decoration:none;}a:hover{text-decoration:underline;}
 .topbar{background:#0f172a;color:#fff;padding:6px 0;font-size:12px;}.topbar-inner{max-width:1280px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}.topbar a{color:#94a3b8;text-decoration:none;}
 .page-head{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:32px 0;}.page-head-inner{max-width:1280px;margin:0 auto;padding:0 20px;}.crumb{font-size:13px;color:#94a3b8;margin-bottom:10px;}.crumb a{color:#94a3b8;}.page-title{font-size:clamp(24px,4vw,32px);font-weight:800;color:#fff;margin-bottom:8px;letter-spacing:-0.5px;}.page-sub{color:#94a3b8;font-size:14px;line-height:1.5;max-width:760px;}
@@ -5423,7 +5424,7 @@ footer{background:#0f172a;color:#94a3b8;padding:32px 20px 20px;margin-top:40px;}
 <header class="page-head"><div class="page-head-inner">
 <div class="crumb"><a href="/">Home</a> · <span>Daily Insights</span></div>
 <h1 class="page-title">Daily Forex Insights</h1>
-<p class="page-sub">Forex market wraps focused on the highest-impact news, the currencies that moved, and what traders should watch over the next 24 hours. Daily forex session wraps — Asia 08:05, London 14:05, New York 20:05 (MYT). Monday to Friday.</p>
+<p class="page-sub">Forex market wraps focused on the highest-impact news, the currencies that moved, and what traders should watch over the next 24 hours. Daily forex session wraps, Asia 08:05, London 14:05, New York 20:05 (MYT). Monday to Friday.</p>
 </div></header>
 <div class="main">
 <div><div class="ix-grid">${items}</div><div class="rss-card"><a href="/insight/rss.xml">📡 Subscribe via RSS</a><div style="font-size:13px;color:#1e40af;margin-top:6px;">Get new insights in Feedly, Inoreader, or any RSS reader</div></div></div>
@@ -5749,7 +5750,7 @@ async function pruneStaleInsights(env) {
     const age = Math.floor((now - new Date(m[1] + 'T00:00:00Z')) / 864e5);
     if (age < PRUNE_AGE_DAYS) continue;
     const p = perf[slug] || { clicks: 0, impr: 0 };
-    if (p.clicks > 0 || p.impr >= 3) continue; // proven demand — keep indexed
+    if (p.clicks > 0 || p.impr >= 3) continue; // proven demand, keep indexed
     candidates.push(slug);
   }
   if (!candidates.length) { console.log('pruneStaleInsights: nothing to prune'); return { ok: true, pruned: 0 }; }
@@ -6285,7 +6286,7 @@ async function _sendAlertEmail(env, to, flips) {
   const fromEmail = env.ALERT_EMAIL_FROM || 'alerts@fxnewsbias.com';
   await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: [to], subject: `⚡ ${flips.map(f => f.currency + ' ' + f.to).join(', ')} — bias flip`, html }), signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: [to], subject: `⚡ ${flips.map(f => f.currency + ' ' + f.to).join(', ')}, bias flip`, html }), signal: AbortSignal.timeout(20000),
   });
 }
 
@@ -6321,7 +6322,7 @@ async function _sendForecastAlertEmail(env, to, calls) {
     + `<div style="background:#0f172a;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;"><div style="font-size:18px;font-weight:800;">🎯 Today's forecasts are live</div><div style="font-size:13px;color:#94a3b8;margin-top:4px;">Fresh directional calls just published.</div></div>`
     + `<div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:18px 24px;"><table style="width:100%;border-collapse:collapse;">${calls.map(row).join('')}</table>`
     + `<a href="https://fxnewsbias.com/forecast" style="display:inline-block;margin-top:18px;background:#2563eb;color:#fff;padding:11px 22px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">See today's forecasts →</a>`
-    + `<p style="font-size:12px;color:#94a3b8;margin-top:16px;line-height:1.5;">Sentiment-based analysis, not financial advice. You enabled alerts on FXNewsBias Pro — manage them on your <a href="https://fxnewsbias.com/pro" style="color:#2563eb;">dashboard</a>.</p></div></div>`;
+    + `<p style="font-size:12px;color:#94a3b8;margin-top:16px;line-height:1.5;">Sentiment-based analysis, not financial advice. You enabled alerts on FXNewsBias Pro, manage them on your <a href="https://fxnewsbias.com/pro" style="color:#2563eb;">dashboard</a>.</p></div></div>`;
   const fromEmail = env.ALERT_EMAIL_FROM || 'alerts@fxnewsbias.com';
   await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -6702,7 +6703,7 @@ async function generateCurrencySEO(ccy, sentData, headlines, env, topQueries = [
   const drivers = (Array.isArray(sentData.drivers) ? sentData.drivers : []).slice(0,3).join('; ') || 'mixed signals across the board';
   const headlineList = headlines.length ? headlines.slice(0,5).map((h,i)=>`${i+1}. ${h}`).join('\n') : 'No major headlines in this window.';
   const queryBlock = (topQueries && topQueries.length)
-    ? `\nREAL GOOGLE QUERIES already bringing impressions to THIS page (last 28d) — write the SEO <title> to MATCH this dominant search intent and lift click-through; mirror the searcher's wording where it fits naturally, never keyword-stuff:\n${topQueries.map(q => `- "${q.query}" (${q.impr} impr, avg pos ${Math.round(q.pos)})`).join('\n')}\n`
+    ? `\nREAL GOOGLE QUERIES already bringing impressions to THIS page (last 28d), write the SEO <title> to MATCH this dominant search intent and lift click-through; mirror the searcher's wording where it fits naturally, never keyword-stuff:\n${topQueries.map(q => `- "${q.query}" (${q.impr} impr, avg pos ${Math.round(q.pos)})`).join('\n')}\n`
     : '';
 
   const prompt = `You are a senior FX analyst at a major bank writing the "What Is Driving the ${ccy.code} Today" section of a live market page on ${dateStr}.
@@ -6714,18 +6715,19 @@ Current ${ccy.code} data:
 ${queryBlock}
 Write exactly 2 short paragraphs using ONLY <p> and <strong> tags. No headings, no lists, no other tags.
 
-Paragraph 1: What the ${ccy.name} is doing right now — reference the score (${score}/100), the bias (${bias}), specific drivers. Be direct and data-specific.
-Paragraph 2: What to watch — upcoming catalysts, key risks, best ${ccy.code} pairs to track (${ccy.pairs}).
+Paragraph 1: What the ${ccy.name} is doing right now, reference the score (${score}/100), the bias (${bias}), specific drivers. Be direct and data-specific.
+Paragraph 2: What to watch, upcoming catalysts, key risks, best ${ccy.code} pairs to track (${ccy.pairs}).
 
 Hard rules:
 - Never write "as of [date]", "it is worth noting", "it is important to", "in conclusion", "furthermore", "it is clear that"
 - No markdown symbols. No bullet points.
-- Confident, direct tone — no fluff. Vary sentence length.
+- Confident, direct tone, no fluff. Vary sentence length.
 - Naturally include: ${ccy.keywords}
 - 120–170 words total.
 
+Never use em dashes, use a comma, a colon or a full stop instead.
 Return ONLY valid JSON (no markdown, no code fences):
-{"page_title":"<max 65 chars — STRICT format: '${ccy.code} ${bias} ${score}/100 | [CATALYST] — ${dateShort}'. CATALYST must name a specific real-world event from the headlines (e.g. named data print, central bank decision, specific inflation figure, named geopolitical event). BANNED in title (any = failure): 'Rate Expectations', 'Strength', 'Weakness', 'Sentiment Shift', 'Markets Await', 'Rate Divergence', 'Risk Appetite', 'Risk Sentiment', score notation like '72/100' outside the fixed slot. Rules: (1) Em dash — before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (3) No brand suffix.>","html":"<the two paragraphs>"}`;
+{"page_title":"<max 65 chars, STRICT format: '${ccy.code} ${bias} ${score}/100 | [CATALYST], ${dateShort}'. CATALYST must name a specific real-world event from the headlines (e.g. named data print, central bank decision, specific inflation figure, named geopolitical event). BANNED in title (any = failure): 'Rate Expectations', 'Strength', 'Weakness', 'Sentiment Shift', 'Markets Await', 'Rate Divergence', 'Risk Appetite', 'Risk Sentiment', score notation like '72/100' outside the fixed slot. Rules: (1) Em dash, before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC. (3) No brand suffix.>","html":"<the two paragraphs>"}`;
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -6741,8 +6743,8 @@ Return ONLY valid JSON (no markdown, no code fences):
   if (jsonMatch) {
     try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
   }
-  if (!pageTitle) pageTitle = `${ccy.code} ${bias} | ${ccy.name} Sentiment — ${dateShort}`;
-  pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
+  if (!pageTitle) pageTitle = `${ccy.code} ${bias} | ${ccy.name} Sentiment, ${dateShort}`;
+  pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ', $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
   html = _addInternalLinks(html, '/currencies/' + ccy.code.toLowerCase(), 4);
   return { pageTitle, html };
 }
@@ -6782,7 +6784,7 @@ async function generateAllCurrencySEO(env, opts = {}) {
           const { pageTitle, html } = await generateCurrencySEO(ccy, sentData, headlines, env, pageQueries['/currencies/' + ccy.code.toLowerCase()] || []);
           if (html) {
             try { await saveSEOCache(ccy.slug, html, env); } catch(ce) { console.log(`cache ${ccy.code}:`, ce.message); }
-            console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100) — title: ${pageTitle}`);
+            console.log(`Currency SEO cached: ${ccy.code} (${sentData.bias} ${sentData.score}/100), title: ${pageTitle}`);
           }
           if (pageTitle) titleUpdates.push({ path: `currencies/${ccy.code.toLowerCase()}/index.html`, pageTitle, ccy, sentData });
         } catch(e) {
@@ -6817,11 +6819,11 @@ async function generateAllCurrencySEO(env, opts = {}) {
           const dateShort = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
           // Dynamic meta description (max 155 chars)
-          const descRaw = `${ccy.code} (${ccy.name}) is ${bias} today (${score}/100). ${catalyst}. Live news-based forex sentiment & bias — ${dateShort}.`;
+          const descRaw = `${ccy.code} (${ccy.name}) is ${bias} today (${score}/100). ${catalyst}. Live news-based forex sentiment & bias, ${dateShort}.`;
           const safeDesc = descRaw.replace(/"/g, '&quot;').slice(0, 155);
 
           // H1: keep flag span, replace static "CODE Sentiment & NAME Bias" with bias + score + catalyst
-          const h1Text = `${ccy.code} ${bias} — ${catalyst}`;
+          const h1Text = `${ccy.code} ${bias}, ${catalyst}`;
 
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
@@ -6836,7 +6838,7 @@ async function generateAllCurrencySEO(env, opts = {}) {
         }
         if (filesToCommit.length > 0) {
           const dateLabel = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
-          await _insCommitFiles(env, filesToCommit, `seo: update currency page titles — ${dateLabel}`);
+          await _insCommitFiles(env, filesToCommit, `seo: update currency page titles, ${dateLabel}`);
           for (const c of committed) await _recordTitleChange(env, c.slug, c.pageTitle, 'seo-cycle');
           console.log(`Currency SEO: committed ${filesToCommit.length}/${titleUpdates.length} title patches (rest held by gate)`);
         }
@@ -6873,32 +6875,33 @@ async function generatePairSEO(pair, score, headlines, env, topQueries = []) {
   const biasLabel = score > 10 ? 'Bullish' : score < -10 ? 'Bearish' : 'Neutral';
   const headlineList = headlines.length ? headlines.slice(0, 5).map((h, i) => `${i + 1}. ${h}`).join('\n') : 'No major headlines at this time.';
   const queryBlock = (topQueries && topQueries.length)
-    ? `\nREAL GOOGLE QUERIES already bringing impressions to THIS page (last 28d) — write the SEO <title> to MATCH this dominant search intent and lift click-through; mirror the searcher's wording where it fits naturally, never keyword-stuff:\n${topQueries.map(q => `- "${q.query}" (${q.impr} impr, avg pos ${Math.round(q.pos)})`).join('\n')}\n`
+    ? `\nREAL GOOGLE QUERIES already bringing impressions to THIS page (last 28d), write the SEO <title> to MATCH this dominant search intent and lift click-through; mirror the searcher's wording where it fits naturally, never keyword-stuff:\n${topQueries.map(q => `- "${q.query}" (${q.impr} impr, avg pos ${Math.round(q.pos)})`).join('\n')}\n`
     : '';
 
   const prompt = `You are an expert forex analyst writing a concise, SEO-optimised market update for ${pair.name} on ${dateStr}.
 
 Current data:
-- Sentiment bias score: ${score} (${biasLabel} — positive = ${pair.base} strength, negative = ${pair.quote} strength)
+- Sentiment bias score: ${score} (${biasLabel}, positive = ${pair.base} strength, negative = ${pair.quote} strength)
 - Key forex headlines (last 3 hours):\n${headlineList}
 ${queryBlock}
 Write a 3-paragraph HTML article using ONLY these tags: <p>, <strong>, <ul>, <li>. No headings, no other tags.
 
-Paragraph 1: Current ${pair.name} sentiment today — reference the bias score, explain what it means for direction.
-Paragraph 2: Key drivers — name the SPECIFIC real-world event from the headlines above (e.g. a named data print, a central bank rate decision, a specific inflation figure, a named geopolitical development, a commodity price move). For cross pairs (e.g. EUR/JPY, GBP/JPY), name the distinct driver for EACH component currency — do not merge them into one generic phrase.
-Paragraph 3: What to watch — forward-looking, mention next session, specific upcoming data or risk events if relevant.
+Paragraph 1: Current ${pair.name} sentiment today, reference the bias score, explain what it means for direction.
+Paragraph 2: Key drivers, name the SPECIFIC real-world event from the headlines above (e.g. a named data print, a central bank rate decision, a specific inflation figure, a named geopolitical development, a commodity price move). For cross pairs (e.g. EUR/JPY, GBP/JPY), name the distinct driver for EACH component currency, do not merge them into one generic phrase.
+Paragraph 3: What to watch, forward-looking, mention next session, specific upcoming data or risk events if relevant.
 
 Hard rules:
 - Naturally include these keywords: ${pair.keywords}, live forex sentiment, forex bias today 2026, news-based forex analysis
 - Keep it factual and data-driven. Do NOT invent specific price levels.
 - Total length: 200–280 words.
-- NEVER write vague phrases like "rate expectations", "strength dominates", "sentiment shift", "rate divergence", "[currency] strength", "risk sentiment", "risk appetite", "quiet markets", "no major headlines", "no major catalysts", "absence of data", "lack of data", "no data", "markets await" — if headlines are quiet, describe positioning, technical levels, or the macro backdrop instead.
+- NEVER write vague phrases like "rate expectations", "strength dominates", "sentiment shift", "rate divergence", "[currency] strength", "risk sentiment", "risk appetite", "quiet markets", "no major headlines", "no major catalysts", "absence of data", "lack of data", "no data", "markets await", if headlines are quiet, describe positioning, technical levels, or the macro backdrop instead.
 
-Title rules — STRICT format: "${pair.name} ${biasLabel} Today | [CATALYST] — ${dateShort}"
+Title rules, STRICT format: "${pair.name} ${biasLabel} Today | [CATALYST], ${dateShort}"
 CATALYST must name a specific named event, policy decision, data print, or macro theme. If headlines are quiet, describe the POSITIONING or TECHNICAL driver (e.g. "USD Holds Near 99 as Traders Await FOMC", "EUR Tests Support on Thin Volume"). Never acknowledge the absence of news. Max 65 chars total.
 BANNED words/phrases in title (any = failure): "Rate Expectations", "Strength Dominates", "Sentiment Shift", "Rate Divergence", "CHF Strength", "USD Strength", "EUR Strength", "GBP Strength", "AUD Strength", "JPY Strength", "CAD Strength", "NZD Strength", "Risk Appetite", "Risk Sentiment", "Markets Await", "Sentiment Bullish", "Sentiment Bearish", "Sentiment Neutral", "Bias Today —" (without pipe), "No Major", "Absence of", "Lack of", "No Data", "No Catalyst", "Quiet Session", score notation like "72/100".
-Rules: (1) Em dash — before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC, SNB not snb. (3) No brand suffix. (4) ALWAYS use format "PAIR Bullish/Bearish/Neutral Today | CATALYST — DATE" — never "Sentiment Bullish" or "Bias Today —".
+Rules: (1) Em dash, before date, never a plain hyphen. (2) Write BoJ not BOJ, BoE not BOE, BoC not BOC, SNB not snb. (3) No brand suffix. (4) ALWAYS use format "PAIR Bullish/Bearish/Neutral Today | CATALYST, DATE", never "Sentiment Bullish" or "Bias Today —".
 
+Never use em dashes, use a comma, a colon or a full stop instead.
 Return ONLY valid JSON (no markdown, no code fences):
 {"page_title":"<title here>","html":"<the three paragraphs>"}`;
 
@@ -6916,8 +6919,8 @@ Return ONLY valid JSON (no markdown, no code fences):
   if (jsonMatch) {
     try { const p = JSON.parse(jsonMatch[0]); pageTitle = p.page_title||''; html = p.html||raw; } catch(_) {}
   }
-  if (!pageTitle) pageTitle = `${pair.name} ${biasLabel} Bias Today | ${pair.name} Sentiment — ${dateShort}`;
-  pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ' — $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
+  if (!pageTitle) pageTitle = `${pair.name} ${biasLabel} Bias Today | ${pair.name} Sentiment, ${dateShort}`;
+  pageTitle = pageTitle.replace(/ - FXNewsBias$/i, '').replace(/ [-–] (\d)/, ', $1').replace(/\bBOJ\b/g, 'BoJ').replace(/\bBOE\b/g, 'BoE').replace(/\bBOC\b/g, 'BoC');
   html = _addInternalLinks(html, '/pairs/' + pair.slug, 4);
   return { pageTitle, html };
 }
@@ -6979,7 +6982,7 @@ async function generateAllPairSEO(env, opts = {}) {
           const { pageTitle, html } = await generatePairSEO(pair, pairScore, pairHeadlines, env, pageQueries['/pairs/' + pair.slug] || []);
           if (html) {
             try { await saveSEOCache(pair.slug, html, env); } catch(ce) { console.log(`cache ${pair.slug}:`, ce.message); }
-            console.log(`SEO processed: ${pair.slug} — title: ${pageTitle}`);
+            console.log(`SEO processed: ${pair.slug}, title: ${pageTitle}`);
           }
           if (pageTitle) titleUpdates.push({ path: `pairs/${pair.slug}/index.html`, pageTitle, pair, pairScore });
         } catch (e) { console.log(`SEO gen error for ${pair.slug}:`, e.message); }
@@ -7012,11 +7015,11 @@ async function generateAllPairSEO(env, opts = {}) {
           const dateShort = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
           // Dynamic meta description (max 155 chars)
-          const descRaw = `${pair.name} is ${biasLabel} today. ${catalyst}. Live news-based forex sentiment & bias for traders — ${dateShort}.`;
+          const descRaw = `${pair.name} is ${biasLabel} today. ${catalyst}. Live news-based forex sentiment & bias for traders, ${dateShort}.`;
           const safeDesc = descRaw.replace(/"/g, '&quot;').slice(0, 155);
 
           // H1: keep flag span, replace static "Sentiment Today" with bias + catalyst
-          const h1Text = `${pair.name} ${biasLabel} Today — ${catalyst}`;
+          const h1Text = `${pair.name} ${biasLabel} Today, ${catalyst}`;
 
           const patched = current
             .replace(/<title>[^<]*<\/title>/, `<title>${safe}</title>`)
@@ -7031,7 +7034,7 @@ async function generateAllPairSEO(env, opts = {}) {
         }
         if (filesToCommit.length > 0) {
           const dateLabel = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-          await _insCommitFiles(env, filesToCommit, `seo: update pair page titles — ${dateLabel}`);
+          await _insCommitFiles(env, filesToCommit, `seo: update pair page titles, ${dateLabel}`);
           for (const c of committed) await _recordTitleChange(env, c.slug, c.pageTitle, 'seo-cycle');
           console.log(`Pair SEO: committed ${filesToCommit.length}/${titleUpdates.length} title patches (rest held by gate)`);
         }
@@ -7264,7 +7267,7 @@ async function generatePairForecasts(env) {
         headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001', max_tokens: 1200,
-          messages: [{ role: 'user', content: `You write terse institutional forex research notes. For each line below, write a 2-sentence rationale for the stated call using ONLY the given sentiment drivers. No price targets, no advice, no hedging boilerplate. Return ONLY a JSON object mapping pair to rationale, e.g. {"EUR/USD":"..."}.\n\n${lines}` }],
+          messages: [{ role: 'user', content: `You write terse institutional forex research notes. For each line below, write a 2-sentence rationale for the stated call using ONLY the given sentiment drivers. No price targets, no advice, no hedging boilerplate. Never use em dashes. Return ONLY a JSON object mapping pair to rationale, e.g. {"EUR/USD":"..."}.\n\n${lines}` }],
         }),
         signal: AbortSignal.timeout(45000),
       });
@@ -7278,7 +7281,7 @@ async function generatePairForecasts(env) {
   rows.forEach(r => {
     if (!r.narrative) {
       r.narrative = r.direction === 'Stand Aside'
-        ? `Sentiment gap of ${r.gap > 0 ? '+' : ''}${r.gap} between ${r.pair.slice(0, 3)} and ${r.pair.slice(4)} is inside the neutral band — no directional edge today.`
+        ? `Sentiment gap of ${r.gap > 0 ? '+' : ''}${r.gap} between ${r.pair.slice(0, 3)} and ${r.pair.slice(4)} is inside the neutral band, no directional edge today.`
         : `${r.pair.slice(0, 3)} sentiment (${r.base_score}) vs ${r.pair.slice(4)} (${r.quote_score}) opens a ${Math.abs(r.gap)}-point gap favouring the ${r.direction.toLowerCase()} side.`;
     }
   });
@@ -7451,7 +7454,7 @@ async function runForecastBacktest(env, { horizonH = 6, gapMin = 15, momMin = 8,
     _fcSbAll(env, `sentiment?select=currency,score,created_at&created_at=gte.${sinceISO}&order=created_at.asc`),
     _fcSbAll(env, `price_history?select=pair,price,ts&ts=gte.${sinceISO}&order=ts.asc`),
   ]);
-  if (!priceRows.length) return { ok: false, error: 'price_history is empty — run /backfill-prices first (and apply RUN_PRICE_HISTORY_MIGRATION.sql)' };
+  if (!priceRows.length) return { ok: false, error: 'price_history is empty, run /backfill-prices first (and apply RUN_PRICE_HISTORY_MIGRATION.sql)' };
 
   // Sentiment rows -> cycles: rows written by one 3h run share a timestamp
   // to within seconds; bucket to 15 min.
@@ -7653,7 +7656,7 @@ async function generateSessionBias(env, session) {
         headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001', max_tokens: 1200,
-          messages: [{ role: 'user', content: `You write terse institutional forex research notes describing the NEWS TONE going into a trading session. For each line below, write a 2-sentence note explaining what the news flow says, using ONLY the given drivers. This is reporting on sentiment, NOT a trade recommendation — never say buy, sell, target, or advise a position. Return ONLY a JSON object mapping pair to note, e.g. {"EUR/USD":"..."}.\n\n${lines}` }],
+          messages: [{ role: 'user', content: `You write terse institutional forex research notes describing the NEWS TONE going into a trading session. For each line below, write a 2-sentence note explaining what the news flow says, using ONLY the given drivers. This is reporting on sentiment, NOT a trade recommendation, never say buy, sell, target, or advise a position. Never use em dashes. Return ONLY a JSON object mapping pair to note, e.g. {"EUR/USD":"..."}.\n\n${lines}` }],
         }),
         signal: AbortSignal.timeout(45000),
       });
@@ -7667,7 +7670,7 @@ async function generateSessionBias(env, session) {
   rows.forEach(r => {
     if (!r.narrative) {
       r.narrative = r.tone === 'Neutral'
-        ? `News flow is balanced between ${r.pair.slice(0, 3)} and ${r.pair.slice(4)} going into the ${SB_SESSIONS[session]} session — sentiment gap of ${r.gap > 0 ? '+' : ''}${r.gap} is inside the neutral band.`
+        ? `News flow is balanced between ${r.pair.slice(0, 3)} and ${r.pair.slice(4)} going into the ${SB_SESSIONS[session]} session, sentiment gap of ${r.gap > 0 ? '+' : ''}${r.gap} is inside the neutral band.`
         : `News tone favours the ${r.pair.slice(0, 3)} side into the ${SB_SESSIONS[session]} session: sentiment ${r.base_score} vs ${r.quote_score}, a ${Math.abs(r.gap)}-point gap.`;
     }
   });
@@ -7742,11 +7745,11 @@ async function _sendBiasAlertEmail(env, to, session, reads) {
     + `<div style="background:#0f172a;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;"><div style="font-size:18px;font-weight:800;">📰 Strong news tone into the ${sessionName} session</div><div style="font-size:13px;color:#94a3b8;margin-top:4px;">The news flow is leaning hard on pairs you follow.</div></div>`
     + `<div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:18px 24px;"><table style="width:100%;border-collapse:collapse;">${reads.map(row).join('')}</table>`
     + `<a href="https://fxnewsbias.com/forecast" style="display:inline-block;margin-top:18px;background:#2563eb;color:#fff;padding:11px 22px;border-radius:8px;font-weight:700;font-size:14px;text-decoration:none;">Open the session scorecard →</a>`
-    + `<p style="font-size:12px;color:#94a3b8;margin-top:16px;line-height:1.5;">This reports the tone of news sentiment — it is not a forecast or trade advice. You enabled alerts on FXNewsBias Pro — manage them on your <a href="https://fxnewsbias.com/pro" style="color:#2563eb;">dashboard</a>.</p></div></div>`;
+    + `<p style="font-size:12px;color:#94a3b8;margin-top:16px;line-height:1.5;">This reports the tone of news sentiment, it is not a forecast or trade advice. You enabled alerts on FXNewsBias Pro, manage them on your <a href="https://fxnewsbias.com/pro" style="color:#2563eb;">dashboard</a>.</p></div></div>`;
   const fromEmail = env.ALERT_EMAIL_FROM || 'alerts@fxnewsbias.com';
   await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: [to], subject: `📰 ${reads.map(r => r.pair).join(', ')} — strong ${sessionName} session tone`, html }), signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ from: `FXNewsBias Alerts <${fromEmail}>`, to: [to], subject: `📰 ${reads.map(r => r.pair).join(', ')}, strong ${sessionName} session tone`, html }), signal: AbortSignal.timeout(20000),
   });
 }
 
@@ -8223,7 +8226,7 @@ async function executeSeoActions(env) {
   for (const p of (plan.top_pages || [])) {
     if (p && p.bucket === 'near_winner' && p.url) {
       const u = String(p.url).replace(/\/+$/, '') || '/';
-      if (!seen.has(u)) { seen.add(u); targets.push({ url: u, why: `near_winner at pos ${p.pos} — push toward page 1` }); }
+      if (!seen.has(u)) { seen.add(u); targets.push({ url: u, why: `near_winner at pos ${p.pos}, push toward page 1` }); }
     }
   }
   if (!targets.length) return { ok: true, executed: 0, reason: 'no-eligible-actions' };
@@ -8263,7 +8266,7 @@ async function executeSeoActions(env) {
         headers: { 'Content-Type': 'application/json', 'x-api-key': env.CLAUDE_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001', max_tokens: 400,
-          messages: [{ role: 'user', content: `You optimise page titles for CTR on a forex sentiment site (fxnewsbias.com). Page: ${t.url}\nCurrent title: ${curTitle}\nWhy it was flagged: ${t.why}\nReal Google queries this page appears for (last 28 days):\n${qLines}\n\nWrite ONE better title (max 60 chars, front-load the highest-demand query naturally, no clickbait, no ALL CAPS, keep any factual claims generic since you cannot verify page specifics) and ONE meta description (max 155 chars). Return ONLY JSON: {"title":"...","description":"..."}` }],
+          messages: [{ role: 'user', content: `You optimise page titles for CTR on a forex sentiment site (fxnewsbias.com). Page: ${t.url}\nCurrent title: ${curTitle}\nWhy it was flagged: ${t.why}\nReal Google queries this page appears for (last 28 days):\n${qLines}\n\nWrite ONE better title (max 60 chars, front-load the highest-demand query naturally, no clickbait, no ALL CAPS, no em dashes, keep any factual claims generic since you cannot verify page specifics) and ONE meta description (max 155 chars). Return ONLY JSON: {"title":"...","description":"..."}` }],
         }),
         signal: AbortSignal.timeout(45000),
       });
@@ -8295,7 +8298,7 @@ async function executeSeoActions(env) {
 
   if (filesToCommit.length) {
     const dateLabel = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    await _insCommitFiles(env, filesToCommit, `seo: execute weekly intelligence actions — ${dateLabel}`);
+    await _insCommitFiles(env, filesToCommit, `seo: execute weekly intelligence actions, ${dateLabel}`);
     for (const e of executed) {
       await writeSystemState(env, `seo_title_gate:pg:${e.url}`, { last_changed_at: new Date().toISOString(), title: e.title, reason: 'weekly-exec' });
     }
