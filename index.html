@@ -335,7 +335,14 @@ html[data-pro="1"] .sky-inline{display:none!important;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 
 footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
-.footer-inner{max-width:1280px;margin:0 auto;padding:0 20px;}
+.footer-inner{max-width:1280px;margin:0 auto;padding:0 24px;}
+/* SEO prose block. It used to be a 980px box centred on the viewport, so its
+   left edge never matched the 1280px grid every other section sits on: 126px
+   out at laptop width, a few px out on a phone. Same container now, with the
+   line length capped instead of the box. */
+.seo-content{padding:48px 0;}
+.seo-inner{max-width:1280px;margin:0 auto;padding:0 24px;}
+.seo-inner h2,.seo-inner p{max-width:78ch;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:32px;margin-bottom:32px;}
 .footer-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;}
 .footer-col ul{list-style:none;}
@@ -366,6 +373,8 @@ footer{background:#0f172a;color:#94a3b8;padding:40px 0 20px;margin-top:40px;}
   .hero-inner{padding:0 16px;}
   .pulse-wrap{padding:0 16px;}
   .divg-section{padding:0 16px;}
+  .seo-inner{padding:0 16px;}
+  .footer-inner{padding:0 16px;}
   }
   @media(max-width:520px){
   .hero-stats{flex-wrap:wrap;}
@@ -924,8 +933,8 @@ window.addEventListener('load',function(){
 </main>
 
 <!-- SEO content section -->
-<section class="seo-content" style="background:#0f172a;color:#cbd5e1;padding:48px 20px;border-top:1px solid #1e293b;">
-  <div style="max-width:980px;margin:0 auto;">
+<section class="seo-content" style="background:#0f172a;color:#cbd5e1;border-top:1px solid #1e293b;">
+  <div class="seo-inner">
     <h2 style="color:#fff;font-size:24px;margin-bottom:18px;font-weight:700;">What is FXNewsBias?</h2>
     <p style="margin-bottom:14px;line-height:1.7;font-size:15px;">FXNewsBias is a free, AI-powered forex news sentiment dashboard built for retail traders who want to understand the fundamental story behind currency price movements without spending hours reading financial news. Every three hours, our system pulls the latest forex headlines from trusted sources including FXStreet, ForexLive, CNBC, MarketWatch, the Wall Street Journal, BBC News, and Investing.com, then runs each story through a sentiment classifier to score it as bullish, bearish, or neutral for each of the eight major currencies: USD, EUR, GBP, JPY, AUD, CAD, CHF, and NZD.</p>
 
