@@ -210,6 +210,12 @@ try {
 // /data-quality is the human page (a static asset on the site worker) and
 // /data-quality.json is this machine-readable report. The bare path stays
 // answered here so anything already polling it keeps working.
+if (url.pathname === '/run-bing-ingest') {
+if (!_authed()) return new Response('Unauthorized', { status: 401 });
+const out = await ingestBingPerformance(env);
+return new Response(JSON.stringify(out, null, 2), { headers: { 'Content-Type': 'application/json' } });
+}
+
 if (url.pathname === '/data-quality' || url.pathname === '/data-quality.json') {
 return handleDataQuality(env);
 }
@@ -567,6 +573,9 @@ if (event.cron === '*/15 * * * *') {
     // Once/day at 03:15 UTC: pull Search Console performance -> gsc_performance (E1).
     ...(new Date().getUTCHours() === 3 ? [(async () => {
       await ingestGscPerformance(env).catch(e => console.log('ingestGscPerformance error:', e.message));
+      // Same daily slot for Bing, so both engines land together and can be
+      // compared on the admin page without a second dashboard.
+      await ingestBingPerformance(env).catch(e => console.log('ingestBingPerformance error:', e.message));
       await pruneStaleInsights(env).catch(e => console.log('pruneStaleInsights error:', e.message));
       // Self-healing signup net: any registrant whose browser-side welcome
       // call was aborted gets picked up here within a day.
@@ -1267,6 +1276,89 @@ async function getGoogleAccessToken(clientEmail, privateKeyPem, scope) {
     if (!data.access_token) console.log('Google token error:', JSON.stringify(data).slice(0, 200));
     return data.access_token || null;
   } catch (e) { console.log('getGoogleAccessToken error:', e.message); return null; }
+}
+
+// ============================================
+// BING WEBMASTER PERFORMANCE -> bing_performance
+// ============================================
+// Uses the JSON/HTTP flavour of the Webmaster API. The SOAP and POX flavours
+// retire on 31 Aug 2026; JSON is the documented replacement and keeps the same
+// key, quotas and permissions, so nothing here needs to change on that date.
+//
+// Bing returns dates as Microsoft JSON dates: "/Date(1778742000000-0700)/".
+const _BING_API = 'https://ssl.bing.com/webmaster/api.svc/json';
+
+function _bingDate(v) {
+  if (!v) return null;
+  const m = String(v).match(/\/Date\((-?\d+)/);
+  if (!m) return null;
+  return new Date(Number(m[1])).toISOString().slice(0, 10);
+}
+
+async function _bingGet(env, method, extra = '') {
+  const url = `${_BING_API}/${method}?apikey=${encodeURIComponent(env.BING_API_KEY)}`
+    + `&siteUrl=${encodeURIComponent('https://fxnewsbias.com')}${extra}`;
+  const r = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(25000) });
+  if (!r.ok) throw new Error(`${method} HTTP ${r.status}: ${(await r.text()).slice(0, 160)}`);
+  const j = await r.json();
+  return j && j.d !== undefined ? j.d : j;
+}
+
+async function ingestBingPerformance(env) {
+  if (!env.BING_API_KEY) { console.log('ingestBingPerformance: BING_API_KEY not set'); return { ok: false, reason: 'no-key' }; }
+  const now = new Date().toISOString();
+  const rows = [];
+  const out = { ok: true, site: 0, pages: 0, queries: 0, upserted: 0, errors: [] };
+
+  // Site level clicks and impressions per day.
+  try {
+    for (const d of (await _bingGet(env, 'GetRankAndTrafficStats')) || []) {
+      const date = _bingDate(d.Date);
+      if (!date) continue;
+      rows.push({ date, dimension: 'site', key: '', clicks: d.Clicks || 0,
+                  impressions: d.Impressions || 0, position: 0, fetched_at: now });
+      out.site++;
+    }
+  } catch (e) { out.errors.push(e.message); }
+
+  // Per page and per query. Both come back as QueryStats rows carrying their
+  // own Date, so each is stored against the day it belongs to rather than
+  // being flattened onto today. GetPageStats puts the URL in the Query field,
+  // which is Bing's naming, not a mistake here.
+  for (const [method, dim, counter] of [['GetPageStats', 'page', 'pages'], ['GetQueryStats', 'query', 'queries']]) {
+    try {
+      for (const d of (await _bingGet(env, method)) || []) {
+        const key = String(d.Query || '').slice(0, 2000);
+        const date = _bingDate(d.Date);
+        if (!key || !date) continue;
+        rows.push({ date, dimension: dim, key, clicks: d.Clicks || 0,
+                    impressions: d.Impressions || 0,
+                    position: d.AvgImpressionPosition > 0 ? d.AvgImpressionPosition : 0, fetched_at: now });
+        out[counter]++;
+      }
+    } catch (e) { out.errors.push(`${method}: ${e.message}`); }
+  }
+
+  // The upsert targets a unique (date, dimension, key), so a repeated triple in
+  // one payload would make Postgres reject the whole chunk. Collapse first.
+  const seen = new Map();
+  for (const r of rows) seen.set(`${r.date}|${r.dimension}|${r.key}`, r);
+  const deduped = [...seen.values()];
+  out.rows_after_dedupe = deduped.length;
+
+  for (let i = 0; i < deduped.length; i += 500) {
+    const chunk = deduped.slice(i, i + 500);
+    const up = await fetch(`${env.SUPABASE_URL}/rest/v1/bing_performance?on_conflict=date,dimension,key`, {
+      method: 'POST',
+      headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(chunk), signal: AbortSignal.timeout(25000),
+    });
+    if (!up.ok) out.errors.push(`upsert ${up.status}: ${(await up.text()).slice(0, 160)}`);
+    else out.upserted += chunk.length;
+  }
+  console.log('ingestBingPerformance:', JSON.stringify(out));
+  return out;
 }
 
 async function ingestGscPerformance(env, opts = {}) {
