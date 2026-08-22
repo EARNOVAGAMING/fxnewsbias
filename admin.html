@@ -174,11 +174,11 @@ function renderSearch() {
     const c = t.last28.clicks, i = t.last28.impressions;
     const pc = t.prior28 ? t.prior28.clicks : 0;
     const arrow = !t.prior28 ? '' : (c > pc ? ' up' : c < pc ? ' down' : ' flat');
-    return n(c) + ' clicks · ' + n(i) + ' impressions' + (arrow ? ' (' + arrow.trim() + ' vs prior 28d)' : '');
+    return n(c) + (c === 1 ? ' click · ' : ' clicks · ') + n(i) + (i === 1 ? ' impression' : ' impressions') + (arrow ? ' (' + arrow.trim() + ' vs prior 28d)' : '');
   };
   const warn = [];
   if (b && b.crawlErrors) warn.push(n(b.crawlErrors) + ' crawl error(s) yesterday');
-  if (b && b.inLinks !== null && b.inLinks < 20) warn.push('only ' + n(b.inLinks) + ' inbound links known to Bing');
+  if (b && b.inLinks !== null && b.inLinks < 20) warn.push('only ' + n(b.inLinks) + ' inbound link' + (b.inLinks === 1 ? '' : 's') + ' known to Bing');
   return `
     <div class="stats" style="margin-top:-6px;">
       <div class="stat"><div class="label">Bing: pages indexed</div><div class="val">${n(b && b.inIndex)}</div><div class="sub">${b ? esc(delta(b.inIndex, b.inIndex30dAgo)) : ''}</div></div>
